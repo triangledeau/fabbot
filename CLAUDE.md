@@ -22,6 +22,20 @@ du projet est un expert du jeu, mais débute en programmation : explications en
 Principe central : le moteur avance jusqu'à une `Decision` ; un `Agent` (bot ou
 humain) répond par l'index d'une option. Tout choix de joueur passe par là.
 
+## Début et fin de conversation
+- **Au début** : lire `docs/suivi.md` (état d'avancement, questions ouvertes,
+  prochaine tâche) et partir de la branche indiquée.
+- **À la fin de chaque tâche** : mettre à jour `docs/suivi.md` (statut, journal,
+  questions ouvertes, prochaine tâche), committer et pousser.
+- **Rappeler au propriétaire de changer de conversation** quand une tâche est
+  finie ou que la conversation devient longue (cela réduit la consommation),
+  et lui fournir à chaque fois **le message à coller** dans la nouvelle
+  conversation, au format :
+  > Projet fabbot. Lis `CLAUDE.md` puis `docs/suivi.md`. Pars de la branche
+  > `<branche>`. Tâche : <prochaine tâche>.
+- Le propriétaire débute avec Git : quand une pull request est utile,
+  lui expliquer pas à pas comment la faire sur github.com.
+
 ## Règles de travail
 - **Sources de vérité** : Comprehensive Rules officiel + textes officiels des
   cartes avec errata (voir `docs/rules/README.md`). Citer la section du CR en
