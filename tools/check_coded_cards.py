@@ -57,7 +57,7 @@ for c in coded:
         if k.lower() not in text.lower():
             print(f"MOT-CLÉ  {c['name']} {c['color']} : « {k} » absent du texte")
             problems += 1
-    for k in ["Go again", "Dominate", "Battleworn", "Temper", "Guardwell", "Blade Break"]:
+    for k in ["Go again", "Dominate", "Battleworn", "Temper", "Guardwell", "Blade Break", "Ambush", "Ephemeral"]:
         printed = re.search(r"\*\*" + k + r"\*\*(\{br\}|$)", text, re.I)
         if printed and k not in c["keywords"]:
             print(f"MOT-CLÉ  {c['name']} {c['color']} : « {k} » imprimé mais pas codé")

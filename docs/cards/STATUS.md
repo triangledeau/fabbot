@@ -15,9 +15,17 @@ mais sont suivies séparément, car leurs valeurs (attaque, défense...) diffèr
 imprimées vérifiées par `python3 tools/check_coded_cards.py`). Le token
 **Flurry** (créé par Edict of Steel et Toe the Line) est aussi codé et testé.
 
+**Étape 3, deck Ira (2026-11-22)** : toutes les cartes du deck Ira sont
+`Tested` (code : `crates/cards/src/real/ninja.rs` et `generic.rs`, tests :
+`crates/cards/tests/cartes_ninja.rs` et `cartes_generiques.rs`). La carte
+**Crouching Tiger** (créée par Aspect of Tiger, Blessing of Qi, Pouncing Paws
+et Tiger Eye Reflex) est aussi codée et testée : ce n'est **pas** un token
+(ligne de type officielle « Ninja Action - Attack »), mais une carte avec
+ephemeral.
+
 | Carte | Couleur | Utilisée par | Statut |
 |---|---|---|---|
-| **Ira, Crimson Haze** | héros | Ira, Crimson Haze | NotCoded |
+| **Ira, Crimson Haze** | héros | Ira, Crimson Haze | Tested |
 | **Hala** | héros | Hala | Tested |
 | **Dorinthea** | héros | Dorinthea | Tested |
 | **Bravo, Flattering Showman** | héros | Bravo, Flattering Showman | NotCoded |
@@ -31,9 +39,9 @@ imprimées vérifiées par `python3 tools/check_coded_cards.py`). Le token
 | Arcane Lantern | arène | Florian | NotCoded |
 | Blade Beckoner Boots | arène | Dorinthea, Iyslander | Tested |
 | Blade Beckoner Gauntlets | arène | Iyslander | NotCoded |
-| Blade Beckoner Helm | arène | Bravo, Flattering Showman, Ira, Crimson Haze, Iyslander | NotCoded |
+| Blade Beckoner Helm | arène | Bravo, Flattering Showman, Ira, Crimson Haze, Iyslander | Tested |
 | Blade Beckoner Plating | arène | Iyslander | NotCoded |
-| Blood Scent | arène | Ira, Crimson Haze | NotCoded |
+| Blood Scent | arène | Ira, Crimson Haze | Tested |
 | Bloodied Oval | arène | Florian | NotCoded |
 | Blossom of Spring | arène | Arakni, Web of Deceit, Florian | NotCoded |
 | Buzzard Helm | arène | Levia | NotCoded |
@@ -43,9 +51,9 @@ imprimées vérifiées par `python3 tools/check_coded_cards.py`). Le token
 | Danger Digits | arène | Arakni, Web of Deceit | NotCoded |
 | Decimator Great Axe | arène | Dorinthea | Tested |
 | Deep Blue | arène | Dromai | NotCoded |
-| Double Cross Strap | arène | Ira, Crimson Haze | NotCoded |
+| Double Cross Strap | arène | Ira, Crimson Haze | Tested |
 | Edge Laden Plate | arène | Hala | Tested |
-| Edge of Autumn | arène | Ira, Crimson Haze | NotCoded |
+| Edge of Autumn | arène | Ira, Crimson Haze | Tested |
 | Embraforged Gauntlet | arène | Levia | NotCoded |
 | Gauntlet of Boulderhold | arène | Bravo, Flattering Showman | NotCoded |
 | Gauntlets of Unity | arène | Dorinthea, Hala | Tested |
@@ -55,7 +63,7 @@ imprimées vérifiées par `python3 tools/check_coded_cards.py`). Le token
 | Hex Gauntlet | arène | Levia | NotCoded |
 | Hooves of the Shadowbeast | arène | Levia | NotCoded |
 | Mark of the Huntsman | arène | Arakni, Web of Deceit | NotCoded |
-| Mask of the Swarming Claw | arène | Ira, Crimson Haze | NotCoded |
+| Mask of the Swarming Claw | arène | Ira, Crimson Haze | Tested |
 | Miller's Grindstone | arène | Bravo, Flattering Showman | NotCoded |
 | Nebula Blade | arène | Florian | NotCoded |
 | Nullrune Boots | arène | Bravo, Flattering Showman, Hala | Tested |
@@ -65,7 +73,7 @@ imprimées vérifiées par `python3 tools/check_coded_cards.py`). Le token
 | Pillar of Unity | arène | Hala | Tested |
 | Plating of Unity | arène | Dorinthea | Tested |
 | Plume of Evergrowth | arène | Florian | NotCoded |
-| Pouncing Paws | arène | Ira, Crimson Haze | NotCoded |
+| Pouncing Paws | arène | Ira, Crimson Haze | Tested |
 | Predatory Plating | arène | Levia | NotCoded |
 | Prey Spotters | arène | Arakni, Web of Deceit | NotCoded |
 | Refraction Bolters | arène | Dorinthea | Tested |
@@ -79,7 +87,7 @@ imprimées vérifiées par `python3 tools/check_coded_cards.py`). Le token
 | Stalker's Steps | arène | Arakni, Web of Deceit | NotCoded |
 | Steelbraid Buckler | arène | Bravo, Flattering Showman | NotCoded |
 | Storm of Sandikai | arène | Dromai | NotCoded |
-| Tearing Shuko | arène | Ira, Crimson Haze | NotCoded |
+| Tearing Shuko | arène | Ira, Crimson Haze | Tested |
 | Time Skippers | arène | Dromai | NotCoded |
 | Topsy Turvy | arène | Arakni, Web of Deceit | NotCoded |
 | Unflinching Foothold | arène | Bravo, Flattering Showman, Iyslander | NotCoded |
@@ -95,16 +103,16 @@ imprimées vérifiées par `python3 tools/check_coded_cards.py`). Le token
 | Arcane Seeds // Life | red | Florian | NotCoded |
 | Arcane Twining | blue | Iyslander | NotCoded |
 | Art of Desire: Body | red | Arakni, Web of Deceit | NotCoded |
-| Aspect of Tiger: Body | red | Ira, Crimson Haze | NotCoded |
+| Aspect of Tiger: Body | red | Ira, Crimson Haze | Tested |
 | Autumn's Touch | blue | Florian | NotCoded |
 | Autumn's Touch | red | Florian | NotCoded |
 | Autumn's Touch | yellow | Florian | NotCoded |
 | Billowing Mirage | red | Dromai | NotCoded |
 | Bite | red | Arakni, Web of Deceit | NotCoded |
-| Bittering Thorns | red | Ira, Crimson Haze | NotCoded |
+| Bittering Thorns | red | Ira, Crimson Haze | Tested |
 | Blaze Headlong | red | Dromai | NotCoded |
-| Blessing of Qi | red | Ira, Crimson Haze | NotCoded |
-| Bluster Buff | red | Ira, Crimson Haze | NotCoded |
+| Blessing of Qi | red | Ira, Crimson Haze | Tested |
+| Bluster Buff | red | Ira, Crimson Haze | Tested |
 | Boneyard Marauder | red | Levia | NotCoded |
 | Boulder Drop | blue | Bravo, Flattering Showman | NotCoded |
 | Boulder Drop | red | Bravo, Flattering Showman | NotCoded |
@@ -150,13 +158,13 @@ imprimées vérifiées par `python3 tools/check_coded_cards.py`). Le token
 | Fault Line | red | Bravo, Flattering Showman | NotCoded |
 | Feasting Shadowbeast | red | Levia | NotCoded |
 | Feeding Frenzy | red | Levia | NotCoded |
-| Feign Vengeance | blue | Ira, Crimson Haze | NotCoded |
+| Feign Vengeance | blue | Ira, Crimson Haze | Tested |
 | Felling Swing | blue | Dorinthea | Tested |
 | Felling Swing | red | Dorinthea | Tested |
 | Felling Swing | yellow | Dorinthea | Tested |
 | Flatten the Field | blue | Bravo, Flattering Showman | NotCoded |
-| Flying Kick | blue | Ira, Crimson Haze | NotCoded |
-| Flying Kick | red | Ira, Crimson Haze | NotCoded |
+| Flying Kick | blue | Ira, Crimson Haze | Tested |
+| Flying Kick | red | Ira, Crimson Haze | Tested |
 | Frost Spike | blue | Iyslander | NotCoded |
 | Frosting | blue | Iyslander | NotCoded |
 | Fruits of the Forest | blue | Florian | NotCoded |
@@ -166,7 +174,7 @@ imprimées vérifiées par `python3 tools/check_coded_cards.py`). Le token
 | Goremass Summoning | blue | Levia | NotCoded |
 | Graveling Growl | red | Levia | NotCoded |
 | Graveling Growl | yellow | Levia | NotCoded |
-| Growl | red | Ira, Crimson Haze | NotCoded |
+| Growl | red | Ira, Crimson Haze | Tested |
 | Harvest Season | red | Florian | NotCoded |
 | Hit and Run | blue | Dorinthea | Tested |
 | Humble | red | Hala, Ira, Crimson Haze | Tested |
@@ -188,7 +196,7 @@ imprimées vérifiées par `python3 tools/check_coded_cards.py`). Le token
 | Jack Be Quick | red | Dromai | NotCoded |
 | Lair of the Spider | red | Arakni, Web of Deceit | NotCoded |
 | Lay Low | yellow | Dorinthea | Tested |
-| Legacy of Ikaru | blue | Ira, Crimson Haze | NotCoded |
+| Legacy of Ikaru | blue | Ira, Crimson Haze | Tested |
 | Look Tuff | red | Dorinthea, Iyslander | Tested |
 | Macho Grande | blue | Bravo, Flattering Showman | NotCoded |
 | Mark of the Black Widow | red | Arakni, Web of Deceit | NotCoded |
@@ -206,33 +214,33 @@ imprimées vérifiées par `python3 tools/check_coded_cards.py`). Le token
 | Passing Mirage | blue | Dromai | NotCoded |
 | Photon Splicing | blue | Iyslander | NotCoded |
 | Pick Up the Point | red | Arakni, Web of Deceit | NotCoded |
-| Pouncing Qi | blue | Ira, Crimson Haze | NotCoded |
-| Pouncing Qi | red | Ira, Crimson Haze | NotCoded |
+| Pouncing Qi | blue | Ira, Crimson Haze | Tested |
+| Pouncing Qi | red | Ira, Crimson Haze | Tested |
 | Public Bounty | red | Arakni, Web of Deceit | NotCoded |
 | Pummel | red | Bravo, Flattering Showman | NotCoded |
 | Pursue to the Edge of Oblivion | red | Arakni, Web of Deceit | NotCoded |
 | Pursue to the Pits of Despair | red | Arakni, Web of Deceit | NotCoded |
 | Pyroglyphic Protection | blue | Iyslander | NotCoded |
-| Qi Unleashed | blue | Ira, Crimson Haze | NotCoded |
+| Qi Unleashed | blue | Ira, Crimson Haze | Tested |
 | Raging Onslaught | blue | Dorinthea | Tested |
 | Rake the Embers | red | Dromai | NotCoded |
 | Ravenous Rabble | red | Arakni, Web of Deceit, Dromai, Iyslander | NotCoded |
-| Razor Reflex | red | Arakni, Web of Deceit, Ira, Crimson Haze | NotCoded |
+| Razor Reflex | red | Arakni, Web of Deceit, Ira, Crimson Haze | Tested |
 | Razor's Edge | red | Arakni, Web of Deceit | NotCoded |
 | Read the Runes | red | Florian | NotCoded |
 | Reaper's Call | blue | Arakni, Web of Deceit | NotCoded |
 | Reduce to Runechant | blue | Florian | NotCoded |
 | Reduce to Runechant | red | Florian | NotCoded |
 | Reduce to Runechant | yellow | Florian | NotCoded |
-| Reinforce the Line | red | Ira, Crimson Haze | NotCoded |
+| Reinforce the Line | red | Ira, Crimson Haze | Tested |
 | Relentless Pursuit | blue | Arakni, Web of Deceit | NotCoded |
 | Rootbound Carapace | red | Florian | NotCoded |
 | Rootbound Carapace | yellow | Florian | NotCoded |
 | Runeblood Incantation | red | Florian | NotCoded |
 | Sand Cover | red | Dromai | NotCoded |
-| Scar for a Scar | red | Dromai, Ira, Crimson Haze, Iyslander | NotCoded |
-| Seek Vengeance | blue | Ira, Crimson Haze | NotCoded |
-| Seek Vengeance | red | Ira, Crimson Haze | NotCoded |
+| Scar for a Scar | red | Dromai, Ira, Crimson Haze, Iyslander | Tested |
+| Seek Vengeance | blue | Ira, Crimson Haze | Tested |
+| Seek Vengeance | red | Ira, Crimson Haze | Tested |
 | Sharp Incline | blue | Hala | Tested |
 | Sharp Incline | red | Hala | Tested |
 | Sharpen Steel | blue | Dorinthea | Tested |
@@ -263,13 +271,13 @@ imprimées vérifiées par `python3 tools/check_coded_cards.py`). Le token
 | The Suspense is Killing Me | blue | Bravo, Flattering Showman | NotCoded |
 | Thunder Quake | blue | Bravo, Flattering Showman | NotCoded |
 | Thunk | blue | Bravo, Flattering Showman | NotCoded |
-| Tiger Eye Reflex | yellow | Ira, Crimson Haze | NotCoded |
+| Tiger Eye Reflex | yellow | Ira, Crimson Haze | Tested |
 | Timekeeper's Whim | blue | Iyslander | NotCoded |
 | Timesnap Potion | blue | Dromai, Iyslander | NotCoded |
 | Toe the Line | red | Hala | Tested |
 | Turn to Mindfire | red | Iyslander | NotCoded |
 | Unmovable | red | Iyslander | NotCoded |
-| Untamed | red | Ira, Crimson Haze | NotCoded |
+| Untamed | red | Ira, Crimson Haze | Tested |
 | Vigorous Smashup | blue | Levia | NotCoded |
 | Vigorous Smashup | red | Levia | NotCoded |
 | Vigorous Smashup | yellow | Levia | NotCoded |

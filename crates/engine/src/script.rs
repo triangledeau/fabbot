@@ -109,6 +109,7 @@ pub enum ScriptRef {
     Activated(CardId, u8),
     ActivatedCost(CardId, u8),
     Trigger(CardId, u8),
+    Granted(CardId, u8),
 }
 
 impl GameState {
@@ -119,6 +120,7 @@ impl GameState {
             ScriptRef::Activated(c, i) => &self.db.get(c).activated[i as usize].script,
             ScriptRef::ActivatedCost(c, i) => &self.db.get(c).activated[i as usize].effect_cost,
             ScriptRef::Trigger(c, i) => &self.db.get(c).triggers[i as usize].script,
+            ScriptRef::Granted(c, i) => &self.db.get(c).granted[i as usize].script,
         }
     }
 }

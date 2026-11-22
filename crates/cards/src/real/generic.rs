@@ -1,9 +1,9 @@
 //! Cartes génériques (sans classe) des decks Hala et Dorinthea.
 
-use super::{by_color, deck_card, equipment, power, COLORS};
+use super::{by_color, deck_card, equipment, grant, power, target_obj, COLORS};
 use fab_engine::card::{CardDb, CardDef, Color, Delta, Keywords, Subtypes, Supertypes, Types};
-use fab_engine::script::{Ask, Op};
-use fab_engine::{Choice, Event, GameState, ObjectId, TriggerDef};
+use fab_engine::script::{Ask, Ctx, Op, Target, TargetSpec};
+use fab_engine::{Choice, Event, GameState, ObjectId, TriggerDef, Until, Zone};
 
 /// Noms des cartes de ce module (pour `docs/cards/STATUS.md`).
 pub const NAMES: &[&str] = &[
@@ -23,6 +23,11 @@ pub const NAMES: &[&str] = &[
     "Nullrune Gloves",
     "Nullrune Boots",
     "Blade Beckoner Boots",
+    "Blade Beckoner Helm",
+    "Bluster Buff",
+    "Razor Reflex",
+    "Reinforce the Line",
+    "Scar for a Scar",
 ];
 
 const G: Supertypes = Supertypes::NONE;
@@ -319,11 +324,156 @@ pub fn add(db: &mut CardDb) {
     }
 
     // Blade Beckoner Boots — Generic Equipment - Legs, déf. 1.
+    // Blade Beckoner Helm — Generic Equipment - Head, déf. 1.
     // « This gets +1{d} while defending a weapon attack. Guardwell »
-    let mut d: CardDef = equipment("Blade Beckoner Boots", G, Subtypes::LEGS, 1);
+    db.add(blade_beckoner("Blade Beckoner Boots", Subtypes::LEGS));
+    db.add(blade_beckoner("Blade Beckoner Helm", Subtypes::HEAD));
+
+    // Bluster Buff (rouge) — Generic Action - Attack, 6, coût 1, déf. 3.
+    // « When this attacks, it gets -1{p} unless you pay {r}. »
+    let mut d = deck_card(
+        "Bluster Buff",
+        Color::Red,
+        G,
+        Types::ACTION,
+        Some(1),
+        Some(6),
+        Some(3),
+    );
+    d.triggers = vec![minus_one_unless_you_pay()];
+    db.add(d);
+
+    // Razor Reflex — Generic Attack Reaction, coût 1, déf. 2.
+    // « Choose 1;
+    // * Target dagger or sword weapon attack gets +3{p}.
+    // * Target attack action card with cost 1 or less gets +3{p} and "When
+    //   this hits, it gets **go again**." » (+3 / +2 / +1)
+    for c in COLORS {
+        let mut d = deck_card(
+            "Razor Reflex",
+            c,
+            G,
+            Types::ATTACK_REACTION,
+            Some(1),
+            None,
+            Some(2),
+        );
+        d.modes = vec![
+            "attaque d'arme dague ou épée",
+            "carte d'attaque de coût 1 ou moins (+ go again si elle touche)",
+        ];
+        d.targets = vec![TargetSpec {
+            label: "attaque",
+            // La cible dépend du mode choisi (CR 1.7.5, 5.1.4).
+            filter: |g, c, t| {
+                let Target::Object(r) = t else { return false };
+                if g.active_attack() != Some(r.id) {
+                    return false;
+                }
+                if c.mode == 0 {
+                    g.is_weapon_attack(r.id)
+                        && g.def(r.id).subtypes.any(Subtypes::DAGGER | Subtypes::SWORD)
+                } else {
+                    is_attack_action_card(g, r.id) && g.def(r.id).cost.unwrap_or(0) <= 1
+                }
+            },
+            optional: false,
+        }];
+        d.resolve = vec![Op::Do(|g, c| {
+            if let Some(r) = target_obj(c, 0) {
+                g.modify(r, power(by_color(g, c, [3, 2, 1])), Until::EndOfTurn);
+                if c.mode == 1 {
+                    g.grant_trigger(r, c.card, 0, Until::EndOfTurn);
+                }
+            }
+        })];
+        // La capacité accordée : « When this hits, it gets go again. »
+        d.granted = vec![TriggerDef {
+            when: this_hits,
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| {
+                if let Some(s) = c.source {
+                    g.modify(s, grant(Keywords::GO_AGAIN), Until::EndOfTurn);
+                }
+            })],
+        }];
+        db.add(d);
+    }
+
+    // Reinforce the Line — Generic Instant, coût 0.
+    // « Target defending attack action card gets +4{d}. » (+4 / +3 / +2)
+    for c in COLORS {
+        let mut d = deck_card(
+            "Reinforce the Line",
+            c,
+            G,
+            Types::INSTANT,
+            Some(0),
+            None,
+            None,
+        );
+        d.targets = vec![TargetSpec {
+            label: "carte d'attaque qui défend",
+            // CR 7.0.5a : une carte défend tant qu'elle est sur la chaîne.
+            filter: |g, _, t| {
+                matches!(t, Target::Object(r) if g.obj(r.id).zone == Zone::CombatChain
+                    && g.combat.links.iter().any(|l| l.defenders.contains(&r.id))
+                    && is_attack_action_card(g, r.id))
+            },
+            optional: false,
+        }];
+        d.resolve = vec![Op::Do(|g, c: &mut Ctx| {
+            if let Some(r) = target_obj(c, 0) {
+                let d = Delta {
+                    defense: by_color(g, c, [4, 3, 2]),
+                    ..Default::default()
+                };
+                // Sans durée écrite : l'effet dure tant que la carte reste sur
+                // la chaîne (elle la quitte au plus tard à la fin du tour).
+                g.modify(r, d, Until::EndOfTurn);
+            }
+        })];
+        db.add(d);
+    }
+
+    // Scar for a Scar — Generic Action - Attack, 4/3/2, coût 0, déf. 2.
+    // « When this is played, if you have less {h} than an opposing hero, it
+    // gets **go again**. »
+    for (i, c) in COLORS.into_iter().enumerate() {
+        let mut d = deck_card(
+            "Scar for a Scar",
+            c,
+            G,
+            Types::ACTION,
+            Some(0),
+            Some(4 - i as u8),
+            Some(2),
+        );
+        d.triggers = vec![TriggerDef {
+            when: |_, me, e| matches!(e, Event::Played { card, .. } if *card == me),
+            anywhere: false,
+            targets: vec![],
+            // CR 6.6.1c : la condition est vérifiée à la résolution.
+            script: vec![Op::Do(|g, c| {
+                let p = c.controller;
+                if g.player(p).life < g.player(p.opponent()).life {
+                    if let Some(s) = c.source {
+                        g.modify(s, grant(Keywords::GO_AGAIN), Until::EndOfTurn);
+                    }
+                }
+            })],
+        }];
+        db.add(d);
+    }
+}
+
+/// « This gets +1{d} while defending a weapon attack. Guardwell »
+fn blade_beckoner(name: &str, slot: Subtypes) -> CardDef {
+    let mut d: CardDef = equipment(name, G, slot, 1);
     d.keywords = Keywords::GUARDWELL;
     d.self_mod = Some(|g, me| {
-        let defending_weapon_attack = g.obj(me).zone == fab_engine::Zone::CombatChain
+        let defending_weapon_attack = g.obj(me).zone == Zone::CombatChain
             && g.combat.links.iter().any(|l| {
                 l.defenders.contains(&me)
                     && l.source.is_some_and(|w| g.def(w).types.has(Types::WEAPON))
@@ -337,5 +487,18 @@ pub fn add(db: &mut CardDb) {
             Delta::default()
         }
     });
-    db.add(d);
+    d
+}
+
+/// Une carte d'action d'attaque (pas une attaque-proxy d'arme).
+pub(crate) fn is_attack_action_card(g: &GameState, id: ObjectId) -> bool {
+    let d = g.def(id);
+    g.obj(id).proxy_of.is_none() && d.is_action() && d.is_attack_card()
+}
+
+/// « When this hits » pour une attaque `me` (carte ou attaque-proxy : pour une
+/// proxy, l'événement « hit » désigne l'arme).
+pub(crate) fn this_hits(g: &GameState, me: ObjectId, e: &Event) -> bool {
+    matches!(e, Event::Hit { attack, .. }
+        if *attack == me || g.obj(me).proxy_of == Some(*attack))
 }

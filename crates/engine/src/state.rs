@@ -88,6 +88,10 @@ pub enum LayerKind {
     Activated(u8),
     /// Une capacité déclenchée (index dans `CardDef::triggers`).
     Trigger(u8),
+    /// Une capacité déclenchée **accordée** par une carte à un autre objet
+    /// (index dans `CardDef::granted` de la carte qui l'accorde), ex. Legacy
+    /// of Ikaru : « Target attack gets "When this hits, …" ».
+    Granted(u8),
     /// Une capacité déclenchée définie par une règle ou un mot-clé
     /// (spectra, blade break…), gérée directement par le moteur.
     Rule(RuleTrigger),
@@ -228,6 +232,32 @@ pub struct NextAttackEffect {
     /// Seulement une attaque de cette arme (« its next attack this turn »,
     /// ex. Cut n' Carve).
     pub weapon: Option<ObjRef>,
+    /// L'effet se termine quand la chaîne de combat se ferme (« … you play
+    /// this combat chain », ex. Growl), CR 7.7.7.
+    pub combat_chain: bool,
+}
+
+/// « You may play it this turn / during your next turn » : permission de
+/// jouer un objet depuis la zone de bannissement (ex. Crouching Tiger).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PlayPermission {
+    pub card: ObjRef,
+    pub player: PlayerId,
+    /// Le tour pendant lequel la carte peut être jouée.
+    pub turn: u32,
+}
+
+/// Une capacité déclenchée accordée à un objet par un effet (CR 6.2,
+/// « gets "When this hits, …" »).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GrantedTrigger {
+    /// L'objet qui reçoit la capacité.
+    pub target: ObjRef,
+    /// La carte qui accorde la capacité (sa définition porte le script).
+    pub card: CardId,
+    /// Index dans `CardDef::granted`.
+    pub index: u8,
+    pub until: Until,
 }
 
 /// Effet d'un tour sur les attaques d'une arme (CR 5.2.3, 5.1.6).
@@ -410,6 +440,10 @@ pub struct GameState {
     pub next_attack_effects: Vec<NextAttackEffect>,
     /// Effets du tour sur les attaques des armes (coût, limite d'activation).
     pub weapon_effects: Vec<WeaponEffect>,
+    /// Permissions de jouer des objets depuis la zone de bannissement.
+    pub play_permissions: Vec<PlayPermission>,
+    /// Capacités déclenchées accordées par des effets.
+    pub granted_triggers: Vec<GrantedTrigger>,
     /// Objets aiguisés ce tour (sharpen, CR 8.5.58) : leurs compteurs +1{p}
     /// sont retirés au début de la phase de fin.
     pub sharpened: Vec<ObjRef>,

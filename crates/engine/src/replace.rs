@@ -19,6 +19,7 @@
 //! dégâts (avant les préventions, CR 6.5.4-6.5.5), création de tokens, sharpen.
 //! Les préventions (CR 6.4.10) sont dans `effects.rs` (dégâts).
 
+use crate::card::Keywords;
 use crate::decision::{Choice, Decision, DecisionKind};
 use crate::ids::{CardId, ObjRef, ObjectId, PlayerId};
 use crate::script::Target;
@@ -275,6 +276,14 @@ impl GameState {
     /// Les déplacements sont instantanés dans le moteur : un remplacement
     /// optionnel n'y est pas géré (aucune carte des 9 decks n'en a).
     pub(crate) fn replace_move(&mut self, id: ObjectId, zone: Zone, on_top: bool) -> (Zone, bool) {
+        // CR 8.3.21 : ephemeral, « If this would be put into a graveyard from
+        // anywhere, instead remove it from the game ».
+        if zone == Zone::Graveyard
+            && self.def(id).keywords.has(Keywords::EPHEMERAL)
+            && !self.lost_abilities(id)
+        {
+            return (Zone::Gone, on_top);
+        }
         let kind = match zone {
             Zone::Graveyard => ReplaceKind::ToGraveyard,
             Zone::Deck if on_top => ReplaceKind::ToDeckTop,

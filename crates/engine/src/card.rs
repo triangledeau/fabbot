@@ -101,6 +101,11 @@ flags! {
         /// CR 8.3.14 : « this can be attacked » + « when this becomes the
         /// target of an attack, destroy this ».
         SPECTRA = 9,
+        /// CR 8.3.28 : « While this is in your arsenal, you may defend with it. »
+        AMBUSH = 10,
+        /// CR 8.3.21 : « If this would be put into a graveyard from anywhere,
+        /// instead remove it from the game. »
+        EPHEMERAL = 11,
     }
 }
 
@@ -259,6 +264,10 @@ pub struct CardDef {
     /// Capacités de résolution (CR 5.3.4).
     pub resolve: Vec<Op>,
     pub triggers: Vec<TriggerDef>,
+    /// Capacités déclenchées que cette carte **accorde** à d'autres objets
+    /// (« target attack gets "When this hits, …" »), voir
+    /// `GameState::grant_trigger`. Elles ne fonctionnent pas sur la carte elle-même.
+    pub granted: Vec<TriggerDef>,
     pub activated: Vec<ActivatedDef>,
     /// « Play this only if … » (CR 5.1.5).
     pub play_condition: Option<fn(&GameState, PlayerId, ObjectId) -> bool>,

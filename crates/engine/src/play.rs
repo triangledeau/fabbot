@@ -20,6 +20,15 @@ impl GameState {
                 opts.push(Choice::Play(c));
             }
         }
+        // Objets que le joueur a la permission de jouer depuis sa zone de
+        // bannissement (« you may play it this turn »).
+        if !self.play_permissions.is_empty() {
+            for &c in &ps.banished {
+                if self.can_play(p, c) && !opts.contains(&Choice::Play(c)) {
+                    opts.push(Choice::Play(c));
+                }
+            }
+        }
         for src in self.ability_sources(p) {
             for i in 0..self.def(src).activated.len() {
                 if self.can_activate(p, src, i as u8) {
@@ -157,11 +166,27 @@ impl GameState {
             .all(|s| s.optional || !self.target_candidates(s, ctx).is_empty())
     }
 
+    /// Carte modale (CR 1.7.5) : au moins un mode a ses cibles (le filtre
+    /// d'une cible peut dépendre du mode, `Ctx::mode`). Sans mode : les cibles.
+    fn some_mode_has_targets(&self, specs: &[TargetSpec], n_modes: usize, mut ctx: Ctx) -> bool {
+        if n_modes == 0 || specs.is_empty() {
+            return self.targets_available(specs, &ctx);
+        }
+        (0..n_modes as u8).any(|m| {
+            ctx.mode = m;
+            self.targets_available(specs, &ctx)
+        })
+    }
+
     pub(crate) fn can_play(&self, p: PlayerId, c: ObjectId) -> bool {
         let o = self.obj(c);
         let def = self.def(c);
-        // CR 5.1.1a : seulement depuis la main ou l'arsenal, par son propriétaire.
-        if o.owner != p || !matches!(o.zone, Zone::Hand | Zone::Arsenal) {
+        // CR 5.1.1a : seulement depuis la main ou l'arsenal, par son
+        // propriétaire, sauf permission (« you may play it [from your banished
+        // zone] this turn », CR 1.0.2 : une permission).
+        let zone_ok = matches!(o.zone, Zone::Hand | Zone::Arsenal)
+            || (o.zone == Zone::Banished && self.play_permitted(p, c));
+        if o.owner != p || !zone_ok {
             return false;
         }
         let Some(speed) = self.card_speed(c) else {
@@ -183,7 +208,7 @@ impl GameState {
             source: Some(self.obj_ref(c)),
             ..Default::default()
         };
-        self.targets_available(&def.targets, &ctx)
+        self.some_mode_has_targets(&def.targets, def.modes.len(), ctx)
             && self.play_cost(p, c) <= self.available_resources(p, Some(c))
     }
 
@@ -379,6 +404,7 @@ impl GameState {
             LayerKind::Card => self.db.get(l.card).targets.clone(),
             LayerKind::Activated(i) => self.db.get(l.card).activated[i as usize].targets.clone(),
             LayerKind::Trigger(i) => self.db.get(l.card).triggers[i as usize].targets.clone(),
+            LayerKind::Granted(i) => self.db.get(l.card).granted[i as usize].targets.clone(),
             LayerKind::Rule(_) => Vec::new(),
         }
     }
@@ -420,7 +446,16 @@ impl GameState {
             // CR 5.1.4a
             Task::PlayMode => {
                 if kind == LayerKind::Card && !def.modes.is_empty() {
-                    let options = (0..def.modes.len() as u8).map(Choice::Mode).collect();
+                    // CR 1.7.5, 5.1.4 : seulement les modes dont les cibles existent.
+                    let mut ctx = (*self.top_layer().ctx).clone();
+                    let specs = def.targets.clone();
+                    let options = (0..def.modes.len() as u8)
+                        .filter(|&m| {
+                            ctx.mode = m;
+                            self.targets_available(&specs, &ctx)
+                        })
+                        .map(Choice::Mode)
+                        .collect();
                     self.pending = Some(Decision {
                         player: p,
                         kind: DecisionKind::Mode,
@@ -492,7 +527,7 @@ impl GameState {
                     LayerKind::Activated(i) => {
                         u8::from(def.activated[i as usize].speed == Speed::Action)
                     }
-                    LayerKind::Trigger(_) | LayerKind::Rule(_) => 0,
+                    LayerKind::Trigger(_) | LayerKind::Granted(_) | LayerKind::Rule(_) => 0,
                 };
                 self.tasks.push(Task::Pay {
                     player: p,
@@ -511,7 +546,7 @@ impl GameState {
                         }
                         ScriptRef::ActivatedCost(card, i)
                     }
-                    LayerKind::Trigger(_) | LayerKind::Rule(_) => return,
+                    LayerKind::Trigger(_) | LayerKind::Granted(_) | LayerKind::Rule(_) => return,
                 };
                 if !self.script_ops(script).is_empty() {
                     let ctx = self.top_layer().ctx.clone();
@@ -545,7 +580,7 @@ impl GameState {
                 Some(src) if self.obj(src).card == l.card => self.activation_cost(src, i),
                 _ => def.activated[i as usize].cost as u32,
             },
-            LayerKind::Trigger(_) | LayerKind::Rule(_) => 0,
+            LayerKind::Trigger(_) | LayerKind::Granted(_) | LayerKind::Rule(_) => 0,
         }
     }
 
@@ -608,7 +643,7 @@ impl GameState {
                     ability: i,
                 })
             }
-            LayerKind::Trigger(_) | LayerKind::Rule(_) => {}
+            LayerKind::Trigger(_) | LayerKind::Granted(_) | LayerKind::Rule(_) => {}
         }
         if is_attack {
             // CR 8.3.14 : « When this becomes the target of an attack, destroy this. »
@@ -636,7 +671,7 @@ impl GameState {
         match l.kind {
             LayerKind::Card => self.db.get(l.card).subtypes.has(Subtypes::ATTACK),
             LayerKind::Activated(i) => self.db.get(l.card).activated[i as usize].attack,
-            LayerKind::Trigger(_) | LayerKind::Rule(_) => false,
+            LayerKind::Trigger(_) | LayerKind::Granted(_) | LayerKind::Rule(_) => false,
         }
     }
 }

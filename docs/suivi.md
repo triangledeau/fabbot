@@ -11,25 +11,26 @@ met à jour à la fin de chaque tâche.
 | 0 | Mise en place, squelette | ✅ |
 | 1 | Cœur des règles + système d'effets | ✅ (manques connus listés dans `docs/rules/README.md`) |
 | 2 | Deux premiers decks complets + interface texte | ✅ (cartes à valider par le propriétaire avec l'interface) |
-| 3 | Les 7 autres decks + simulateur rapide | ⏳ |
+| 3 | Les 7 autres decks + simulateur rapide | ⏳ (Ira ✅ ; restent Bravo, Iyslander, Florian, Levia, Dromai, Arakni) |
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ⏳ |
 | 5 | Interface web locale + annulation | ⏳ |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ⏳ |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
 
-**Branche la plus récente :** `claude/fervent-ride-8osack` (interface texte,
-partie de `main` après la fusion de `claude/quirky-ritchie-a0y1et`). Tant
-qu'elle n'est pas fusionnée dans `main`, partir de cette branche.
+**Branche la plus récente :** `claude/intelligent-mayer-kvrq5b` (deck Ira,
+partie de `main`). Tant qu'elle n'est pas fusionnée dans `main`, partir de
+cette branche.
 
 **Jouer contre le bot :** `cargo run --release -p fab-ui` (mode d'emploi :
 `docs/interface.md`).
 
-**Chiffres actuels :** 180 tests au vert. Vrais decks Hala contre Dorinthea
-(`--vrais`) : 100 000 parties aléatoires sans incohérence, ≈ 7 000 à 7 600
-parties/s dans le conteneur de Claude (4 cœurs, la mesure varie d'un essai à
-l'autre) ; Hala 49,8 %, Dorinthea 46,5 % entre
-bots **aléatoires** (ce chiffre ne dit rien du vrai matchup). Decks d'essai :
-100 000 + 50 000 (`--mecanismes`) parties sans incohérence.
+**Chiffres actuels :** 245 tests au vert. Simulateur, bots **aléatoires**
+(ces pourcentages ne disent rien des vrais matchups), 100 000 parties
+vérifiées (`--check`) sans incohérence pour chaque paire, ≈ 7 500 à 8 700
+parties/s dans le conteneur de Claude (4 cœurs) :
+`--decks ira dorinthea` (Ira 83,5 %), `--decks ira ira`, `--vrais` (Hala
+49,8 %, Dorinthea 46,5 %, inchangé). Decks d'essai : 50 000 parties
+(normal et `--mecanismes`) sans incohérence.
 
 **Choix provisoire d'équipement et de deck** (`real::default_loadout`, en
 attendant la phase de side de l'étape 6) : la première carte de chaque
@@ -78,6 +79,25 @@ cartes de la liste.
     L'interface les cache pour tout le monde en attendant
     (`crates/ui/src/vue.rs`, `visible`). Aucune carte de Hala ou Dorinthea
     n'est concernée.
+11. **Combo, « the last attack this combat chain »** : le moteur prend
+    l'attaque du **maillon précédent** celui de la carte (sinon Seek Vengeance
+    ne pourrait jamais avoir son combo, puisqu'elle est elle-même la dernière
+    attaque). Même lecture pour la capacité donnée par **Legacy of Ikaru**
+    (« When this hits, if Edge of Autumn was the last attack… ») : Legacy sur
+    Seek Vengeance après Edge of Autumn → pioche ; Legacy sur l'attaque
+    d'Edge of Autumn elle-même → pas de pioche. Correct ? Voir
+    `crates/cards/src/real/ninja.rs` (`last_attack_before`).
+12. **Crouching Tiger n'est pas un token** (ligne de type officielle « Ninja
+    Action - Attack », mot-clé Ephemeral) : le moteur le crée comme une carte
+    dans la zone de bannissement ; après son attaque il est retiré de la
+    partie (ephemeral). Correct ?
+13. **Blessing of Qi** : « It gets +3{p} » n'a pas de durée écrite ; le moteur
+    applique le bonus jusqu'à la fin du tour (le tigre ne peut être joué que
+    ce tour). Correct ?
+14. **Aspect of Tiger: Body** (« if a red attack action card was the last
+    attack ») : une attaque d'arme (Edge of Autumn) ne compte pas, une carte
+    d'attaque rouge (ex. Scar for a Scar rouge) compte, le Crouching Tiger
+    (sans couleur) ne compte pas. Correct ?
 
 ## Prochaine tâche
 
@@ -86,10 +106,15 @@ cartes de la liste.
 (commande `t <n>` pour le texte officiel) et passer celles qui sont justes en
 `Validated` dans `docs/cards/STATUS.md` ; signaler tout comportement faux.
 
-**Pour Claude (étape 3) :** les 7 autres decks. Avant Dromai, il faudra ajouter au
-moteur les **capacités accordées par un effet** (Storm of Sandikai donne une
-capacité d'attaque aux dragons) ; vérifier « clash » et « crush » au fil des
-cartes (aucune carte de Hala ou Dorinthea ne les utilise).
+Vérifier aussi les cartes d'Ira (`t <n>` dans l'interface donne le texte
+officiel) et répondre aux questions 11 à 14.
+
+**Pour Claude (étape 3, suite) :** coder le deck suivant de la liste,
+**Bravo, Flattering Showman** (`data/decks/04_bravo.txt`). Puis Iyslander,
+Florian, Levia, Dromai, Arakni. Le moteur sait maintenant accorder des
+capacités **déclenchées** (`CardDef::granted`) ; pour Dromai il faudra aussi
+accorder une capacité **activée** (Storm of Sandikai donne une capacité
+d'attaque aux dragons). Vérifier « clash » et « crush » au fil des cartes.
 
 ## Journal des sessions
 
@@ -100,3 +125,4 @@ cartes (aucune carte de Hala ou Dorinthea ne les utilise).
 | 2026-11-22 | Fin de l'étape 1 : arcane barrier / ward / spellvoid, remplacements, attaques contre alliés et spectra, perte des capacités, durées « prochain tour », étape de fermeture avec déclenchements | `claude/etape-1-moteur` |
 | 2026-11-22 | Étape 2 : toutes les cartes de Hala et Dorinthea (55 lignes de STATUS.md + token Flurry) codées et testées (73 tests de cartes) ; moteur : sharpen, effets « prochaine attaque de cette arme », coût d'activation réduit, attaques supplémentaires (CR 5.2.3), paiement « unless you pay », renvoi d'une carte qui défend, fin de la marque (CR 9.3.3) ; `tools/check_coded_cards.py` ; `fab-sim --vrais` | `claude/quirky-ritchie-a0y1et` |
 | 2026-11-22 | Fin de l'étape 2 : interface texte `fab-ui` (état visible du joueur, options numérotées, annulation illimitée, texte officiel des cartes avec `t`, journal des événements) ; moteur : `GameState::record` (journal complet facultatif), libellé des questions des cartes (`Ask::label`) ; `docs/interface.md` | `claude/fervent-ride-8osack` |
+| 2026-11-22 | Étape 3, deck Ira : 27 lignes de STATUS.md + Crouching Tiger codées et testées (45 tests Ninja, 12 tests génériques, 8 tests de règles) ; moteur : jouer depuis la zone de bannissement (permission), cartes créées dans le bannissement, ephemeral, ambush, capacités déclenchées accordées (`CardDef::granted`), effets « this combat chain » sur la prochaine attaque, modes proposés seulement s'ils ont une cible ; `fab-sim --decks a b` | `claude/intelligent-mayer-kvrq5b` |

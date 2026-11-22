@@ -114,6 +114,24 @@ ou `add_prevention` (filtre de source, « if you prevent damage this way »).
 - Renvoyer une carte qui défend dans la main : `return_to_hand(id)`.
 - Marque : CR 9.3.3, un héros marqué touché par une source adverse n'est plus marqué.
 
+## Bannissement, capacités accordées, ambush (étape 3)
+
+- « Create a Crouching Tiger in your banished zone » : `create_card_banished(p, carte)`
+  (une carte créée, pas un token) ; « you may play it this turn / during your
+  next turn » : `permit_play(p, objet, tour)` (`g.turn` ou `g.next_turn_of(p)`).
+  Les cartes permises apparaissent dans les options de priorité (`Choice::Play`).
+- Ephemeral (`Keywords::EPHEMERAL`, CR 8.3.21) : au lieu d'aller au cimetière,
+  la carte est retirée de la partie (`Zone::Gone`).
+- Ambush (`Keywords::AMBUSH`, CR 8.3.28) : la carte de l'arsenal est proposée
+  pour défendre.
+- « Target attack gets "When this hits, …" » : la capacité accordée est écrite
+  dans `CardDef::granted` de la carte qui l'accorde, puis
+  `grant_trigger(cible, c.card, index, durée)`. Sa couche est
+  `LayerKind::Granted` ; `c.source` y désigne l'objet qui a reçu la capacité.
+- « The next Crouching Tiger you play this combat chain » : `next_attack_this_chain`.
+- Carte à modes dont la cible dépend du mode (Razor Reflex) : le filtre de
+  cible lit `c.mode` ; seuls les modes qui ont une cible sont proposés.
+
 ## Les événements et le journal du tour
 
 Tout ce qui se passe (carte jouée, attaque, défense, touche, pitch, dégâts,
@@ -133,4 +151,4 @@ se passe en fin de tour, quand `turn_log` est vidé.
 - Tests de règles : `crates/cards/tests/regles_*.rs` (un test par article du CR).
 - Test massif : `cargo run --release -p fab-sim -- --games 100000 --check`
   (ajouter `--mecanismes` pour les decks d'essai qui utilisent préventions,
-  remplacements, alliés et spectra).
+  remplacements, alliés et spectra ; `--decks ira hala` pour deux vrais decks).
