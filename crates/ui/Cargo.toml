@@ -1,0 +1,16 @@
+[package]
+name = "fab-ui"
+description = "Interface locale pour jouer contre le bot, avec annulation illimitée."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "fab-ui"
+path = "src/main.rs"
+
+[dependencies]
+fab-engine.workspace = true
+fab-ai.workspace = true
+fab-match.workspace = true

@@ -1,0 +1,12 @@
+[package]
+name = "fab-cards"
+description = "Base de cartes : données (JSON) + effets codés en Rust + statut de validation."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+fab-engine.workspace = true
+serde.workspace = true
+serde_json.workspace = true

@@ -1,0 +1,18 @@
+# Paramètres du format Silver Age.
+#
+# ⚠️ NON VÉRIFIÉ. Toute valeur doit être confirmée sur le document officiel
+# de Legend Story Studios (fabtcg.com) avant d'être décommentée.
+# Une valeur absente vaut « inconnue » : le moteur refusera de deviner.
+# Quand tout est vérifié : passer `verified` à true et remplir `source`.
+
+name = "Silver Age"
+verified = false
+# source = "URL du document officiel + date de consultation"
+
+# Hypothèses à vérifier (laissées en commentaire volontairement) :
+# deck_size = 40
+# card_pool_max = 55
+# max_copies = 2
+# allowed_rarities = ["Common", "Rare", "Basic"]
+# hero_type = "Young"
+# games_to_win_match = 2

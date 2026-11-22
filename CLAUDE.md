@@ -1,0 +1,51 @@
+# fabbot — consignes pour Claude Code
+
+Bot jouant 9 decks de Flesh and Blood au format **Silver Age**. Le propriétaire
+du projet est un expert du jeu, mais débute en programmation : explications en
+**français**, claires, sans jargon inutile.
+
+## Priorités (dans cet ordre)
+1. **Exactitude des règles et des cartes.** Ne jamais deviner une règle ou un
+   texte de carte. En cas de doute : laisser un `TODO(règles)` et poser la question.
+2. **Performance** du moteur (simulation massive sur une Surface Pro 9).
+3. **Niveau de jeu** du bot, toujours *mesuré* (Elo, matrice de matchups), jamais supposé.
+
+## Architecture (workspace Rust dans `crates/`)
+- `engine` (`fab-engine`) : état de partie, règles, points de décision, RNG déterministe, historique d'annulation.
+- `cards` (`fab-cards`) : données des cartes + effets + statut de validation.
+- `ai` (`fab-ai`) : trait `Agent` et les bots B0 → B3.
+- `fab-match` : matchs en plusieurs manches, phase de side.
+- `sim` (`fab-sim`) : simulateur en ligne de commande.
+- `ui` (`fab-ui`) : interface pour jouer contre le bot.
+
+Principe central : le moteur avance jusqu'à une `Decision` ; un `Agent` (bot ou
+humain) répond par l'index d'une option. Tout choix de joueur passe par là.
+
+## Règles de travail
+- **Sources de vérité** : Comprehensive Rules officiel + textes officiels des
+  cartes avec errata (voir `docs/rules/README.md`). Citer la section du CR en
+  commentaire, au format `// CR x.y.z`, dans le code de règles.
+- **Chaque carte** suit le cycle : `NotCoded` → `Coded` → `Tested` → `Validated`.
+  Seul le propriétaire passe une carte en `Validated`. Tenir `docs/cards/STATUS.md` à jour.
+- **Un test par phrase du texte d'une carte**, plus les cas limites. Noms de
+  tests en français, descriptifs (`attaque_avec_go_again_rend_un_point_d_action`).
+- **Tout bug de règle signalé devient d'abord un test** qui échoue, puis on corrige.
+- Pas de valeur de format non vérifiée : `config/silver_age.toml` reste
+  commenté tant que `verified = false`.
+- Le hasard passe **uniquement** par `fab_engine::Rng` (déterminisme, rejeu).
+- `GameState` doit rester bon marché à copier : pas de `String`, pas de
+  pointeurs partagés ; des identifiants numériques.
+- Un bot n'a accès qu'à l'information de son joueur.
+
+## Commandes
+- Compiler : `cargo build --workspace`
+- Tests : `cargo test --workspace`
+- Lint : `cargo clippy --workspace --all-targets -- -D warnings`
+- Format : `cargo fmt --all`
+- Simulation (mode optimisé) : `cargo run --release -p fab-sim`
+
+Avant chaque commit : fmt, clippy sans avertissement, tous les tests au vert.
+
+## Git
+- Ne pas travailler directement sur `main` : une branche par tâche, puis PR.
+- Messages de commit en français.
