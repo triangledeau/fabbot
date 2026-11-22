@@ -333,6 +333,7 @@ pub fn add_to(db: &mut CardDb) {
             options.push(Choice::Pass);
             Some(Ask {
                 player: c.controller,
+                label: "Carte de la main à mettre sous le deck (Pass : arrêter)",
                 options,
             })
         }),

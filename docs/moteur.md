@@ -45,7 +45,10 @@ Les effets sont de petits programmes (`Op`, voir `crates/engine/src/script.rs`) 
 - `Op::Do(|g, c| …)` : du code Rust qui modifie la partie avec les primitives
   de `crates/engine/src/effects.rs` (`draw`, `deal_damage`, `destroy`,
   `banish`, `modify`, `next_attack`, `prevent_next`, `create_token`…) ;
-- `Op::Ask(|g, c| …)` : pose une question ; la réponse arrive dans `c.answer` ;
+- `Op::Ask(|g, c| …)` : pose une question (`Ask { player, label, options }`, le
+  `label` est le texte affiché par l'interface) ; la réponse arrive dans `c.answer`.
+  La fonction doit rester **pure** (sans effet sur la partie) : l'interface la
+  rappelle pour retrouver le libellé ;
 - `Op::If(condition, n)` / `Op::Back(condition, n)` : sauter / boucler.
 
 Exemples complets : les **vraies cartes** de `crates/cards/src/real/`
@@ -117,6 +120,13 @@ Tout ce qui se passe (carte jouée, attaque, défense, touche, pitch, dégâts,
 destruction, bannissement…) est un `Event`. Il est ajouté au journal du tour
 (`turn_log`) et déclenche les capacités concernées. Les conditions du type
 « si vous avez joué une autre carte rouge ce tour » lisent ce journal.
+
+## Interface
+
+`GameState::record` : journal complet facultatif des événements (`None` par
+défaut, donc sans coût pour les simulations). L'interface texte (`crates/ui`,
+voir `docs/interface.md`) l'active pour raconter la partie, y compris ce qui
+se passe en fin de tour, quand `turn_log` est vidé.
 
 ## Vérifier
 

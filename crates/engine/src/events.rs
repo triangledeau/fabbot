@@ -129,6 +129,9 @@ impl GameState {
     /// Signale un événement : journal du tour + déclenchements.
     pub fn emit(&mut self, ev: Event) {
         self.turn_log.push(ev);
+        if let Some(r) = &mut self.record {
+            r.push(ev);
+        }
         let any_lost = self.any_lose_abilities;
         // Les objets dont une capacité peut se déclencher.
         for k in 0..self.trigger_objects.len() {

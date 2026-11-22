@@ -285,6 +285,7 @@ fn heroes_and_arena(db: &mut CardDb) {
             Op::Ask(|g, c| {
                 c.source.filter(|&s| g.is_current(s)).map(|_| Ask {
                     player: c.controller,
+                    label: "Détruire cette carte pour donner go again à l'attaque ?",
                     options: vec![Choice::Yes, Choice::No],
                 })
             }),
@@ -650,6 +651,7 @@ fn deck_cards(db: &mut CardDb) {
                 .collect();
             Some(Ask {
                 player: c.controller,
+                label: "Carte (hors équipement) qui défend contre votre attaque d'épée",
                 options,
             })
         }),

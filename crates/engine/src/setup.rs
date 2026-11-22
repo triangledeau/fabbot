@@ -170,6 +170,7 @@ impl GameState {
             tasks: Vec::new(),
             declared_defenders: Vec::new(),
             turn_log: Vec::new(),
+            record: None,
             pending: None,
             outcome: None,
             end_reason: None,

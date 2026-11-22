@@ -54,6 +54,7 @@ name = "fab-ui"
 version = "0.1.0"
 dependencies = [
  "fab-ai",
+ "fab-cards",
  "fab-engine",
  "fab-match",
 ]

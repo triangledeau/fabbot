@@ -436,6 +436,11 @@ pub struct GameState {
     pub declared_defenders: Vec<ObjectId>,
     /// Journal des événements du tour.
     pub turn_log: Vec<Event>,
+    /// Journal complet facultatif, jamais vidé par le moteur (`None` par
+    /// défaut, donc gratuit pour les simulations). L'interface l'active pour
+    /// afficher ce qui s'est passé, y compris en fin de tour, et le vide
+    /// elle-même au fil de l'affichage.
+    pub record: Option<Vec<Event>>,
     pub pending: Option<Decision>,
     pub outcome: Option<Outcome>,
     pub end_reason: Option<EndReason>,

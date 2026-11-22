@@ -48,6 +48,7 @@ fn minus_one_unless_you_pay() -> TriggerDef {
             Op::Ask(|g, c| {
                 (g.available_resources(c.controller, None) >= 1).then(|| Ask {
                     player: c.controller,
+                    label: "Payer {r} ? Sinon, l'attaque a -1{p}",
                     options: vec![Choice::Yes, Choice::No],
                 })
             }),
@@ -281,6 +282,7 @@ pub fn add(db: &mut CardDb) {
                 options.push(Choice::Pass);
                 Some(Ask {
                     player: c.controller,
+                    label: "Carte de la main à mettre sous le deck (Pass : arrêter)",
                     options,
                 })
             }),

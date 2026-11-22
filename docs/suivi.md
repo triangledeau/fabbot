@@ -10,20 +10,24 @@ met à jour à la fin de chaque tâche.
 |---|---|---|
 | 0 | Mise en place, squelette | ✅ |
 | 1 | Cœur des règles + système d'effets | ✅ (manques connus listés dans `docs/rules/README.md`) |
-| 2 | Deux premiers decks complets + interface texte | 🟡 cartes Hala et Dorinthea faites ; interface texte à faire |
+| 2 | Deux premiers decks complets + interface texte | ✅ (cartes à valider par le propriétaire avec l'interface) |
 | 3 | Les 7 autres decks + simulateur rapide | ⏳ |
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ⏳ |
 | 5 | Interface web locale + annulation | ⏳ |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ⏳ |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
 
-**Branche la plus récente :** `claude/quirky-ritchie-a0y1et` (cartes de Hala
-et Dorinthea, partie de `main` après la fusion de `claude/etape-1-moteur`).
-Tant qu'elle n'est pas fusionnée dans `main`, partir de cette branche.
+**Branche la plus récente :** `claude/fervent-ride-8osack` (interface texte,
+partie de `main` après la fusion de `claude/quirky-ritchie-a0y1et`). Tant
+qu'elle n'est pas fusionnée dans `main`, partir de cette branche.
 
-**Chiffres actuels :** 169 tests au vert. Vrais decks Hala contre Dorinthea
-(`--vrais`) : 100 000 parties aléatoires sans incohérence, ≈ 7 600 parties/s
-dans le conteneur de Claude (4 cœurs) ; Hala 49,8 %, Dorinthea 46,5 % entre
+**Jouer contre le bot :** `cargo run --release -p fab-ui` (mode d'emploi :
+`docs/interface.md`).
+
+**Chiffres actuels :** 180 tests au vert. Vrais decks Hala contre Dorinthea
+(`--vrais`) : 100 000 parties aléatoires sans incohérence, ≈ 7 000 à 7 600
+parties/s dans le conteneur de Claude (4 cœurs, la mesure varie d'un essai à
+l'autre) ; Hala 49,8 %, Dorinthea 46,5 % entre
 bots **aléatoires** (ce chiffre ne dit rien du vrai matchup). Decks d'essai :
 100 000 + 50 000 (`--mecanismes`) parties sans incohérence.
 
@@ -70,16 +74,19 @@ cartes de la liste.
    sans effet dans le moteur (regarder ne change pas l'état). Il faudra
    l'information « ce que chaque joueur sait » pour les bots B2+ et
    l'interface.
+10. **Cartes bannies face cachée** : leur propriétaire peut-il les regarder ?
+    L'interface les cache pour tout le monde en attendant
+    (`crates/ui/src/vue.rs`, `visible`). Aucune carte de Hala ou Dorinthea
+    n'est concernée.
 
 ## Prochaine tâche
 
-Étape 2 (fin) : **interface texte** pour jouer contre le bot (crate `fab-ui`) :
-afficher l'état visible du joueur, la décision en cours et ses options,
-répondre par un numéro ; bot B0 (aléatoire) en face, decks Hala ou
-Dorinthea. Le propriétaire peut en profiter pour vérifier les cartes et les
-passer en `Validated`.
+**Pour le propriétaire :** jouer quelques parties avec
+`cargo run --release -p fab-ui`, vérifier les cartes de Hala et Dorinthea
+(commande `t <n>` pour le texte officiel) et passer celles qui sont justes en
+`Validated` dans `docs/cards/STATUS.md` ; signaler tout comportement faux.
 
-Ensuite (étape 3) : les 7 autres decks. Avant Dromai, il faudra ajouter au
+**Pour Claude (étape 3) :** les 7 autres decks. Avant Dromai, il faudra ajouter au
 moteur les **capacités accordées par un effet** (Storm of Sandikai donne une
 capacité d'attaque aux dragons) ; vérifier « clash » et « crush » au fil des
 cartes (aucune carte de Hala ou Dorinthea ne les utilise).
@@ -92,3 +99,4 @@ cartes (aucune carte de Hala ou Dorinthea ne les utilise).
 | 2026-11-22 | Étape 1 : cœur des règles (tour, priorité, combat), puis système d'effets suspendable | `claude/etape-1-regles`, `claude/etape-1-suite` |
 | 2026-11-22 | Fin de l'étape 1 : arcane barrier / ward / spellvoid, remplacements, attaques contre alliés et spectra, perte des capacités, durées « prochain tour », étape de fermeture avec déclenchements | `claude/etape-1-moteur` |
 | 2026-11-22 | Étape 2 : toutes les cartes de Hala et Dorinthea (55 lignes de STATUS.md + token Flurry) codées et testées (73 tests de cartes) ; moteur : sharpen, effets « prochaine attaque de cette arme », coût d'activation réduit, attaques supplémentaires (CR 5.2.3), paiement « unless you pay », renvoi d'une carte qui défend, fin de la marque (CR 9.3.3) ; `tools/check_coded_cards.py` ; `fab-sim --vrais` | `claude/quirky-ritchie-a0y1et` |
+| 2026-11-22 | Fin de l'étape 2 : interface texte `fab-ui` (état visible du joueur, options numérotées, annulation illimitée, texte officiel des cartes avec `t`, journal des événements) ; moteur : `GameState::record` (journal complet facultatif), libellé des questions des cartes (`Ask::label`) ; `docs/interface.md` | `claude/fervent-ride-8osack` |
