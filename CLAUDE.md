@@ -25,6 +25,12 @@ humain) répond par l'index d'une option. Tout choix de joueur passe par là.
 - **Sources de vérité** : Comprehensive Rules officiel + textes officiels des
   cartes avec errata (voir `docs/rules/README.md`). Citer la section du CR en
   commentaire, au format `// CR x.y.z`, dans le code de règles.
+- Pour consulter les règles : `bash tools/fetch_rules.sh`, puis chercher dans
+  `docs/rules/sources/*.txt`. rules.fabtcg.com est accessible ; fabtcg.com
+  bloque les accès automatisés (403) : ne pas chercher à contourner, demander
+  au propriétaire de copier le contenu.
+- En Silver Age il n'y a pas de sideboard séparé : avant chaque manche, on choisit
+  équipement + deck de 40 dans un card-pool de 55 (CR 4.1).
 - **Chaque carte** suit le cycle : `NotCoded` → `Coded` → `Tested` → `Validated`.
   Seul le propriétaire passe une carte en `Validated`. Tenir `docs/cards/STATUS.md` à jour.
 - **Un test par phrase du texte d'une carte**, plus les cas limites. Noms de

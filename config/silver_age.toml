@@ -1,18 +1,37 @@
 # Paramètres du format Silver Age.
 #
-# ⚠️ NON VÉRIFIÉ. Toute valeur doit être confirmée sur le document officiel
-# de Legend Story Studios (fabtcg.com) avant d'être décommentée.
-# Une valeur absente vaut « inconnue » : le moteur refusera de deviner.
-# Quand tout est vérifié : passer `verified` à true et remplir `source`.
+# Source : Tournament Rules and Policy (TRP), section 7 « Constructed Formats »,
+# https://rules.fabtcg.com/en/trp/07-constructed-formats/  (consulté le 2026-11-22)
+# Uniquement ce que dit le texte officiel ; rien n'est deviné.
 
 name = "Silver Age"
-verified = false
-# source = "URL du document officiel + date de consultation"
+verified = true
+source = "TRP 7 / 7.4 Silver Age Format, rules.fabtcg.com, consulté le 2026-11-22"
 
-# Hypothèses à vérifier (laissées en commentaire volontairement) :
-# deck_size = 40
-# card_pool_max = 55
-# max_copies = 2
-# allowed_rarities = ["Common", "Rare", "Basic"]
-# hero_type = "Young"
-# games_to_win_match = 2
+# TRP 7.4 : « 1 young hero card »
+hero_subtype = "Young"
+
+# TRP 7.4 : « a combined maximum of 55 arena-cards and deck-cards »
+card_pool_max = 55
+
+# TRP 7.4 : « A Player must start the game with exactly 40 cards in their deck. »
+deck_size = 40
+
+# TRP 7.4 : « up to 2 copies of each unique card »
+# CR 2.7.1 : l'unicité d'une carte = son nom + sa valeur de pitch.
+# TRP 7 : une carte « restricted » est limitée à 1 copie, une carte « banned » est interdite.
+max_copies = 2
+max_copies_restricted = 1
+
+# TRP 7.4 : le héros et les cartes doivent être de rareté commune ou rare.
+#  - « common » : a été imprimée au moins une fois en rareté basic ou common ;
+#  - « rare »   : a été imprimée au moins une fois en rareté rare (et n'est pas common).
+legal_rarities = ["Basic", "Common", "Rare"]
+
+# Liste officielle des cartes bannies / restreintes / héros mis au banc
+# (« Card Legality Policy » sur fabtcg.com) : NON RÉCUPÉRÉE, le site bloque
+# les accès automatisés. À remplir à la main depuis la page officielle.
+banned = []
+restricted = []
+benched_heroes = []
+legality_list_verified = false

@@ -46,9 +46,10 @@ crates/
   fab-match/  Matchs en plusieurs manches et phase de side
   sim/        Simulateur de parties en masse
   ui/         Interface pour jouer contre le bot
-config/       Paramètres du format Silver Age (à vérifier)
+config/       Paramètres du format Silver Age (vérifiés, TRP 7.4)
 data/decks/   Les listes des 9 decks
 docs/rules/   Sources officielles des règles et suivi de couverture
+tools/        Scripts (ex. télécharger les règles officielles)
 docs/cards/   Tableau de validation des cartes
 ```
 
