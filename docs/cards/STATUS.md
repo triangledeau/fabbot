@@ -23,12 +23,18 @@ et Tiger Eye Reflex) est aussi codée et testée : ce n'est **pas** un token
 (ligne de type officielle « Ninja Action - Attack »), mais une carte avec
 ephemeral.
 
+**Étape 3, deck Bravo (2026-11-22)** : toutes les cartes du deck Bravo sont
+`Tested` (code : `crates/cards/src/real/guardian.rs` et `generic.rs`, tests :
+`crates/cards/tests/cartes_guardian.rs`). Les tokens **Seismic Surge**,
+**Might**, **Vigor** et **Quicken** (créés par les cartes du deck) sont aussi
+codés et testés.
+
 | Carte | Couleur | Utilisée par | Statut |
 |---|---|---|---|
 | **Ira, Crimson Haze** | héros | Ira, Crimson Haze | Tested |
 | **Hala** | héros | Hala | Tested |
 | **Dorinthea** | héros | Dorinthea | Tested |
-| **Bravo, Flattering Showman** | héros | Bravo, Flattering Showman | NotCoded |
+| **Bravo, Flattering Showman** | héros | Bravo, Flattering Showman | Tested |
 | **Iyslander** | héros | Iyslander | NotCoded |
 | **Florian** | héros | Florian | NotCoded |
 | **Levia** | héros | Levia | NotCoded |
@@ -45,7 +51,7 @@ ephemeral.
 | Bloodied Oval | arène | Florian | NotCoded |
 | Blossom of Spring | arène | Arakni, Web of Deceit, Florian | NotCoded |
 | Buzzard Helm | arène | Levia | NotCoded |
-| Civic Steps | arène | Bravo, Flattering Showman | NotCoded |
+| Civic Steps | arène | Bravo, Flattering Showman | Tested |
 | Crown of Dichotomy | arène | Florian | NotCoded |
 | Crucible of Aetherweave | arène | Iyslander | NotCoded |
 | Danger Digits | arène | Arakni, Web of Deceit | NotCoded |
@@ -55,7 +61,7 @@ ephemeral.
 | Edge Laden Plate | arène | Hala | Tested |
 | Edge of Autumn | arène | Ira, Crimson Haze | Tested |
 | Embraforged Gauntlet | arène | Levia | NotCoded |
-| Gauntlet of Boulderhold | arène | Bravo, Flattering Showman | NotCoded |
+| Gauntlet of Boulderhold | arène | Bravo, Flattering Showman | Tested |
 | Gauntlets of Unity | arène | Dorinthea, Hala | Tested |
 | Hell Hammer | arène | Levia | NotCoded |
 | Helm of Lignum Vitae | arène | Florian | NotCoded |
@@ -64,7 +70,7 @@ ephemeral.
 | Hooves of the Shadowbeast | arène | Levia | NotCoded |
 | Mark of the Huntsman | arène | Arakni, Web of Deceit | NotCoded |
 | Mask of the Swarming Claw | arène | Ira, Crimson Haze | Tested |
-| Miller's Grindstone | arène | Bravo, Flattering Showman | NotCoded |
+| Miller's Grindstone | arène | Bravo, Flattering Showman | Tested |
 | Nebula Blade | arène | Florian | NotCoded |
 | Nullrune Boots | arène | Bravo, Flattering Showman, Hala | Tested |
 | Nullrune Gloves | arène | Bravo, Flattering Showman, Dorinthea, Florian, Hala, Iyslander | Tested |
@@ -77,7 +83,7 @@ ephemeral.
 | Predatory Plating | arène | Levia | NotCoded |
 | Prey Spotters | arène | Arakni, Web of Deceit | NotCoded |
 | Refraction Bolters | arène | Dorinthea | Tested |
-| Richter Scale | arène | Bravo, Flattering Showman | NotCoded |
+| Richter Scale | arène | Bravo, Flattering Showman | Tested |
 | Scepter of Pain | arène | Florian | NotCoded |
 | Seeker's Leggings | arène | Dromai | NotCoded |
 | Silken Shroud | arène | Dromai | NotCoded |
@@ -85,12 +91,12 @@ ephemeral.
 | Smoldering Scales | arène | Dromai | NotCoded |
 | Spellfire Cloak | arène | Iyslander | NotCoded |
 | Stalker's Steps | arène | Arakni, Web of Deceit | NotCoded |
-| Steelbraid Buckler | arène | Bravo, Flattering Showman | NotCoded |
+| Steelbraid Buckler | arène | Bravo, Flattering Showman | Tested |
 | Storm of Sandikai | arène | Dromai | NotCoded |
 | Tearing Shuko | arène | Ira, Crimson Haze | Tested |
 | Time Skippers | arène | Dromai | NotCoded |
 | Topsy Turvy | arène | Arakni, Web of Deceit | NotCoded |
-| Unflinching Foothold | arène | Bravo, Flattering Showman, Iyslander | NotCoded |
+| Unflinching Foothold | arène | Bravo, Flattering Showman, Iyslander | Tested |
 | Unyielding Grip | arène | Florian | NotCoded |
 | Wave of Reality | arène | Dromai | NotCoded |
 | Well Grounded | arène | Florian | NotCoded |
@@ -114,32 +120,32 @@ ephemeral.
 | Blessing of Qi | red | Ira, Crimson Haze | Tested |
 | Bluster Buff | red | Ira, Crimson Haze | Tested |
 | Boneyard Marauder | red | Levia | NotCoded |
-| Boulder Drop | blue | Bravo, Flattering Showman | NotCoded |
-| Boulder Drop | red | Bravo, Flattering Showman | NotCoded |
+| Boulder Drop | blue | Bravo, Flattering Showman | Tested |
+| Boulder Drop | red | Bravo, Flattering Showman | Tested |
 | Brutal Assault | blue | Hala | Tested |
-| Buckling Blow | blue | Bravo, Flattering Showman | NotCoded |
+| Buckling Blow | blue | Bravo, Flattering Showman | Tested |
 | Chest Puff | red | Hala, Iyslander | Tested |
-| Chokeslam | blue | Bravo, Flattering Showman | NotCoded |
-| Chokeslam | red | Bravo, Flattering Showman | NotCoded |
+| Chokeslam | blue | Bravo, Flattering Showman | Tested |
+| Chokeslam | red | Bravo, Flattering Showman | Tested |
 | Chorus of Rotwood | red | Florian | NotCoded |
 | Clash of Agility | blue | Levia | NotCoded |
-| Clash of Might | blue | Bravo, Flattering Showman | NotCoded |
-| Clash of Mountains | blue | Bravo, Flattering Showman | NotCoded |
-| Clash of Vigor | blue | Bravo, Flattering Showman | NotCoded |
+| Clash of Might | blue | Bravo, Flattering Showman | Tested |
+| Clash of Mountains | blue | Bravo, Flattering Showman | Tested |
+| Clash of Vigor | blue | Bravo, Flattering Showman | Tested |
 | Cleave the Heavens | blue | Levia | NotCoded |
 | Cleave the Heavens | red | Levia | NotCoded |
 | Colors of Aria | red | Florian | NotCoded |
 | Concoct Disorder | red | Arakni, Web of Deceit | NotCoded |
 | Consuming Strength | yellow | Levia | NotCoded |
 | Countdown to Extinction | red | Levia | NotCoded |
-| Crash and Bash | red | Bravo, Flattering Showman | NotCoded |
-| Crush Confidence | red | Bravo, Flattering Showman | NotCoded |
+| Crash and Bash | red | Bravo, Flattering Showman | Tested |
+| Crush Confidence | red | Bravo, Flattering Showman | Tested |
 | Cut n' Carve | blue | Hala | Tested |
 | Dam the Shadowake | red | Levia | NotCoded |
 | Deadwood Rumbler | blue | Levia | NotCoded |
-| Debilitate | blue | Bravo, Flattering Showman | NotCoded |
-| Debilitate | red | Bravo, Flattering Showman | NotCoded |
-| Disable | blue | Bravo, Flattering Showman | NotCoded |
+| Debilitate | blue | Bravo, Flattering Showman | Tested |
+| Debilitate | red | Bravo, Flattering Showman | Tested |
+| Disable | blue | Bravo, Flattering Showman | Tested |
 | Display of Craftsmanship | blue | Dorinthea, Hala | Tested |
 | Display of Craftsmanship | red | Hala | Tested |
 | Double Trouble | red | Arakni, Web of Deceit | NotCoded |
@@ -155,14 +161,14 @@ ephemeral.
 | Engulfing Shadows | yellow | Levia | NotCoded |
 | Essence of Ancestry: Body | red | Dromai | NotCoded |
 | Fatal Engagement | blue | Hala | Tested |
-| Fault Line | red | Bravo, Flattering Showman | NotCoded |
+| Fault Line | red | Bravo, Flattering Showman | Tested |
 | Feasting Shadowbeast | red | Levia | NotCoded |
 | Feeding Frenzy | red | Levia | NotCoded |
 | Feign Vengeance | blue | Ira, Crimson Haze | Tested |
 | Felling Swing | blue | Dorinthea | Tested |
 | Felling Swing | red | Dorinthea | Tested |
 | Felling Swing | yellow | Dorinthea | Tested |
-| Flatten the Field | blue | Bravo, Flattering Showman | NotCoded |
+| Flatten the Field | blue | Bravo, Flattering Showman | Tested |
 | Flying Kick | blue | Ira, Crimson Haze | Tested |
 | Flying Kick | red | Ira, Crimson Haze | Tested |
 | Frost Spike | blue | Iyslander | NotCoded |
@@ -198,7 +204,7 @@ ephemeral.
 | Lay Low | yellow | Dorinthea | Tested |
 | Legacy of Ikaru | blue | Ira, Crimson Haze | Tested |
 | Look Tuff | red | Dorinthea, Iyslander | Tested |
-| Macho Grande | blue | Bravo, Flattering Showman | NotCoded |
+| Macho Grande | blue | Bravo, Flattering Showman | Tested |
 | Mark of the Black Widow | red | Arakni, Web of Deceit | NotCoded |
 | Mark of the Funnel Web | red | Arakni, Web of Deceit | NotCoded |
 | Mark the Prey | red | Arakni, Web of Deceit | NotCoded |
@@ -217,7 +223,7 @@ ephemeral.
 | Pouncing Qi | blue | Ira, Crimson Haze | Tested |
 | Pouncing Qi | red | Ira, Crimson Haze | Tested |
 | Public Bounty | red | Arakni, Web of Deceit | NotCoded |
-| Pummel | red | Bravo, Flattering Showman | NotCoded |
+| Pummel | red | Bravo, Flattering Showman | Tested |
 | Pursue to the Edge of Oblivion | red | Arakni, Web of Deceit | NotCoded |
 | Pursue to the Pits of Despair | red | Arakni, Web of Deceit | NotCoded |
 | Pyroglyphic Protection | blue | Iyslander | NotCoded |
@@ -253,12 +259,12 @@ ephemeral.
 | Sirens of Safe Harbor | blue | Dorinthea, Hala, Ira, Crimson Haze | Tested |
 | Sirens of Safe Harbor | red | Dorinthea, Hala, Ira, Crimson Haze | Tested |
 | Sirens of Safe Harbor | yellow | Hala, Ira, Crimson Haze | Tested |
-| Sit! | red | Bravo, Flattering Showman | NotCoded |
+| Sit! | red | Bravo, Flattering Showman | Tested |
 | Smashback Alehorn | blue | Levia | NotCoded |
 | Snatch | red | Dromai | NotCoded |
 | Soul Harvest | blue | Levia | NotCoded |
 | Stains of the Redback | red | Arakni, Web of Deceit | NotCoded |
-| Staunch Response | red | Bravo, Flattering Showman | NotCoded |
+| Staunch Response | red | Bravo, Flattering Showman | Tested |
 | Steelblade Shunt | blue | Dorinthea | Tested |
 | Steelblade Shunt | red | Dorinthea, Hala | Tested |
 | Steelblade Shunt | yellow | Dorinthea | Tested |
@@ -267,10 +273,10 @@ ephemeral.
 | Swordmaster's Path | blue | Hala | Tested |
 | Swordmaster's Path | red | Hala | Tested |
 | Test of Agility | red | Levia | NotCoded |
-| Test of Vigor | red | Bravo, Flattering Showman | NotCoded |
-| The Suspense is Killing Me | blue | Bravo, Flattering Showman | NotCoded |
-| Thunder Quake | blue | Bravo, Flattering Showman | NotCoded |
-| Thunk | blue | Bravo, Flattering Showman | NotCoded |
+| Test of Vigor | red | Bravo, Flattering Showman | Tested |
+| The Suspense is Killing Me | blue | Bravo, Flattering Showman | Tested |
+| Thunder Quake | blue | Bravo, Flattering Showman | Tested |
+| Thunk | blue | Bravo, Flattering Showman | Tested |
 | Tiger Eye Reflex | yellow | Ira, Crimson Haze | Tested |
 | Timekeeper's Whim | blue | Iyslander | NotCoded |
 | Timesnap Potion | blue | Dromai, Iyslander | NotCoded |

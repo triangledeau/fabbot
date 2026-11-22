@@ -57,11 +57,15 @@ for c in coded:
         if k.lower() not in text.lower():
             print(f"MOT-CLÉ  {c['name']} {c['color']} : « {k} » absent du texte")
             problems += 1
-    for k in ["Go again", "Dominate", "Battleworn", "Temper", "Guardwell", "Blade Break", "Ambush", "Ephemeral"]:
+    for k in ["Go again", "Dominate", "Battleworn", "Temper", "Guardwell", "Blade Break", "Ambush", "Ephemeral", "Suspense"]:
         printed = re.search(r"\*\*" + k + r"\*\*(\{br\}|$)", text, re.I)
         if printed and k not in c["keywords"]:
             print(f"MOT-CLÉ  {c['name']} {c['color']} : « {k} » imprimé mais pas codé")
             problems += 1
+    # Crush est un label (« **Crush** - When … ») : drapeau CRUSH obligatoire.
+    if "**crush** -" in text.lower() and "Crush" not in c["keywords"]:
+        print(f"MOT-CLÉ  {c['name']} {c['color']} : label « Crush » imprimé mais pas codé")
+        problems += 1
 
 print(f"{len(coded)} cartes codées vérifiées, {problems} problème(s).")
 sys.exit(1 if problems else 0)

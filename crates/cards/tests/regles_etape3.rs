@@ -1,6 +1,7 @@
 //! Règles ajoutées à l'étape 3 (deck Ira) : jouer depuis la zone de
 //! bannissement, cartes créées avec ephemeral, ambush, capacités accordées,
-//! modes dont la cible dépend du mode. Cartes **fictives** (`fab_cards::test_set`).
+//! modes dont la cible dépend du mode ; pour le deck Bravo : clash, réductions
+//! de coût, « loses and can't gain ». Cartes **fictives** (`fab_cards::test_set`).
 
 mod commun;
 use commun::*;
@@ -206,4 +207,135 @@ fn cr_1_7_5_carte_modale_injouable_si_aucun_mode_n_a_de_cible() {
     let alt = t.en_main(P0, "Essai Alternative", R);
     assert!(!t.peut(Choice::Play(alt)), "aucune attaque");
     t.finir_le_tour();
+}
+
+// ---------------------------------------------------------------------------
+// Ajouts du deck Bravo : clash, réductions de coût, « loses and can't gain »
+// ---------------------------------------------------------------------------
+
+/// Partie où le dessus du deck de P0 est `haut0` et celui de P1 `haut1`
+/// (`None` : un Essai Rempart, sans puissance).
+fn clash_entre(
+    haut0: Option<(&str, Option<fab_engine::card::Color>)>,
+    haut1: Option<(&str, Option<fab_engine::card::Color>)>,
+) -> Partie {
+    let s0: Vec<_> = haut0.into_iter().collect();
+    let s1: Vec<_> = haut1.into_iter().collect();
+    partie(&[RAMPART; 4], &s0, &[RAMPART; 4], &s1, &[], &[])
+}
+
+#[test]
+fn cr_8_5_45_le_clash_est_gagne_par_la_plus_grande_puissance() {
+    let mut t = clash_entre(Some(("Essai Frappe", R)), Some(("Essai Frappe", B)));
+    let (h0, h1) = (t.g.top_of_deck(P0).unwrap(), t.g.top_of_deck(P1).unwrap());
+    assert_eq!(t.g.clash(P0, P1), Some(P0), "4 contre 2");
+    assert_eq!(t.g.clash(P1, P0), Some(P0), "l'ordre ne compte pas");
+    // CR 8.5.17c : révéler ne déplace pas les cartes.
+    assert_eq!(t.g.top_of_deck(P0), Some(h0));
+    assert_eq!(t.g.top_of_deck(P1), Some(h1));
+    // CR 8.5.45a : le gagnant gagne « en révélant cette carte ».
+    assert!(t.g.turn_events().iter().any(|e| matches!(
+        e,
+        fab_engine::Event::ClashWon { winner, card } if *winner == P0 && *card == h0
+    )));
+}
+
+#[test]
+fn cr_8_5_45b_une_carte_sans_puissance_perd_contre_une_carte_qui_en_a() {
+    let mut t = clash_entre(None, Some(("Essai Frappe", B)));
+    assert_eq!(
+        t.g.clash(P0, P1),
+        Some(P1),
+        "Rempart (sans puissance) contre 2"
+    );
+}
+
+#[test]
+fn cr_8_5_45b_un_deck_vide_ne_revele_rien_et_perd() {
+    let mut t = clash_entre(None, Some(("Essai Frappe", B)));
+    t.g.player_mut(P1).deck.clear();
+    t.g.player_mut(P0).deck.clear();
+    let haut = t.en_main(P0, "Essai Rempart", B);
+    // P0 n'a plus qu'une carte sans puissance, P1 rien : personne ne gagne.
+    t.g.put_on_top(haut);
+    assert_eq!(t.g.clash(P0, P1), None);
+}
+
+#[test]
+fn cr_8_5_45c_a_puissance_egale_personne_ne_gagne() {
+    let mut t = clash_entre(Some(("Essai Frappe", R)), Some(("Essai Frappe", R)));
+    assert_eq!(t.g.clash(P0, P1), None);
+    let mut t = clash_entre(None, None);
+    assert_eq!(t.g.clash(P0, P1), None, "aucune puissance des deux côtés");
+}
+
+#[test]
+fn cr_8_5_45d_il_faut_deux_heros_differents() {
+    let mut t = clash_entre(Some(("Essai Frappe", R)), None);
+    assert_eq!(t.g.clash(P0, P0), None);
+}
+
+#[test]
+fn cr_5_1_6_reduction_de_la_prochaine_carte_qui_verifie_le_filtre() {
+    let mut t = partie(
+        &[
+            ("Essai Écrasement", R),
+            ("Essai Frappe", R),
+            RAMPART,
+            RAMPART,
+        ],
+        RIEN,
+        RIEN,
+        RIEN,
+        &[],
+        &[],
+    );
+    // « Your next [carte avec dominate] this turn costs {r} less », deux fois.
+    let filtre = |g: &fab_engine::GameState, c: ObjectId| {
+        g.def(c).keywords.has(fab_engine::Keywords::DOMINATE)
+    };
+    t.g.next_card_costs_less(P0, filtre, 1);
+    t.g.next_card_costs_less(P0, filtre, 1);
+    let e = t.en_main(P0, "Essai Écrasement", R);
+    let f = t.en_main(P0, "Essai Frappe", R);
+    assert_eq!(t.g.play_cost(P0, e), 0, "2 - 1 - 1");
+    assert_eq!(t.g.play_cost(P0, f), 1, "hors filtre");
+    assert_eq!(t.g.play_cost(P1, e), 2, "réductions de P0 seulement");
+    t.g.refresh_priority();
+    t.choisir(Choice::Play(e));
+    assert!(
+        t.g.cost_reductions.is_empty(),
+        "les deux réductions sont utilisées"
+    );
+}
+
+#[test]
+fn cr_8_3_4_perdre_et_ne_plus_pouvoir_gagner_dominate() {
+    let mut t = partie(
+        &[("Essai Écrasement", R), RAMPART, RAMPART, RAMPART],
+        RIEN,
+        RIEN,
+        RIEN,
+        &[],
+        &[],
+    );
+    let e = t.en_main(P0, "Essai Écrasement", R);
+    let r = t.g.obj_ref(e);
+    let perd = fab_engine::Delta {
+        loses: fab_engine::Keywords::DOMINATE,
+        ..Default::default()
+    };
+    t.g.modify(r, perd, fab_engine::Until::EndOfTurn);
+    assert!(!t.g.keywords(e).has(fab_engine::Keywords::DOMINATE));
+    let gagne = fab_engine::Delta {
+        grants: fab_engine::Keywords::DOMINATE | fab_engine::Keywords::GO_AGAIN,
+        ..Default::default()
+    };
+    t.g.modify(r, gagne, fab_engine::Until::EndOfTurn);
+    let k = t.g.keywords(e);
+    assert!(!k.has(fab_engine::Keywords::DOMINATE));
+    assert!(
+        k.has(fab_engine::Keywords::GO_AGAIN),
+        "les autres mots-clés restent"
+    );
 }

@@ -132,6 +132,27 @@ ou `add_prevention` (filtre de source, « if you prevent damage this way »).
 - Carte à modes dont la cible dépend du mode (Razor Reflex) : le filtre de
   cible lit `c.mode` ; seuls les modes qui ont une cible sont proposés.
 
+## Clash, crush, heave, suspense (étape 3, deck Bravo)
+
+- **Clash** (CR 8.5.45) : `g.clash(a, b)` révèle le dessus des deux decks
+  (événements `Revealed`), compare la puissance **imprimée** (CR 1.7.4) et
+  renvoie le gagnant (événement `ClashWon`), ou `None`.
+- « When you win a clash revealing this » (Thunk) : déclenchement `anywhere`
+  sur `Event::ClashWon { card == me }` ; une capacité `anywhere` fonctionne
+  aussi dans une zone privée (main, deck) et vérifie elle-même sa zone.
+- **Crush** (CR 8.4.2) : capacité déclenchée sur `Event::Damage` (dégâts
+  réellement infligés, ≥ 4, à un héros). Le drapeau `Keywords::CRUSH` dit
+  qu'une carte « a crush » (Bravo, Crash and Bash).
+- **Heave** (CR 8.3.18) : déclenchement `anywhere` depuis la main au début de
+  la phase de fin (voir Thunder Quake) ; `put_in_arsenal` puis `turn_face_up`.
+- **Suspense** (`Keywords::SUSPENSE`, CR 8.3.42) : géré par le moteur
+  (compteurs dans `Object::counters`).
+- « Your next Guardian attack action card costs {r} less » :
+  `next_card_costs_less(p, filtre, n)` (Seismic Surge).
+- « Can't gain {p} during their next action phase » :
+  `forbid_power_gain_next_action_phase(p)` (Chokeslam).
+- « Loses and can't gain dominate » : `Delta { loses: Keywords::DOMINATE, .. }`.
+
 ## Les événements et le journal du tour
 
 Tout ce qui se passe (carte jouée, attaque, défense, touche, pitch, dégâts,

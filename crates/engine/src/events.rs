@@ -123,6 +123,16 @@ pub enum Event {
         player: PlayerId,
         amount: u16,
     },
+    /// Un joueur révèle une carte (CR 8.5.17), ex. pour un clash.
+    Revealed {
+        player: PlayerId,
+        card: ObjectId,
+    },
+    /// Un joueur gagne un clash en révélant cette carte (CR 8.5.45a).
+    ClashWon {
+        winner: PlayerId,
+        card: ObjectId,
+    },
 }
 
 impl GameState {
@@ -145,10 +155,13 @@ impl GameState {
                 continue;
             }
             // CR 1.7.4 : fonctionne dans l'arène (et sur la pile pour les attaques),
-            // ou partout si la capacité le précise. Une proxy n'a pas les
-            // capacités de son arme (seule l'arme en a).
+            // ou partout si la capacité le précise (`anywhere`) : la condition
+            // vérifie alors elle-même la zone, y compris une zone privée
+            // (heave depuis la main, CR 8.3.18 ; « when you win a clash
+            // revealing this » depuis le deck, CR 1.7.4i). Une proxy n'a pas
+            // les capacités de son arme (seule l'arme en a).
             let in_play = o.zone.in_arena() || o.zone == Zone::Stack;
-            if o.proxy_of.is_some() || o.face_down && !in_play {
+            if o.proxy_of.is_some() {
                 continue;
             }
             // « Loses all abilities » : plus de capacités déclenchées.

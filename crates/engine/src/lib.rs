@@ -48,7 +48,7 @@ pub use rng::Rng;
 pub use script::{Ask, Ctx, Op, ScriptRef, Target, TargetSpec};
 pub use setup::{GameSetup, Loadout, SetupError};
 pub use state::{
-    ApplyError, EndReason, GameState, Outcome, Prevention, RuleTrigger, Until, WeaponEffect,
-    WeaponEffectKind,
+    ApplyError, CostReduction, EndReason, GameState, Outcome, Prevention, RuleTrigger, Until,
+    WeaponEffect, WeaponEffectKind,
 };
 pub use zones::Zone;

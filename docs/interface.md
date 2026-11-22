@@ -10,7 +10,8 @@ Par défaut, vous jouez **Hala** et le bot joue **Dorinthea**. Options :
 |---|---|
 | `--deck dorinthea` | vous jouez Dorinthea (le bot prend alors Hala) |
 | `--deck ira` | vous jouez Ira, Crimson Haze (le bot prend alors Hala) |
-| `--bot hala` | deck du bot : `ira`, `hala` ou `dorinthea` (on peut faire un miroir : `--deck hala --bot hala`) |
+| `--deck bravo` | vous jouez Bravo, Flattering Showman (le bot prend alors Hala) |
+| `--bot hala` | deck du bot : `ira`, `hala`, `dorinthea` ou `bravo` (on peut faire un miroir : `--deck hala --bot hala`) |
 | `--graine 42` | rejouer exactement la même partie (mêmes mélanges) |
 
 Exemple : `cargo run --release -p fab-ui -- --deck dorinthea --graine 42`

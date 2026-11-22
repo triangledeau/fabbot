@@ -488,6 +488,13 @@ impl GameState {
         self.move_to(id, Zone::Deck, true);
     }
 
+    /// Met une carte dans la zone d'arsenal de son propriétaire, face cachée
+    /// (ex. heave, qui la retourne ensuite avec [`Self::turn_face_up`]).
+    pub fn put_in_arsenal(&mut self, id: ObjectId) {
+        debug_assert!(self.player(self.obj(id).owner).arsenal.is_none());
+        self.move_to(id, Zone::Arsenal, true);
+    }
+
     /// Mélange le deck (CR 8.5.20).
     pub fn shuffle_deck(&mut self, p: PlayerId) {
         let mut deck = std::mem::take(&mut self.player_mut(p).deck);
@@ -771,6 +778,74 @@ impl GameState {
         self.next_effect_id = self.next_effect_id.wrapping_add(1);
         prev.id = self.next_effect_id;
         self.preventions.push(prev);
+    }
+
+    /// Clash (CR 8.5.45) entre deux héros : chacun révèle le dessus de son
+    /// deck ; celui qui révèle la plus grande puissance gagne. Renvoie le
+    /// gagnant (`None` : personne ne gagne, CR 8.5.45c-d).
+    ///
+    /// Les cartes révélées restent sur le deck (CR 8.5.17c). Dans le deck,
+    /// les capacités statiques d'une carte ne fonctionnent pas (CR 1.7.4) :
+    /// on compare la puissance imprimée. Un deck vide ne révèle rien ; une
+    /// carte sans puissance perd contre une carte qui en a (CR 8.5.45b).
+    pub fn clash(&mut self, a: PlayerId, b: PlayerId) -> Option<PlayerId> {
+        if a == b {
+            return None; // CR 8.5.45d : il faut deux héros.
+        }
+        let (ca, cb) = (self.top_of_deck(a), self.top_of_deck(b));
+        for (p, c) in [(a, ca), (b, cb)] {
+            if let Some(card) = c {
+                self.emit(Event::Revealed { player: p, card });
+            }
+        }
+        let pw = |c: Option<ObjectId>| c.and_then(|c| self.def(c).power);
+        let winner = match (pw(ca), pw(cb)) {
+            (Some(x), Some(y)) if x > y => Some(a),
+            (Some(x), Some(y)) if y > x => Some(b),
+            (Some(_), None) => Some(a),
+            (None, Some(_)) => Some(b),
+            _ => None,
+        };
+        if let Some(w) = winner {
+            let card = if w == a { ca } else { cb };
+            // CR 8.5.45a : « wins the clash by revealing that card ».
+            self.emit(Event::ClashWon {
+                winner: w,
+                card: card.expect("carte révélée"),
+            });
+        }
+        winner
+    }
+
+    /// « Your next [carte filtrée] this turn costs {r} less to play »
+    /// (ex. Seismic Surge), CR 5.1.6.
+    pub fn next_card_costs_less(
+        &mut self,
+        p: PlayerId,
+        filter: fn(&GameState, ObjectId) -> bool,
+        amount: u8,
+    ) {
+        self.cost_reductions.push(crate::state::CostReduction {
+            player: p,
+            filter,
+            amount,
+            turn: self.turn,
+        });
+    }
+
+    /// « Attack action cards they control can't gain {p} during their next
+    /// action phase » (Chokeslam).
+    pub fn forbid_power_gain_next_action_phase(&mut self, p: PlayerId) {
+        let turn = self.next_turn_of(p);
+        if !self.no_power_gain.contains(&(p, turn)) {
+            self.no_power_gain.push((p, turn));
+        }
+    }
+
+    /// Retourner une carte face visible (CR 8.5.24, 3.0.3) : elle
+    /// devient publique, sans changer de zone.
+    pub fn turn_face_up(&mut self, id: ObjectId) {
+        self.obj_mut(id).face_down = false;
     }
 
     /// Marquer un héros (CR 8.5.50).
