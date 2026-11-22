@@ -94,6 +94,12 @@ qui la vérifient (`crates/cards/tests/regles_etape1.rs`, tests nommés `cr_…`
 | CR 8.3.4 | Dominate | `flow.rs`, `play.rs` | ✅ testé |
 | CR 8.3.5 | Go again | `flow.rs` | ✅ testé |
 | CR 8.5.3 / 8.5.6 / 8.5.7 | Dégâts, pioche, gain de vie | `effects.rs`, `setup.rs` | ✅ testé |
+| CR 8.5.45 / 8.5.17 | Clash (cartes révélées, puissance imprimée, gagnant) ; « when you win a clash revealing this » (CR 1.7.4i) | `effects.rs`, `events.rs` | ✅ testé |
+| CR 8.4.2 | Crush (déclenché par les **dégâts** infligés, pas le hit) | `cards/src/real/guardian.rs` | ✅ testé |
+| CR 8.3.18 / 5.4.7b | Heave (capacité déclenchée cachée depuis la main) | `events.rs` + carte | ✅ testé |
+| CR 8.3.42 | Suspense (2 compteurs, un retiré à chaque début de tour, détruit à 0) | `state.rs`, `flow.rs` | ✅ testé |
+| CR 5.1.6 | Réduction « your next … costs {r} less » (Seismic Surge) | `play.rs`, `effects.rs` | ✅ testé |
+| CR 8.3.4 | « Loses and can't gain dominate » | `state.rs` | ✅ testé |
 | CR 4.1.3 | Qui choisit le premier joueur (match) | `crates/fab-match` | ✅ testé |
 | TRP 7.4 | Format Silver Age | `config/silver_age.toml` | ✅ testé |
 
@@ -127,5 +133,12 @@ qui la vérifient (`crates/cards/tests/regles_etape1.rs`, tests nommés `cr_…`
   l'étape de résolution (CR 7.6.2a).
 - **Partie nulle par blocage** (CR 4.5.4d) : seul le cas simple est détecté ;
   sinon le simulateur arrête la partie après N tours (« limite de tours »).
+- **Heave** (CR 5.4.7b) : le choix « déclencher ou non » de la capacité
+  cachée est posé à la résolution (la pile de la phase de fin se résout sans
+  priorité, personne ne peut répondre entre les deux). Si le joueur refuse,
+  l'adversaire a vu passer la carte : petite fuite d'information.
+- **« Can't gain {p} »** (Chokeslam) : les bonus de puissance (effets, auras,
+  « this gets +1{p} ») sont ignorés, les malus restent ; les compteurs +1{p}
+  ne sont pas concernés (aucune carte d'attaque des 9 decks n'en reçoit).
 - Mélange des decks fait avant le choix du premier joueur au lieu d'après
   (CR 4.1.8) : sans conséquence, le choix ne dépend pas de l'ordre du deck.

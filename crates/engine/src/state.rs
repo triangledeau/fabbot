@@ -113,6 +113,10 @@ pub enum RuleTrigger {
     /// CR 8.5.58 : sharpen, partie déclenchée retardée : « at the beginning of
     /// the end phase, remove all +1{p} counters from it ».
     Unsharpen,
+    /// CR 8.3.42 : « At the start of your turn, remove a suspense counter from this. »
+    SuspenseTick,
+    /// CR 8.3.42 : « When this has no suspense counters, destroy it. »
+    SuspenseEmpty,
 }
 
 /// Une couche sur la pile.
@@ -235,6 +239,19 @@ pub struct NextAttackEffect {
     /// L'effet se termine quand la chaîne de combat se ferme (« … you play
     /// this combat chain », ex. Growl), CR 7.7.7.
     pub combat_chain: bool,
+}
+
+/// « Your next [carte filtrée] this turn costs {r} less to play » (ex. le
+/// token Seismic Surge), CR 5.1.6. Plusieurs réductions s'appliquent à la
+/// même carte, la prochaine jouée qui vérifie le filtre ; elles sont alors
+/// utilisées.
+#[derive(Clone, Copy, Debug)]
+pub struct CostReduction {
+    pub player: PlayerId,
+    pub filter: fn(&GameState, ObjectId) -> bool,
+    pub amount: u8,
+    /// Le tour pendant lequel la réduction existe (« this turn »).
+    pub turn: u32,
 }
 
 /// « You may play it this turn / during your next turn » : permission de
@@ -447,6 +464,14 @@ pub struct GameState {
     /// Objets aiguisés ce tour (sharpen, CR 8.5.58) : leurs compteurs +1{p}
     /// sont retirés au début de la phase de fin.
     pub sharpened: Vec<ObjRef>,
+    /// Réductions de coût « your next … costs {r} less » en attente.
+    pub cost_reductions: Vec<CostReduction>,
+    /// « Attack action cards they control can't gain {p} during their next
+    /// action phase » (Chokeslam) : (joueur, numéro du tour).
+    pub no_power_gain: Vec<(PlayerId, u32)>,
+    /// Le joueur actif est dans sa phase d'action (CR 4.3), entre les
+    /// événements `BeginActionPhase` et `BeginEndPhase`.
+    pub action_phase: bool,
     pub preventions: Vec<Prevention>,
     /// Effets de remplacement créés par des capacités (CR 6.4).
     pub replacements: Vec<Replacement>,
@@ -691,6 +716,10 @@ impl GameState {
             self.emit(Event::LeaveArena { card: id, owner });
         }
         if !was_in_arena && zone.in_arena() {
+            // CR 8.3.42 : « This enters the arena with 2 suspense counters. »
+            if zone == Zone::Permanent && self.def(id).keywords.has(Keywords::SUSPENSE) {
+                self.obj_mut(id).counters = 2;
+            }
             self.emit(Event::EnterArena { card: id });
         }
         from
@@ -778,17 +807,24 @@ impl GameState {
 
     /// Somme des effets continus qui s'appliquent à un objet.
     pub fn continuous_delta(&self, id: ObjectId) -> Delta {
+        self.delta_with(id, false)
+    }
+
+    /// `no_gain` : les bonus de puissance sont ignorés (« can't gain {p} »),
+    /// seuls les malus comptent.
+    fn delta_with(&self, id: ObjectId, no_gain: bool) -> Delta {
         let o = self.obj(id);
         let r = o.obj_ref(id);
         let mut d = Delta::default();
         let mut add = |x: Delta| {
-            d.power += x.power;
+            d.power += if no_gain { x.power.min(0) } else { x.power };
             d.defense += x.defense;
             d.grants = d.grants | x.grants;
             d.arcane_barrier += x.arcane_barrier;
             d.ward += x.ward;
             d.spellvoid += x.spellvoid;
             d.lose_abilities |= x.lose_abilities;
+            d.loses = d.loses | x.loses;
         };
         for m in &self.modifiers {
             if m.target == r {
@@ -849,7 +885,24 @@ impl GameState {
             Some(w) => self.power(w),
             None => self.db.get(o.card).power.unwrap_or(0) as i16 + o.power_counters as i16,
         };
-        (base + self.continuous_delta(id).power).max(0)
+        (base + self.delta_with(id, self.cant_gain_power(id)).power).max(0)
+    }
+
+    /// Chokeslam : « attack action cards they control can't gain {p} during
+    /// their next action phase ».
+    pub fn cant_gain_power(&self, id: ObjectId) -> bool {
+        if self.no_power_gain.is_empty() || !self.action_phase {
+            return false;
+        }
+        let o = self.obj(id);
+        let def = self.db.get(o.card);
+        o.proxy_of.is_none()
+            && def.is_action()
+            && def.is_attack_card()
+            && self
+                .no_power_gain
+                .iter()
+                .any(|&(p, t)| p == o.controller && t == self.turn)
     }
 
     /// Défense actuelle (CR 2.3.3, jamais négative CR 2.0.3c).
@@ -871,7 +924,9 @@ impl GameState {
             None if self.lost_abilities(id) => Keywords::NONE,
             None => self.db.get(o.card).keywords,
         };
-        base | self.continuous_delta(id).grants
+        let d = self.continuous_delta(id);
+        // « Loses and can't gain » l'emporte sur les mots-clés accordés.
+        (base | d.grants).without(d.loses)
     }
 
     /// Valeurs actuelles des préventions au choix d'un objet :

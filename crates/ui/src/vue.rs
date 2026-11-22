@@ -411,7 +411,17 @@ fn bloc_joueur(g: &GameState, viewer: PlayerId, p: PlayerId, complet: bool) -> S
         .filter(|&id| g.obj(id).controller == p)
         .collect();
     if !perms.is_empty() {
-        let _ = writeln!(s, "  Permanents : {}", liste(g, viewer, &perms));
+        let noms: Vec<String> = perms
+            .iter()
+            .map(|&id| {
+                let mut n = nom_pour(g, viewer, id);
+                if g.def(id).keywords.has(fab_engine::Keywords::SUSPENSE) {
+                    let _ = write!(n, " ({} compteur(s) suspense)", g.obj(id).counters);
+                }
+                n
+            })
+            .collect();
+        let _ = writeln!(s, "  Permanents : {}", noms.join(", "));
     }
     if complet {
         let _ = writeln!(s, "  Cimetière : {}", liste(g, viewer, &ps.graveyard));
@@ -446,6 +456,8 @@ fn regle(r: RuleTrigger) -> &'static str {
         RuleTrigger::Temper => "temper",
         RuleTrigger::Guardwell => "guardwell",
         RuleTrigger::Unsharpen => "fin du sharpen",
+        RuleTrigger::SuspenseTick => "suspense : retirer un compteur",
+        RuleTrigger::SuspenseEmpty => "suspense : plus de compteur, détruire",
     }
 }
 
@@ -652,6 +664,12 @@ pub fn evenement(g: &GameState, viewer: PlayerId, e: &Event) -> Option<String> {
             )
         }
         Event::CombatChainClosed => "La chaîne de combat se ferme.".into(),
+        Event::Revealed { player, card } => {
+            format!("{}.", sujet(player, "révèle", "révélez", &nom(g, card)))
+        }
+        Event::ClashWon { winner, .. } => {
+            format!("{}.", sujet(winner, "gagne", "gagnez", "le clash"))
+        }
         Event::ToGraveyard { card, from, owner } => {
             // Seules les défausses depuis la main sont utiles à signaler.
             if from == Zone::Hand {

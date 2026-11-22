@@ -106,6 +106,15 @@ flags! {
         /// CR 8.3.21 : « If this would be put into a graveyard from anywhere,
         /// instead remove it from the game. »
         EPHEMERAL = 11,
+        /// CR 8.4.2 : crush est un **label** (« Crush - When this deals 4 or
+        /// more damage, … ») et non un mot-clé ; ce drapeau dit seulement que
+        /// la carte « a crush » (Bravo, Crash and Bash). La capacité elle-même
+        /// est une capacité déclenchée de la carte.
+        CRUSH = 12,
+        /// CR 8.3.42 : « This enters the arena with 2 suspense counters »,
+        /// « At the start of your turn, remove a suspense counter from this »,
+        /// « When this has no suspense counters, destroy it ».
+        SUSPENSE = 13,
     }
 }
 
@@ -227,6 +236,9 @@ pub struct Delta {
     pub spellvoid: u8,
     /// « loses all abilities » (ex. Humble, Crush Confidence).
     pub lose_abilities: bool,
+    /// « loses and can't gain [mots-clés] » (ex. Unflinching Foothold :
+    /// dominate). Retirés même s'ils sont accordés par un autre effet.
+    pub loses: Keywords,
 }
 
 /// Coût additionnel en ressources (CR 5.4.4a).

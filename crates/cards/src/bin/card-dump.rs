@@ -69,6 +69,8 @@ fn main() {
             (Keywords::BLADE_BREAK, "Blade Break"),
             (Keywords::AMBUSH, "Ambush"),
             (Keywords::EPHEMERAL, "Ephemeral"),
+            (Keywords::SUSPENSE, "Suspense"),
+            (Keywords::CRUSH, "Crush"),
         ] {
             if d.keywords.has(k) {
                 kw.push(w);

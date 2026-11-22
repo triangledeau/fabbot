@@ -11,26 +11,27 @@ met à jour à la fin de chaque tâche.
 | 0 | Mise en place, squelette | ✅ |
 | 1 | Cœur des règles + système d'effets | ✅ (manques connus listés dans `docs/rules/README.md`) |
 | 2 | Deux premiers decks complets + interface texte | ✅ (cartes à valider par le propriétaire avec l'interface) |
-| 3 | Les 7 autres decks + simulateur rapide | ⏳ (Ira ✅ ; restent Bravo, Iyslander, Florian, Levia, Dromai, Arakni) |
+| 3 | Les 7 autres decks + simulateur rapide | ⏳ (Ira ✅, Bravo ✅ ; restent Iyslander, Florian, Levia, Dromai, Arakni) |
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ⏳ |
 | 5 | Interface web locale + annulation | ⏳ |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ⏳ |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
 
-**Branche la plus récente :** `claude/intelligent-mayer-kvrq5b` (deck Ira,
+**Branche la plus récente :** `claude/wizardly-pasteur-r91h2w` (deck Bravo,
 partie de `main`). Tant qu'elle n'est pas fusionnée dans `main`, partir de
 cette branche.
 
 **Jouer contre le bot :** `cargo run --release -p fab-ui` (mode d'emploi :
 `docs/interface.md`).
 
-**Chiffres actuels :** 249 tests au vert. Simulateur, bots **aléatoires**
+**Chiffres actuels :** 317 tests au vert. Simulateur, bots **aléatoires**
 (ces pourcentages ne disent rien des vrais matchups), 100 000 parties
-vérifiées (`--check`) sans incohérence pour chaque paire, ≈ 7 500 à 8 700
+vérifiées (`--check`) sans incohérence pour chaque paire, ≈ 8 000 à 9 500
 parties/s dans le conteneur de Claude (4 cœurs) :
-`--decks ira dorinthea` (Ira 83,5 %), `--decks ira ira`, `--vrais` (Hala
-49,8 %, Dorinthea 46,5 %, inchangé). Decks d'essai : 50 000 parties
-(normal et `--mecanismes`) sans incohérence.
+`--decks bravo ira` (Bravo 16,0 %), `--decks bravo hala` (Bravo 59,5 %),
+`--decks bravo dorinthea` (Bravo 61,8 %), `--decks bravo bravo`,
+`--vrais` (Hala 49,8 %, Dorinthea 46,5 %, inchangé). Ira contre Dorinthea :
+83,5 % (session précédente).
 
 **Choix provisoire d'équipement et de deck** (`real::default_loadout`, en
 attendant la phase de side de l'étape 6) : la première carte de chaque
@@ -41,7 +42,16 @@ cartes de la liste.
 
 ## Questions ouvertes pour le propriétaire
 
-Aucune pour l'instant.
+Aucune question bloquante. Deux choix faits pour Bravo, à confirmer en jouant :
+
+1. **Heave** (Thunder Quake) : CR 5.4.7b dit que le joueur décide de
+   déclencher la capacité cachée, puis la couche se résout. Le moteur pose une
+   seule question (« payer 3 ? ») à la résolution, et ne déclenche heave que
+   si c'est possible (arsenal vide, 3 ressources sans pitcher la carte
+   elle-même). Si vous refusez, l'adversaire a vu passer la carte.
+2. **Bravo** : sa capacité n'est proposée que s'il y a une carte face cachée
+   dans l'arsenal (l'activer sans carte serait légal, mais ne ferait rien
+   d'autre que coûter 2 ressources).
 
 Questions réglées le 2026-11-22 (réponses du propriétaire, citées en
 commentaire dans le code) : action non-attaque à l'étape de résolution
@@ -62,12 +72,13 @@ précédent si l'épée a quitté ce maillon (notes de Mastery Pack Warrior).
 (commande `t <n>` pour le texte officiel) et passer celles qui sont justes en
 `Validated` dans `docs/cards/STATUS.md` ; signaler tout comportement faux.
 
-Vérifier aussi les cartes d'Ira (`cargo run --release -p fab-ui -- --deck ira`,
-`t <n>` donne le texte officiel).
+Vérifier aussi les cartes d'Ira (`cargo run --release -p fab-ui -- --deck ira`)
+et de Bravo (`cargo run --release -p fab-ui -- --deck bravo`) ; `t <n>` donne
+le texte officiel.
 
 **Pour Claude (étape 3, suite) :** coder le deck suivant de la liste,
-**Bravo, Flattering Showman** (`data/decks/04_bravo.txt`). Puis Iyslander,
-Florian, Levia, Dromai, Arakni. Le moteur sait maintenant accorder des
+**Iyslander** (`data/decks/05_iyslander.txt`). Puis Florian, Levia, Dromai,
+Arakni. Le moteur sait maintenant accorder des
 capacités **déclenchées** (`CardDef::granted`) ; pour Dromai il faudra aussi
 accorder une capacité **activée** (Storm of Sandikai donne une capacité
 d'attaque aux dragons). Vérifier « clash » et « crush » au fil des cartes.
@@ -84,3 +95,4 @@ d'attaque aux dragons). Vérifier « clash » et « crush » au fil des cartes.
 | 2026-11-22 | Étape 3, deck Ira : 27 lignes de STATUS.md + Crouching Tiger codées et testées (45 tests Ninja, 12 tests génériques, 8 tests de règles) ; moteur : jouer depuis la zone de bannissement (permission), cartes créées dans le bannissement, ephemeral, ambush, capacités déclenchées accordées (`CardDef::granted`), effets « this combat chain » sur la prochaine attaque, modes proposés seulement s'ils ont une cible ; `fab-sim --decks a b` | `claude/intelligent-mayer-kvrq5b` |
 | 2026-11-22 | Réponses aux questions 1 et 3 à 14 : commentaires des règles confirmées, correction de Shove Off (épée partie du maillon), cartes bannies face cachée visibles par leur propriétaire dans l'interface, test Legacy of Ikaru sur une 2e attaque d'Edge of Autumn | `claude/intelligent-mayer-kvrq5b` |
 | 2026-11-22 | Liste officielle Silver Age (40 cartes bannies, 4 héros mis sur la touche) dans `config/silver_age.toml`, noms français traduits par le fichier officiel ; aucune carte de nos decks concernée | `claude/intelligent-mayer-kvrq5b` |
+| 2026-11-22 | Étape 3, deck Bravo : 35 lignes de STATUS.md + tokens Seismic Surge, Might, Vigor, Quicken codés et testés (61 tests de cartes, 7 tests de règles) ; moteur : clash (CR 8.5.45), « win a clash revealing this » depuis le deck, crush (CR 8.4.2, sur les dégâts), heave (capacité cachée depuis la main), suspense (CR 8.3.42), réductions « your next … costs {r} less », « can't gain {p} » (Chokeslam), « loses and can't gain dominate » ; `fab-ui --deck bravo` | `claude/wizardly-pasteur-r91h2w` |

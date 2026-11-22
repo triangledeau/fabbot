@@ -136,7 +136,18 @@ impl GameState {
         if let Some(f) = def.cost_mod {
             cost += f(self, p, c);
         }
+        cost -= self.cost_reduction(p, c) as i16;
         cost.max(0) as u32
+    }
+
+    /// Somme des réductions « your next … costs {r} less » qui s'appliquent à
+    /// la carte `c` jouée par `p` ce tour (CR 5.1.6).
+    pub fn cost_reduction(&self, p: PlayerId, c: ObjectId) -> u8 {
+        self.cost_reductions
+            .iter()
+            .filter(|x| x.player == p && x.turn == self.turn && (x.filter)(self, c))
+            .map(|x| x.amount)
+            .sum()
     }
 
     /// Toutes les cibles possibles pour une spécification (CR 1.8.5a : objets
@@ -522,6 +533,14 @@ impl GameState {
                             !(e.weapon == r && matches!(e.kind, WeaponEffectKind::CostLess(_)))
                         });
                     }
+                }
+                if kind == LayerKind::Card && !self.cost_reductions.is_empty() {
+                    // CR 5.1.6 : les réductions « your next … » sont utilisées.
+                    let c = self.top_layer().object.id;
+                    let turn = self.turn;
+                    let mut v = std::mem::take(&mut self.cost_reductions);
+                    v.retain(|x| !(x.player == p && x.turn == turn && (x.filter)(self, c)));
+                    self.cost_reductions = v;
                 }
                 let action_points = match kind {
                     // CR 5.1.6b : une action non jouée comme instant coûte 1 point d'action.

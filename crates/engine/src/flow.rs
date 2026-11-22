@@ -380,6 +380,20 @@ impl GameState {
                 let o = self.obj_mut(id);
                 o.power_counters = o.power_counters.min(0);
             }
+            RuleTrigger::SuspenseTick => {
+                let o = self.obj_mut(id);
+                o.counters = o.counters.saturating_sub(1);
+                if o.counters == 0 {
+                    // « When this has no suspense counters, destroy it » :
+                    // déclenchement basé sur un état (CR 6.6.1c).
+                    self.push_rule_trigger(RuleTrigger::SuspenseEmpty, id);
+                }
+            }
+            RuleTrigger::SuspenseEmpty => {
+                if self.obj(id).counters == 0 {
+                    self.destroy(id);
+                }
+            }
         }
     }
 
@@ -400,6 +414,16 @@ impl GameState {
         // CR 4.2.2 : début du tour, déclenchements résolus sans priorité.
         let tp = self.turn_player;
         self.emit(Event::StartOfTurn(tp));
+        // CR 8.3.42 : « At the start of your turn, remove a suspense counter from this. »
+        let suspense: Vec<ObjectId> = self
+            .permanents
+            .iter()
+            .copied()
+            .filter(|&o| self.obj(o).controller == tp && self.keywords(o).has(Keywords::SUSPENSE))
+            .collect();
+        for o in suspense {
+            self.push_rule_trigger(RuleTrigger::SuspenseTick, o);
+        }
         self.stage = Stage::ResolveThen(AfterResolve::ActionPhase);
     }
 
@@ -416,6 +440,7 @@ impl GameState {
             AfterResolve::ActionPhase => {
                 // CR 4.3.1-4.3.3
                 let tp = self.turn_player;
+                self.action_phase = true;
                 self.emit(Event::BeginActionPhase(tp));
                 self.player_mut(tp).action_points = 1;
                 self.give_priority(tp);
@@ -498,6 +523,7 @@ impl GameState {
         if !self.combat.open {
             // CR 4.3.4 : fin de la phase d'action.
             self.priority = None;
+            self.action_phase = false;
             self.emit(Event::BeginEndPhase(tp));
             // CR 8.5.58 : déclenchements retardés des sharpen.
             for r in std::mem::take(&mut self.sharpened) {
@@ -1108,6 +1134,8 @@ impl GameState {
             .retain(|e| e.turn.is_some_and(|t| t > turn));
         self.weapon_effects.clear();
         self.play_permissions.retain(|x| x.turn > turn);
+        self.cost_reductions.retain(|x| x.turn > turn);
+        self.no_power_gain.retain(|&(_, t)| t > turn);
         self.granted_triggers
             .retain(|x| !x.until.ends_at_end_of(turn));
         self.sharpened.clear();
