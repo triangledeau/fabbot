@@ -42,7 +42,11 @@ fn ne_montre_pas(texte: &str, cachees: &[ObjectId], contexte: &str) {
 
 #[test]
 fn une_partie_complete_se_joue_en_tapant_toujours_1() {
-    for (moi, bot) in [("hala", "dorinthea"), ("dorinthea", "hala")] {
+    for (moi, bot) in [
+        ("hala", "dorinthea"),
+        ("dorinthea", "hala"),
+        ("ira", "hala"),
+    ] {
         for graine in 1..=3 {
             let mut g = nouvelle_partie(moi, bot, graine).unwrap();
             let (fin, texte) = jouer(&mut g, &"1\n".repeat(50_000), graine);
@@ -186,4 +190,23 @@ fn la_main_adverse_n_affiche_que_le_nombre_de_cartes() {
         .hand
         .iter()
         .all(|&c| g.obj(c).zone == Zone::Hand && !vue::visible(&g, P0, c)));
+}
+
+#[test]
+fn une_carte_bannie_face_cachee_est_visible_par_son_proprietaire_seulement() {
+    // CR 3.0.3a : un joueur peut regarder un objet privé qu'il possède, sauf
+    // dans le deck.
+    let mut g = nouvelle_partie("hala", "dorinthea", 1).unwrap();
+    while g.player(P0).hand.is_empty() {
+        let d = g.pending_decision().unwrap().clone();
+        let i = RandomAgent::new(1).choose(&g, &d);
+        g.apply(i).unwrap();
+    }
+    let c = g.player(P0).hand[0];
+    g.banish(c, true);
+    assert_eq!(g.obj(c).zone, Zone::Banished);
+    assert!(vue::visible(&g, P0, c));
+    assert!(!vue::visible(&g, PlayerId::P1, c));
+    let haut = g.top_of_deck(P0).unwrap();
+    assert!(!vue::visible(&g, P0, haut), "pas le deck");
 }

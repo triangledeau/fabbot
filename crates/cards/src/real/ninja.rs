@@ -46,10 +46,11 @@ const TIGER: &str = "Crouching Tiger";
 /// dernier état connu). Si `me` n'est pas encore sur la chaîne (sur la pile),
 /// l'attaque du dernier maillon.
 ///
-/// TODO(règles) : lecture retenue, car l'attaque elle-même ne peut pas être
-/// « the last attack » de son propre combo (sinon Seek Vengeance ne
-/// fonctionnerait jamais). Même lecture pour la capacité accordée par Legacy
-/// of Ikaru. À confirmer par le propriétaire.
+/// Notes de Welcome to Rathe : le combo regarde l'attaque précédente sur la
+/// chaîne (seul le nom compte, qu'elle ait touché ou non). Même lecture pour
+/// la capacité accordée par Legacy of Ikaru (confirmé par le propriétaire) :
+/// sur l'attaque d'Edge of Autumn elle-même, pas de pioche, sauf si Edge of
+/// Autumn a déjà attaqué juste avant dans la même chaîne.
 pub(crate) fn last_attack_before(g: &GameState, me: ObjectId) -> Option<CardId> {
     let links = &g.combat.links;
     match links.iter().position(|l| l.attack.id == me) {
@@ -259,8 +260,9 @@ fn heroes_and_arena(db: &mut CardDb) {
 
     // Crouching Tiger — Ninja Action - Attack, 0{p}, coût 0 (sans pitch ni
     // défense). « Ephemeral. Go again ». Ce n'est pas un token (ligne de type
-    // officielle) : une carte créée, retirée de la partie au lieu d'aller au
-    // cimetière (CR 8.3.21).
+    // officielle ; notes de Dynasty : « Crouching Tiger is a card ») : une
+    // carte créée, retirée de la partie au lieu d'aller au cimetière
+    // (CR 8.3.21). Non jouée à temps, elle reste dans la zone de bannissement.
     db.add(CardDef {
         name: TIGER.into(),
         cost: Some(0),
@@ -291,7 +293,9 @@ fn deck_cards(db: &mut CardDb) {
         when: when_this_attacks,
         anywhere: false,
         targets: vec![],
-        // CR 6.6.1c : la condition est vérifiée à la résolution.
+        // CR 6.6.1c : la condition est vérifiée à la résolution (notes de
+        // Part the Mistveil). Une attaque d'arme ou un Crouching Tiger (sans
+        // couleur) ne compte pas.
         script: vec![Op::Do(|g, c| {
             let Some(me) = c.source else { return };
             let red_attack_card = last_attack_before(g, me.id).is_some_and(|card| {
@@ -355,7 +359,8 @@ fn deck_cards(db: &mut CardDb) {
                 }
                 let tiger = create_tiger(g, c.controller, false);
                 let bonus = by_color(g, c, [3, 2, 1]);
-                // Sans durée écrite ; le tigre ne peut être joué que ce tour.
+                // CR 6.2.2a : sans durée écrite, l'effet finit à la fin du tour.
+                // Il suit la carte sur la pile (pas de remise à zéro, CR 3.0.9).
                 g.modify(g.obj_ref(tiger), power(bonus), Until::EndOfTurn);
             })],
         }];

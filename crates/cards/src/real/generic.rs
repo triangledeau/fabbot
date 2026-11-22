@@ -429,8 +429,7 @@ pub fn add(db: &mut CardDb) {
                     defense: by_color(g, c, [4, 3, 2]),
                     ..Default::default()
                 };
-                // Sans durée écrite : l'effet dure tant que la carte reste sur
-                // la chaîne (elle la quitte au plus tard à la fin du tour).
+                // CR 6.2.2a : sans durée écrite, l'effet finit à la fin du tour.
                 g.modify(r, d, Until::EndOfTurn);
             }
         })];

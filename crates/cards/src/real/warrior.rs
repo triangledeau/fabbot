@@ -225,6 +225,9 @@ fn heroes_and_arena(db: &mut CardDb) {
         targets: vec![TargetSpec {
             label: "carte qui défend",
             // CR 7.0.5a : une carte défend tant qu'elle est sur la chaîne.
+            // Notes de Dusk till Dawn : n'importe quelle carte qui défend sur
+            // la chaîne, pas seulement sur ce maillon, équipements compris ;
+            // jusqu'à la fin du tour (Errata Bulletin 7).
             filter: |g, _, t| {
                 matches!(t, Target::Object(r) if g.obj(r.id).zone == Zone::CombatChain
                     && g.combat.links.iter().any(|l| l.defenders.contains(&r.id)))
@@ -482,9 +485,10 @@ fn deck_cards(db: &mut CardDb) {
         );
         d.resolve = vec![Op::Do(|g, c| {
             // La carte va défendre l'attaque du maillon actif (CR 5.3.2b,
-            // 7.4.2d) : on regarde cette attaque à la résolution.
-            // TODO(règles) : la condition « if this defends » est vérifiée à la
-            // résolution, avant que la carte devienne une carte qui défend.
+            // 7.4.2d) : la condition « if this defends » est vérifiée à la
+            // résolution (CR 5.3.4), juste avant que la carte devienne une
+            // carte qui défend (CR 5.3.6b), contre l'attaque du maillon actif
+            // (confirmé par le propriétaire).
             let Some(link) = g.active_link() else {
                 return;
             };
@@ -632,8 +636,11 @@ fn deck_cards(db: &mut CardDb) {
     d.resolve = vec![
         Op::Ask(|g, c| {
             // CR 7.0.5a : une carte défend tant qu'elle est sur la chaîne, contre
-            // l'attaque de son maillon. TODO(règles) : on accepte donc aussi les
-            // cartes des maillons précédents (question au propriétaire).
+            // l'attaque de son maillon : les cartes des maillons précédents
+            // comptent, si l'épée est encore sur ce maillon (notes de Mastery
+            // Pack Warrior). Quand l'épée attaque de nouveau, son ancienne
+            // attaque-proxy cesse d'exister (CR 1.4.3c) : l'épée a quitté le
+            // maillon.
             let options: Vec<Choice> = g
                 .combat
                 .links
@@ -642,6 +649,8 @@ fn deck_cards(db: &mut CardDb) {
                     l.attacker == c.controller
                         && l.source
                             .is_some_and(|w| g.def(w).types.has(Types::WEAPON) && is_sword(g, w))
+                        && g.is_current(l.attack)
+                        && g.obj(l.attack.id).zone == Zone::CombatChain
                 })
                 .flat_map(|l| l.defenders.iter().copied())
                 .filter(|&x| {
