@@ -7,6 +7,8 @@
 //! On ne cherche pas à « comprendre » automatiquement le texte des cartes :
 //! chaque effet est écrit et testé à la main, puis validé par un humain.
 
+pub mod decklist;
+
 use fab_engine::CardId;
 use serde::Deserialize;
 

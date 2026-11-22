@@ -1,0 +1,40 @@
+# DORINTHEA — Sunday Showdown: Mexico City 1st (Dorinthea)
+Hero: Dorinthea
+Class: Warrior
+Source: Sunday Showdown: Mexico City 1st (Dorinthea)
+
+Arena:
+1 Decimator Great Axe [Weapon]
+1 Helm of Unity [Head]
+1 Nullrune Hood [Head]
+1 Plating of Unity [Chest]
+1 Nullrune Robe [Chest]
+1 Gauntlets of Unity [Arms]
+1 Nullrune Gloves [Arms]
+1 Refraction Bolters [Legs]
+1 Blade Beckoner Boots [Legs]
+
+Deck:
+2 Arcane Polarity (red)
+2 Felling Swing (red)
+2 Fyendal's Fighting Spirit (red)
+2 Look Tuff (red)
+2 On the Horizon (red)
+2 Overpower (red)
+2 Sharpen Steel (red)
+2 Sirens of Safe Harbor (red)
+2 Steelblade Shunt (red)
+2 Felling Swing (yellow)
+2 Lay Low (yellow)
+2 Steelblade Shunt (yellow)
+2 Display of Craftsmanship (blue)
+2 Felling Swing (blue)
+2 Fyendal's Fighting Spirit (blue)
+2 Hit and Run (blue)
+2 Ironsong Response (blue)
+2 Overpower (blue)
+2 Raging Onslaught (blue)
+2 Sharpen Steel (blue)
+2 Sift (blue)
+2 Sirens of Safe Harbor (blue)
+2 Steelblade Shunt (blue)

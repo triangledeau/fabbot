@@ -7,7 +7,8 @@ du projet est un expert du jeu, mais débute en programmation : explications en
 ## Priorités (dans cet ordre)
 1. **Exactitude des règles et des cartes.** Ne jamais deviner une règle ou un
    texte de carte. En cas de doute : laisser un `TODO(règles)` et poser la question.
-2. **Performance** du moteur (simulation massive sur une Surface Pro 9).
+2. **Performance** du moteur (simulation massive sur une Surface Pro 9 **Intel** :
+   10 cœurs / 12 threads, dont 2 cœurs performants et 8 cœurs économes).
 3. **Niveau de jeu** du bot, toujours *mesuré* (Elo, matrice de matchups), jamais supposé.
 
 ## Architecture (workspace Rust dans `crates/`)
@@ -29,6 +30,10 @@ humain) répond par l'index d'une option. Tout choix de joueur passe par là.
   `docs/rules/sources/*.txt`. rules.fabtcg.com est accessible ; fabtcg.com
   bloque les accès automatisés (403) : ne pas chercher à contourner, demander
   au propriétaire de copier le contenu.
+- Textes des cartes : base communautaire (`bash tools/fetch_cards.sh`, voir
+  `docs/cards/README.md`) à confronter au texte officiel. 8 cartes de Levia n'y
+  sont pas : demander leur texte au propriétaire.
+- Les 9 decks sont dans `data/decks/` ; `cargo run -p fab-cards --bin deck-stats`.
 - En Silver Age il n'y a pas de sideboard séparé : avant chaque manche, on choisit
   équipement + deck de 40 dans un card-pool de 55 (CR 4.1).
 - **Chaque carte** suit le cycle : `NotCoded` → `Coded` → `Tested` → `Validated`.

@@ -1,0 +1,43 @@
+# IYSLANDER — SAGE Rabblelander (Iyslander)
+Hero: Iyslander
+Class: Elemental Wizard
+Source: SAGE Rabblelander (Iyslander)
+
+Arena:
+1 Crucible of Aetherweave [Weapon]
+1 Blade Beckoner Helm [Head]
+1 Nullrune Hood [Head]
+1 Spellfire Cloak [Chest]
+1 Blade Beckoner Plating [Chest]
+1 Blade Beckoner Gauntlets [Arms]
+1 Nullrune Gloves [Arms]
+1 Aetherstorm Wellingtons [Legs]
+1 Blade Beckoner Boots [Legs]
+1 Unflinching Foothold [Legs]
+
+Deck:
+2 Aethersling (red)
+2 Arcane Polarity (red)
+2 Chest Puff (red)
+2 Fyendal's Fighting Spirit (red)
+2 Ice Bolt (red)
+2 Look Tuff (red)
+2 On the Horizon (red)
+2 Ravenous Rabble (red)
+2 Scar for a Scar (red)
+2 Turn to Mindfire (red)
+1 Unmovable (red)
+2 Voltic Bolt (red)
+2 Wounded Bull (red)
+2 Arcane Twining (blue)
+1 Frost Spike (blue)
+2 Frosting (blue)
+2 Ice Bolt (blue)
+2 Ice Eternal (blue)
+2 Photon Splicing (blue)
+1 Pyroglyphic Protection (blue)
+2 Stir the Aetherwinds (blue)
+1 Timekeeper's Whim (blue)
+1 Timesnap Potion (blue)
+2 Voltic Bolt (blue)
+2 Winter's Bite (blue)

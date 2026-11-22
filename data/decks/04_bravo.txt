@@ -1,0 +1,42 @@
+# BRAVO, FLATTERING SHOWMAN — Sunday Showdown: Mexico City 3rd (Bravo)
+Hero: Bravo, Flattering Showman
+Class: Guardian
+Source: Sunday Showdown: Mexico City 3rd (Bravo)
+
+Arena:
+1 Miller's Grindstone [Weapon]
+1 Blade Beckoner Helm [Head]
+1 Nullrune Hood [Head]
+1 Richter Scale [Chest]
+1 Steelbraid Buckler [Off-Hand]
+1 Gauntlet of Boulderhold [Arms]
+1 Nullrune Gloves [Arms]
+1 Civic Steps [Legs]
+1 Unflinching Foothold [Legs]
+1 Nullrune Boots [Legs]
+
+Deck:
+2 Arcane Polarity (red)
+2 Boulder Drop (red)
+2 Chokeslam (red)
+2 Crash and Bash (red)
+2 Crush Confidence (red)
+2 Debilitate (red)
+2 Fault Line (red)
+2 Pummel (red)
+1 Sit! (red)
+2 Staunch Response (red)
+2 Test of Vigor (red)
+2 Boulder Drop (blue)
+2 Buckling Blow (blue)
+2 Chokeslam (blue)
+2 Clash of Might (blue)
+1 Clash of Mountains (blue)
+2 Clash of Vigor (blue)
+2 Debilitate (blue)
+2 Disable (blue)
+2 Flatten the Field (blue)
+2 Macho Grande (blue)
+1 The Suspense is Killing Me (blue)
+2 Thunder Quake (blue)
+2 Thunk (blue)

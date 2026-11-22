@@ -1,0 +1,42 @@
+# FLORIAN — Sunday Showdown: Bangkok 2nd (Florian)
+Hero: Florian
+Class: Earth Runeblade
+Source: Sunday Showdown: Bangkok 2nd (Florian)
+
+Arena:
+1 Nebula Blade [Weapon]
+1 Scepter of Pain [Weapon]
+1 Annals of Sutcliffe [Off-Hand]
+1 Arcane Lantern [Off-Hand]
+1 Bloodied Oval [Off-Hand]
+1 Crown of Dichotomy [Head]
+1 Helm of Lignum Vitae [Head]
+1 Plume of Evergrowth [Head]
+1 Blossom of Spring [Chest]
+1 Nullrune Gloves [Arms]
+1 Unyielding Grip [Arms]
+1 Well Grounded [Legs]
+
+Deck:
+2 Amplify the Arknight (red)
+2 Arcane Polarity (red)
+2 Arcane Seeds // Life (red)
+1 Autumn's Touch (red)
+2 Chorus of Rotwood (red)
+2 Colors of Aria (red)
+2 Harvest Season (red)
+2 On the Horizon (red)
+2 Read the Runes (red)
+2 Reduce to Runechant (red)
+2 Rootbound Carapace (red)
+2 Runeblood Incantation (red)
+2 Autumn's Touch (yellow)
+2 Fruits of the Forest (yellow)
+2 Reduce to Runechant (yellow)
+2 Rootbound Carapace (yellow)
+2 Amplify the Arknight (blue)
+2 Autumn's Touch (blue)
+2 Fruits of the Forest (blue)
+2 Oath of the Arknight (blue)
+2 Reduce to Runechant (blue)
+2 Sigil of Silphidae (blue)
