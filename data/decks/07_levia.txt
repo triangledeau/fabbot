@@ -1,0 +1,42 @@
+# LEVIA — Sunday Showdown: Atlanta 5th (Levia)
+Hero: Levia
+Class: Shadow Brute
+Source: Sunday Showdown: Atlanta 5th (Levia)
+
+Arena:
+1 Hell Hammer [Weapon]
+1 Buzzard Helm [Head]
+1 Nullrune Hood [Head]
+1 Predatory Plating [Chest]
+1 Skera Strapping [Arms]
+1 Embraforged Gauntlet [Arms]
+1 Hex Gauntlet [Arms]
+1 Hooves of the Shadowbeast [Legs]
+
+Deck:
+2 Boneyard Marauder (red)
+2 Cleave the Heavens (red)
+2 Countdown to Extinction (red)
+2 Dam the Shadowake (red)
+2 Dread Screamer (red)
+2 Endless Maw (red)
+2 Feasting Shadowbeast (red)
+2 Feeding Frenzy (red)
+2 Graveling Growl (red)
+1 Test of Agility (red)
+2 Vigorous Smashup (red)
+2 Agile Windup (yellow)
+1 Consuming Strength (yellow)
+1 Dread Screamer (yellow)
+2 Engulfing Shadows (yellow)
+2 Graveling Growl (yellow)
+2 Vigorous Smashup (yellow)
+1 Clash of Agility (blue)
+2 Cleave the Heavens (blue)
+2 Deadwood Rumbler (blue)
+2 Dread Screamer (blue)
+2 Goremass Summoning (blue)
+2 Smashback Alehorn (blue)
+1 Soul Harvest (blue)
+2 Vigorous Smashup (blue)
+2 Wrecker Romp (blue)

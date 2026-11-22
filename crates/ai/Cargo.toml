@@ -1,0 +1,10 @@
+[package]
+name = "fab-ai"
+description = "Les bots : aléatoire (B0), heuristique (B1), recherche ISMCTS (B2), évaluation apprise (B3)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+fab-engine.workspace = true

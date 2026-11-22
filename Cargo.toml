@@ -1,0 +1,43 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/engine",
+    "crates/cards",
+    "crates/ai",
+    "crates/sim",
+    "crates/fab-match",
+    "crates/ui",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "UNLICENSED"
+publish = false
+
+[workspace.dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+toml = "1.2.2"
+
+fab-engine = { path = "crates/engine" }
+fab-cards = { path = "crates/cards" }
+fab-ai = { path = "crates/ai" }
+fab-match = { path = "crates/fab-match" }
+
+# Mode optimisé (`cargo run --release`) : c'est celui qu'on utilise pour simuler.
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+debug = false
+
+# Les tests restent rapides à compiler mais un peu optimisés,
+# car les tests aléatoires massifs jouent beaucoup de parties.
+[profile.test]
+opt-level = 1
+
+# Profil pour mesurer les performances (optimisé, avec symboles).
+[profile.profiling]
+inherits = "release"
+debug = true

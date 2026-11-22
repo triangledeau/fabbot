@@ -1,0 +1,40 @@
+# HALA — Sunday Showdown: Sydney 5th (Hala)
+Hero: Hala
+Class: Warrior
+Source: Sunday Showdown: Sydney 5th (Hala)
+
+Arena:
+1 Zenith Blade [Weapon]
+1 Helm of Unity [Head]
+1 Nullrune Hood [Head]
+1 Edge Laden Plate [Chest]
+1 Gauntlets of Unity [Arms]
+1 Nullrune Gloves [Arms]
+1 Pillar of Unity [Legs]
+1 Nullrune Boots [Legs]
+
+Deck:
+2 Arcane Polarity (red)
+2 Chest Puff (red)
+2 Display of Craftsmanship (red)
+2 Edict of Steel (red)
+1 Fyendal's Fighting Spirit (red)
+2 Humble (red)
+2 Ironsong Response (red)
+2 On the Horizon (red)
+2 Sharp Incline (red)
+2 Sirens of Safe Harbor (red)
+2 Steelblade Shunt (red)
+2 Swordmaster's Path (red)
+2 Toe the Line (red)
+2 Edict of Steel (yellow)
+2 Sirens of Safe Harbor (yellow)
+2 Brutal Assault (blue)
+2 Cut n' Carve (blue)
+2 Display of Craftsmanship (blue)
+2 Edict of Steel (blue)
+2 Fatal Engagement (blue)
+2 Sharp Incline (blue)
+2 Shove Off (blue)
+2 Sirens of Safe Harbor (blue)
+2 Swordmaster's Path (blue)

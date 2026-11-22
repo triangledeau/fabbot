@@ -1,0 +1,412 @@
+================================================================================
+FLESH AND BLOOD — SILVER AGE ARENA (v0.14.7)
+LISTES COMPLETES DES 9 DECKS DU BOT
+================================================================================
+
+
+================================================================================
+1. IRA, CRIMSON HAZE — Sunday Showdown: Sydney 2nd (Ira)
+================================================================================
+Hero: Ira, Crimson Haze
+Class: Ninja
+Total pool: 55 cartes (7 Arena + 48 Deck — Rouge: 30 | Jaune: 4 | Bleu: 14)
+
+Arena cards (7):
+1x Edge of Autumn [Weapon]
+1x Mask of the Swarming Claw [Head]
+1x Blade Beckoner Helm [Head]
+1x Blood Scent [Chest]
+1x Double Cross Strap [Chest]
+1x Tearing Shuko [Arms]
+1x Pouncing Paws [Legs]
+
+Deck cards (48):
+2x Arcane Polarity (red)
+2x Aspect of Tiger: Body (red)
+2x Bittering Thorns (red)
+2x Blessing of Qi (red)
+2x Bluster Buff (red)
+2x Flying Kick (red)
+2x Growl (red)
+2x Humble (red)
+1x On the Horizon (red)
+2x Pouncing Qi (red)
+1x Razor Reflex (red)
+2x Reinforce the Line (red)
+2x Scar for a Scar (red)
+2x Seek Vengeance (red)
+2x Sirens of Safe Harbor (red)
+2x Untamed (red)
+2x Sirens of Safe Harbor (yellow)
+2x Tiger Eye Reflex (yellow)
+2x Feign Vengeance (blue)
+2x Flying Kick (blue)
+2x Legacy of Ikaru (blue)
+2x Pouncing Qi (blue)
+2x Qi Unleashed (blue)
+2x Seek Vengeance (blue)
+2x Sirens of Safe Harbor (blue)
+
+
+================================================================================
+2. HALA — Sunday Showdown: Sydney 5th (Hala)
+================================================================================
+Hero: Hala
+Class: Warrior
+Total pool: 55 cartes (8 Arena + 47 Deck — Rouge: 25 | Jaune: 4 | Bleu: 18)
+
+Arena cards (8):
+1x Zenith Blade [Weapon]
+1x Helm of Unity [Head]
+1x Nullrune Hood [Head]
+1x Edge Laden Plate [Chest]
+1x Gauntlets of Unity [Arms]
+1x Nullrune Gloves [Arms]
+1x Pillar of Unity [Legs]
+1x Nullrune Boots [Legs]
+
+Deck cards (47):
+2x Arcane Polarity (red)
+2x Chest Puff (red)
+2x Display of Craftsmanship (red)
+2x Edict of Steel (red)
+1x Fyendal's Fighting Spirit (red)
+2x Humble (red)
+2x Ironsong Response (red)
+2x On the Horizon (red)
+2x Sharp Incline (red)
+2x Sirens of Safe Harbor (red)
+2x Steelblade Shunt (red)
+2x Swordmaster's Path (red)
+2x Toe the Line (red)
+2x Edict of Steel (yellow)
+2x Sirens of Safe Harbor (yellow)
+2x Brutal Assault (blue)
+2x Cut n' Carve (blue)
+2x Display of Craftsmanship (blue)
+2x Edict of Steel (blue)
+2x Fatal Engagement (blue)
+2x Sharp Incline (blue)
+2x Shove Off (blue)
+2x Sirens of Safe Harbor (blue)
+2x Swordmaster's Path (blue)
+
+
+================================================================================
+3. DORINTHEA — Sunday Showdown: Mexico City 1st (Dorinthea)
+================================================================================
+Hero: Dorinthea
+Class: Warrior
+Total pool: 55 cartes (9 Arena + 46 Deck — Rouge: 18 | Jaune: 6 | Bleu: 22)
+
+Arena cards (9):
+1x Decimator Great Axe [Weapon]
+1x Helm of Unity [Head]
+1x Nullrune Hood [Head]
+1x Plating of Unity [Chest]
+1x Nullrune Robe [Chest]
+1x Gauntlets of Unity [Arms]
+1x Nullrune Gloves [Arms]
+1x Refraction Bolters [Legs]
+1x Blade Beckoner Boots [Legs]
+
+Deck cards (46):
+2x Arcane Polarity (red)
+2x Felling Swing (red)
+2x Fyendal's Fighting Spirit (red)
+2x Look Tuff (red)
+2x On the Horizon (red)
+2x Overpower (red)
+2x Sharpen Steel (red)
+2x Sirens of Safe Harbor (red)
+2x Steelblade Shunt (red)
+2x Felling Swing (yellow)
+2x Lay Low (yellow)
+2x Steelblade Shunt (yellow)
+2x Display of Craftsmanship (blue)
+2x Felling Swing (blue)
+2x Fyendal's Fighting Spirit (blue)
+2x Hit and Run (blue)
+2x Ironsong Response (blue)
+2x Overpower (blue)
+2x Raging Onslaught (blue)
+2x Sharpen Steel (blue)
+2x Sift (blue)
+2x Sirens of Safe Harbor (blue)
+2x Steelblade Shunt (blue)
+
+
+================================================================================
+4. BRAVO, FLATTERING SHOWMAN — Sunday Showdown: Mexico City 3rd (Bravo)
+================================================================================
+Hero: Bravo, Flattering Showman
+Class: Guardian
+Total pool: 55 cartes (10 Arena + 45 Deck — Rouge: 21 | Jaune: 0 | Bleu: 24)
+
+Arena cards (10):
+1x Miller's Grindstone [Weapon]
+1x Blade Beckoner Helm [Head]
+1x Nullrune Hood [Head]
+1x Richter Scale [Chest]
+1x Steelbraid Buckler [Off-Hand]
+1x Gauntlet of Boulderhold [Arms]
+1x Nullrune Gloves [Arms]
+1x Civic Steps [Legs]
+1x Unflinching Foothold [Legs]
+1x Nullrune Boots [Legs]
+
+Deck cards (45):
+2x Arcane Polarity (red)
+2x Boulder Drop (red)
+2x Chokeslam (red)
+2x Crash and Bash (red)
+2x Crush Confidence (red)
+2x Debilitate (red)
+2x Fault Line (red)
+2x Pummel (red)
+1x Sit! (red)
+2x Staunch Response (red)
+2x Test of Vigor (red)
+2x Boulder Drop (blue)
+2x Buckling Blow (blue)
+2x Chokeslam (blue)
+2x Clash of Might (blue)
+1x Clash of Mountains (blue)
+2x Clash of Vigor (blue)
+2x Debilitate (blue)
+2x Disable (blue)
+2x Flatten the Field (blue)
+2x Macho Grande (blue)
+1x The Suspense is Killing Me (blue)
+2x Thunder Quake (blue)
+2x Thunk (blue)
+
+
+================================================================================
+5. IYSLANDER — SAGE Rabblelander (Iyslander)
+================================================================================
+Hero: Iyslander
+Class: Elemental Wizard
+Total pool: 55 cartes (10 Arena + 45 Deck — Rouge: 25 | Jaune: 0 | Bleu: 20)
+
+Arena cards (10):
+1x Crucible of Aetherweave [Weapon]
+1x Blade Beckoner Helm [Head]
+1x Nullrune Hood [Head]
+1x Spellfire Cloak [Chest]
+1x Blade Beckoner Plating [Chest]
+1x Blade Beckoner Gauntlets [Arms]
+1x Nullrune Gloves [Arms]
+1x Aetherstorm Wellingtons [Legs]
+1x Blade Beckoner Boots [Legs]
+1x Unflinching Foothold [Legs]
+
+Deck cards (45):
+2x Aethersling (red)
+2x Arcane Polarity (red)
+2x Chest Puff (red)
+2x Fyendal's Fighting Spirit (red)
+2x Ice Bolt (red)
+2x Look Tuff (red)
+2x On the Horizon (red)
+2x Ravenous Rabble (red)
+2x Scar for a Scar (red)
+2x Turn to Mindfire (red)
+1x Unmovable (red)
+2x Voltic Bolt (red)
+2x Wounded Bull (red)
+2x Arcane Twining (blue)
+1x Frost Spike (blue)
+2x Frosting (blue)
+2x Ice Bolt (blue)
+2x Ice Eternal (blue)
+2x Photon Splicing (blue)
+1x Pyroglyphic Protection (blue)
+2x Stir the Aetherwinds (blue)
+1x Timekeeper's Whim (blue)
+1x Timesnap Potion (blue)
+2x Voltic Bolt (blue)
+2x Winter's Bite (blue)
+
+
+================================================================================
+6. FLORIAN — Sunday Showdown: Bangkok 2nd (Florian)
+================================================================================
+Hero: Florian
+Class: Earth Runeblade
+Total pool: 55 cartes (12 Arena + 43 Deck — Rouge: 23 | Jaune: 8 | Bleu: 12)
+
+Arena cards (12):
+1x Nebula Blade [Weapon]
+1x Scepter of Pain [Weapon]
+1x Annals of Sutcliffe [Off-Hand]
+1x Arcane Lantern [Off-Hand]
+1x Bloodied Oval [Off-Hand]
+1x Crown of Dichotomy [Head]
+1x Helm of Lignum Vitae [Head]
+1x Plume of Evergrowth [Head]
+1x Blossom of Spring [Chest]
+1x Nullrune Gloves [Arms]
+1x Unyielding Grip [Arms]
+1x Well Grounded [Legs]
+
+Deck cards (43):
+2x Amplify the Arknight (red)
+2x Arcane Polarity (red)
+2x Arcane Seeds // Life (red)
+1x Autumn's Touch (red)
+2x Chorus of Rotwood (red)
+2x Colors of Aria (red)
+2x Harvest Season (red)
+2x On the Horizon (red)
+2x Read the Runes (red)
+2x Reduce to Runechant (red)
+2x Rootbound Carapace (red)
+2x Runeblood Incantation (red)
+2x Autumn's Touch (yellow)
+2x Fruits of the Forest (yellow)
+2x Reduce to Runechant (yellow)
+2x Rootbound Carapace (yellow)
+2x Amplify the Arknight (blue)
+2x Autumn's Touch (blue)
+2x Fruits of the Forest (blue)
+2x Oath of the Arknight (blue)
+2x Reduce to Runechant (blue)
+2x Sigil of Silphidae (blue)
+
+
+================================================================================
+7. LEVIA — Sunday Showdown: Atlanta 5th (Levia)
+================================================================================
+Hero: Levia
+Class: Shadow Brute
+Total pool: 55 cartes (8 Arena + 47 Deck — Rouge: 21 | Jaune: 10 | Bleu: 16)
+
+Arena cards (8):
+1x Hell Hammer [Weapon]
+1x Buzzard Helm [Head]
+1x Nullrune Hood [Head]
+1x Predatory Plating [Chest]
+1x Skera Strapping [Arms]
+1x Embraforged Gauntlet [Arms]
+1x Hex Gauntlet [Arms]
+1x Hooves of the Shadowbeast [Legs]
+
+Deck cards (47):
+2x Boneyard Marauder (red)
+2x Cleave the Heavens (red)
+2x Countdown to Extinction (red)
+2x Dam the Shadowake (red)
+2x Dread Screamer (red)
+2x Endless Maw (red)
+2x Feasting Shadowbeast (red)
+2x Feeding Frenzy (red)
+2x Graveling Growl (red)
+1x Test of Agility (red)
+2x Vigorous Smashup (red)
+2x Agile Windup (yellow)
+1x Consuming Strength (yellow)
+1x Dread Screamer (yellow)
+2x Engulfing Shadows (yellow)
+2x Graveling Growl (yellow)
+2x Vigorous Smashup (yellow)
+1x Clash of Agility (blue)
+2x Cleave the Heavens (blue)
+2x Deadwood Rumbler (blue)
+2x Dread Screamer (blue)
+2x Goremass Summoning (blue)
+2x Smashback Alehorn (blue)
+1x Soul Harvest (blue)
+2x Vigorous Smashup (blue)
+2x Wrecker Romp (blue)
+
+
+================================================================================
+8. DROMAI — Sunday Showdown: Paris 5th (Dromai)
+================================================================================
+Hero: Dromai
+Class: Draconic Illusionist
+Total pool: 55 cartes (7 Arena + 48 Deck — Rouge: 45 | Jaune: 0 | Bleu: 3)
+
+Arena cards (7):
+1x Storm of Sandikai [Weapon]
+1x Silken Shroud [Head]
+1x Smoldering Scales [Chest]
+1x Deep Blue [Chest]
+1x Wave of Reality [Arms]
+1x Seeker's Leggings [Legs]
+1x Time Skippers [Legs]
+
+Deck cards (48):
+2x Billowing Mirage (red)
+2x Blaze Headlong (red)
+2x Dunebreaker Cenipai (red)
+2x Dustup (red)
+2x Essence of Ancestry: Body (red)
+2x Invoke Azvolai (red)
+2x Invoke Cromai (red)
+2x Invoke Kyloria (red)
+2x Invoke Miragai (red)
+2x Invoke Nekria (red)
+1x Invoke Ouvia (red)
+1x Invoke Themai (red)
+2x Invoke Yendurai (red)
+2x Jack Be Quick (red)
+2x Nimblism (red)
+2x Oasis Respite (red)
+2x On the Horizon (red)
+2x Outed (red)
+2x Rake the Embers (red)
+2x Ravenous Rabble (red)
+2x Sand Cover (red)
+2x Scar for a Scar (red)
+1x Snatch (red)
+2x Sweeping Blow (red)
+2x Passing Mirage (blue)
+1x Timesnap Potion (blue)
+
+
+================================================================================
+9. ARAKNI, WEB OF DECEIT — Sunday Showdown: Jakarta 5th (Arakni)
+================================================================================
+Hero: Arakni, Web of Deceit
+Class: Assassin
+Total pool: 55 cartes (8 Arena + 47 Deck — Rouge: 41 | Jaune: 0 | Bleu: 6)
+
+Arena cards (8):
+1x Blossom of Spring [Chest]
+1x Danger Digits [Arms]
+2x Mark of the Huntsman [Weapon]
+1x Nullrune Robe [Chest]
+1x Prey Spotters [Head]
+1x Stalker's Steps [Legs]
+1x Topsy Turvy [Head]
+
+Deck cards (47):
+2x Arcane Polarity (red)
+2x Art of Desire: Body (red)
+2x Bite (red)
+2x Concoct Disorder (red)
+2x Double Trouble (red)
+1x Hurl (red)
+2x Infect (red)
+2x Lair of the Spider (red)
+2x Mark of the Black Widow (red)
+2x Mark of the Funnel Web (red)
+2x Mark the Prey (red)
+2x Nimblism (red)
+2x Oasis Respite (red)
+2x Orb-Weaver Spinneret (red)
+1x Pick Up the Point (red)
+1x Public Bounty (red)
+2x Pursue to the Edge of Oblivion (red)
+1x Pursue to the Pits of Despair (red)
+2x Ravenous Rabble (red)
+1x Razor Reflex (red)
+2x Razor's Edge (red)
+2x Shred (red)
+2x Stains of the Redback (red)
+1x Night's Embrace (blue)
+2x Reaper's Call (blue)
+1x Relentless Pursuit (blue)
+2x Shred (blue)

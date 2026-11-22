@@ -1,0 +1,40 @@
+# IRA, CRIMSON HAZE — Sunday Showdown: Sydney 2nd (Ira)
+Hero: Ira, Crimson Haze
+Class: Ninja
+Source: Sunday Showdown: Sydney 2nd (Ira)
+
+Arena:
+1 Edge of Autumn [Weapon]
+1 Mask of the Swarming Claw [Head]
+1 Blade Beckoner Helm [Head]
+1 Blood Scent [Chest]
+1 Double Cross Strap [Chest]
+1 Tearing Shuko [Arms]
+1 Pouncing Paws [Legs]
+
+Deck:
+2 Arcane Polarity (red)
+2 Aspect of Tiger: Body (red)
+2 Bittering Thorns (red)
+2 Blessing of Qi (red)
+2 Bluster Buff (red)
+2 Flying Kick (red)
+2 Growl (red)
+2 Humble (red)
+1 On the Horizon (red)
+2 Pouncing Qi (red)
+1 Razor Reflex (red)
+2 Reinforce the Line (red)
+2 Scar for a Scar (red)
+2 Seek Vengeance (red)
+2 Sirens of Safe Harbor (red)
+2 Untamed (red)
+2 Sirens of Safe Harbor (yellow)
+2 Tiger Eye Reflex (yellow)
+2 Feign Vengeance (blue)
+2 Flying Kick (blue)
+2 Legacy of Ikaru (blue)
+2 Pouncing Qi (blue)
+2 Qi Unleashed (blue)
+2 Seek Vengeance (blue)
+2 Sirens of Safe Harbor (blue)

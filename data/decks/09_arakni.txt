@@ -1,0 +1,42 @@
+# ARAKNI, WEB OF DECEIT — Sunday Showdown: Jakarta 5th (Arakni)
+Hero: Arakni, Web of Deceit
+Class: Assassin
+Source: Sunday Showdown: Jakarta 5th (Arakni)
+
+Arena:
+1 Blossom of Spring [Chest]
+1 Danger Digits [Arms]
+2 Mark of the Huntsman [Weapon]
+1 Nullrune Robe [Chest]
+1 Prey Spotters [Head]
+1 Stalker's Steps [Legs]
+1 Topsy Turvy [Head]
+
+Deck:
+2 Arcane Polarity (red)
+2 Art of Desire: Body (red)
+2 Bite (red)
+2 Concoct Disorder (red)
+2 Double Trouble (red)
+1 Hurl (red)
+2 Infect (red)
+2 Lair of the Spider (red)
+2 Mark of the Black Widow (red)
+2 Mark of the Funnel Web (red)
+2 Mark the Prey (red)
+2 Nimblism (red)
+2 Oasis Respite (red)
+2 Orb-Weaver Spinneret (red)
+1 Pick Up the Point (red)
+1 Public Bounty (red)
+2 Pursue to the Edge of Oblivion (red)
+1 Pursue to the Pits of Despair (red)
+2 Ravenous Rabble (red)
+1 Razor Reflex (red)
+2 Razor's Edge (red)
+2 Shred (red)
+2 Stains of the Redback (red)
+1 Night's Embrace (blue)
+2 Reaper's Call (blue)
+1 Relentless Pursuit (blue)
+2 Shred (blue)

@@ -1,0 +1,10 @@
+[package]
+name = "fab-match"
+description = "Gestion d'un match en plusieurs manches et de la phase de side."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+fab-engine.workspace = true

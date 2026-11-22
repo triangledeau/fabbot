@@ -1,0 +1,16 @@
+[package]
+name = "fab-sim"
+description = "Simulateur en ligne de commande : N parties en parallèle, statistiques, matrice de matchups."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "fab-sim"
+path = "src/main.rs"
+
+[dependencies]
+fab-engine.workspace = true
+fab-ai.workspace = true
+fab-cards = { path = "../cards" }

@@ -1,0 +1,41 @@
+# DROMAI — Sunday Showdown: Paris 5th (Dromai)
+Hero: Dromai
+Class: Draconic Illusionist
+Source: Sunday Showdown: Paris 5th (Dromai)
+
+Arena:
+1 Storm of Sandikai [Weapon]
+1 Silken Shroud [Head]
+1 Smoldering Scales [Chest]
+1 Deep Blue [Chest]
+1 Wave of Reality [Arms]
+1 Seeker's Leggings [Legs]
+1 Time Skippers [Legs]
+
+Deck:
+2 Billowing Mirage (red)
+2 Blaze Headlong (red)
+2 Dunebreaker Cenipai (red)
+2 Dustup (red)
+2 Essence of Ancestry: Body (red)
+2 Invoke Azvolai (red)
+2 Invoke Cromai (red)
+2 Invoke Kyloria (red)
+2 Invoke Miragai (red)
+2 Invoke Nekria (red)
+1 Invoke Ouvia (red)
+1 Invoke Themai (red)
+2 Invoke Yendurai (red)
+2 Jack Be Quick (red)
+2 Nimblism (red)
+2 Oasis Respite (red)
+2 On the Horizon (red)
+2 Outed (red)
+2 Rake the Embers (red)
+2 Ravenous Rabble (red)
+2 Sand Cover (red)
+2 Scar for a Scar (red)
+1 Snatch (red)
+2 Sweeping Blow (red)
+2 Passing Mirage (blue)
+1 Timesnap Potion (blue)
