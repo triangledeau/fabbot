@@ -55,6 +55,8 @@ pub enum Op {
 #[derive(Clone, Debug)]
 pub struct Ask {
     pub player: PlayerId,
+    /// La question, pour l'interface (« Payer {r} ? Sinon -1{p} »).
+    pub label: &'static str,
     pub options: Vec<Choice>,
 }
 
@@ -110,7 +112,7 @@ pub enum ScriptRef {
 }
 
 impl GameState {
-    pub(crate) fn script_ops(&self, r: ScriptRef) -> &[Op] {
+    pub fn script_ops(&self, r: ScriptRef) -> &[Op] {
         match r {
             ScriptRef::Resolve(c) => &self.db.get(c).resolve,
             ScriptRef::EffectCost(c) => &self.db.get(c).effect_cost,

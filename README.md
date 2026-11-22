@@ -33,7 +33,7 @@ Rust fonctionne aussi bien sur les Surface Pro 9 Intel que sur la version ARM (S
 | Lancer tous les tests | `cargo test --workspace` |
 | Lancer le simulateur (mode optimisé) | `cargo run --release -p fab-sim -- --games 100000` |
 | Simuler en vérifiant la cohérence à chaque coup | `cargo run --release -p fab-sim -- --games 100000 --check` |
-| Lancer l'interface de jeu | `cargo run --release -p fab-ui` |
+| Jouer contre le bot (Hala contre Dorinthea) | `cargo run --release -p fab-ui` (voir `docs/interface.md`) |
 
 La première compilation prend une ou deux minutes, les suivantes sont rapides.
 Toujours utiliser `--release` pour simuler : c'est 10 à 50 fois plus rapide.
@@ -60,8 +60,8 @@ docs/cards/   Tableau de validation des cartes
 | Étape | Contenu | Statut |
 |---|---|---|
 | 0 | Mise en place, squelette | ✅ |
-| 1 | Cœur des règles (zones, tour, ressources, combat, couches) | 🔶 en cours |
-| 2 | Deux premiers decks complets + interface texte | ⏳ |
+| 1 | Cœur des règles (zones, tour, ressources, combat, couches) | ✅ |
+| 2 | Deux premiers decks complets + interface texte | ✅ |
 | 3 | Les 7 autres decks + simulateur rapide | ⏳ |
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ⏳ |
 | 5 | Interface web locale + annulation | ⏳ |
