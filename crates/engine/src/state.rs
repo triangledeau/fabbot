@@ -254,6 +254,17 @@ pub struct CostReduction {
     pub turn: u32,
 }
 
+/// « You may play your next [carte filtrée] this turn as though it were an
+/// instant » (Stir the Aetherwinds), CR 8.1.1d. Utilisée par la prochaine
+/// carte jouée qui vérifie le filtre.
+#[derive(Clone, Copy, Debug)]
+pub struct InstantPermission {
+    pub player: PlayerId,
+    pub filter: fn(&GameState, ObjectId) -> bool,
+    /// Le tour pendant lequel la permission existe (« this turn »).
+    pub turn: u32,
+}
+
 /// « You may play it this turn / during your next turn » : permission de
 /// jouer un objet depuis la zone de bannissement (ex. Crouching Tiger).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -466,6 +477,8 @@ pub struct GameState {
     pub sharpened: Vec<ObjRef>,
     /// Réductions de coût « your next … costs {r} less » en attente.
     pub cost_reductions: Vec<CostReduction>,
+    /// Permissions « play your next … as though it were an instant » en attente.
+    pub instant_permissions: Vec<InstantPermission>,
     /// « Attack action cards they control can't gain {p} during their next
     /// action phase » (Chokeslam) : (joueur, numéro du tour).
     pub no_power_gain: Vec<(PlayerId, u32)>,

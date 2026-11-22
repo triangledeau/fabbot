@@ -153,6 +153,30 @@ ou `add_prevention` (filtre de source, « if you prevent damage this way »).
   `forbid_power_gain_next_action_phase(p)` (Chokeslam).
 - « Loses and can't gain dominate » : `Delta { loses: Keywords::DOMINATE, .. }`.
 
+## Instant, Frostbite, amp, tap (étape 3, deck Iyslander)
+
+- **« As though it were an instant »** (CR 8.1.1d) : capacité statique
+  `CardDef::play_as_instant` (Iyslander : source, carte) ou permission
+  `next_card_as_instant(p, filtre)` (Stir the Aetherwinds, utilisée par la
+  prochaine carte jouée qui vérifie le filtre). `Ctx::as_instant` : la carte
+  ne coûte pas de point d'action.
+- **Surcoût** « cards and abilities cost you an additional {r} » :
+  `CardDef::cost_tax` (Frostbite), ajouté dans `play_cost` et
+  `activation_cost` avant les réductions (CR 5.1.6a).
+- **Coût « XX »** : `CardDef::x_twice` (Ice Eternal, X+X).
+- **« The next card you play this turn … deals that much plus N »** :
+  remplacement de dégâts avec `Replacement::bind` (filtre) ; la carte est
+  mémorisée dans `data` quand elle est jouée, `value` porte le +N
+  (Crucible of Aetherweave, Stir the Aetherwinds). `amp(p, n)` (CR 8.5.47).
+- **Tap** : `tap(id)` renvoie `false` si l'objet est déjà engagé (CR 8.5.55a).
+- **Zones exposées** : `exposed_zones()`, `create_token_in_zone(p, carte,
+  zone)` (Frost Spike, CR 8.5.2c) ; le choix d'une zone est `Choice::Zone`.
+- **Prévention statique** « If you would be dealt arcane damage, prevent N » :
+  `CardDef::prevent_arcane` (Pyroglyphic Protection), `PreventRef::Static`.
+- « Any target » / « target hero » : `wizard::ANY_TARGET`, `wizard::TARGET_HERO`.
+- « Has an arcane damage effect » : `CardDef::arcane_damage`, à cocher sur
+  chaque carte qui inflige des dégâts arcaniques.
+
 ## Les événements et le journal du tour
 
 Tout ce qui se passe (carte jouée, attaque, défense, touche, pitch, dégâts,

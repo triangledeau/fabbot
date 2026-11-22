@@ -11,23 +11,26 @@ met à jour à la fin de chaque tâche.
 | 0 | Mise en place, squelette | ✅ |
 | 1 | Cœur des règles + système d'effets | ✅ (manques connus listés dans `docs/rules/README.md`) |
 | 2 | Deux premiers decks complets + interface texte | ✅ (cartes à valider par le propriétaire avec l'interface) |
-| 3 | Les 7 autres decks + simulateur rapide | ⏳ (Ira ✅, Bravo ✅ ; restent Iyslander, Florian, Levia, Dromai, Arakni) |
+| 3 | Les 7 autres decks + simulateur rapide | ⏳ (Ira ✅, Bravo ✅, Iyslander ✅ ; restent Florian, Levia, Dromai, Arakni) |
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ⏳ |
 | 5 | Interface web locale + annulation | ⏳ |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ⏳ |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
 
-**Branche la plus récente :** `claude/wizardly-pasteur-r91h2w` (deck Bravo,
-partie de `main`). Tant qu'elle n'est pas fusionnée dans `main`, partir de
-cette branche.
+**Branche la plus récente :** `claude/gallant-thompson-jslxg7` (deck
+Iyslander, partie de `main` après la fusion du deck Bravo). Tant qu'elle n'est
+pas fusionnée dans `main`, partir de cette branche.
 
 **Jouer contre le bot :** `cargo run --release -p fab-ui` (mode d'emploi :
 `docs/interface.md`).
 
-**Chiffres actuels :** 317 tests au vert. Simulateur, bots **aléatoires**
+**Chiffres actuels :** 392 tests au vert. Simulateur, bots **aléatoires**
 (ces pourcentages ne disent rien des vrais matchups), 100 000 parties
-vérifiées (`--check`) sans incohérence pour chaque paire, ≈ 8 000 à 9 500
-parties/s dans le conteneur de Claude (4 cœurs) :
+vérifiées (`--check`) sans incohérence pour chaque paire, ≈ 8 000 à 17 000
+parties/s dans le conteneur de Claude (4 cœurs). Iyslander contre chacun des
+4 autres decks et en miroir : 0 erreur ; Iyslander perd ≈ 99 % contre les
+autres decks avec un bot aléatoire, qui envoie la moitié de ses sorts « any
+target » sur son propre héros (normal pour B0, à revoir avec B1). Avant :
 `--decks bravo ira` (Bravo 16,0 %), `--decks bravo hala` (Bravo 59,5 %),
 `--decks bravo dorinthea` (Bravo 61,8 %), `--decks bravo bravo`,
 `--vrais` (Hala 49,8 %, Dorinthea 46,5 %, inchangé). Ira contre Dorinthea :
@@ -42,7 +45,24 @@ cartes de la liste.
 
 ## Questions ouvertes pour le propriétaire
 
-Aucune question bloquante. Deux choix faits pour Bravo, à confirmer en jouant :
+Aucune question bloquante. Trois choix faits pour Iyslander, à confirmer :
+
+1. **Frost Spike** : « Create a Frostbite token in an exposed head, chest,
+   arms, or legs zone ». Le joueur de Frost Spike choisit à la résolution
+   (ce n'est pas une cible) **n'importe quelle** zone exposée, la sienne ou
+   celle de l'adversaire ; le Frostbite entre sous le contrôle du joueur à
+   qui appartient la zone (CR 8.5.2c) et occupe la zone jusqu'à sa
+   destruction. Est-ce bien ça ?
+2. **« As though it were an instant »** (Iyslander depuis l'arsenal, Stir the
+   Aetherwinds) : le moteur utilise toujours la permission quand elle existe
+   (elle évite seulement de dépenser un point d'action). Pour Stir, la
+   permission et le bonus de dégâts sont « consommés » par la prochaine
+   action Wizard non-attaque jouée, qu'elle ait été jouée comme instant ou non.
+3. **Ice Eternal** : la fusion (révéler une carte Ice) est demandée après le
+   paiement des ressources (CR 5.1.9 : les coûts d'effet se paient après) ;
+   seules les cartes Ice encore en main peuvent être révélées.
+
+Deux choix faits pour Bravo, à confirmer en jouant :
 
 1. **Heave** (Thunder Quake) : CR 5.4.7b dit que le joueur décide de
    déclencher la capacité cachée, puis la couche se résout. Le moteur pose une
@@ -72,13 +92,13 @@ précédent si l'épée a quitté ce maillon (notes de Mastery Pack Warrior).
 (commande `t <n>` pour le texte officiel) et passer celles qui sont justes en
 `Validated` dans `docs/cards/STATUS.md` ; signaler tout comportement faux.
 
-Vérifier aussi les cartes d'Ira (`cargo run --release -p fab-ui -- --deck ira`)
-et de Bravo (`cargo run --release -p fab-ui -- --deck bravo`) ; `t <n>` donne
+Vérifier aussi les cartes d'Ira (`cargo run --release -p fab-ui -- --deck ira`),
+de Bravo (`--deck bravo`) et d'Iyslander (`--deck iyslander`) ; `t <n>` donne
 le texte officiel.
 
 **Pour Claude (étape 3, suite) :** coder le deck suivant de la liste,
-**Iyslander** (`data/decks/05_iyslander.txt`). Puis Florian, Levia, Dromai,
-Arakni. Le moteur sait maintenant accorder des
+**Florian** (`data/decks/06_florian.txt`). Puis Levia, Dromai, Arakni.
+Le moteur sait maintenant accorder des
 capacités **déclenchées** (`CardDef::granted`) ; pour Dromai il faudra aussi
 accorder une capacité **activée** (Storm of Sandikai donne une capacité
 d'attaque aux dragons). Vérifier « clash » et « crush » au fil des cartes.
@@ -96,3 +116,4 @@ d'attaque aux dragons). Vérifier « clash » et « crush » au fil des cartes.
 | 2026-11-22 | Réponses aux questions 1 et 3 à 14 : commentaires des règles confirmées, correction de Shove Off (épée partie du maillon), cartes bannies face cachée visibles par leur propriétaire dans l'interface, test Legacy of Ikaru sur une 2e attaque d'Edge of Autumn | `claude/intelligent-mayer-kvrq5b` |
 | 2026-11-22 | Liste officielle Silver Age (40 cartes bannies, 4 héros mis sur la touche) dans `config/silver_age.toml`, noms français traduits par le fichier officiel ; aucune carte de nos decks concernée | `claude/intelligent-mayer-kvrq5b` |
 | 2026-11-22 | Étape 3, deck Bravo : 35 lignes de STATUS.md + tokens Seismic Surge, Might, Vigor, Quicken codés et testés (61 tests de cartes, 7 tests de règles) ; moteur : clash (CR 8.5.45), « win a clash revealing this » depuis le deck, crush (CR 8.4.2, sur les dégâts), heave (capacité cachée depuis la main), suspense (CR 8.3.42), réductions « your next … costs {r} less », « can't gain {p} » (Chokeslam), « loses and can't gain dominate » ; `fab-ui --deck bravo` | `claude/wizardly-pasteur-r91h2w` |
+| 2026-11-22 | Étape 3, deck Iyslander : 25 lignes de STATUS.md + tokens Frostbite et Ponder codés et testés (67 tests de cartes, 8 tests de règles) ; moteur : jouer une action « as though it were an instant » (CR 8.1.1d), surcoût Frostbite (CR 5.1.6a), coût « XX », amp (CR 8.5.47), tap (CR 8.5.55), « the next card you play … plus N » (`Replacement::bind`), zones exposées et token créé dans une zone d'équipement (CR 3.0.1a, 8.5.2c), prévention statique (Pyroglyphic Protection) ; `fab-ui --deck iyslander` | `claude/gallant-thompson-jslxg7` |

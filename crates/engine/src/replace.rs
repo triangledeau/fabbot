@@ -85,6 +85,9 @@ impl Pending {
 pub struct Who {
     pub me: Option<ObjectId>,
     pub controller: PlayerId,
+    /// Valeur mémorisée par l'effet (`Replacement::value`, ex. « plus 3 ») ;
+    /// 0 pour un remplacement statique.
+    pub value: i32,
 }
 
 pub type AppliesFn = fn(&GameState, Who, &Pending) -> bool;
@@ -111,6 +114,12 @@ pub struct Replacement {
     pub controller: PlayerId,
     /// Objet mémorisé par l'effet (ex. « the next card you play »).
     pub data: Option<ObjRef>,
+    /// « The next card you play this turn [qui vérifie ce filtre] » : tant que
+    /// `data` est vide, la prochaine carte jouée par le contrôleur qui vérifie
+    /// le filtre devient `data` (au moment où elle est jouée, CR 5.1.10).
+    pub bind: Option<fn(&GameState, ObjectId) -> bool>,
+    /// Valeur libre de l'effet, transmise dans `Who::value` (ex. amp N).
+    pub value: i32,
     pub optional: bool,
     pub applies: AppliesFn,
     pub apply: ApplyFn,
@@ -134,6 +143,24 @@ impl GameState {
         self.next_effect_id = self.next_effect_id.wrapping_add(1);
         r.id = self.next_effect_id;
         self.replacements.push(r);
+    }
+
+    /// CR 5.1.10 : la carte `card` vient d'être jouée par `p` ; les effets
+    /// « the next card you play this turn … » en attente la mémorisent.
+    pub(crate) fn bind_replacements(&mut self, p: PlayerId, card: ObjectId) {
+        for k in 0..self.replacements.len() {
+            let r = self.replacements[k];
+            if r.controller == p && r.data.is_none() {
+                if let Some(f) = r.bind {
+                    if f(self, card) {
+                        let cr = self.obj_ref(card);
+                        let r = &mut self.replacements[k];
+                        r.data = Some(cr);
+                        r.bind = None;
+                    }
+                }
+            }
+        }
     }
 
     /// Un remplacement statique est-il fonctionnel (CR 1.7.4) ?
@@ -164,6 +191,7 @@ impl GameState {
                     } else {
                         o.owner
                     },
+                    value: 0,
                 };
                 if (d.applies)(self, who, p) {
                     v.push((src, d.optional));
@@ -186,6 +214,7 @@ impl GameState {
         Who {
             me: r.data.filter(|&d| self.is_current(d)).map(|d| d.id),
             controller: r.controller,
+            value: r.value,
         }
     }
 
@@ -202,6 +231,7 @@ impl GameState {
                     } else {
                         o.owner
                     },
+                    value: 0,
                 };
                 (d.apply)(self, who, p);
             }
@@ -364,8 +394,13 @@ impl GameState {
             ReplaceKind::CreateToken => {
                 if let Some(card) = p.card {
                     for _ in 0..p.amount.max(0) {
-                        let id = self.create_token_raw(p.player, card);
-                        self.last_created.push(id);
+                        let id = if p.zone == Zone::Permanent {
+                            Some(self.create_token_raw(p.player, card))
+                        } else {
+                            // Zone d'équipement exposée (Frost Spike).
+                            self.create_token_in_slot(p.player, card, p.zone)
+                        };
+                        self.last_created.extend(id);
                     }
                 }
             }

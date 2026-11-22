@@ -3,6 +3,7 @@
 use crate::effects::PreventRef;
 use crate::ids::{ObjectId, PlayerId};
 use crate::script::Target;
+use crate::zones::Zone;
 
 /// Le type de choix demandé.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -77,6 +78,9 @@ pub enum Choice {
     Trigger(u8),
     /// Appliquer cette prévention.
     Prevent(PreventRef),
+    /// Une zone d'un joueur (ex. Frost Spike : « an exposed head, chest,
+    /// arms, or legs zone »).
+    Zone(PlayerId, Zone),
 }
 
 /// Ce que le moteur attend : « le joueur X doit choisir parmi ces options ».

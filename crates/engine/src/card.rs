@@ -266,6 +266,12 @@ pub struct CardDef {
     pub keywords: Keywords,
     /// Le coût contient X (CR 5.1.3a).
     pub x_cost: bool,
+    /// Coût imprimé « XX » : le coût de base est X+X (CR 2.1, exemple de
+    /// Spark of Genius ; ex. Ice Eternal).
+    pub x_twice: bool,
+    /// La carte a un effet de dégâts arcaniques (« the next card you play this
+    /// turn with an arcane damage effect », Crucible of Aetherweave).
+    pub arcane_damage: bool,
     /// Modes : « Choose 1 » (CR 1.7.5) ; libellés des modes.
     pub modes: Vec<&'static str>,
     /// Cibles déclarées en jouant la carte (CR 5.1.4).
@@ -297,6 +303,17 @@ pub struct CardDef {
     pub spellvoid: u8,
     /// Effets de remplacement statiques (« If … would …, instead … », CR 6.4).
     pub replacements: Vec<ReplacementDef>,
+    /// « Cards and abilities cost you an additional {r} to play or activate »
+    /// (Frostbite, CR 8.6.10) : surcoût pour le contrôleur de ce permanent.
+    pub cost_tax: u8,
+    /// « If you would be dealt arcane damage, prevent N of that damage »
+    /// (Pyroglyphic Protection) : prévention statique, obligatoire, à chaque
+    /// événement de dégâts arcaniques (CR 6.4.10).
+    pub prevent_arcane: u8,
+    /// « You may play [cartes] as though they were instants » (Iyslander) :
+    /// capacité statique du héros, des équipements ou des permanents.
+    /// Arguments : source de la capacité, carte que son contrôleur veut jouer.
+    pub play_as_instant: Option<fn(&GameState, ObjectId, ObjectId) -> bool>,
 }
 
 impl CardDef {

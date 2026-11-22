@@ -100,10 +100,22 @@ qui la vérifient (`crates/cards/tests/regles_etape1.rs`, tests nommés `cr_…`
 | CR 8.3.42 | Suspense (2 compteurs, un retiré à chaque début de tour, détruit à 0) | `state.rs`, `flow.rs` | ✅ testé |
 | CR 5.1.6 | Réduction « your next … costs {r} less » (Seismic Surge) | `play.rs`, `effects.rs` | ✅ testé |
 | CR 8.3.4 | « Loses and can't gain dominate » | `state.rs` | ✅ testé |
+| CR 8.1.1d | Action jouée « as though it were an instant » (Iyslander, Stir the Aetherwinds) : sans point d'action | `play.rs` | ✅ testé |
+| CR 5.1.6a | Augmentations de coût (Frostbite) avant les réductions | `play.rs` | ✅ testé |
+| CR 2.1 | Coût « XX » = X+X (Ice Eternal) | `play.rs` | ✅ testé |
+| CR 8.3.17 | Fusion (Ice Eternal) : coût additionnel optionnel, révéler une carte | carte | ✅ testé |
+| CR 8.5.47 | Amp N | `effects.rs` | ✅ testé |
+| CR 8.5.55 | Engager (tap) un permanent, échec s'il l'est déjà | `effects.rs` | ✅ testé |
+| CR 3.0.1a, 8.5.2c | Zone exposée ; token créé dans la zone d'un joueur, sous son contrôle (Frost Spike) | `effects.rs`, `replace.rs` | ✅ testé |
+| CR 6.4.10 | Prévention statique « If you would be dealt arcane damage, prevent N » (Pyroglyphic Protection) | `effects.rs` | ✅ testé |
 | CR 4.1.3 | Qui choisit le premier joueur (match) | `crates/fab-match` | ✅ testé |
 | TRP 7.4 | Format Silver Age | `config/silver_age.toml` | ✅ testé |
 
 ### Simplifications et manques connus
+
+- **« You may play … as though it were an instant »** (CR 5.1.3d) : quand la
+  permission existe, le moteur la déclare d'office (elle ne fait qu'éviter de
+  dépenser un point d'action ; aucun cas où ne pas l'utiliser serait mieux).
 
 - **Ordre de plusieurs remplacements obligatoires** sur le même événement
   (CR 6.5.1-6.5.4) : le moteur applique ceux des cartes puis ceux des effets,

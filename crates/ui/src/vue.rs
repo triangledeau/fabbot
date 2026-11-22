@@ -116,6 +116,7 @@ fn prevention(g: &GameState, viewer: PlayerId, r: PreventRef) -> String {
         PreventRef::ArcaneBarrier(id) => format!("Arcane barrier de {}", nom(g, id)),
         PreventRef::Ward(id) => format!("Ward de {}", nom(g, id)),
         PreventRef::Spellvoid(id) => format!("Spellvoid de {}", nom(g, id)),
+        PreventRef::Static(id) => format!("Prévention de {}", nom(g, id)),
     }
 }
 
@@ -323,6 +324,16 @@ pub fn option(g: &GameState, d: &Decision, c: Choice) -> String {
             None => format!("Déclenchement n° {i}"),
         },
         Choice::Prevent(r) => prevention(g, v, r),
+        Choice::Zone(p, z) => {
+            let zone = match z {
+                Zone::Head => "tête",
+                Zone::Chest => "torse",
+                Zone::Arms => "bras",
+                Zone::Legs => "jambes",
+                _ => "autre",
+            };
+            format!("Zone {zone} de {} ({})", joueur(v, p), heros(g, p))
+        }
     }
 }
 

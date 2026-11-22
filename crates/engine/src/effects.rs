@@ -49,6 +49,9 @@ pub enum PreventRef {
     Ward(ObjectId),
     /// Spellvoid de cet objet (CR 8.3.15).
     Spellvoid(ObjectId),
+    /// Prévention statique de cet objet : « If you would be dealt arcane
+    /// damage, prevent N of that damage » (`CardDef::prevent_arcane`).
+    Static(ObjectId),
 }
 
 struct PreventCandidate {
@@ -251,6 +254,17 @@ impl GameState {
             );
         for o in sources {
             let def = self.def(o);
+            // Pyroglyphic Protection : obligatoire, à chaque événement (CR 6.4.10).
+            if ev.arcane && def.prevent_arcane > 0 && !self.lost_abilities(o) {
+                let what = PreventRef::Static(o);
+                if !ev.used.contains(&what) {
+                    v.push(PreventCandidate {
+                        what,
+                        optional: false,
+                        amount: Some(def.prevent_arcane as i32),
+                    });
+                }
+            }
             if def.arcane_barrier == 0
                 && def.ward == 0
                 && def.spellvoid == 0
@@ -336,6 +350,10 @@ impl GameState {
             PreventRef::Ward(o) => {
                 let n = (self.prevention_values(o).1 as i32).min(ev.amount);
                 self.destroy(o);
+                ev.amount -= n;
+            }
+            PreventRef::Static(o) => {
+                let n = (self.def(o).prevent_arcane as i32).min(ev.amount);
                 ev.amount -= n;
             }
         }
@@ -846,6 +864,111 @@ impl GameState {
     /// devient publique, sans changer de zone.
     pub fn turn_face_up(&mut self, id: ObjectId) {
         self.obj_mut(id).face_down = false;
+    }
+
+    /// Engager (tap, CR 8.5.55) un permanent. Renvoie `false` si l'effet
+    /// échoue parce qu'il est déjà engagé (CR 8.5.55a).
+    pub fn tap(&mut self, id: ObjectId) -> bool {
+        let o = self.obj_mut(id);
+        if o.tapped || !o.zone.in_arena() {
+            return false;
+        }
+        o.tapped = true;
+        true
+    }
+
+    /// Amp N (CR 8.5.47) : « the next time an event the player controls would
+    /// deal arcane damage this turn, instead it deals that much arcane damage
+    /// plus N ».
+    pub fn amp(&mut self, p: PlayerId, n: u8) {
+        self.add_replacement(crate::replace::Replacement {
+            id: 0,
+            kind: ReplaceKind::Damage,
+            controller: p,
+            data: None,
+            bind: None,
+            value: n as i32,
+            optional: false,
+            applies: |_, w, pending| pending.arcane && pending.player == w.controller,
+            apply: |_, w, pending| pending.amount += w.value,
+            until: Until::EndOfTurn,
+            uses: Some(1),
+        });
+    }
+
+    /// « You may play your next [carte filtrée] this turn as though it were an
+    /// instant » (Stir the Aetherwinds) : la permission sert à la prochaine
+    /// carte jouée qui vérifie le filtre (CR 8.1.1d).
+    pub fn next_card_as_instant(&mut self, p: PlayerId, filter: fn(&GameState, ObjectId) -> bool) {
+        self.instant_permissions
+            .push(crate::state::InstantPermission {
+                player: p,
+                filter,
+                turn: self.turn,
+            });
+    }
+
+    /// Les zones d'équipement exposées (CR 3.0.1a : vides) des deux joueurs.
+    pub fn exposed_zones(&self) -> Vec<(PlayerId, Zone)> {
+        let mut v = Vec::new();
+        for p in PlayerId::BOTH {
+            let ps = self.player(p);
+            for (slot, z) in [
+                (ps.head, Zone::Head),
+                (ps.chest, Zone::Chest),
+                (ps.arms, Zone::Arms),
+                (ps.legs, Zone::Legs),
+            ] {
+                if slot.is_none() {
+                    v.push((p, z));
+                }
+            }
+        }
+        v
+    }
+
+    /// Crée un token dans une zone d'équipement exposée du joueur `p` (Frost
+    /// Spike) : il entre sous le contrôle de ce joueur (CR 8.5.2c). Passe par
+    /// les remplacements de création de tokens.
+    pub fn create_token_in_zone(&mut self, p: PlayerId, card: CardId, zone: Zone) {
+        self.last_created.clear();
+        let mut pending = Pending::new(ReplaceKind::CreateToken, p);
+        pending.card = Some(card);
+        pending.amount = 1;
+        pending.zone = zone;
+        self.run_replace(pending, Vec::new());
+    }
+
+    /// Crée un token, sans remplacement, dans une zone d'équipement de `p`
+    /// (rien si la zone n'est plus exposée).
+    pub(crate) fn create_token_in_slot(
+        &mut self,
+        p: PlayerId,
+        card: CardId,
+        zone: Zone,
+    ) -> Option<ObjectId> {
+        let ps = self.player(p);
+        let free = match zone {
+            Zone::Head => ps.head.is_none(),
+            Zone::Chest => ps.chest.is_none(),
+            Zone::Arms => ps.arms.is_none(),
+            Zone::Legs => ps.legs.is_none(),
+            _ => false,
+        };
+        if !free {
+            return None;
+        }
+        let id = self.new_object(p, card);
+        self.obj_mut(id).zone = zone;
+        let ps = self.player_mut(p);
+        match zone {
+            Zone::Head => ps.head = Some(id),
+            Zone::Chest => ps.chest = Some(id),
+            Zone::Arms => ps.arms = Some(id),
+            _ => ps.legs = Some(id),
+        }
+        self.emit(Event::EnterArena { card: id });
+        Some(id)
     }
 
     /// Marquer un héros (CR 8.5.50).

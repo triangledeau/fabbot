@@ -162,6 +162,7 @@ impl GameState {
             granted_triggers: Vec::new(),
             sharpened: Vec::new(),
             cost_reductions: Vec::new(),
+            instant_permissions: Vec::new(),
             no_power_gain: Vec::new(),
             action_phase: false,
             preventions: Vec::new(),

@@ -35,6 +35,12 @@ pub const NAMES: &[&str] = &[
     "Quicken",
     "Pummel",
     "Unflinching Foothold",
+    "Blade Beckoner Plating",
+    "Blade Beckoner Gauntlets",
+    "Ravenous Rabble",
+    "Wounded Bull",
+    "Unmovable",
+    "Timesnap Potion",
 ];
 
 const G: Supertypes = Supertypes::NONE;
@@ -475,6 +481,133 @@ pub fn add(db: &mut CardDb) {
 
     tokens(db);
     bravo_generics(db);
+    iyslander_generics(db);
+}
+
+/// Cartes génériques du deck Iyslander.
+fn iyslander_generics(db: &mut CardDb) {
+    // Blade Beckoner Plating — Generic Equipment - Chest, déf. 1.
+    // Blade Beckoner Gauntlets — Generic Equipment - Arms, déf. 1.
+    // « This gets +1{d} while defending a weapon attack. Guardwell »
+    db.add(blade_beckoner("Blade Beckoner Plating", Subtypes::CHEST));
+    db.add(blade_beckoner("Blade Beckoner Gauntlets", Subtypes::ARMS));
+
+    // Ravenous Rabble (rouge) — Generic Action - Attack, 5, coût 0, déf. 2.
+    // « When this attacks, reveal the top card of your deck. This gets -X{p},
+    //   where X is the pitch value of the card revealed this way.
+    //   Go again »
+    let mut d = deck_card(
+        "Ravenous Rabble",
+        Color::Red,
+        G,
+        Types::ACTION,
+        Some(0),
+        Some(5),
+        Some(2),
+    );
+    d.keywords = Keywords::GO_AGAIN;
+    d.triggers = vec![TriggerDef {
+        when: when_this_attacks,
+        anywhere: false,
+        targets: vec![],
+        script: vec![Op::Do(|g, c| {
+            // Deck vide : rien n'est révélé, X = 0 (CR 8.5.17).
+            let Some(top) = g.top_of_deck(c.controller) else {
+                return;
+            };
+            g.emit(Event::Revealed {
+                player: c.controller,
+                card: top,
+            });
+            let x = g.def(top).pitch_value() as i16;
+            if let Some(s) = c.source.filter(|&s| g.is_current(s)) {
+                if x > 0 {
+                    g.modify(s, power(-x), Until::EndOfTurn);
+                }
+            }
+        })],
+    }];
+    db.add(d);
+
+    // Wounded Bull (rouge) — Generic Action - Attack, 7, coût 3, déf. 2.
+    // « When this is played, if you have less {h} than an opposing hero, it
+    //   gets +1{p}. »
+    let mut d = deck_card(
+        "Wounded Bull",
+        Color::Red,
+        G,
+        Types::ACTION,
+        Some(3),
+        Some(7),
+        Some(2),
+    );
+    d.triggers = vec![TriggerDef {
+        when: |_, me, e| matches!(e, Event::Played { card, .. } if *card == me),
+        anywhere: false,
+        targets: vec![],
+        script: vec![Op::Do(|g, c| {
+            // Condition vérifiée à la résolution du déclenchement.
+            let me = g.player(c.controller).life;
+            if me < g.player(c.controller.opponent()).life {
+                if let Some(s) = c.source.filter(|&s| g.is_current(s)) {
+                    g.modify(s, power(1), Until::EndOfTurn);
+                }
+            }
+        })],
+    }];
+    db.add(d);
+
+    // Unmovable (rouge) — Generic Defense Reaction, coût 3, déf. 7.
+    // « If this was played from arsenal, it gets +1{d}. »
+    let mut d = deck_card(
+        "Unmovable",
+        Color::Red,
+        G,
+        Types::DEFENSE_REACTION,
+        Some(3),
+        None,
+        Some(7),
+    );
+    d.self_mod = Some(|g, me| {
+        if !matches!(g.obj(me).zone, Zone::Stack | Zone::CombatChain) {
+            return Delta::default();
+        }
+        // La dernière fois que cette carte a été jouée (ce tour).
+        let from = g.turn_events().iter().rev().find_map(|e| match *e {
+            Event::Played { card, from, .. } if card == me => Some(from),
+            _ => None,
+        });
+        if from == Some(Zone::Arsenal) {
+            Delta {
+                defense: 1,
+                ..Default::default()
+            }
+        } else {
+            Delta::default()
+        }
+    });
+    db.add(d);
+
+    // Timesnap Potion (bleu) — Generic Action - Item, coût 0, pas de défense.
+    // « Action -- Destroy this: Gain 2 action points. »
+    let mut d = deck_card(
+        "Timesnap Potion",
+        Color::Blue,
+        G,
+        Types::ACTION,
+        Some(0),
+        None,
+        None,
+    );
+    d.subtypes = Subtypes::ITEM;
+    d.activated = vec![ActivatedDef {
+        label: "Détruire : gagner 2 points d'action",
+        speed: Speed::Action,
+        effect_cost: vec![Op::Do(|g, c| destroy_source(g, c))],
+        script: vec![Op::Do(|g, c| g.gain_action_points(c.controller, 2))],
+        ..Default::default()
+    }];
+    db.add(d);
 }
 
 /// Tokens génériques Might, Vigor et Quicken.

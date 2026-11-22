@@ -32,6 +32,10 @@ with open(CSV, encoding="utf-8-sig", newline="") as fh:
 
 def num(v):
     v = (v or "").strip()
+    # Coût « X » ou « XX » : la partie fixe vaut 0 (CR 1.12.2a), le X est
+    # géré par `x_cost` / `x_twice`.
+    if v and set(v) == {"X"}:
+        return 0
     return int(v) if v.isdigit() else None
 
 

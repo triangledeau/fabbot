@@ -1135,6 +1135,7 @@ impl GameState {
         self.weapon_effects.clear();
         self.play_permissions.retain(|x| x.turn > turn);
         self.cost_reductions.retain(|x| x.turn > turn);
+        self.instant_permissions.retain(|x| x.turn > turn);
         self.no_power_gain.retain(|&(_, t)| t > turn);
         self.granted_triggers
             .retain(|x| !x.until.ends_at_end_of(turn));

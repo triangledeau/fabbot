@@ -10,12 +10,14 @@
 //! - [`generic`] : cartes génériques (sans classe) ;
 //! - [`warrior`] : cartes Warrior (Hala, Dorinthea) ;
 //! - [`ninja`] : cartes Ninja (Ira) ;
-//! - [`guardian`] : cartes Guardian (Bravo).
+//! - [`guardian`] : cartes Guardian (Bravo) ;
+//! - [`wizard`] : cartes Wizard, Elemental et Ice (Iyslander).
 
 pub mod generic;
 pub mod guardian;
 pub mod ninja;
 pub mod warrior;
+pub mod wizard;
 
 use crate::decklist::{self, Decklist};
 use fab_engine::card::{CardDb, CardDef, Color, Delta, Keywords, Subtypes, Supertypes, Types};
@@ -29,6 +31,7 @@ pub fn build() -> CardDb {
     warrior::add(&mut db);
     ninja::add(&mut db);
     guardian::add(&mut db);
+    wizard::add(&mut db);
     db
 }
 
@@ -40,6 +43,7 @@ pub fn build_names() -> Vec<&'static str> {
         .chain(warrior::NAMES.iter())
         .chain(ninja::NAMES.iter())
         .chain(guardian::NAMES.iter())
+        .chain(wizard::NAMES.iter())
         .copied()
         .collect()
 }

@@ -582,6 +582,8 @@ fn deck_cards(db: &mut CardDb) {
                 kind: ReplaceKind::Sharpen,
                 controller: c.controller,
                 data: None,
+                bind: None,
+                value: 0,
                 optional: false,
                 applies: |g, w, p| {
                     p.player == w.controller && p.object.is_some_and(|o| is_sword(g, o))
