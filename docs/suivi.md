@@ -24,7 +24,7 @@ cette branche.
 **Jouer contre le bot :** `cargo run --release -p fab-ui` (mode d'emploi :
 `docs/interface.md`).
 
-**Chiffres actuels :** 248 tests au vert. Simulateur, bots **aléatoires**
+**Chiffres actuels :** 249 tests au vert. Simulateur, bots **aléatoires**
 (ces pourcentages ne disent rien des vrais matchups), 100 000 parties
 vérifiées (`--check`) sans incohérence pour chaque paire, ≈ 7 500 à 8 700
 parties/s dans le conteneur de Claude (4 cœurs) :
@@ -41,8 +41,7 @@ cartes de la liste.
 
 ## Questions ouvertes pour le propriétaire
 
-1. **Liste officielle des bannissements Silver Age** (fabtcg.com, inaccessible
-   aux outils automatiques) : à copier-coller si on veut la confirmer.
+Aucune pour l'instant.
 
 Questions réglées le 2026-11-22 (réponses du propriétaire, citées en
 commentaire dans le code) : action non-attaque à l'étape de résolution
@@ -51,6 +50,8 @@ ward sans dégâts restants (CR 1.9.1b), Steelblade Shunt, Decimator Great Axe,
 Flurry + Dorinthea, On the Horizon, cartes bannies face cachée (visibles par
 leur propriétaire, CR 3.0.3a), combo « last attack », Crouching Tiger (une
 carte, pas un token), Blessing of Qi (CR 6.2.2a), Aspect of Tiger: Body.
+Liste officielle Silver Age (bannies, héros mis sur la touche) copiée dans
+`config/silver_age.toml` : aucune carte de nos decks n'est concernée.
 Correction : **Shove Off** ne peut plus viser une carte d'un maillon
 précédent si l'épée a quitté ce maillon (notes de Mastery Pack Warrior).
 
@@ -82,3 +83,4 @@ d'attaque aux dragons). Vérifier « clash » et « crush » au fil des cartes.
 | 2026-11-22 | Fin de l'étape 2 : interface texte `fab-ui` (état visible du joueur, options numérotées, annulation illimitée, texte officiel des cartes avec `t`, journal des événements) ; moteur : `GameState::record` (journal complet facultatif), libellé des questions des cartes (`Ask::label`) ; `docs/interface.md` | `claude/fervent-ride-8osack` |
 | 2026-11-22 | Étape 3, deck Ira : 27 lignes de STATUS.md + Crouching Tiger codées et testées (45 tests Ninja, 12 tests génériques, 8 tests de règles) ; moteur : jouer depuis la zone de bannissement (permission), cartes créées dans le bannissement, ephemeral, ambush, capacités déclenchées accordées (`CardDef::granted`), effets « this combat chain » sur la prochaine attaque, modes proposés seulement s'ils ont une cible ; `fab-sim --decks a b` | `claude/intelligent-mayer-kvrq5b` |
 | 2026-11-22 | Réponses aux questions 1 et 3 à 14 : commentaires des règles confirmées, correction de Shove Off (épée partie du maillon), cartes bannies face cachée visibles par leur propriétaire dans l'interface, test Legacy of Ikaru sur une 2e attaque d'Edge of Autumn | `claude/intelligent-mayer-kvrq5b` |
+| 2026-11-22 | Liste officielle Silver Age (40 cartes bannies, 4 héros mis sur la touche) dans `config/silver_age.toml`, noms français traduits par le fichier officiel ; aucune carte de nos decks concernée | `claude/intelligent-mayer-kvrq5b` |

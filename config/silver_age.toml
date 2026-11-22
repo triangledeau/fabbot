@@ -28,10 +28,59 @@ max_copies_restricted = 1
 #  - « rare »   : a été imprimée au moins une fois en rareté rare (et n'est pas common).
 legal_rarities = ["Basic", "Common", "Rare"]
 
-# Liste officielle des cartes bannies / restreintes / héros mis au banc
-# (« Card Legality Policy » sur fabtcg.com) : NON RÉCUPÉRÉE, le site bloque
-# les accès automatisés. À remplir à la main depuis la page officielle.
-banned = []
+# Liste officielle (« Politique de légalité des cartes », section Silver Age,
+# https://fabtcg.com/fr/regles-et-politiques/politique-de-legalite-des-cartes/#silver-age),
+# copiée par le propriétaire le 2026-11-22 (le site bloque les accès
+# automatisés). La page est en français : chaque nom a été traduit par le nom
+# anglais de la même carte (même card_id) dans le fichier officiel LSS.
+#
+# Cartes bannies (40). Aucune carte restreinte n'est listée.
+banned = [
+    "Aether Flare",
+    "Aether Ironweave",
+    "Ball Lightning",
+    "Beaten Trackers",
+    "Belittle",
+    "Bonds of Ancestry",
+    "Bracers of Belief",
+    "Count Your Blessings",
+    "Deadwood Dirge",
+    "Drone of Brutality",
+    "Ebon Fold",
+    "Electromagnetic Somersault",
+    "Emeritus Scolding",
+    "Fate Foreseen",
+    "Fiddler's Green",
+    "Flic Flak",
+    "Goliath Gauntlet",
+    "Harmonized Kodachi",
+    "Heartened Cross Strap",
+    "Honing Hood",
+    "Lightning Press",
+    "Mask of Three Tails",
+    "Nimby",
+    "Old Knocker",
+    "Plunder Run",
+    "Pulping",
+    "Ragamuffin's Hat",
+    "Reality Refractor",
+    "Reaping Blade",
+    "Rosetta Thorn",
+    "Sigil of Solace",
+    "Sigil of Suffering",
+    "Sink Below",
+    "Snapback",
+    "Snapdragon Scalers",
+    "Stubby Hammerers",
+    "Vest of the First Fist",
+    "Volzar, the Lightning Rod",
+    "Waning Moon",
+    "Zephyr Needle",
+]
 restricted = []
-benched_heroes = []
-legality_list_verified = false
+# Héros mis sur la touche, de l'avant-première d'Usurp the Shadow Throne
+# (18 septembre 2026) jusqu'à celle d'Outbreak (5 février 2027) ; Chane
+# jusqu'à l'extension 22 (2027). « Bruyère » = Briar, « Vieilhom » = Oldhim.
+# À mettre à jour à chaque saison.
+benched_heroes = ["Chane", "Briar", "Oldhim", "Oscilio"]
+legality_list_verified = true
