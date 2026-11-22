@@ -8,9 +8,11 @@
 //!
 //! Organisation :
 //! - [`generic`] : cartes génériques (sans classe) ;
-//! - [`warrior`] : cartes Warrior (Hala, Dorinthea).
+//! - [`warrior`] : cartes Warrior (Hala, Dorinthea) ;
+//! - [`ninja`] : cartes Ninja (Ira).
 
 pub mod generic;
+pub mod ninja;
 pub mod warrior;
 
 use crate::decklist::{self, Decklist};
@@ -23,6 +25,7 @@ pub fn build() -> CardDb {
     let mut db = CardDb::new();
     generic::add(&mut db);
     warrior::add(&mut db);
+    ninja::add(&mut db);
     db
 }
 
@@ -32,6 +35,7 @@ pub fn build_names() -> Vec<&'static str> {
     generic::NAMES
         .iter()
         .chain(warrior::NAMES.iter())
+        .chain(ninja::NAMES.iter())
         .copied()
         .collect()
 }

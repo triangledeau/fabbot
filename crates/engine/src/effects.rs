@@ -502,10 +502,19 @@ impl GameState {
         self.last_created.first().copied()
     }
 
-    /// Crée un token dans la zone permanente, sous le contrôle de `p`, sans
-    /// remplacement.
-    pub(crate) fn create_token_raw(&mut self, p: PlayerId, card: CardId) -> ObjectId {
-        debug_assert!(self.db.get(card).types.has(Types::TOKEN));
+    /// « Create a Crouching Tiger in your banished zone » : crée une carte
+    /// (pas un token : ex. Crouching Tiger, carte avec ephemeral) dans la zone
+    /// de bannissement de `p`, et la renvoie. Aucune carte des 9 decks ne
+    /// remplace cette création.
+    pub fn create_card_banished(&mut self, p: PlayerId, card: CardId) -> ObjectId {
+        let id = self.new_object(p, card);
+        self.obj_mut(id).zone = Zone::Banished;
+        self.player_mut(p).banished.push(id);
+        id
+    }
+
+    /// Un nouvel objet (hors de toute zone) appartenant à `p`.
+    fn new_object(&mut self, p: PlayerId, card: CardId) -> ObjectId {
         self.objects.push(Object {
             card,
             owner: p,
@@ -528,10 +537,54 @@ impl GameState {
         if !self.db.get(card).replacements.is_empty() {
             self.replacement_objects.push(id);
         }
+        id
+    }
+
+    /// Crée un token, sans remplacement, dans la zone permanente (sous le
+    /// contrôle de `p`) ou dans la zone de bannissement de `p`.
+    pub(crate) fn create_token_raw(&mut self, p: PlayerId, card: CardId) -> ObjectId {
+        debug_assert!(self.db.get(card).types.has(Types::TOKEN));
+        let id = self.new_object(p, card);
         self.obj_mut(id).zone = Zone::Permanent;
         self.permanents.push(id);
         self.emit(Event::EnterArena { card: id });
         id
+    }
+
+    /// « You may play it this turn » (`turn = self.turn`) ou « during your
+    /// next turn » (`turn = self.next_turn_of(p)`) : `p` peut jouer cet objet
+    /// depuis sa zone de bannissement pendant le tour `turn`.
+    pub fn permit_play(&mut self, p: PlayerId, card: ObjectId, turn: u32) {
+        let card = self.obj_ref(card);
+        self.play_permissions.push(crate::state::PlayPermission {
+            card,
+            player: p,
+            turn,
+        });
+    }
+
+    /// L'objet peut-il être joué depuis la zone de bannissement par `p` ce tour ?
+    pub fn play_permitted(&self, p: PlayerId, card: ObjectId) -> bool {
+        let o = self.obj(card);
+        o.zone == Zone::Banished
+            && !o.face_down
+            && self
+                .play_permissions
+                .iter()
+                .any(|x| x.player == p && x.turn == self.turn && x.card == o.obj_ref(card))
+    }
+
+    /// « Target attack gets "When this hits, …" » : accorde à `target` la
+    /// capacité déclenchée n° `index` de `CardDef::granted` de la carte `card`.
+    pub fn grant_trigger(&mut self, target: ObjRef, card: CardId, index: u8, until: Until) {
+        if self.is_current(target) {
+            self.granted_triggers.push(crate::state::GrantedTrigger {
+                target,
+                card,
+                index,
+                until,
+            });
+        }
     }
 
     /// Un objet « gets » +N / go again… (CR 8.5.8, 8.5.9).
@@ -561,6 +614,28 @@ impl GameState {
             cards_only,
             turn: None,
             weapon: None,
+            combat_chain: false,
+        });
+    }
+
+    /// « The next [attaque filtrée] you play this combat chain gets … »
+    /// (ex. Growl : « the next Crouching Tiger you play this combat chain ») :
+    /// carte d'attaque jouée seulement, l'effet se termine quand la chaîne de
+    /// combat se ferme (CR 7.7.7).
+    pub fn next_attack_this_chain(
+        &mut self,
+        p: PlayerId,
+        filter: Option<fn(&GameState, ObjectId) -> bool>,
+        delta: Delta,
+    ) {
+        self.next_attack_effects.push(NextAttackEffect {
+            player: p,
+            filter,
+            delta,
+            cards_only: true,
+            turn: None,
+            weapon: None,
+            combat_chain: true,
         });
     }
 
@@ -581,6 +656,7 @@ impl GameState {
             cards_only: false,
             turn: Some(turn),
             weapon: None,
+            combat_chain: false,
         });
     }
 
@@ -594,6 +670,7 @@ impl GameState {
             cards_only: false,
             turn: None,
             weapon: Some(weapon),
+            combat_chain: false,
         });
     }
 

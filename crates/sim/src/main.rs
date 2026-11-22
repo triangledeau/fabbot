@@ -9,6 +9,9 @@
 //! `--vrais` : les vrais decks Hala contre Dorinthea (`data/decks/`), avec un
 //! choix provisoire d'équipement et de 40 cartes (`real::default_loadout`).
 //!
+//! `--decks ira hala` : deux vrais decks au choix (début du nom de fichier
+//! dans `data/decks/`, sans le numéro : `ira`, `hala`, `dorinthea`…).
+//!
 //! Étape 1 : parties « bot aléatoire contre bot aléatoire » avec les decks
 //! d'essai (cartes fictives). Sert à mesurer la vitesse du moteur et, avec
 //! `--check`, à vérifier la cohérence de l'état après chaque décision.
@@ -52,33 +55,63 @@ fn main() {
     let check = args.iter().any(|a| a == "--check");
     let seed0 = get("--seed", 1);
 
-    let vrais = args.iter().any(|a| a == "--vrais");
+    // Vrais decks : `--vrais` (Hala contre Dorinthea) ou `--decks a b`.
+    let choisis: Option<[String; 2]> = match args.iter().position(|a| a == "--decks") {
+        Some(i) => Some([
+            args.get(i + 1).expect("--decks a b").clone(),
+            args.get(i + 2).expect("--decks a b").clone(),
+        ]),
+        None if args.iter().any(|a| a == "--vrais") => {
+            Some(["hala".to_string(), "dorinthea".to_string()])
+        }
+        None => None,
+    };
+    let vrais = choisis.is_some();
     let db = Arc::new(if vrais {
         real::build()
     } else {
         test_set::build()
     });
-    let (nom0, nom1) = if vrais {
-        ("Hala", "Dorinthea")
-    } else {
-        ("deck agressif", "deck défensif")
-    };
-    let lo = if vrais {
+    let (noms, lo) = if let Some(choisis) = &choisis {
         let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/decks");
-        let lire = |f: &str| {
-            let text = std::fs::read_to_string(dir.join(f)).expect("liste de deck");
+        let lire = |nom: &str| {
+            let fichier = std::fs::read_dir(&dir)
+                .expect("dossier data/decks")
+                .filter_map(|e| e.ok())
+                .map(|e| e.file_name().to_string_lossy().into_owned())
+                .find(|f| {
+                    f.ends_with(".txt")
+                        && f.split_once('_')
+                            .is_some_and(|(_, reste)| reste.starts_with(&nom.to_lowercase()))
+                })
+                .unwrap_or_else(|| panic!("aucun deck « {nom} » dans data/decks"));
+            let text = std::fs::read_to_string(dir.join(&fichier)).expect("liste de deck");
             let list = Decklist::parse(&text).expect("liste valide");
-            real::default_loadout(&db, &list).expect("cartes codées")
+            let lo =
+                real::default_loadout(&db, &list).unwrap_or_else(|e| panic!("{fichier} : {e}"));
+            (list.hero.clone(), lo)
         };
-        [lire("02_hala.txt"), lire("03_dorinthea.txt")]
+        let (n0, l0) = lire(&choisis[0]);
+        let (n1, l1) = lire(&choisis[1]);
+        ([n0, n1], [l0, l1])
     } else if args.iter().any(|a| a == "--mecanismes") {
-        test_set::mechanics_loadouts(&db)
+        (
+            [
+                "deck mécanismes 1".to_string(),
+                "deck mécanismes 2".to_string(),
+            ],
+            test_set::mechanics_loadouts(&db),
+        )
     } else {
-        [
-            test_set::aggro_loadout(&db),
-            test_set::defensive_loadout(&db),
-        ]
+        (
+            ["deck agressif".to_string(), "deck défensif".to_string()],
+            [
+                test_set::aggro_loadout(&db),
+                test_set::defensive_loadout(&db),
+            ],
+        )
     };
+    let (nom0, nom1) = (noms[0].as_str(), noms[1].as_str());
     println!("fab-sim — {games} parties, {threads} threads, vérification : {check}");
     let start = Instant::now();
     let per = games.div_ceil(threads);

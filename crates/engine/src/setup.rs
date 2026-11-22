@@ -158,6 +158,8 @@ impl GameState {
             check_allies: false,
             next_attack_effects: Vec::new(),
             weapon_effects: Vec::new(),
+            play_permissions: Vec::new(),
+            granted_triggers: Vec::new(),
             sharpened: Vec::new(),
             preventions: Vec::new(),
             replacements: Vec::new(),

@@ -13,7 +13,11 @@ use fab_engine::{CardDb, GameSetup, GameState, Loadout, PlayerId};
 use std::sync::Arc;
 
 /// Les decks jouables dans l'interface : (nom court, fichier de `data/decks/`).
-pub const DECKS: &[(&str, &str)] = &[("hala", "02_hala.txt"), ("dorinthea", "03_dorinthea.txt")];
+pub const DECKS: &[(&str, &str)] = &[
+    ("ira", "01_ira.txt"),
+    ("hala", "02_hala.txt"),
+    ("dorinthea", "03_dorinthea.txt"),
+];
 
 /// Charge un deck jouable par son nom court, avec le choix provisoire
 /// d'équipement et de 40 cartes (`real::default_loadout`).

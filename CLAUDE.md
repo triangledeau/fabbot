@@ -70,7 +70,7 @@ humain) répond par l'index d'une option. Tout choix de joueur passe par là.
 - Tests de règles : `crates/cards/tests/regles_*.rs`, un test par article du
   CR, nommé `cr_x_y_z_description`. Cartes fictives : `fab_cards::test_set`.
 - Test massif : `cargo run --release -p fab-sim -- --games 100000 --check`
-  (`--vrais` : vrais decks Hala contre Dorinthea).
+  (`--vrais` : vrais decks Hala contre Dorinthea ; `--decks ira hala` : deux vrais decks au choix).
 - Organisation du moteur et façon d'écrire une carte : `docs/moteur.md`.
 - Harnais de test commun : `crates/cards/tests/commun/mod.rs` (`partie`, `choisir`,
   `passer_jusqua`, `finir_le_tour`).

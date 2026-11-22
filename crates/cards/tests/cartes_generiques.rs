@@ -499,3 +499,261 @@ fn blade_beckoner_boots_contre_une_attaque_de_carte_pas_de_bonus() {
     fin_du_combat(&mut t);
     assert_eq!(t.vie(P1), 17);
 }
+
+// ---------------------------------------------------------------------------
+// Cartes génériques du deck Ira
+// ---------------------------------------------------------------------------
+
+/// Comme `duel`, avec des équipements.
+fn duel_equipe(
+    main0: &[(&str, Option<Color>)],
+    main1: &[(&str, Option<Color>)],
+    arena0: &[&str],
+    arena1: &[&str],
+) -> Partie {
+    partie_vraie(
+        ["Essai Héros", "Essai Héros"],
+        main0,
+        RIEN,
+        main1,
+        RIEN,
+        arena0,
+        arena1,
+    )
+}
+
+/// P0 attaque avec son arme en pitchant un Essai Rempart ; renvoie la proxy.
+fn attaquer_arme(t: &mut Partie, nom: &str) -> ObjectId {
+    let w = t.equipement(P0, nom);
+    t.choisir(Choice::Activate(w, 0));
+    pitcher(t, "Essai Rempart", B);
+    let i =
+        t.g.objects
+            .iter()
+            .rposition(|o| o.proxy_of == Some(w))
+            .expect("attaque-proxy");
+    ObjectId(i as u32)
+}
+
+fn jusqua_reaction(t: &mut Partie) {
+    passer_jusqua_que(t, |t| {
+        t.g.combat.step == Some(fab_engine::state::CombatStep::Reaction)
+    });
+}
+
+#[test]
+fn blade_beckoner_helm_plus_un_en_defense_contre_une_attaque_d_arme() {
+    let mut t = duel_equipe(
+        &[RAMPART, ("Essai Garde", Y), RAMPART, RAMPART],
+        &[RAMPART; 4],
+        &["Edge of Autumn"],
+        &["Blade Beckoner Helm"],
+    );
+    let helm = t.equipement(P1, "Blade Beckoner Helm");
+    assert_eq!(t.g.defense(helm), 1);
+    attaquer_arme(&mut t, "Edge of Autumn");
+    passer_jusqua_que(&mut t, |t| t.kind() == DecisionKind::Defend);
+    t.choisir(Choice::Defend(helm));
+    t.choisir(Choice::Pass);
+    assert_eq!(t.g.defense(helm), 2);
+    fin_du_combat(&mut t);
+    // Guardwell : autant de compteurs -1{d} que sa défense (2).
+    assert_eq!(t.g.obj(helm).defense_counters, -2);
+    assert_eq!(t.vie(P1), 20);
+}
+
+#[test]
+fn blade_beckoner_helm_pas_de_bonus_contre_une_carte_d_attaque() {
+    let mut t = duel_equipe(
+        &[("Essai Assaut", Y), ("Essai Garde", Y), RAMPART, RAMPART],
+        &[RAMPART; 4],
+        &[],
+        &["Blade Beckoner Helm"],
+    );
+    let helm = t.equipement(P1, "Blade Beckoner Helm");
+    jouer(&mut t, "Essai Assaut", Y);
+    passer_jusqua_que(&mut t, |t| t.kind() == DecisionKind::Defend);
+    t.choisir(Choice::Defend(helm));
+    t.choisir(Choice::Pass);
+    assert_eq!(t.g.defense(helm), 1);
+    fin_du_combat(&mut t);
+    assert_eq!(t.g.obj(helm).defense_counters, -1, "guardwell");
+    assert_eq!(t.vie(P1), 19);
+}
+
+#[test]
+fn bluster_buff_si_on_paie_garde_6() {
+    let mut t = duel(
+        &[("Bluster Buff", R), RAMPART, RAMPART, RAMPART],
+        &[RAMPART; 4],
+    );
+    jouer(&mut t, "Bluster Buff", R);
+    pitcher(&mut t, "Essai Rempart", B);
+    passer_jusqua_que(&mut t, |t| t.kind() == DecisionKind::Effect);
+    t.choisir(Choice::Yes);
+    assert_eq!(t.g.player(P0).resource_points, 1);
+    defendre_avec(&mut t, &[]);
+    fin_du_combat(&mut t);
+    assert_eq!(t.vie(P1), 14);
+}
+
+#[test]
+fn bluster_buff_sans_payer_perd_1() {
+    let mut t = duel(
+        &[("Bluster Buff", R), RAMPART, RAMPART, RAMPART],
+        &[RAMPART; 4],
+    );
+    jouer(&mut t, "Bluster Buff", R);
+    pitcher(&mut t, "Essai Rempart", B);
+    passer_jusqua_que(&mut t, |t| t.kind() == DecisionKind::Effect);
+    t.choisir(Choice::No);
+    defendre_avec(&mut t, &[]);
+    fin_du_combat(&mut t);
+    assert_eq!(t.vie(P1), 15);
+}
+
+#[test]
+fn razor_reflex_mode_1_attaque_d_epee_plus_trois() {
+    let mut t = duel_equipe(
+        &[("Razor Reflex", R), ("Essai Garde", Y), RAMPART, RAMPART],
+        &[RAMPART; 4],
+        &["Edge of Autumn"],
+        &[],
+    );
+    let proxy = attaquer_arme(&mut t, "Edge of Autumn");
+    jusqua_reaction(&mut t);
+    jouer(&mut t, "Razor Reflex", R);
+    // Seul le premier mode a une cible (une attaque d'arme, pas une carte).
+    assert_eq!(t.options(), vec![Choice::Mode(0)]);
+    t.choisir(Choice::Mode(0));
+    passer_jusqua_que(&mut t, |t| t.g.stack.is_empty());
+    assert_eq!(t.g.power(proxy), 4);
+}
+
+#[test]
+fn razor_reflex_mode_2_carte_de_cout_1_plus_trois_et_go_again_si_elle_touche() {
+    let mut t = duel(
+        &[
+            ("Essai Frappe", R),
+            ("Razor Reflex", R),
+            ("Essai Garde", Y),
+            RAMPART,
+        ],
+        &[RAMPART; 4],
+    );
+    let f = jouer(&mut t, "Essai Frappe", R);
+    pitcher(&mut t, "Essai Rempart", B);
+    defendre_avec(&mut t, &[]);
+    jusqua_reaction(&mut t);
+    jouer(&mut t, "Razor Reflex", R);
+    assert_eq!(t.options(), vec![Choice::Mode(1)]);
+    t.choisir(Choice::Mode(1));
+    passer_jusqua_que(&mut t, |t| t.g.stack.is_empty());
+    assert_eq!(t.g.power(f), 7);
+    fin_du_combat(&mut t);
+    assert_eq!(t.vie(P1), 13);
+    assert_eq!(t.g.player(P0).action_points, 1, "go again après la touche");
+}
+
+#[test]
+fn razor_reflex_mode_2_bloquee_pas_de_go_again() {
+    let mut t = duel(
+        &[("Essai Frappe", R), ("Razor Reflex", B), RAMPART, RAMPART],
+        &[RAMPART; 4],
+    );
+    jouer(&mut t, "Essai Frappe", R);
+    pitcher(&mut t, "Essai Rempart", B);
+    // Défense 4 + 4 contre 4 + 1.
+    defendre_avec(&mut t, &[RAMPART, RAMPART]);
+    jusqua_reaction(&mut t);
+    jouer(&mut t, "Razor Reflex", B);
+    t.choisir(Choice::Mode(1));
+    fin_du_combat(&mut t);
+    assert_eq!(t.vie(P1), 20);
+    assert_eq!(t.g.player(P0).action_points, 0);
+}
+
+#[test]
+fn razor_reflex_injouable_sur_une_carte_de_cout_2() {
+    let mut t = duel(
+        &[
+            ("Brutal Assault", R),
+            ("Razor Reflex", R),
+            ("Essai Garde", Y),
+            RAMPART,
+        ],
+        &[RAMPART; 4],
+    );
+    jouer(&mut t, "Brutal Assault", R);
+    pitcher(&mut t, "Essai Rempart", B);
+    defendre_avec(&mut t, &[]);
+    jusqua_reaction(&mut t);
+    let r = t.en_main(P0, "Razor Reflex", R);
+    assert!(!t.peut(Choice::Play(r)));
+}
+
+#[test]
+fn reinforce_the_line_carte_d_attaque_qui_defend_plus_quatre() {
+    let mut t = duel(
+        &[("Brutal Assault", R), RAMPART, RAMPART, RAMPART],
+        &[
+            ("Essai Frappe", R),
+            ("Reinforce the Line", R),
+            ("Essai Garde", Y),
+            RAMPART,
+        ],
+    );
+    jouer(&mut t, "Brutal Assault", R);
+    pitcher(&mut t, "Essai Rempart", B);
+    defendre_avec(&mut t, &[("Essai Frappe", R)]);
+    let f = *t.g.combat.links[0].defenders.first().unwrap();
+    assert_eq!(t.g.defense(f), 3);
+    passer_jusqua_que(&mut t, |t| {
+        t.joueur() == P1 && t.kind() == DecisionKind::Priority
+    });
+    jouer(&mut t, "Reinforce the Line", R);
+    passer_jusqua_que(&mut t, |t| t.g.stack.is_empty());
+    assert_eq!(t.g.defense(f), 7);
+    fin_du_combat(&mut t);
+    assert_eq!(t.vie(P1), 20, "6 contre 7");
+}
+
+#[test]
+fn reinforce_the_line_pas_sur_une_carte_qui_n_est_pas_une_attaque() {
+    let mut t = duel(
+        &[("Essai Assaut", R), RAMPART, RAMPART, RAMPART],
+        &[("Reinforce the Line", B), RAMPART, RAMPART, RAMPART],
+    );
+    jouer(&mut t, "Essai Assaut", R);
+    defendre_avec(&mut t, &[RAMPART]);
+    fin_du_combat(&mut t);
+    // Reinforce the Line n'a jamais été jouable : elle est encore en main.
+    t.en_main(P1, "Reinforce the Line", B);
+}
+
+#[test]
+fn scar_for_a_scar_go_again_si_moins_de_vie() {
+    let mut t = duel(
+        &[("Scar for a Scar", R), ("Essai Garde", Y), RAMPART, RAMPART],
+        &[RAMPART; 4],
+    );
+    t.g.player_mut(P0).life = 15;
+    let s = jouer(&mut t, "Scar for a Scar", R);
+    passer_jusqua_que(&mut t, |t| t.g.active_attack() == Some(s));
+    assert!(t.g.keywords(s).has(fab_engine::Keywords::GO_AGAIN));
+    fin_du_combat(&mut t);
+    assert_eq!(t.vie(P1), 16);
+    assert_eq!(t.g.player(P0).action_points, 1);
+}
+
+#[test]
+fn scar_for_a_scar_pas_de_go_again_a_egalite() {
+    let mut t = duel(
+        &[("Scar for a Scar", B), RAMPART, RAMPART, RAMPART],
+        &[RAMPART; 4],
+    );
+    jouer(&mut t, "Scar for a Scar", B);
+    fin_du_combat(&mut t);
+    assert_eq!(t.vie(P1), 18);
+    assert_eq!(t.g.player(P0).action_points, 0);
+}

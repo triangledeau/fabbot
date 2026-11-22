@@ -183,6 +183,33 @@ impl GameState {
                 }
             }
         }
+        // Capacités accordées par des effets (« gets "When this hits, …" ») :
+        // elles restent même si l'objet perd ses capacités (CR 6.3.6).
+        for k in 0..self.granted_triggers.len() {
+            let gt = self.granted_triggers[k];
+            if !self.is_current(gt.target) {
+                continue;
+            }
+            let trig = &self.db.get(gt.card).granted[gt.index as usize];
+            if (trig.when)(self, gt.target.id, &ev) {
+                let controller = self.obj(gt.target.id).controller;
+                self.pending_triggers.push(Layer {
+                    kind: LayerKind::Granted(gt.index),
+                    object: gt.target,
+                    card: gt.card,
+                    controller,
+                    target: None,
+                    origin: Zone::Stack,
+                    ctx: Box::new(Ctx {
+                        controller,
+                        card: gt.card,
+                        source: Some(gt.target),
+                        event: Some(ev),
+                        ..Default::default()
+                    }),
+                });
+            }
+        }
     }
 
     /// Événements de ce tour (CR : « this turn »).
@@ -269,6 +296,7 @@ impl GameState {
             LayerKind::Card => Some(ScriptRef::Resolve(layer.card)),
             LayerKind::Activated(i) => Some(ScriptRef::Activated(layer.card, i)),
             LayerKind::Trigger(i) => Some(ScriptRef::Trigger(layer.card, i)),
+            LayerKind::Granted(i) => Some(ScriptRef::Granted(layer.card, i)),
             LayerKind::Rule(_) => None,
         }
     }

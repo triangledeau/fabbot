@@ -153,14 +153,12 @@ fn libelle_cible(g: &GameState) -> Option<&'static str> {
         }
         Task::TriggerTargets { layer, next } => {
             let d = g.db.get(layer.card);
-            let LayerKind::Trigger(t) = layer.kind else {
-                return None;
+            let list = match layer.kind {
+                LayerKind::Trigger(t) => d.triggers.get(t as usize)?,
+                LayerKind::Granted(t) => d.granted.get(t as usize)?,
+                _ => return None,
             };
-            d.triggers
-                .get(t as usize)?
-                .targets
-                .get(*next as usize)
-                .map(|s| s.label)
+            list.targets.get(*next as usize).map(|s| s.label)
         }
         _ => None,
     }
@@ -258,10 +256,10 @@ pub fn option(g: &GameState, d: &Decision, c: Choice) -> String {
         Choice::Yes => "Oui".into(),
         Choice::No => "Non".into(),
         Choice::Play(id) => {
-            let depuis = if g.obj(id).zone == Zone::Arsenal {
-                " depuis l'arsenal"
-            } else {
-                ""
+            let depuis = match g.obj(id).zone {
+                Zone::Arsenal => " depuis l'arsenal",
+                Zone::Banished => " depuis la zone de bannissement",
+                _ => "",
             };
             format!("Jouer {}{depuis} — {}", nom(g, id), valeurs(g, id))
         }
@@ -295,6 +293,8 @@ pub fn option(g: &GameState, d: &Decision, c: Choice) -> String {
             let d = g.def(id);
             let ou = if d.types.has(Types::EQUIPMENT) {
                 "équipement"
+            } else if g.obj(id).zone == Zone::Arsenal {
+                "arsenal, ambush"
             } else {
                 "main"
             };
@@ -506,6 +506,11 @@ fn combat_et_pile(g: &GameState, viewer: PlayerId) -> String {
                 }
                 LayerKind::Activated(_) => format!("capacité de {}", g.db.get(l.card).name),
                 LayerKind::Trigger(_) => format!("déclenchement de {}", g.db.get(l.card).name),
+                LayerKind::Granted(_) => format!(
+                    "déclenchement de {} (accordé par {})",
+                    nom(g, l.object.id),
+                    g.db.get(l.card).name
+                ),
                 LayerKind::Rule(r) => format!("{} ({})", regle(r), g.db.get(l.card).name),
             };
             let cibles: Vec<String> = l

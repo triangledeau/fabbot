@@ -296,12 +296,12 @@ impl GameState {
 
     /// CR 6.6.6a : déclarer les cibles d'une couche déclenchée, puis l'empiler.
     fn trigger_targets(&mut self, layer: Box<Layer>, next: u8) {
-        let LayerKind::Trigger(i) = layer.kind else {
+        let specs = match layer.kind {
+            LayerKind::Trigger(i) => self.db.get(layer.card).triggers[i as usize].targets.clone(),
+            LayerKind::Granted(i) => self.db.get(layer.card).granted[i as usize].targets.clone(),
             // Déclenchement d'un mot-clé : pas de cible.
-            self.stack.push(*layer);
-            return;
+            _ => Vec::new(),
         };
-        let specs = self.db.get(layer.card).triggers[i as usize].targets.clone();
         let Some(spec) = specs.get(next as usize) else {
             self.stack.push(*layer);
             return;
@@ -556,6 +556,7 @@ impl GameState {
                 .targets
                 .clone(),
             LayerKind::Trigger(i) => self.db.get(layer.card).triggers[i as usize].targets.clone(),
+            LayerKind::Granted(i) => self.db.get(layer.card).granted[i as usize].targets.clone(),
             LayerKind::Rule(_) => unreachable!(),
         };
         for (i, spec) in specs.iter().enumerate() {
@@ -615,7 +616,7 @@ impl GameState {
                     self.gain_action_points(layer.controller, 1);
                 }
             }
-            LayerKind::Trigger(_) | LayerKind::Rule(_) => {}
+            LayerKind::Trigger(_) | LayerKind::Granted(_) | LayerKind::Rule(_) => {}
         }
     }
 
@@ -751,6 +752,16 @@ impl GameState {
             let def = self.def(e);
             if def.types.has(Types::EQUIPMENT) && def.defense.is_some() {
                 opts.push(Choice::Defend(e));
+            }
+        }
+        // CR 8.3.28 : ambush, « while this is in your arsenal, you may defend with it ».
+        if let Some(c) = ps.arsenal {
+            if !self.declared_defenders.contains(&c)
+                && self.def(c).defense.is_some()
+                && !self.def(c).types.has(Types::DEFENSE_REACTION)
+                && self.keywords(c).has(Keywords::AMBUSH)
+            {
+                opts.push(Choice::Defend(c));
             }
         }
         opts.push(Choice::Pass);
@@ -970,7 +981,7 @@ impl GameState {
                 let a = &def.activated[i as usize];
                 a.attack || matches!(a.speed, Speed::AttackReaction | Speed::DefenseReaction)
             }
-            LayerKind::Trigger(_) | LayerKind::Rule(_) => false,
+            LayerKind::Trigger(_) | LayerKind::Granted(_) | LayerKind::Rule(_) => false,
         }
     }
 
@@ -1010,6 +1021,12 @@ impl GameState {
             .retain(|m| m.until != Until::CombatChainCloses);
         self.replacements
             .retain(|m| m.until != Until::CombatChainCloses);
+        self.next_attack_effects.retain(|e| !e.combat_chain);
+        if !self.granted_triggers.is_empty() {
+            let mut g = std::mem::take(&mut self.granted_triggers);
+            g.retain(|x| x.until != Until::CombatChainCloses && self.is_current(x.target));
+            self.granted_triggers = g;
+        }
         let tp = self.turn_player;
         self.give_priority(tp);
     }
@@ -1090,6 +1107,9 @@ impl GameState {
         self.next_attack_effects
             .retain(|e| e.turn.is_some_and(|t| t > turn));
         self.weapon_effects.clear();
+        self.play_permissions.retain(|x| x.turn > turn);
+        self.granted_triggers
+            .retain(|x| !x.until.ends_at_end_of(turn));
         self.sharpened.clear();
         self.turn_log.clear();
         for o in &mut self.objects {

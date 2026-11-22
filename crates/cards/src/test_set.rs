@@ -921,6 +921,92 @@ fn add_engine_cards(db: &mut CardDb) {
         })
     })];
     db.add(d);
+    add_step3_cards(db);
+}
+
+/// Mécanismes ajoutés à l'étape 3 (deck Ira).
+fn add_step3_cards(db: &mut CardDb) {
+    // Comme Crouching Tiger : carte créée (pas un token), « Ephemeral. Go again ».
+    db.add(CardDef {
+        name: "Essai Fauve".into(),
+        cost: Some(0),
+        power: Some(1),
+        types: Types::ACTION,
+        subtypes: Subtypes::ATTACK,
+        keywords: Keywords::EPHEMERAL | Keywords::GO_AGAIN,
+        ..Default::default()
+    });
+    // Comme Pouncing Paws : « Create a Crouching Tiger in your banished zone.
+    // You may play it this turn. »
+    let mut d = deck_card("Essai Appel", Color::Blue, Types::INSTANT, 0, None, None);
+    d.resolve = vec![Op::Do(|g, c| {
+        let f = card_named(g, "Essai Fauve");
+        let id = g.create_card_banished(c.controller, f);
+        g.permit_play(c.controller, id, g.turn);
+    })];
+    db.add(d);
+    // Comme Tiger Eye Reflex : « Ambush ».
+    let mut d = deck_card(
+        "Essai Embuscade",
+        Color::Blue,
+        Types::BLOCK,
+        0,
+        None,
+        Some(3),
+    );
+    d.cost = None;
+    d.keywords = Keywords::AMBUSH;
+    db.add(d);
+    // Comme Legacy of Ikaru : « Target attack gets "When this hits, gain 1{h}." »
+    let mut d = deck_card(
+        "Essai Héritage",
+        Color::Blue,
+        Types::ATTACK_REACTION,
+        0,
+        None,
+        Some(3),
+    );
+    d.targets = vec![TargetSpec {
+        label: "attaque",
+        filter: active_attack,
+        optional: false,
+    }];
+    d.resolve = vec![Op::Do(|g, c| {
+        if let Some(Target::Object(r)) = c.target(0) {
+            g.grant_trigger(r, c.card, 0, Until::EndOfTurn);
+        }
+    })];
+    d.granted = vec![TriggerDef {
+        when: when_this_hits,
+        anywhere: false,
+        targets: vec![],
+        script: vec![Op::Do(|g, c| g.gain_life(c.controller, 1))],
+    }];
+    db.add(d);
+    // Comme Razor Reflex : « Choose 1 ; target weapon attack gets +3{p} ;
+    // or target attack action card gets +1{p} » (cible selon le mode).
+    let mut d = deck_card(
+        "Essai Alternative",
+        Color::Red,
+        Types::ATTACK_REACTION,
+        0,
+        None,
+        Some(2),
+    );
+    d.modes = vec!["attaque d'arme +3", "carte d'attaque +1"];
+    d.targets = vec![TargetSpec {
+        label: "attaque",
+        filter: |g, c, t| {
+            let Target::Object(r) = t else { return false };
+            g.active_attack() == Some(r.id) && (g.is_weapon_attack(r.id) == (c.mode == 0))
+        },
+        optional: false,
+    }];
+    d.resolve = vec![Op::Do(|g, c| {
+        let n = if c.mode == 0 { 3 } else { 1 };
+        buff_target(g, c, n);
+    })];
+    db.add(d);
 }
 
 fn buff_target(g: &mut GameState, c: &mut Ctx, n: i16) {

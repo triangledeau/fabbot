@@ -45,13 +45,19 @@ fn main() {
             (Subtypes::YOUNG, "Young"),
             (Subtypes::SWORD, "Sword"),
             (Subtypes::AXE, "Axe"),
+            (Subtypes::DAGGER, "Dagger"),
         ] {
             if d.subtypes.has(t) {
                 words.push(w);
             }
         }
-        if d.supertypes.has(Supertypes::WARRIOR) {
-            words.push("Warrior");
+        for (t, w) in [
+            (Supertypes::WARRIOR, "Warrior"),
+            (Supertypes::NINJA, "Ninja"),
+        ] {
+            if d.supertypes.has(t) {
+                words.push(w);
+            }
         }
         let mut kw: Vec<&str> = Vec::new();
         for (k, w) in [
@@ -61,6 +67,8 @@ fn main() {
             (Keywords::TEMPER, "Temper"),
             (Keywords::GUARDWELL, "Guardwell"),
             (Keywords::BLADE_BREAK, "Blade Break"),
+            (Keywords::AMBUSH, "Ambush"),
+            (Keywords::EPHEMERAL, "Ephemeral"),
         ] {
             if d.keywords.has(k) {
                 kw.push(w);
