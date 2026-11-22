@@ -4,8 +4,9 @@ Un bot qui joue à **Flesh and Blood** au format **Silver Age** avec 9 decks :
 contre lui-même pour simuler beaucoup de parties, ou contre un humain avec
 annulation illimitée.
 
-> État : **étape 0, squelette**. Le projet compile et les tests passent, mais
-> on ne peut pas encore jouer. Les règles arrivent à l'étape 1.
+> État : **étape 1 en cours**. Le cœur des règles fonctionne avec des cartes
+> d'essai fictives : des parties complètes se jouent entre bots aléatoires.
+> Les vraies cartes arrivent à l'étape 2.
 
 ## Installer sur Windows (Surface Pro 9)
 
@@ -30,7 +31,8 @@ Rust fonctionne aussi bien sur les Surface Pro 9 Intel que sur la version ARM (S
 | Je veux… | Commande |
 |---|---|
 | Lancer tous les tests | `cargo test --workspace` |
-| Lancer le simulateur (mode optimisé) | `cargo run --release -p fab-sim` |
+| Lancer le simulateur (mode optimisé) | `cargo run --release -p fab-sim -- --games 100000` |
+| Simuler en vérifiant la cohérence à chaque coup | `cargo run --release -p fab-sim -- --games 100000 --check` |
 | Lancer l'interface de jeu | `cargo run --release -p fab-ui` |
 
 La première compilation prend une ou deux minutes, les suivantes sont rapides.
@@ -57,8 +59,8 @@ docs/cards/   Tableau de validation des cartes
 
 | Étape | Contenu | Statut |
 |---|---|---|
-| 0 | Mise en place, squelette | ✅ en cours de relecture |
-| 1 | Cœur des règles (zones, tour, ressources, combat, couches) | ⏳ |
+| 0 | Mise en place, squelette | ✅ |
+| 1 | Cœur des règles (zones, tour, ressources, combat, couches) | 🔶 en cours |
 | 2 | Deux premiers decks complets + interface texte | ⏳ |
 | 3 | Les 7 autres decks + simulateur rapide | ⏳ |
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ⏳ |

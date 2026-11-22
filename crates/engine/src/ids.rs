@@ -8,6 +8,7 @@ pub struct PlayerId(pub u8);
 impl PlayerId {
     pub const P0: PlayerId = PlayerId(0);
     pub const P1: PlayerId = PlayerId(1);
+    pub const BOTH: [PlayerId; 2] = [PlayerId::P0, PlayerId::P1];
 
     /// L'adversaire de ce joueur.
     #[inline]
@@ -22,14 +23,25 @@ impl PlayerId {
 }
 
 /// Une *définition* de carte (ex. : « telle carte, version rouge »),
-/// index dans la base de cartes (`fab-cards`).
+/// index dans la base de cartes ([`crate::card::CardDb`]).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct CardId(pub u16);
 
-/// Un *exemplaire* physique dans une partie. Deux copies de la même carte
-/// ont le même [`CardId`] mais des `ObjectId` différents.
+/// Un emplacement d'objet dans la partie.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ObjectId(pub u32);
+
+/// Référence à un objet **tel qu'il existe maintenant**.
+///
+/// CR 3.0.9 : quand un objet entre dans une zone hors de l'arène (sauf la
+/// pile), il devient un nouvel objet sans lien avec le précédent. On le
+/// modélise en augmentant sa « génération » : un effet qui visait l'ancienne
+/// génération ne s'applique plus.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct ObjRef {
+    pub id: ObjectId,
+    pub gen: u32,
+}
 
 #[cfg(test)]
 mod tests {

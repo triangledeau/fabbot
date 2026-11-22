@@ -19,6 +19,7 @@ dependencies = [
 name = "fab-cards"
 version = "0.1.0"
 dependencies = [
+ "fab-ai",
  "fab-engine",
  "serde",
  "serde_json",
@@ -44,6 +45,7 @@ name = "fab-sim"
 version = "0.1.0"
 dependencies = [
  "fab-ai",
+ "fab-cards",
  "fab-engine",
 ]
 

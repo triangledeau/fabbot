@@ -2,36 +2,42 @@
 
 use crate::ids::{ObjectId, PlayerId};
 
-/// Le type de choix demandé. La liste sera complétée au fil des étapes.
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// Le type de choix demandé.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DecisionKind {
-    /// Phase d'action : jouer une carte, activer une capacité, ou passer.
-    Action,
-    /// Choisir quelle(s) carte(s) pitcher pour payer un coût.
-    Pitch,
-    /// Choisir les cartes et équipements qui défendent.
-    Defend,
-    /// Fenêtre de réaction / priorité.
+    /// Le joueur choisisseur désigne le premier joueur (CR 4.1.3).
+    FirstPlayer,
+    /// Le joueur a la priorité : jouer une carte, activer une capacité, ou passer (CR 1.11).
     Priority,
-    /// Choisir une carte à mettre en arsenal en fin de tour.
+    /// Payer un coût en ressources : choisir la prochaine carte à pitcher (CR 1.14.2d).
+    Pitch,
+    /// Déclarer les cartes qui défendent, une par une, puis « Pass » pour terminer (CR 7.3.2).
+    Defend,
+    /// Fin de tour : mettre une carte en arsenal ou passer (CR 4.4.3b).
     Arsenal,
-    /// Choisir une cible.
-    Target,
-    /// Ordonner des déclenchements simultanés.
-    OrderTriggers,
-    /// Choix entre plusieurs modes d'une carte.
-    Mode,
-    /// Phase de side entre deux manches.
-    Sideboard,
+    /// Fin de tour : choisir la prochaine carte du pitch à mettre sous le deck (CR 4.4.3c).
+    PitchOrder,
 }
 
 /// Une option proposée au joueur.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Choice {
+    /// Passer / terminer / ne rien faire.
     Pass,
-    Object(ObjectId),
-    Objects(Vec<ObjectId>),
-    Number(u32),
+    /// Jouer cette carte (depuis la main ou l'arsenal).
+    Play(ObjectId),
+    /// Activer la capacité d'attaque de cette arme.
+    Activate(ObjectId),
+    /// Pitcher cette carte de la main.
+    Pitch(ObjectId),
+    /// Déclarer cette carte (main ou équipement) comme carte qui défend.
+    Defend(ObjectId),
+    /// Mettre cette carte en arsenal.
+    Arsenal(ObjectId),
+    /// Mettre cette carte sous le deck maintenant.
+    PitchToBottom(ObjectId),
+    /// Désigner ce joueur comme premier joueur.
+    FirstPlayer(PlayerId),
 }
 
 /// Ce que le moteur attend : « le joueur X doit choisir parmi ces options ».
@@ -43,10 +49,7 @@ pub struct Decision {
 }
 
 impl Decision {
-    /// Une décision n'a de sens que s'il existe au moins une option.
-    /// Quand il n'en existe qu'une, le moteur peut la prendre tout seul
-    /// (ex. : passer la priorité sans aucune action légale).
-    pub fn is_forced(&self) -> bool {
-        self.options.len() == 1
+    pub fn index_of(&self, choice: Choice) -> Option<usize> {
+        self.options.iter().position(|c| *c == choice)
     }
 }

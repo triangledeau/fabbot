@@ -10,3 +10,6 @@ publish.workspace = true
 fab-engine.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+
+[dev-dependencies]
+fab-ai = { path = "../ai" }

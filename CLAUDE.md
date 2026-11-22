@@ -45,8 +45,14 @@ humain) répond par l'index d'une option. Tout choix de joueur passe par là.
 - Pas de valeur de format non vérifiée : `config/silver_age.toml` reste
   commenté tant que `verified = false`.
 - Le hasard passe **uniquement** par `fab_engine::Rng` (déterminisme, rejeu).
-- `GameState` doit rester bon marché à copier : pas de `String`, pas de
-  pointeurs partagés ; des identifiants numériques.
+- `GameState` doit rester bon marché à copier : pas de `String`, des
+  identifiants numériques. Seule exception : la base de cartes immuable,
+  partagée par `Arc<CardDb>`.
+- Le moteur passe la priorité automatiquement quand « passer » est la seule
+  option légale : un test qui attend une décision doit en tenir compte.
+- Tests de règles : `crates/cards/tests/regles_*.rs`, un test par article du
+  CR, nommé `cr_x_y_z_description`. Cartes fictives : `fab_cards::test_set`.
+- Test massif : `cargo run --release -p fab-sim -- --games 100000 --check`.
 - Un bot n'a accès qu'à l'information de son joueur.
 
 ## Commandes
