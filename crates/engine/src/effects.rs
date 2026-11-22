@@ -4,10 +4,56 @@
 //! depuis ses instructions `Op::Do`.
 
 use crate::card::{Delta, Types};
+use crate::decision::{Choice, Decision, DecisionKind};
 use crate::events::Event;
 use crate::ids::{CardId, ObjRef, ObjectId, PlayerId};
-use crate::state::{GameState, Modifier, NextAttackEffect, Object, Prevention, Until};
+use crate::replace::{Pending, ReplaceKind};
+use crate::script::Target;
+use crate::state::{GameState, Modifier, NextAttackEffect, Object, Prevention, Task, Until};
 use crate::zones::Zone;
+
+/// « If you prevent damage this way, … » : joueur protégé, quantité prévenue.
+pub type OnPreventFn = fn(&mut GameState, PlayerId, i32);
+
+/// Des dégâts en cours d'application (CR 8.5.3, 6.5).
+#[derive(Clone, Debug)]
+pub struct DamageEvent {
+    pub source: Option<ObjectId>,
+    pub by: PlayerId,
+    pub target: Target,
+    pub amount: i32,
+    pub arcane: bool,
+    /// Dégâts de combat du maillon actif : événement « hit » (CR 7.5.2a).
+    pub hit: bool,
+    /// Les remplacements standards ont déjà été appliqués.
+    pub replaced: bool,
+    /// Le joueur a refusé les préventions optionnelles restantes.
+    pub declined: bool,
+    /// Préventions déjà appliquées à cet événement (CR 6.4.5).
+    pub used: Vec<PreventRef>,
+    /// « If you prevent damage this way, … » à exécuter.
+    pub on_prevent: Vec<(OnPreventFn, PlayerId, i32)>,
+}
+
+/// Une prévention qu'un joueur peut appliquer (CR 6.5.5).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum PreventRef {
+    /// Un effet de `GameState::preventions` (par identifiant).
+    Effect(u16),
+    /// Arcane barrier de cet objet (CR 8.3.8).
+    ArcaneBarrier(ObjectId),
+    /// Ward de cet objet (CR 8.3.20).
+    Ward(ObjectId),
+    /// Spellvoid de cet objet (CR 8.3.15).
+    Spellvoid(ObjectId),
+}
+
+struct PreventCandidate {
+    what: PreventRef,
+    optional: bool,
+    /// Quantité prévenue au plus ; `None` = tout.
+    amount: Option<i32>,
+}
 
 impl GameState {
     /// Pioche une carte (CR 8.5.6). Échoue si le deck est vide (CR 8.5.6b).
@@ -55,11 +101,7 @@ impl GameState {
         }
     }
 
-    /// Inflige des dégâts à un héros (CR 8.5.3) et renvoie les dégâts réellement
-    /// infligés après prévention (CR 6.4). Le total de vie n'est jamais négatif (CR 2.5.3e).
-    ///
-    /// TODO(étape 2) : préventions au choix du joueur (arcane barrier, ward,
-    /// spellvoid) ; dégâts aux alliés.
+    /// Inflige des dégâts à un héros (CR 8.5.3). Raccourci de [`Self::deal_damage_to`].
     pub fn deal_damage(
         &mut self,
         source: Option<ObjectId>,
@@ -67,40 +109,314 @@ impl GameState {
         target: PlayerId,
         amount: i32,
         arcane: bool,
-    ) -> i32 {
-        if amount <= 0 {
-            return 0; // CR 1.9.1b : 0 dégât = rien ne se passe
-        }
-        let mut amount = amount;
-        let src_ref = source.map(|s| self.obj_ref(s));
-        for prev in self.preventions.iter_mut() {
-            if amount == 0 {
-                break;
-            }
-            if prev.player != target || prev.remaining <= 0 || (prev.arcane_only && !arcane) {
-                continue;
-            }
-            if prev.source.is_some() && prev.source != src_ref {
-                continue;
-            }
-            let n = prev.remaining.min(amount);
-            prev.remaining -= n;
-            amount -= n;
-        }
-        self.preventions.retain(|p| p.remaining > 0);
-        if amount <= 0 {
-            return 0;
-        }
-        let ps = self.player_mut(target);
-        ps.life = (ps.life - amount).max(0);
-        self.emit(Event::Damage {
+    ) {
+        self.deal_damage_to(source, by, Target::Player(target), amount, arcane);
+    }
+
+    /// Inflige des dégâts à un héros ou à un allié (CR 8.5.3).
+    ///
+    /// L'événement passe par les remplacements (CR 6.5.4) puis les préventions
+    /// (CR 6.5.5) ; si le joueur protégé a un choix à faire (arcane barrier,
+    /// spellvoid, ordre des préventions), les dégâts attendent sa réponse.
+    /// Le résultat est rangé dans `last_damage`, à lire dans l'instruction
+    /// **suivante** du script.
+    pub fn deal_damage_to(
+        &mut self,
+        source: Option<ObjectId>,
+        by: PlayerId,
+        target: Target,
+        amount: i32,
+        arcane: bool,
+    ) {
+        self.run_damage(Box::new(DamageEvent {
             source,
             by,
             target,
-            amount: amount as u16,
+            amount,
             arcane,
+            hit: false,
+            replaced: false,
+            declined: false,
+            used: Vec::new(),
+            on_prevent: Vec::new(),
+        }));
+    }
+
+    /// Fait avancer un événement de dégâts jusqu'à sa fin ou jusqu'à un choix.
+    pub(crate) fn run_damage(&mut self, mut ev: Box<DamageEvent>) {
+        // CR 1.9.1b : 0 dégât, rien ne se passe.
+        if ev.amount <= 0 {
+            self.last_damage = 0;
+            return;
+        }
+        if let Target::Object(r) = ev.target {
+            // CR 8.5.3c : un objet qui n'est pas vivant ne peut pas recevoir de dégâts.
+            let alive = self.is_current(r) && self.is_living_permanent(r.id);
+            if !alive {
+                self.last_damage = 0;
+                return;
+            }
+        }
+        // CR 6.5.4 : remplacements standards (ex. « deals that much plus 1 »).
+        if !ev.replaced {
+            ev.replaced = true;
+            if !self.no_replacements() {
+                let mut p = Pending::new(ReplaceKind::Damage, ev.by);
+                p.object = ev.source;
+                p.amount = ev.amount;
+                p.arcane = ev.arcane;
+                p.target = Some(ev.target);
+                let opt = self.replace_mandatory(&mut p, &mut Vec::new());
+                debug_assert!(opt.is_none(), "remplacement optionnel de dégâts");
+                ev.amount = p.amount;
+                ev.arcane = p.arcane;
+            }
+        }
+        // CR 6.5.5 : préventions, appliquées une à une par leur contrôleur.
+        while ev.amount > 0 {
+            let cands = self.prevention_candidates(&ev);
+            if cands.is_empty() {
+                break;
+            }
+            let all_mandatory = cands.iter().all(|c| !c.optional);
+            // Si toutes les préventions sont obligatoires et qu'elles seront
+            // toutes entièrement utilisées, l'ordre ne change rien.
+            let total: Option<i32> = cands.iter().map(|c| c.amount).sum();
+            if all_mandatory && (cands.len() == 1 || total.is_some_and(|t| t <= ev.amount)) {
+                self.apply_prevention(&mut ev, cands[0].what);
+                continue;
+            }
+            let Target::Player(player) = ev.target else {
+                unreachable!("préventions seulement pour les héros")
+            };
+            let mut options: Vec<Choice> = cands.iter().map(|c| Choice::Prevent(c.what)).collect();
+            if cands.iter().all(|c| c.optional) {
+                options.push(Choice::Pass);
+            }
+            self.tasks.push(Task::Damage(ev));
+            self.pending = Some(Decision {
+                player,
+                kind: DecisionKind::Prevention,
+                options,
+            });
+            return;
+        }
+        self.finish_damage(*ev);
+    }
+
+    /// Les préventions actives pour un événement de dégâts (CR 6.4.2).
+    fn prevention_candidates(&self, ev: &DamageEvent) -> Vec<PreventCandidate> {
+        let mut v = Vec::new();
+        // TODO(règles) : préventions des dégâts infligés à un allié (aucune
+        // carte des 9 decks n'en crée).
+        let Target::Player(p) = ev.target else {
+            return v;
+        };
+        let src_ref = ev.source.map(|s| self.obj_ref(s));
+        for prev in &self.preventions {
+            let what = PreventRef::Effect(prev.id);
+            if prev.player != p
+                || ev.used.contains(&what)
+                || prev.remaining.is_some_and(|r| r <= 0)
+                || (prev.arcane_only && !ev.arcane)
+                || (prev.source.is_some() && prev.source != src_ref)
+            {
+                continue;
+            }
+            if let Some(f) = prev.source_filter {
+                if !ev.source.is_some_and(|s| f(self, s)) {
+                    continue;
+                }
+            }
+            v.push(PreventCandidate {
+                what,
+                optional: false,
+                amount: prev.remaining,
+            });
+        }
+        // Arcane barrier, ward et spellvoid des objets du joueur : « you » est
+        // le contrôleur de l'objet (CR 1.1.2b).
+        let ps = self.player(p);
+        let sources = std::iter::once(ps.hero)
+            .chain(ps.weapons.iter().copied())
+            .chain(ps.equipment())
+            .chain(
+                self.permanents
+                    .iter()
+                    .copied()
+                    .filter(|&o| self.obj(o).controller == p),
+            );
+        for o in sources {
+            let def = self.def(o);
+            if def.arcane_barrier == 0
+                && def.ward == 0
+                && def.spellvoid == 0
+                && self.modifiers.is_empty()
+                && def.self_mod.is_none()
+            {
+                continue; // chemin rapide : aucune valeur possible
+            }
+            let (ab, ward, sv) = self.prevention_values(o);
+            // CR 8.3.8 : « you may pay N to prevent N of that damage ».
+            if ev.arcane && ab > 0 && !ev.declined {
+                let what = PreventRef::ArcaneBarrier(o);
+                if !ev.used.contains(&what) && self.available_resources(p, None) >= ab as u32 {
+                    v.push(PreventCandidate {
+                        what,
+                        optional: true,
+                        amount: Some(ab as i32),
+                    });
+                }
+            }
+            // CR 8.3.15 : « you may destroy this to prevent N ».
+            if ev.arcane && sv > 0 && !ev.declined {
+                let what = PreventRef::Spellvoid(o);
+                if !ev.used.contains(&what) {
+                    v.push(PreventCandidate {
+                        what,
+                        optional: true,
+                        amount: Some(sv as i32),
+                    });
+                }
+            }
+            // CR 8.3.20 : « destroy this to prevent N » (obligatoire).
+            if ward > 0 {
+                let what = PreventRef::Ward(o);
+                if !ev.used.contains(&what) {
+                    v.push(PreventCandidate {
+                        what,
+                        optional: false,
+                        amount: Some(ward as i32),
+                    });
+                }
+            }
+        }
+        v
+    }
+
+    /// Applique une prévention à l'événement (CR 6.4.10a).
+    pub(crate) fn apply_prevention(&mut self, ev: &mut DamageEvent, what: PreventRef) {
+        ev.used.push(what);
+        let Target::Player(p) = ev.target else {
+            return;
+        };
+        match what {
+            PreventRef::Effect(id) => {
+                let Some(k) = self.preventions.iter().position(|x| x.id == id) else {
+                    return;
+                };
+                let prev = self.preventions[k];
+                let n = prev.remaining.unwrap_or(ev.amount).min(ev.amount);
+                ev.amount -= n;
+                if prev.fixed || prev.remaining.is_some_and(|r| r <= n) {
+                    // CR 6.4.10i-j : prévention fixe utilisée, ou bouclier épuisé.
+                    self.preventions.remove(k);
+                } else if let Some(r) = &mut self.preventions[k].remaining {
+                    *r -= n;
+                }
+                if n > 0 {
+                    if let Some(f) = prev.on_prevent {
+                        ev.on_prevent.push((f, p, n));
+                    }
+                }
+            }
+            PreventRef::ArcaneBarrier(o) => {
+                // Le paiement est demandé par l'appelant (tâche Pay).
+                let n = (self.prevention_values(o).0 as i32).min(ev.amount);
+                ev.amount -= n;
+            }
+            PreventRef::Spellvoid(o) => {
+                let n = (self.prevention_values(o).2 as i32).min(ev.amount);
+                self.destroy(o);
+                ev.amount -= n;
+            }
+            PreventRef::Ward(o) => {
+                let n = (self.prevention_values(o).1 as i32).min(ev.amount);
+                self.destroy(o);
+                ev.amount -= n;
+            }
+        }
+    }
+
+    /// Réponse au choix de prévention.
+    pub(crate) fn answer_prevention(&mut self, choice: Choice) {
+        let Some(Task::Damage(mut ev)) = self.tasks.pop() else {
+            unreachable!("une question de prévention vient d'une tâche Damage")
+        };
+        match choice {
+            Choice::Prevent(what @ PreventRef::ArcaneBarrier(o)) => {
+                let Target::Player(p) = ev.target else {
+                    unreachable!()
+                };
+                let cost = self.prevention_values(o).0;
+                self.apply_prevention(&mut ev, what);
+                // CR 8.3.8 : payer N, puis la suite des dégâts.
+                self.tasks.push(Task::Damage(ev));
+                self.tasks.push(Task::Pay {
+                    player: p,
+                    resources: cost,
+                    action_points: 0,
+                });
+            }
+            Choice::Prevent(what) => {
+                self.apply_prevention(&mut ev, what);
+                self.run_damage(ev);
+            }
+            _ => {
+                // Le joueur refuse les préventions optionnelles restantes.
+                ev.declined = true;
+                self.run_damage(ev);
+            }
+        }
+    }
+
+    /// CR 8.5.3 : les dégâts restants sont infligés.
+    fn finish_damage(&mut self, ev: DamageEvent) {
+        for &(f, p, n) in &ev.on_prevent {
+            f(self, p, n);
+        }
+        let dealt = ev.amount.max(0);
+        self.last_damage = dealt;
+        if dealt == 0 {
+            return;
+        }
+        let (player, target_obj) = match ev.target {
+            Target::Player(p) => {
+                // CR 2.5.3e : jamais négatif.
+                let ps = self.player_mut(p);
+                ps.life = (ps.life - dealt).max(0);
+                (p, None)
+            }
+            Target::Object(r) => {
+                let base = self.def(r.id).life.unwrap_or(0) as i16;
+                let o = self.obj_mut(r.id);
+                o.life_delta = (o.life_delta - dealt as i16).max(-base);
+                let c = o.controller;
+                self.check_allies = true;
+                (c, Some(r.id))
+            }
+        };
+        self.emit(Event::Damage {
+            source: ev.source,
+            by: ev.by,
+            target: player,
+            target_obj,
+            amount: dealt as u16,
+            arcane: ev.arcane,
         });
-        amount
+        if ev.hit {
+            // CR 7.5.5 : l'attaque touche.
+            if let Some(link) = self.combat.links.last_mut() {
+                link.hit = true;
+            }
+            self.emit(Event::Hit {
+                attack: ev.source.expect("source de l'attaque"),
+                attacker: ev.by,
+                target: player,
+                target_obj,
+                damage: dealt as u16,
+            });
+        }
     }
 
     /// Détruire (CR 8.5.4) : au cimetière du propriétaire.
@@ -110,6 +426,9 @@ impl GameState {
         }
         let owner = self.obj(id).owner;
         self.clear(id);
+        // TODO(règles) : si la mise au cimetière est remplacée (« instead
+        // banish it »), l'objet est-il encore « détruit » (déclencheurs « when
+        // this is destroyed ») ? On considère que oui. Question au propriétaire.
         self.emit(Event::Destroyed { card: id, owner });
     }
 
@@ -117,10 +436,10 @@ impl GameState {
     pub fn banish(&mut self, id: ObjectId, face_down: bool) {
         let owner = self.obj(id).owner;
         // CR 3.0.7a : la puissance est celle de l'objet au moment où il quitte sa zone.
-        let power = if self.def(id).power.is_some() && !face_down {
-            self.power(id) as u16
-        } else {
+        let power = if face_down {
             0
+        } else {
+            self.power_if_public(id)
         };
         let from = self.move_to(id, Zone::Banished, true);
         if self.obj(id).zone == Zone::Banished {
@@ -169,8 +488,16 @@ impl GameState {
         self.player_mut(p).deck = deck;
     }
 
-    /// Crée un token (CR 8.5.2) dans la zone permanente, sous le contrôle de `p`.
-    pub fn create_token(&mut self, p: PlayerId, card: CardId) -> ObjectId {
+    /// Crée un token (CR 8.5.2), en passant par les remplacements. Renvoie le
+    /// token créé, ou `None` si la création a été remplacée ou attend un choix.
+    pub fn create_token(&mut self, p: PlayerId, card: CardId) -> Option<ObjectId> {
+        self.create_tokens(p, card, 1);
+        self.last_created.first().copied()
+    }
+
+    /// Crée un token dans la zone permanente, sous le contrôle de `p`, sans
+    /// remplacement.
+    pub(crate) fn create_token_raw(&mut self, p: PlayerId, card: CardId) -> ObjectId {
         debug_assert!(self.db.get(card).types.has(Types::TOKEN));
         self.objects.push(Object {
             card,
@@ -185,10 +512,14 @@ impl GameState {
             counters: 0,
             proxy_of: None,
             activations: [0; 4],
+            life_delta: 0,
         });
         let id = ObjectId(self.objects.len() as u32 - 1);
         if !self.db.get(card).triggers.is_empty() {
             self.trigger_objects.push(id);
+        }
+        if !self.db.get(card).replacements.is_empty() {
+            self.replacement_objects.push(id);
         }
         self.obj_mut(id).zone = Zone::Permanent;
         self.permanents.push(id);
@@ -199,6 +530,7 @@ impl GameState {
     /// Un objet « gets » +N / go again… (CR 8.5.8, 8.5.9).
     pub fn modify(&mut self, target: ObjRef, delta: Delta, until: Until) {
         if self.is_current(target) {
+            self.any_lose_abilities |= delta.lose_abilities;
             self.modifiers.push(Modifier {
                 target,
                 delta,
@@ -220,18 +552,66 @@ impl GameState {
             filter,
             delta,
             cards_only,
+            turn: None,
         });
     }
 
-    /// « Prevent the next N damage that would be dealt to … » (CR 6.4).
-    pub fn prevent_next(&mut self, p: PlayerId, n: i32, arcane_only: bool, source: Option<ObjRef>) {
-        self.preventions.push(Prevention {
+    /// Comme [`Self::next_attack`], mais pour la première attaque du tour n°
+    /// `turn` (ex. Debilitate : « their first attack during their next turn »,
+    /// avec `turn = self.next_turn_of(p)`).
+    pub fn next_attack_on_turn(
+        &mut self,
+        p: PlayerId,
+        turn: u32,
+        filter: Option<fn(&GameState, ObjectId) -> bool>,
+        delta: Delta,
+    ) {
+        self.next_attack_effects.push(NextAttackEffect {
             player: p,
-            remaining: n,
+            filter,
+            delta,
+            cards_only: false,
+            turn: Some(turn),
+        });
+    }
+
+    /// « Prevent the next N damage that would be dealt to … » : bouclier
+    /// (CR 6.4.10j), jusqu'à la fin du tour.
+    pub fn prevent_next(&mut self, p: PlayerId, n: i32, arcane_only: bool, source: Option<ObjRef>) {
+        self.add_prevention(Prevention {
+            id: 0,
+            player: p,
+            remaining: Some(n),
             arcane_only,
             source,
+            source_filter: None,
+            fixed: false,
+            on_prevent: None,
             until: Until::EndOfTurn,
         });
+    }
+
+    /// « The next time you would be dealt damage this turn, prevent N of that
+    /// damage » : prévention fixe (CR 6.4.10i). `n = None` : « prevent it ».
+    pub fn prevent_next_time(&mut self, p: PlayerId, n: Option<i32>) {
+        self.add_prevention(Prevention {
+            id: 0,
+            player: p,
+            remaining: n,
+            arcane_only: false,
+            source: None,
+            source_filter: None,
+            fixed: true,
+            on_prevent: None,
+            until: Until::EndOfTurn,
+        });
+    }
+
+    /// Ajoute un effet de prévention quelconque (l'identifiant est attribué ici).
+    pub fn add_prevention(&mut self, mut prev: Prevention) {
+        self.next_effect_id = self.next_effect_id.wrapping_add(1);
+        prev.id = self.next_effect_id;
+        self.preventions.push(prev);
     }
 
     /// Marquer un héros (CR 8.5.50).
@@ -245,10 +625,12 @@ impl GameState {
         while i < self.next_attack_effects.len() {
             let e = self.next_attack_effects[i];
             let ok = e.player == p
+                && e.turn.is_none_or(|t| t == self.turn)
                 && (is_card || !e.cards_only)
                 && e.filter.is_none_or(|f| f(self, attack.id));
             if ok {
                 self.next_attack_effects.remove(i);
+                self.any_lose_abilities |= e.delta.lose_abilities;
                 self.modifiers.push(Modifier {
                     target: attack,
                     delta: e.delta,

@@ -5,7 +5,7 @@ use crate::decision::{Choice, Decision, DecisionKind};
 use crate::events::Event;
 use crate::ids::{ObjectId, PlayerId};
 use crate::script::{Ctx, ScriptRef, Target, TargetSpec};
-use crate::state::{CombatStep, GameState, Layer, LayerKind, Object, Task, Until};
+use crate::state::{CombatStep, GameState, Layer, LayerKind, Object, RuleTrigger, Task, Until};
 use crate::zones::Zone;
 
 impl GameState {
@@ -86,10 +86,12 @@ impl GameState {
                 self.combat.step == Some(CombatStep::Reaction)
                     && self.active_link().is_some_and(|l| l.attacker == p)
             }
-            // CR 8.1.3a
+            // CR 8.1.3a : seulement le joueur dont le **héros** est attaqué.
             Speed::DefenseReaction => {
                 self.combat.step == Some(CombatStep::Reaction)
-                    && self.active_link().is_some_and(|l| l.target == p)
+                    && self
+                        .active_link()
+                        .is_some_and(|l| l.target == p && l.target_obj.is_none())
             }
         }
     }
@@ -194,6 +196,10 @@ impl GameState {
         if !zone_ok || (a.tap && o.tapped) || (a.once_per_turn && o.activations[i as usize] >= 1) {
             return false;
         }
+        // « Loses all abilities » : plus de capacités activées.
+        if self.lost_abilities(src) {
+            return false;
+        }
         if !self.timing_ok(p, a.speed, a.attack) {
             return false;
         }
@@ -218,9 +224,6 @@ impl GameState {
         self.place(c, Zone::Stack, p);
         let object = self.obj_ref(c);
         let card = self.obj(c).card;
-        // Cible d'attaque (CR 5.1.4b) : en partie à 2 sans allié, le héros adverse.
-        // TODO(étape 2) : attaquer un allié ou un objet avec spectra.
-        let target = if is_attack { Some(p.opponent()) } else { None };
         let ctx = Box::new(Ctx {
             controller: p,
             card,
@@ -232,7 +235,7 @@ impl GameState {
             object,
             card,
             controller: p,
-            target,
+            target: None,
             origin,
             ctx,
         });
@@ -240,7 +243,7 @@ impl GameState {
             self.apply_next_attack_effects(p, object, true);
         }
         let n_targets = self.def(c).targets.len();
-        self.push_play_tasks(n_targets);
+        self.push_play_tasks(n_targets, is_attack);
     }
 
     /// CR 5.2.2 : activer une capacité.
@@ -264,6 +267,7 @@ impl GameState {
                 counters: 0,
                 proxy_of: Some(src),
                 activations: [0; 4],
+                life_delta: 0,
             });
             let proxy = ObjectId(self.objects.len() as u32 - 1);
             let r = self.obj_ref(proxy);
@@ -282,7 +286,6 @@ impl GameState {
         } else {
             self.obj_ref(src)
         };
-        let target = if a.attack { Some(p.opponent()) } else { None };
         let ctx = Box::new(Ctx {
             controller: p,
             card,
@@ -294,14 +297,14 @@ impl GameState {
             object,
             card,
             controller: p,
-            target,
+            target: None,
             origin,
             ctx,
         });
-        self.push_play_tasks(a.targets.len());
+        self.push_play_tasks(a.targets.len(), a.attack);
     }
 
-    fn push_play_tasks(&mut self, n_targets: usize) {
+    fn push_play_tasks(&mut self, n_targets: usize, is_attack: bool) {
         // CR 1.11.5 : personne n'a la priorité pendant qu'on joue.
         self.priority = None;
         self.tasks.push(Task::PlayFinish);
@@ -309,6 +312,10 @@ impl GameState {
         self.tasks.push(Task::PlayPay);
         for t in (0..n_targets).rev() {
             self.tasks.push(Task::PlayTarget(t as u8));
+        }
+        if is_attack {
+            // CR 5.1.4b / 1.4.5 : la cible de l'attaque.
+            self.tasks.push(Task::PlayAttackTarget);
         }
         self.tasks.push(Task::PlayMode);
         self.tasks.push(Task::PlayX);
@@ -326,6 +333,7 @@ impl GameState {
             LayerKind::Card => self.db.get(l.card).targets.clone(),
             LayerKind::Activated(i) => self.db.get(l.card).activated[i as usize].targets.clone(),
             LayerKind::Trigger(i) => self.db.get(l.card).triggers[i as usize].targets.clone(),
+            LayerKind::Rule(_) => Vec::new(),
         }
     }
 
@@ -374,6 +382,23 @@ impl GameState {
                     });
                 }
             }
+            // CR 1.4.5 : le joueur déclare un objet attaquable d'un adversaire.
+            Task::PlayAttackTarget => {
+                let options: Vec<Choice> = self
+                    .attack_targets(p)
+                    .into_iter()
+                    .map(Choice::Target)
+                    .collect();
+                if let [Choice::Target(t)] = options[..] {
+                    self.stack.last_mut().unwrap().target = Some(t);
+                } else {
+                    self.pending = Some(Decision {
+                        player: p,
+                        kind: DecisionKind::AttackTarget,
+                        options,
+                    });
+                }
+            }
             Task::PlayTarget(i) => {
                 let spec = self.top_target_specs()[i as usize];
                 let ctx = (*self.top_layer().ctx).clone();
@@ -411,7 +436,7 @@ impl GameState {
                     LayerKind::Activated(i) => {
                         u8::from(def.activated[i as usize].speed == Speed::Action)
                     }
-                    LayerKind::Trigger(_) => 0,
+                    LayerKind::Trigger(_) | LayerKind::Rule(_) => 0,
                 };
                 self.tasks.push(Task::Pay {
                     player: p,
@@ -430,7 +455,7 @@ impl GameState {
                         }
                         ScriptRef::ActivatedCost(card, i)
                     }
-                    LayerKind::Trigger(_) => return,
+                    LayerKind::Trigger(_) | LayerKind::Rule(_) => return,
                 };
                 if !self.script_ops(script).is_empty() {
                     let ctx = self.top_layer().ctx.clone();
@@ -461,7 +486,7 @@ impl GameState {
                 c + l.ctx.x as u32
             }
             LayerKind::Activated(i) => def.activated[i as usize].cost as u32,
-            LayerKind::Trigger(_) => 0,
+            LayerKind::Trigger(_) | LayerKind::Rule(_) => 0,
         }
     }
 
@@ -524,9 +549,15 @@ impl GameState {
                     ability: i,
                 })
             }
-            LayerKind::Trigger(_) => {}
+            LayerKind::Trigger(_) | LayerKind::Rule(_) => {}
         }
         if is_attack {
+            // CR 8.3.14 : « When this becomes the target of an attack, destroy this. »
+            if let Some(Target::Object(r)) = self.top_layer().target {
+                if self.is_current(r) && self.keywords(r.id).has(Keywords::SPECTRA) {
+                    self.push_rule_trigger(RuleTrigger::Spectra, r.id);
+                }
+            }
             if !self.combat.open {
                 // CR 7.0.2a / 8.2.3b : la chaîne de combat s'ouvre.
                 self.combat.open = true;
@@ -546,7 +577,7 @@ impl GameState {
         match l.kind {
             LayerKind::Card => self.db.get(l.card).subtypes.has(Subtypes::ATTACK),
             LayerKind::Activated(i) => self.db.get(l.card).activated[i as usize].attack,
-            LayerKind::Trigger(_) => false,
+            LayerKind::Trigger(_) | LayerKind::Rule(_) => false,
         }
     }
 }

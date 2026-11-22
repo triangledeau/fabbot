@@ -37,6 +37,8 @@ Une carte est une `CardDef` (dans `crates/engine/src/card.rs`) :
 | `activated` | « Instant — Destroy this: … », attaques d'armes | Timesnap Potion, Edge of Autumn |
 | `self_mod` | « this gets +N / go again if … » | Blaze Headlong, Flying Kick |
 | `aura` | effets statiques sur d'autres objets (héros, équipements, auras) | Ira, Blade Beckoner |
+| `arcane_barrier`, `ward`, `spellvoid` | préventions au choix, valeur imprimée | Nullrune Hood, Silken Shroud, Mask of the Swarming Claw |
+| `replacements` | « If … would …, instead … » (remplacements statiques) | Embraforged Gauntlet, Florian, Smoldering Scales |
 
 Les effets sont de petits programmes (`Op`, voir `crates/engine/src/script.rs`) :
 
@@ -49,6 +51,37 @@ Les effets sont de petits programmes (`Op`, voir `crates/engine/src/script.rs`) 
 Exemples complets : les cartes fictives de `crates/cards/src/test_set.rs`,
 chacune annotée de la vraie carte dont elle reproduit le mécanisme.
 
+## Dégâts, préventions et remplacements
+
+`deal_damage` / `deal_damage_to` ne modifient pas la vie tout de suite : les
+dégâts passent d'abord par les **remplacements** (« deals that much plus 3 »),
+puis par les **préventions** (boucliers, arcane barrier, ward, spellvoid). Si
+le joueur protégé a un choix à faire (payer l'arcane barrier, détruire pour le
+spellvoid, ordre des préventions), les dégâts attendent sa réponse. Le
+résultat (« if damage is dealt this way ») est dans `g.last_damage`, à lire
+dans l'instruction **suivante** du script. Même chose pour `create_tokens` et
+`g.last_created`.
+
+Les remplacements créés par une capacité (Topsy Turvy, Stir the Aetherwinds…)
+s'ajoutent avec `add_replacement` ; les préventions avec `prevent_next`
+(« prevent the next N »), `prevent_next_time` (« the next time … prevent N »)
+ou `add_prevention` (filtre de source, « if you prevent damage this way »).
+
+## Attaques, alliés, perte des capacités
+
+- En jouant une attaque, le joueur choisit sa cible (`DecisionKind::AttackTarget`)
+  s'il y a un allié ou un objet avec spectra en face. `ChainLink::target_obj`
+  et les événements `Attack` / `Hit` / `Damage` (`target_obj`) disent si
+  c'est un héros (`None`) ou un objet (« when this hits a hero »).
+- « Loses all abilities » : `modify` avec `Delta { lose_abilities: true, .. }`.
+- « Until the end of their next turn » : `Until::EndOfTurnNumber(g.next_turn_of(p))`,
+  ou `g.end_of_next_turn(p)`. « Their first attack during their next turn » :
+  `next_attack_on_turn`.
+- Fermeture de la chaîne : les capacités « when the combat chain closes »
+  (Hell Hammer, blade break…) se résolvent **avant** que les permanents
+  reviennent dans leurs zones (CR 7.7.4) ; `g.combat.links` est encore
+  disponible pour savoir qui a attaqué ou défendu.
+
 ## Les événements et le journal du tour
 
 Tout ce qui se passe (carte jouée, attaque, défense, touche, pitch, dégâts,
@@ -59,4 +92,6 @@ destruction, bannissement…) est un `Event`. Il est ajouté au journal du tour
 ## Vérifier
 
 - Tests de règles : `crates/cards/tests/regles_*.rs` (un test par article du CR).
-- Test massif : `cargo run --release -p fab-sim -- --games 100000 --check`.
+- Test massif : `cargo run --release -p fab-sim -- --games 100000 --check`
+  (ajouter `--mecanismes` pour les decks d'essai qui utilisent préventions,
+  remplacements, alliés et spectra).

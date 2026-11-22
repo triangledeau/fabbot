@@ -5,14 +5,14 @@
 //! (une [`Decision`] est alors en attente) ou que la partie soit finie. Les
 //! tâches en attente passent toujours avant le déroulement normal.
 
-use crate::card::{Keywords, Subtypes, Types};
+use crate::card::{Keywords, Speed, Subtypes, Types};
 use crate::decision::{Choice, Decision, DecisionKind};
 use crate::events::Event;
 use crate::ids::{ObjectId, PlayerId};
-use crate::script::{Op, ScriptRef, Target};
+use crate::script::{Ctx, Op, ScriptRef, Target};
 use crate::state::{
-    AfterResolve, ChainLink, CombatStep, EndReason, GameState, Layer, LayerKind, Outcome, Stage,
-    Task, Until,
+    AfterResolve, ChainLink, CombatStep, EndReason, GameState, Layer, LayerKind, Outcome,
+    RuleTrigger, Stage, Task, Until,
 };
 use crate::zones::Zone;
 
@@ -33,6 +33,7 @@ impl GameState {
                 Stage::EndArsenal => self.end_arsenal(),
                 Stage::EndPitchOrder(p) => self.end_pitch_order(p),
                 Stage::EndRest => self.end_rest(),
+                Stage::Closing => self.close_step(),
                 Stage::GameOver => return,
             }
         }
@@ -48,6 +49,8 @@ impl GameState {
             } => self.run_pay(player, resources, action_points),
             Task::FinishResolve(layer) => self.finish_resolve(*layer),
             Task::TriggerTargets { layer, next } => self.trigger_targets(layer, next),
+            Task::Damage(ev) => self.run_damage(ev),
+            Task::Replace { pending, used, .. } => self.run_replace(pending, used),
             other => self.run_play_task(other),
         }
     }
@@ -105,6 +108,11 @@ impl GameState {
             (DecisionKind::PitchOrder, Choice::PitchToBottom(id)) => {
                 self.move_to(id, Zone::Deck, false);
             }
+            (DecisionKind::AttackTarget, Choice::Target(t)) => {
+                self.stack.last_mut().unwrap().target = Some(t)
+            }
+            (DecisionKind::Prevention, c) => self.answer_prevention(c),
+            (DecisionKind::Replacement, c) => self.answer_replacement(c == Choice::Yes),
             (k, c) => unreachable!("réponse {c:?} impossible pour une décision {k:?}"),
         }
     }
@@ -189,8 +197,30 @@ impl GameState {
     // Actions de l'état de jeu (CR 1.10.2) et déclenchements
     // ------------------------------------------------------------------
 
-    /// Retourne `true` si la partie est terminée.
+    /// Actions de l'état de jeu (CR 1.10.2a-b). Retourne `true` si la partie est terminée.
     fn check_heroes(&mut self) -> bool {
+        if self.check_game_over() {
+            return true;
+        }
+        // CR 1.10.2b / 2.5.3f : un allié à 0 PV est « clear ». Vérifié
+        // seulement quand un allié a perdu des PV (chemin rapide).
+        if !self.check_allies {
+            return false;
+        }
+        self.check_allies = false;
+        let dead: Vec<ObjectId> = self
+            .permanents
+            .iter()
+            .copied()
+            .filter(|&o| self.def(o).life.is_some() && self.life_total(o) == Some(0))
+            .collect();
+        for o in dead {
+            self.clear(o);
+        }
+        false
+    }
+
+    fn check_game_over(&mut self) -> bool {
         // CR 1.10.2a / 4.5.3a / 4.5.4a
         let dead = [
             self.player(PlayerId::P0).life <= 0,
@@ -241,7 +271,12 @@ impl GameState {
             let (a, b) = (&self.pending_triggers[w[0]], &self.pending_triggers[w[1]]);
             a.card == b.card && a.kind == b.kind && a.ctx.event == b.ctx.event
         });
-        if mine.len() >= 2 && !all_same {
+        // Les déclenchements des mots-clés (blade break, temper…) n'ont pas
+        // d'effet dont l'ordre importe : pas de question.
+        let all_rules = mine
+            .iter()
+            .all(|&i| matches!(self.pending_triggers[i].kind, LayerKind::Rule(_)));
+        if mine.len() >= 2 && !all_same && !all_rules {
             // Le joueur choisit l'ordre dans lequel il empile ses déclenchements.
             let options = mine.iter().map(|&i| Choice::Trigger(i as u8)).collect();
             self.pending = Some(Decision {
@@ -262,7 +297,9 @@ impl GameState {
     /// CR 6.6.6a : déclarer les cibles d'une couche déclenchée, puis l'empiler.
     fn trigger_targets(&mut self, layer: Box<Layer>, next: u8) {
         let LayerKind::Trigger(i) = layer.kind else {
-            unreachable!()
+            // Déclenchement d'un mot-clé : pas de cible.
+            self.stack.push(*layer);
+            return;
         };
         let specs = self.db.get(layer.card).triggers[i as usize].targets.clone();
         let Some(spec) = specs.get(next as usize) else {
@@ -292,6 +329,51 @@ impl GameState {
                 kind: DecisionKind::Target,
                 options,
             });
+        }
+    }
+
+    /// Crée la couche déclenchée d'un mot-clé (CR 8.3), contrôlée par le
+    /// contrôleur de l'objet.
+    pub(crate) fn push_rule_trigger(&mut self, kind: RuleTrigger, id: ObjectId) {
+        let o = self.obj(id);
+        let (controller, card) = (o.controller, o.card);
+        let object = self.obj_ref(id);
+        self.pending_triggers.push(Layer {
+            kind: LayerKind::Rule(kind),
+            object,
+            card,
+            controller,
+            target: None,
+            origin: Zone::Stack,
+            ctx: Box::new(Ctx {
+                controller,
+                card,
+                source: Some(object),
+                ..Default::default()
+            }),
+        });
+    }
+
+    /// Résolution d'un déclenchement de mot-clé.
+    fn resolve_rule_trigger(&mut self, kind: RuleTrigger, obj: crate::ids::ObjRef) {
+        if !self.is_current(obj) {
+            return; // la source a quitté sa zone : nouvel objet (CR 3.0.9)
+        }
+        let id = obj.id;
+        match kind {
+            // CR 8.3.14b
+            RuleTrigger::Spectra | RuleTrigger::BladeBreak => self.destroy(id),
+            RuleTrigger::Battleworn => self.obj_mut(id).defense_counters -= 1,
+            RuleTrigger::Temper => {
+                self.obj_mut(id).defense_counters -= 1;
+                if self.defense(id) == 0 {
+                    self.destroy(id);
+                }
+            }
+            RuleTrigger::Guardwell => {
+                let d = self.defense(id) as i8;
+                self.obj_mut(id).defense_counters -= d;
+            }
         }
     }
 
@@ -334,6 +416,19 @@ impl GameState {
             }
             AfterResolve::EndArsenal => self.stage = Stage::EndArsenal,
         }
+    }
+
+    /// CR 7.7.4 : la pile se résout comme si tous les joueurs passaient, puis
+    /// la chaîne se ferme (CR 7.7.5-7.7.7).
+    fn close_step(&mut self) {
+        if self.check_heroes() || self.flush_triggers() {
+            return;
+        }
+        if let Some(layer) = self.stack.pop() {
+            self.begin_resolve(layer);
+            return;
+        }
+        self.finish_close();
     }
 
     pub(crate) fn give_priority(&mut self, p: PlayerId) {
@@ -381,6 +476,7 @@ impl GameState {
                 self.combat
                     .queue
                     .push((top.object, top.target.expect("cible d'attaque")));
+                // (la cible a été déclarée en jouant l'attaque, CR 1.4.5)
                 if self.stack.is_empty() {
                     // CR 7.1.3 : fin de l'étape des couches.
                     self.begin_attack_step();
@@ -427,6 +523,10 @@ impl GameState {
     // ------------------------------------------------------------------
 
     fn begin_resolve(&mut self, mut layer: Layer) {
+        if let LayerKind::Rule(kind) = layer.kind {
+            self.resolve_rule_trigger(kind, layer.object);
+            return;
+        }
         if layer.kind == LayerKind::Card {
             let id = layer.object.id;
             // CR 5.3.2b : une réaction de défense qui ne peut pas défendre échoue.
@@ -444,6 +544,7 @@ impl GameState {
                 .targets
                 .clone(),
             LayerKind::Trigger(i) => self.db.get(layer.card).triggers[i as usize].targets.clone(),
+            LayerKind::Rule(_) => unreachable!(),
         };
         for (i, spec) in specs.iter().enumerate() {
             if let Some(Some(t)) = layer.ctx.targets.get(i).copied() {
@@ -502,7 +603,7 @@ impl GameState {
                     self.gain_action_points(layer.controller, 1);
                 }
             }
-            LayerKind::Trigger(_) => {}
+            LayerKind::Trigger(_) | LayerKind::Rule(_) => {}
         }
     }
 
@@ -514,8 +615,19 @@ impl GameState {
     fn begin_attack_step(&mut self) {
         let (attack, target) = self.combat.queue.remove(0);
         let tp = self.turn_player;
-        if !self.is_current(attack) {
-            // CR 7.2.2c : l'attaque ne peut pas devenir un maillon.
+        let attacker = self.obj(attack.id).controller;
+        // CR 1.4.3c : une proxy dont la source a quitté l'arène cesse d'exister.
+        let alive = self.is_current(attack)
+            && self
+                .obj(attack.id)
+                .proxy_of
+                .is_none_or(|w| self.obj(w).zone.in_arena());
+        if !alive || !self.attack_target_legal(attacker, target) {
+            // CR 7.2.2c : l'attaque ne peut pas devenir un maillon (ou n'a plus
+            // de cible légale) : elle est retirée de la file.
+            if self.is_current(attack) && self.obj(attack.id).zone == Zone::Stack {
+                self.clear(attack.id);
+            }
             if self.combat.queue.is_empty() {
                 self.close_combat_chain();
             } else {
@@ -542,15 +654,24 @@ impl GameState {
                     self.clear(o);
                 }
             }
+            if self.obj(w).zone == Zone::Permanent {
+                // Un allié qui attaque quitte la zone permanente pour la chaîne.
+                self.detach(w);
+            }
             self.obj_mut(w).zone = Zone::CombatChain;
         }
         let card = self.obj(id).card;
+        let target_obj = match target {
+            Target::Object(r) => Some(r),
+            Target::Player(_) => None,
+        };
         self.combat.links.push(ChainLink {
             attack: self.obj_ref(id),
             source,
             card,
             attacker: controller,
-            target,
+            target: self.target_controller(target),
+            target_obj,
             defenders: Vec::new(),
             defenders_from_hand: 0,
             hit: false,
@@ -562,7 +683,8 @@ impl GameState {
         self.emit(Event::Attack {
             attack: source.unwrap_or(id),
             attacker: controller,
-            target,
+            target: self.target_controller(target),
+            target_obj: target_obj.map(|r| r.id),
             link,
         });
         // CR 7.2.4
@@ -581,6 +703,10 @@ impl GameState {
     pub fn defend_options(&self) -> Vec<Choice> {
         let link = self.combat.links.last().expect("maillon");
         let p = link.target;
+        // CR 7.3.2a : on ne déclare des cartes que pour un héros attaqué.
+        if link.target_obj.is_some() {
+            return vec![Choice::Pass];
+        }
         let dominate = self.keywords(link.attack.id).has(Keywords::DOMINATE);
         let hand_declared = self
             .declared_defenders
@@ -669,7 +795,7 @@ impl GameState {
         let Some(link) = self.combat.active_link() else {
             return false;
         };
-        if link.defenders.contains(&id) {
+        if link.defenders.contains(&id) || link.target_obj.is_some() {
             return false;
         }
         let dominate = self.keywords(link.attack.id).has(Keywords::DOMINATE);
@@ -703,7 +829,12 @@ impl GameState {
     fn damage_step(&mut self) {
         self.combat.step = Some(CombatStep::Damage);
         let link = self.combat.links.last().expect("maillon").clone();
-        if self.is_current(link.attack) {
+        // CR 7.5.2b : cible disparue ou illégale, pas de dégâts.
+        let target = match link.target_obj {
+            Some(r) => Target::Object(r),
+            None => Target::Player(link.target),
+        };
+        if self.is_current(link.attack) && self.attack_target_legal(link.attacker, target) {
             let power = self.power(link.attack.id);
             // CR 7.5.2 : somme des défenses des cartes publiques qui défendent.
             let defense: i16 = link
@@ -713,25 +844,23 @@ impl GameState {
                 .map(|&d| self.defense(d))
                 .sum();
             if power > defense {
-                // Événement « hit » (CR 7.5.5) : dégâts physiques au héros.
+                // Événement « hit » (CR 7.5.2a, 7.5.5) : dégâts physiques à la
+                // cible. CR 7.5.5b : si tout est prévenu, l'attaque ne touche
+                // pas (voir `finish_damage`). Les dégâts peuvent attendre un
+                // choix de prévention : la tâche passe avant la priorité.
                 let source = link.source.unwrap_or(link.attack.id);
-                let dealt = self.deal_damage(
-                    Some(source),
-                    link.attacker,
-                    link.target,
-                    (power - defense) as i32,
-                    false,
-                );
-                // CR 7.5.5b : une attaque dont les dégâts sont tous prévenus ne touche pas.
-                if dealt > 0 {
-                    self.combat.links.last_mut().unwrap().hit = true;
-                    self.emit(Event::Hit {
-                        attack: source,
-                        attacker: link.attacker,
-                        target: link.target,
-                        damage: dealt as u16,
-                    });
-                }
+                self.run_damage(Box::new(crate::effects::DamageEvent {
+                    source: Some(source),
+                    by: link.attacker,
+                    target,
+                    amount: (power - defense) as i32,
+                    arcane: false,
+                    hit: true,
+                    replaced: false,
+                    declined: false,
+                    used: Vec::new(),
+                    on_prevent: Vec::new(),
+                }));
             }
         }
         // CR 7.5.3
@@ -761,14 +890,10 @@ impl GameState {
         self.give_priority(tp);
     }
 
-    /// CR 7.7 : fermeture de la chaîne de combat.
+    /// CR 7.7.3 : début de l'étape de fermeture de la chaîne de combat.
     pub(crate) fn close_combat_chain(&mut self) {
-        // CR 7.7.3 : événement « combat chain closes ».
-        // Simplification : blade break, battleworn, temper, guardwell sont
-        // appliqués directement (aucun joueur n'a la priorité pendant la
-        // fermeture, CR 7.7.4) ; les autres déclenchements sont résolus au
-        // retour de la priorité.
-        // TODO(règles) : résoudre les déclenchements de fermeture avant CR 7.7.5.
+        // Événement « combat chain closes » : les capacités se déclenchent
+        // (ex. Hell Hammer), dont blade break, battleworn, temper, guardwell.
         self.emit(Event::CombatChainClosed);
         let defenders: Vec<ObjectId> = self
             .combat
@@ -776,14 +901,35 @@ impl GameState {
             .iter()
             .flat_map(|l| l.defenders.iter().copied())
             .collect();
-        // Attaques, couches d'attaque et réactions quittent la pile (CR 7.7.3).
+        for id in defenders {
+            // « if this defended » : la carte est encore sur la chaîne. Ces
+            // mots-clés n'existent que sur des équipements.
+            if self.obj(id).zone != Zone::CombatChain || !self.def(id).types.has(Types::EQUIPMENT) {
+                continue;
+            }
+            let kw = self.keywords(id);
+            for (k, t) in [
+                (Keywords::BLADE_BREAK, RuleTrigger::BladeBreak),
+                (Keywords::TEMPER, RuleTrigger::Temper),
+                (Keywords::GUARDWELL, RuleTrigger::Guardwell),
+                (Keywords::BATTLEWORN, RuleTrigger::Battleworn),
+            ] {
+                if kw.has(k) {
+                    self.push_rule_trigger(t, id);
+                }
+            }
+        }
+        // Attaques, couches d'attaque et réactions quittent la pile et la file.
         let stack = std::mem::take(&mut self.stack);
         for l in stack {
-            if l.kind == LayerKind::Card
-                && self.is_current(l.object)
-                && self.obj(l.object.id).zone == Zone::Stack
-            {
-                self.clear(l.object.id);
+            if self.is_combat_layer(&l) {
+                let o = l.object.id;
+                let is_object_layer = l.kind == LayerKind::Card || self.obj(o).proxy_of.is_some();
+                if is_object_layer && self.is_current(l.object) && self.obj(o).zone == Zone::Stack {
+                    self.clear(o);
+                }
+            } else {
+                self.stack.push(l);
             }
         }
         for (a, _) in std::mem::take(&mut self.combat.queue) {
@@ -791,16 +937,49 @@ impl GameState {
                 self.clear(a.id);
             }
         }
+        // CR 7.7.1 / 7.7.4 : pas de priorité ; la suite dans `close_step`.
+        self.priority = None;
+        self.passes = 0;
+        self.stage = Stage::Closing;
+    }
+
+    /// Une couche que CR 7.7.3 retire de la pile : attaque, couche d'attaque,
+    /// réaction (carte ou capacité activée).
+    fn is_combat_layer(&self, l: &Layer) -> bool {
+        let def = self.db.get(l.card);
+        match l.kind {
+            LayerKind::Card => {
+                def.subtypes.has(Subtypes::ATTACK)
+                    || def
+                        .types
+                        .any(Types::ATTACK_REACTION | Types::DEFENSE_REACTION)
+            }
+            LayerKind::Activated(i) => {
+                let a = &def.activated[i as usize];
+                a.attack || matches!(a.speed, Speed::AttackReaction | Speed::DefenseReaction)
+            }
+            LayerKind::Trigger(_) | LayerKind::Rule(_) => false,
+        }
+    }
+
+    /// CR 7.7.5 à 7.7.7 : fin de la fermeture, une fois la pile vide.
+    fn finish_close(&mut self) {
         // CR 7.7.5 : les permanents retournent dans leurs zones.
         let on_chain: Vec<ObjectId> = (0..self.objects.len() as u32)
             .map(ObjectId)
             .filter(|&id| self.obj(id).zone == Zone::CombatChain)
             .collect();
         for id in on_chain {
+            // CR 1.3.3 : une carte de deck sur la chaîne n'est pas un permanent
+            // (ex. une aura qui défend depuis la main). Seuls les équipements,
+            // armes, tokens, et les permanents venus attaquer (alliés) le sont.
             let def = self.def(id);
-            // TODO(étape 2) : autres permanents sur la chaîne (alliés qui attaquent…).
-            let is_permanent =
-                self.obj(id).proxy_of.is_none() && def.types.any(Types::EQUIPMENT | Types::WEAPON);
+            let is_source = self.combat.links.iter().any(|l| l.source == Some(id));
+            let is_permanent = self.obj(id).proxy_of.is_none()
+                && (def
+                    .types
+                    .any(Types::EQUIPMENT | Types::WEAPON | Types::TOKEN)
+                    || is_source);
             if is_permanent {
                 self.return_to_equipment_zone(id);
             } else {
@@ -808,31 +987,16 @@ impl GameState {
                 self.clear(id);
             }
         }
-        for id in defenders {
-            if !self.def(id).types.has(Types::EQUIPMENT) || !self.obj(id).zone.in_arena() {
-                continue;
-            }
-            let kw = self.keywords(id);
-            if kw.has(Keywords::BLADE_BREAK) {
-                self.destroy(id);
-            } else if kw.has(Keywords::TEMPER) {
-                self.obj_mut(id).defense_counters -= 1;
-                if self.defense(id) == 0 {
-                    self.destroy(id);
-                }
-            } else if kw.has(Keywords::GUARDWELL) {
-                // CR 8.3.34 : -1 compteurs égaux à sa défense.
-                let d = self.defense(id) as i8;
-                self.obj_mut(id).defense_counters -= d;
-            } else if kw.has(Keywords::BATTLEWORN) {
-                self.obj_mut(id).defense_counters -= 1;
-            }
-        }
         // CR 7.7.7 : la chaîne se ferme, fin des effets « this combat chain ».
         self.combat.links.clear();
         self.combat.open = false;
         self.combat.step = None;
         self.modifiers
+            .retain(|m| m.until != Until::CombatChainCloses);
+        self.any_lose_abilities = self.modifiers.iter().any(|m| m.delta.lose_abilities);
+        self.preventions
+            .retain(|m| m.until != Until::CombatChainCloses);
+        self.replacements
             .retain(|m| m.until != Until::CombatChainCloses);
         let tp = self.turn_player;
         self.give_priority(tp);
@@ -906,9 +1070,13 @@ impl GameState {
             self.draw_up_to_intellect(tp.opponent());
         }
         // CR 4.4.4 : fin du tour.
-        self.modifiers.retain(|m| m.until != Until::EndOfTurn);
-        self.preventions.retain(|m| m.until != Until::EndOfTurn);
-        self.next_attack_effects.clear();
+        let turn = self.turn;
+        self.modifiers.retain(|m| !m.until.ends_at_end_of(turn));
+        self.any_lose_abilities = self.modifiers.iter().any(|m| m.delta.lose_abilities);
+        self.preventions.retain(|m| !m.until.ends_at_end_of(turn));
+        self.replacements.retain(|m| !m.until.ends_at_end_of(turn));
+        self.next_attack_effects
+            .retain(|e| e.turn.is_some_and(|t| t > turn));
         self.turn_log.clear();
         for o in &mut self.objects {
             o.activations = [0; 4];

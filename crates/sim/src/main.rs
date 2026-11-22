@@ -1,7 +1,10 @@
 //! fab-sim — simulateur de parties.
 //!
 //! Usage :
-//!     cargo run --release -p fab-sim -- --games 100000 [--check] [--threads N]
+//!     cargo run --release -p fab-sim -- --games 100000 [--check] [--threads N] [--mecanismes]
+//!
+//! `--mecanismes` : decks d'essai qui utilisent préventions au choix,
+//! remplacements, alliés, spectra… (voir `test_set::mechanics_loadouts`).
 //!
 //! Étape 1 : parties « bot aléatoire contre bot aléatoire » avec les decks
 //! d'essai (cartes fictives). Sert à mesurer la vitesse du moteur et, avec
@@ -46,10 +49,14 @@ fn main() {
     let seed0 = get("--seed", 1);
 
     let db = Arc::new(test_set::build());
-    let lo = [
-        test_set::aggro_loadout(&db),
-        test_set::defensive_loadout(&db),
-    ];
+    let lo = if args.iter().any(|a| a == "--mecanismes") {
+        test_set::mechanics_loadouts(&db)
+    } else {
+        [
+            test_set::aggro_loadout(&db),
+            test_set::defensive_loadout(&db),
+        ]
+    };
     println!("fab-sim — {games} parties, {threads} threads, vérification : {check}");
     let start = Instant::now();
     let per = games.div_ceil(threads);

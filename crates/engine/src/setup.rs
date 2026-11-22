@@ -65,6 +65,7 @@ impl GameState {
                     counters: 0,
                     proxy_of: None,
                     activations: [0; 4],
+                    life_delta: 0,
                 });
                 ObjectId(objects.len() as u32 - 1)
             };
@@ -153,8 +154,15 @@ impl GameState {
             stack: Vec::new(),
             combat: Combat::default(),
             modifiers: Vec::new(),
+            any_lose_abilities: false,
+            check_allies: false,
             next_attack_effects: Vec::new(),
             preventions: Vec::new(),
+            replacements: Vec::new(),
+            replacement_objects: Vec::new(),
+            next_effect_id: 0,
+            last_damage: 0,
+            last_created: Vec::new(),
             pending_triggers: Vec::new(),
             trigger_first: None,
             tasks: Vec::new(),
@@ -169,6 +177,10 @@ impl GameState {
         g.trigger_objects = (0..g.objects.len() as u32)
             .map(ObjectId)
             .filter(|&o| !g.def(o).triggers.is_empty())
+            .collect();
+        g.replacement_objects = (0..g.objects.len() as u32)
+            .map(ObjectId)
+            .filter(|&o| !g.def(o).replacements.is_empty())
             .collect();
         // CR 4.1.8 : chaque joueur mélange son deck.
         if setup.shuffle {

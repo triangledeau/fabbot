@@ -9,6 +9,7 @@
 
 use crate::events::Event;
 use crate::ids::{CardId, ObjectId, PlayerId};
+use crate::replace::ReplacementDef;
 use crate::script::{Op, TargetSpec};
 use crate::state::GameState;
 use std::ops::BitOr;
@@ -97,6 +98,9 @@ flags! {
         PHANTASM = 7,
         /// CR 8.3.22
         OVERPOWER = 8,
+        /// CR 8.3.14 : « this can be attacked » + « when this becomes the
+        /// target of an attack, destroy this ».
+        SPECTRA = 9,
     }
 }
 
@@ -205,12 +209,19 @@ pub struct TriggerDef {
     pub script: Vec<Op>,
 }
 
-/// Modification appliquée par un effet statique.
+/// Modification appliquée par un effet (statique ou continu).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Delta {
     pub power: i16,
     pub defense: i16,
     pub grants: Keywords,
+    /// « gets arcane barrier N / ward N / spellvoid N » (ex. Sand Cover,
+    /// Skera Strapping, Mask of the Swarming Claw).
+    pub arcane_barrier: u8,
+    pub ward: u8,
+    pub spellvoid: u8,
+    /// « loses all abilities » (ex. Humble, Crush Confidence).
+    pub lose_abilities: bool,
 }
 
 /// Coût additionnel en ressources (CR 5.4.4a).
@@ -258,6 +269,13 @@ pub struct CardDef {
     /// Effets statiques sur d'autres objets, actifs quand la source est dans
     /// l'arène (héros, équipements, auras). Arguments : source, objet modifié.
     pub aura: Option<fn(&GameState, ObjectId, ObjectId) -> Delta>,
+    /// Valeurs imprimées des préventions au choix (CR 8.3.8, 8.3.20, 8.3.15).
+    /// 0 = la carte n'a pas la capacité.
+    pub arcane_barrier: u8,
+    pub ward: u8,
+    pub spellvoid: u8,
+    /// Effets de remplacement statiques (« If … would …, instead … », CR 6.4).
+    pub replacements: Vec<ReplacementDef>,
 }
 
 impl CardDef {

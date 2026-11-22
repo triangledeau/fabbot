@@ -36,7 +36,10 @@ pub enum Event {
     Attack {
         attack: ObjectId,
         attacker: PlayerId,
+        /// Le joueur qui contrôle la cible (« defending hero »).
         target: PlayerId,
+        /// La cible si ce n'est pas un héros (allié, spectra).
+        target_obj: Option<ObjectId>,
         link: u8,
     },
     /// Une carte devient une carte qui défend (CR 7.0.5a).
@@ -52,6 +55,8 @@ pub enum Event {
         attack: ObjectId,
         attacker: PlayerId,
         target: PlayerId,
+        /// L'allié touché ; `None` = le héros (« when this hits a hero »).
+        target_obj: Option<ObjectId>,
         damage: u16,
     },
     /// Un maillon se résout (CR 7.6.2).
@@ -70,7 +75,10 @@ pub enum Event {
     Damage {
         source: Option<ObjectId>,
         by: PlayerId,
+        /// Le héros touché, ou le contrôleur de l'allié touché.
         target: PlayerId,
+        /// L'allié touché ; `None` = le héros.
+        target_obj: Option<ObjectId>,
         amount: u16,
         arcane: bool,
     },
@@ -116,6 +124,7 @@ impl GameState {
     /// Signale un événement : journal du tour + déclenchements.
     pub fn emit(&mut self, ev: Event) {
         self.turn_log.push(ev);
+        let any_lost = self.any_lose_abilities;
         // Les objets dont une capacité peut se déclencher.
         for k in 0..self.trigger_objects.len() {
             let id = self.trigger_objects[k];
@@ -132,6 +141,10 @@ impl GameState {
             // capacités de son arme (seule l'arme en a).
             let in_play = o.zone.in_arena() || o.zone == Zone::Stack;
             if o.proxy_of.is_some() || o.face_down && !in_play {
+                continue;
+            }
+            // « Loses all abilities » : plus de capacités déclenchées.
+            if any_lost && self.lost_abilities(id) {
                 continue;
             }
             // CR 1.7.4a : une carte qui défend (non permanente) n'a pas ses
@@ -199,6 +212,7 @@ impl GameState {
             .map(|e| match *e {
                 Event::Damage {
                     target,
+                    target_obj: None,
                     amount,
                     arcane: true,
                     ..
@@ -221,6 +235,7 @@ impl GameState {
             LayerKind::Card => Some(ScriptRef::Resolve(layer.card)),
             LayerKind::Activated(i) => Some(ScriptRef::Activated(layer.card, i)),
             LayerKind::Trigger(i) => Some(ScriptRef::Trigger(layer.card, i)),
+            LayerKind::Rule(_) => None,
         }
     }
 

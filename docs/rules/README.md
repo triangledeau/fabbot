@@ -67,7 +67,15 @@ qui la vérifient (`crates/cards/tests/regles_etape1.rs`, tests nommés `cr_…`
 | CR 5.1.3 | Coûts optionnels, X | `play.rs` | ✅ testé (X : pas encore de test) |
 | CR 5.1.8-5.1.9 | Coûts d'effet | `play.rs` | ✅ testé |
 | CR 5.2 | Capacités activées (équipement, objet, main, héros) | `play.rs` | ✅ testé |
-| CR 6.4 | Prévention des dégâts (boucliers) | `effects.rs` | ✅ testé |
+| CR 6.4.10 / 6.5.5 | Prévention des dégâts : boucliers, préventions fixes, ordre au choix du joueur | `effects.rs` | ✅ testé |
+| CR 8.3.8 / 8.3.15 / 8.3.20 | Arcane barrier (payer), spellvoid (détruire, optionnel), ward (obligatoire) | `effects.rs` | ✅ testé |
+| CR 6.4 / 6.5 | Effets de remplacement (« instead ») : cimetière, dessus du deck, dégâts, création de tokens ; statiques ou créés par un effet ; optionnels (« you may ») | `replace.rs` | ✅ testé |
+| CR 8.3.21 | Ephemeral (retiré de la partie au lieu du cimetière) | `replace.rs` + carte | ✅ testé |
+| CR 1.4.5 / 7.3.2a / 8.1.3a | Cible d'attaque au choix (héros, allié, spectra) ; personne ne défend un allié | `play.rs`, `flow.rs` | ✅ testé |
+| CR 2.5.3 / 1.10.2b | Vie des alliés, allié à 0 PV « clear » | `state.rs`, `flow.rs` | ✅ testé |
+| CR 8.3.14 | Spectra | `play.rs`, `flow.rs` | ✅ testé |
+| CR 6.3.6 | « Loses all abilities » (capacités imprimées seulement) | `state.rs`, `events.rs`, `play.rs` | ✅ testé |
+| CR 6.2.2a | Durée « until the end of their next turn » ; « during their next turn » | `state.rs`, `effects.rs` | ✅ testé |
 | CR 8.5.3 | Dégâts arcaniques | `effects.rs` | ✅ testé |
 | CR 1.11 | Priorité, passer, résolution | `flow.rs` | ✅ testé |
 | CR 1.13 / 1.14 | Points d'action, ressources, pitch | `play.rs` | ✅ testé |
@@ -79,34 +87,44 @@ qui la vérifient (`crates/cards/tests/regles_etape1.rs`, tests nommés `cr_…`
 | CR 4.5.4d | Partie nulle par blocage (stalemate) | `flow.rs` | ⚠️ cas simple seulement (decks, mains, arsenaux vides) |
 | CR 5.1 | Jouer une carte | `play.rs` | ✅ testé |
 | CR 5.3 | Résolution, go again, réactions de défense | `flow.rs` | ✅ testé |
-| CR 7.0 à 7.7 | Chaîne de combat, 6 étapes + fermeture | `flow.rs` | ✅ testé |
+| CR 7.0 à 7.7 | Chaîne de combat, 6 étapes + fermeture (déclenchements résolus pendant l'étape de fermeture, avant le retour des permanents) | `flow.rs` | ✅ testé |
 | CR 8.1 | Types : action, réactions, instant, bloc, ressource, arme, équipement | `play.rs`, `flow.rs` | ✅ testé |
 | CR 8.2.1-2, 8.2.10 | 1H / 2H / off-hand | `setup.rs` | ✅ |
-| CR 8.3.2 / 8.3.3 / 8.3.10 | Battleworn, Blade Break, Temper | `flow.rs` | ✅ testé |
+| CR 8.3.2 / 8.3.3 / 8.3.10 / 8.3.34 | Battleworn, Blade Break, Temper, Guardwell (vrais déclenchements de fermeture) | `flow.rs` | ✅ testé |
 | CR 8.3.4 | Dominate | `flow.rs`, `play.rs` | ✅ testé |
 | CR 8.3.5 | Go again | `flow.rs` | ✅ testé |
 | CR 8.5.3 / 8.5.6 / 8.5.7 | Dégâts, pioche, gain de vie | `effects.rs`, `setup.rs` | ✅ testé |
 | CR 4.1.3 | Qui choisit le premier joueur (match) | `crates/fab-match` | ✅ testé |
 | TRP 7.4 | Format Silver Age | `config/silver_age.toml` | ✅ testé |
 
-### Simplifications et manques connus (à traiter à l'étape 2)
+### Simplifications et manques connus
 
-- **Préventions au choix du joueur** : arcane barrier, ward, spellvoid
-  (CR 8.3.8, 8.3.20, 8.3.15) pas encore gérés. Les boucliers simples
-  (« prevent the next N damage ») fonctionnent.
-- **Blade Break / Battleworn / Temper / Guardwell** appliqués directement à la
-  fermeture de la chaîne. Les autres déclenchements de fermeture (ex. Hell
-  Hammer) se résolvent seulement au retour de la priorité, après le retour des
-  permanents dans leur zone (CR 7.7.4-7.7.5).
+- **Ordre de plusieurs remplacements obligatoires** sur le même événement
+  (CR 6.5.1-6.5.4) : le moteur applique ceux des cartes puis ceux des effets,
+  dans l'ordre de création, sans demander. Aucun cas dans les 9 decks où
+  l'ordre change le résultat.
+- **Remplacements optionnels** : seulement pour la création de tokens (ex.
+  Smoldering Scales). Les déplacements (cimetière, deck) et les dégâts n'en
+  acceptent que d'obligatoires (aucune carte des 9 decks n'en a d'autres).
+- **Préventions des dégâts infligés à un allié** : non gérées (aucune carte
+  des 9 decks n'en crée).
+- **Arcane barrier / ward / spellvoid de même type sur un même objet** (valeur
+  imprimée + valeur accordée) : additionnées en une seule capacité.
+- **Prévention au choix** : quand les dégâts restants tombent à 0, plus aucune
+  prévention n'est appliquée (un ward n'est pas détruit pour rien).
+- **Capacités accordées** : un effet peut donner des mots-clés et des valeurs
+  (ward, arcane barrier, spellvoid), pas encore des capacités activées ou
+  déclenchées (ex. Storm of Sandikai : « Dragon allies you control get
+  "Once per Turn Action — 0: Attack" ») ni spectra.
+- **« Loses all abilities »** : l'ordre chronologique entre la perte et une
+  capacité accordée plus tôt n'est pas pris en compte (CR 6.3.4).
+- **Fermeture de la chaîne par un effet** (CR 7.7.2c-d : attaque détruite
+  avant les dégâts, effet « close the combat chain ») : pas encore gérée.
 - **Coût d'effet impossible à payer** (CR 1.14.4b, 5.1.8a) : pas de retour en
   arrière ; chaque carte doit vérifier à l'avance qu'elle peut payer
   (`play_condition`).
 - **Informations de dernier état** (CR 1.2.3) : seulement pour go again à
   l'étape de résolution (CR 7.6.2a).
-- **Attaquer autre chose qu'un héros** (alliés, spectra) : pas encore géré.
-- **Remplacements** (« instead », ex. « if this would be put into your
-  graveyard, instead banish it ») : pas encore gérés.
-- **« Loses all abilities »**, effets « until the end of their next turn » : à faire.
 - **Partie nulle par blocage** (CR 4.5.4d) : seul le cas simple est détecté ;
   sinon le simulateur arrête la partie après N tours (« limite de tours »).
 - Mélange des decks fait avant le choix du premier joueur au lieu d'après

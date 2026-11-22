@@ -1,5 +1,6 @@
 //! Les points de décision : tout choix d'un joueur passe par ici.
 
+use crate::effects::PreventRef;
 use crate::ids::{ObjectId, PlayerId};
 use crate::script::Target;
 
@@ -32,6 +33,14 @@ pub enum DecisionKind {
     Arsenal,
     /// Fin de tour : choisir la prochaine carte du pitch à mettre sous le deck (CR 4.4.3c).
     PitchOrder,
+    /// Cible d'une attaque : héros adverse, allié, objet avec spectra (CR 1.4.5).
+    AttackTarget,
+    /// Le joueur protégé choisit la prochaine prévention à appliquer, ou
+    /// « Pass » pour refuser les préventions optionnelles restantes (CR 6.5.5,
+    /// arcane barrier, spellvoid).
+    Prevention,
+    /// Appliquer un remplacement optionnel (« instead you may … ») ? Oui / non.
+    Replacement,
 }
 
 /// Une option proposée au joueur.
@@ -66,6 +75,8 @@ pub enum Choice {
     Mode(u8),
     /// Le déclenchement n° `i` en attente.
     Trigger(u8),
+    /// Appliquer cette prévention.
+    Prevent(PreventRef),
 }
 
 /// Ce que le moteur attend : « le joueur X doit choisir parmi ces options ».

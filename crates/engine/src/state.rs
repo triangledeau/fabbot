@@ -2,10 +2,12 @@
 
 use crate::card::{CardDb, CardDef, Delta, Keywords, Subtypes, Types};
 use crate::decision::Decision;
+use crate::effects::DamageEvent;
 use crate::events::Event;
 use crate::ids::{CardId, ObjRef, ObjectId, PlayerId};
+use crate::replace::{Pending, ReplSource, Replacement};
 use crate::rng::Rng;
-use crate::script::{Ctx, ScriptRef};
+use crate::script::{Ctx, ScriptRef, Target};
 use crate::zones::Zone;
 use std::sync::Arc;
 
@@ -30,6 +32,8 @@ pub struct Object {
     pub proxy_of: Option<ObjectId>,
     /// Activations de chaque capacité ce tour (limite « Once per Turn »).
     pub activations: [u8; 4],
+    /// Vie gagnée moins vie perdue, pour un allié (CR 2.5.3a).
+    pub life_delta: i16,
 }
 
 impl Object {
@@ -82,6 +86,24 @@ pub enum LayerKind {
     Activated(u8),
     /// Une capacité déclenchée (index dans `CardDef::triggers`).
     Trigger(u8),
+    /// Une capacité déclenchée définie par une règle ou un mot-clé
+    /// (spectra, blade break…), gérée directement par le moteur.
+    Rule(RuleTrigger),
+}
+
+/// Capacités déclenchées des mots-clés (CR 8.3).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuleTrigger {
+    /// CR 8.3.14 : « When this becomes the target of an attack, destroy this. »
+    Spectra,
+    /// CR 8.3.3 : « When the combat chain closes, if this defended, destroy it. »
+    BladeBreak,
+    /// CR 8.3.2 : « … if this defended, put a -1{d} counter on it. »
+    Battleworn,
+    /// CR 8.3.10 : « … put a -1{d} counter on it, then if it has 0{d}, destroy it. »
+    Temper,
+    /// CR 8.3.34 : « … put -1{d} counters on it equal to its {d}. »
+    Guardwell,
 }
 
 /// Une couche sur la pile.
@@ -93,8 +115,8 @@ pub struct Layer {
     /// Définition utilisée pour les effets (reste valable si la source disparaît, CR 1.7.1a).
     pub card: CardId,
     pub controller: PlayerId,
-    /// Cible de l'attaque (CR 1.4.5).
-    pub target: Option<PlayerId>,
+    /// Cible de l'attaque (CR 1.4.5) : un héros ou un objet attaquable.
+    pub target: Option<Target>,
     /// Zone d'où la carte a été jouée (main, arsenal...).
     pub origin: Zone,
     /// Cibles, modes, X... déclarés.
@@ -122,7 +144,10 @@ pub struct ChainLink {
     /// Définition de l'attaque (informations de dernier état, CR 7.0.3c).
     pub card: CardId,
     pub attacker: PlayerId,
+    /// Le joueur qui contrôle la cible de l'attaque (« defending hero », CR 7.2.3b).
     pub target: PlayerId,
+    /// La cible, si ce n'est pas un héros (allié, objet avec spectra).
+    pub target_obj: Option<ObjRef>,
     pub defenders: Vec<ObjectId>,
     /// Nombre de cartes venues de la main qui défendent (pour dominate).
     pub defenders_from_hand: u8,
@@ -137,7 +162,7 @@ pub struct Combat {
     pub step: Option<CombatStep>,
     pub links: Vec<ChainLink>,
     /// File d'attente des attaques (CR 3.15.7) : (attaque, cible).
-    pub queue: Vec<(ObjRef, PlayerId)>,
+    pub queue: Vec<(ObjRef, Target)>,
     /// Index du journal du tour à l'ouverture (« this combat chain »).
     pub log_start: usize,
 }
@@ -159,6 +184,20 @@ impl Combat {
 pub enum Until {
     EndOfTurn,
     CombatChainCloses,
+    /// Jusqu'à la fin du tour n° N (ex. « until the end of their next turn »,
+    /// voir `GameState::end_of_next_turn`).
+    EndOfTurnNumber(u32),
+}
+
+impl Until {
+    /// L'effet se termine-t-il à la fin du tour `turn` (CR 4.4.4) ?
+    pub fn ends_at_end_of(self, turn: u32) -> bool {
+        match self {
+            Until::EndOfTurn => true,
+            Until::CombatChainCloses => false,
+            Until::EndOfTurnNumber(n) => n <= turn,
+        }
+    }
 }
 
 /// « X gets +N » : modification d'un objet par un effet continu.
@@ -178,16 +217,32 @@ pub struct NextAttackEffect {
     pub delta: Delta,
     /// Seulement pour une carte d'attaque jouée (« next attack action card you play »).
     pub cards_only: bool,
+    /// Seulement pendant ce tour (« their first attack during their next turn ») ;
+    /// `None` = ce tour-ci.
+    pub turn: Option<u32>,
 }
 
-/// « Prevent the next N damage that would be dealt to … » (CR 6.4).
+/// Un effet de prévention créé par une capacité (CR 6.4.10), qui protège un héros.
 #[derive(Clone, Copy, Debug)]
 pub struct Prevention {
+    /// Identifiant (pour le choix de l'ordre, CR 6.5.5).
+    pub id: u16,
+    /// Le héros protégé ; son joueur contrôle l'effet.
     pub player: PlayerId,
-    pub remaining: i32,
+    /// Quantité restante ; `None` = « prevent it » / « prevent all » (CR 6.4.10b).
+    pub remaining: Option<i32>,
     pub arcane_only: bool,
     /// Seulement les dégâts de cette source.
     pub source: Option<ObjRef>,
+    /// Seulement les dégâts des sources qui vérifient ce filtre (ex. « a red source »).
+    pub source_filter: Option<fn(&GameState, ObjectId) -> bool>,
+    /// Prévention « fixe » (« The next time … prevent N », CR 6.4.10i) : elle ne
+    /// sert que pour un seul événement de dégâts. Sinon, bouclier (« prevent
+    /// the next N damage », CR 6.4.10j) qui dure jusqu'à épuisement.
+    pub fixed: bool,
+    /// « If you prevent damage this way, … » (ex. Toe the Line) : appelé avec
+    /// le joueur protégé et la quantité prévenue.
+    pub on_prevent: Option<fn(&mut GameState, PlayerId, i32)>,
     pub until: Until,
 }
 
@@ -225,6 +280,16 @@ pub enum Task {
         layer: Box<Layer>,
         next: u8,
     },
+    /// Déclarer la cible d'une attaque (CR 1.4.5, 5.1.4b).
+    PlayAttackTarget,
+    /// Des dégâts en cours (remplacements, préventions au choix), CR 6.5.
+    Damage(Box<DamageEvent>),
+    /// Un événement en attente d'un choix de remplacement optionnel.
+    Replace {
+        pending: Pending,
+        used: Vec<ReplSource>,
+        asking: Option<ReplSource>,
+    },
 }
 
 /// Où en est le déroulement de la partie (hors tâches et priorité).
@@ -246,6 +311,9 @@ pub enum Stage {
     EndPitchOrder(PlayerId),
     /// Suite et fin de la phase de fin (CR 4.4.3d-f, 4.4.4).
     EndRest,
+    /// Étape de fermeture de la chaîne de combat (CR 7.7.4-7.7.7) : la pile
+    /// se résout sans priorité, puis la chaîne se ferme.
+    Closing,
     GameOver,
 }
 
@@ -306,8 +374,25 @@ pub struct GameState {
     pub stack: Vec<Layer>,
     pub combat: Combat,
     pub modifiers: Vec<Modifier>,
+    /// Un des `modifiers` fait perdre ses capacités à un objet (chemin rapide).
+    pub any_lose_abilities: bool,
+    /// Un allié a perdu des PV : vérifier s'il est à 0 (CR 1.10.2b).
+    pub check_allies: bool,
     pub next_attack_effects: Vec<NextAttackEffect>,
     pub preventions: Vec<Prevention>,
+    /// Effets de remplacement créés par des capacités (CR 6.4).
+    pub replacements: Vec<Replacement>,
+    /// Objets dont la carte a des remplacements statiques.
+    pub replacement_objects: Vec<ObjectId>,
+    /// Compteur d'identifiants des préventions et remplacements.
+    pub next_effect_id: u16,
+    /// Dégâts réellement infligés par le dernier événement de dégâts terminé
+    /// (« if damage is dealt this way », « for each damage dealt this way »).
+    /// À lire dans l'instruction **suivante** du script : les dégâts peuvent
+    /// attendre un choix de prévention.
+    pub last_damage: i32,
+    /// Tokens créés par le dernier `create_tokens` (même remarque).
+    pub last_created: Vec<ObjectId>,
     /// Couches déclenchées créées, pas encore ajoutées à la pile (CR 6.6.6).
     pub pending_triggers: Vec<Layer>,
     /// Joueur qui empile ses déclenchements en premier (CR 6.6.6b).
@@ -383,6 +468,19 @@ impl GameState {
         Ok(())
     }
 
+    /// Recalcule la décision de priorité en attente après une modification
+    /// directe de l'état (tests, outils). Sans effet sur les autres décisions.
+    pub fn refresh_priority(&mut self) {
+        if self
+            .pending
+            .as_ref()
+            .is_some_and(|d| d.kind == crate::decision::DecisionKind::Priority)
+        {
+            self.pending = None;
+            self.advance();
+        }
+    }
+
     /// Le maillon actif, s'il existe.
     pub fn active_link(&self) -> Option<&ChainLink> {
         self.combat.active_link()
@@ -445,7 +543,23 @@ impl GameState {
     /// la zone permanente. Applique CR 3.0.9 (nouvel objet hors de l'arène).
     /// Renvoie la zone d'origine.
     pub(crate) fn move_to(&mut self, id: ObjectId, zone: Zone, on_top: bool) -> Zone {
+        // CR 6.4 : « If this would be put into a graveyard, instead … ».
+        let (zone, on_top) = self.replace_move(id, zone, on_top);
         let from = self.obj(id).zone;
+        if zone == Zone::Gone {
+            // Retiré de la partie (CR 8.3.21b, ex. ephemeral).
+            let was_in_arena = from.in_arena();
+            self.detach(id);
+            self.unequip(id);
+            let owner = self.obj(id).owner;
+            let o = self.obj_mut(id);
+            o.zone = Zone::Gone;
+            o.gen += 1;
+            if was_in_arena {
+                self.emit(Event::LeaveArena { card: id, owner });
+            }
+            return from;
+        }
         let was_in_arena = from.in_arena();
         // Un token qui quitte l'arène cesse d'exister (CR 8.1.8a).
         if self.def(id).types.has(Types::TOKEN) && was_in_arena && !zone.in_arena() {
@@ -495,6 +609,7 @@ impl GameState {
             o.counters = 0;
             o.tapped = false;
             o.activations = [0; 4];
+            o.life_delta = 0;
         }
         o.zone = zone;
         o.face_down = matches!(zone, Zone::Deck | Zone::Hand | Zone::Arsenal);
@@ -551,13 +666,36 @@ impl GameState {
     /// Met un objet au cimetière de son propriétaire (événement « ToGraveyard »).
     pub fn put_in_graveyard(&mut self, id: ObjectId) {
         let owner = self.obj(id).owner;
+        // Puissance utile seulement si un remplacement envoie l'objet en bannissement.
+        let power = if self.no_replacements() {
+            0
+        } else {
+            self.power_if_public(id)
+        };
         let from = self.move_to(id, Zone::Graveyard, true);
-        if self.obj(id).zone == Zone::Graveyard {
-            self.emit(Event::ToGraveyard {
+        match self.obj(id).zone {
+            Zone::Graveyard => self.emit(Event::ToGraveyard {
                 card: id,
                 owner,
                 from,
-            });
+            }),
+            // Remplacé par « instead banish it » (ex. Embraforged Gauntlet).
+            Zone::Banished => self.emit(Event::Banished {
+                card: id,
+                owner,
+                from,
+                power,
+            }),
+            _ => {}
+        }
+    }
+
+    /// Puissance d'un objet public qui a la propriété (0 sinon), avant un déplacement.
+    pub(crate) fn power_if_public(&self, id: ObjectId) -> u16 {
+        if self.def(id).power.is_some() && !self.obj(id).face_down {
+            self.power(id) as u16
+        } else {
+            0
         }
     }
 
@@ -574,14 +712,19 @@ impl GameState {
             d.power += x.power;
             d.defense += x.defense;
             d.grants = d.grants | x.grants;
+            d.arcane_barrier += x.arcane_barrier;
+            d.ward += x.ward;
+            d.spellvoid += x.spellvoid;
+            d.lose_abilities |= x.lose_abilities;
         };
         for m in &self.modifiers {
             if m.target == r {
                 add(m.delta);
             }
         }
-        // Effets statiques de la carte elle-même (CR 5.4).
-        if o.proxy_of.is_none() {
+        // Effets statiques de la carte elle-même (CR 5.4), sauf si elle a
+        // perdu ses capacités.
+        if o.proxy_of.is_none() && !self.lost_abilities(id) {
             if let Some(f) = self.db.get(o.card).self_mod {
                 add(f(self, id));
             }
@@ -595,6 +738,23 @@ impl GameState {
         d
     }
 
+    /// L'objet a-t-il perdu toutes ses capacités (« loses all abilities ») ?
+    ///
+    /// CR 6.3.6 : il ne perd que ses capacités propres (imprimées) ; celles
+    /// qu'un autre effet lui donne restent (ex. go again accordé).
+    /// TODO(règles) CR 6.3.4 : on ne tient pas compte de l'ordre chronologique
+    /// (une capacité accordée *avant* la perte devrait peut-être disparaître).
+    #[inline]
+    pub fn lost_abilities(&self, id: ObjectId) -> bool {
+        if !self.any_lose_abilities {
+            return false;
+        }
+        let r = self.obj_ref(id);
+        self.modifiers
+            .iter()
+            .any(|m| m.delta.lose_abilities && m.target == r)
+    }
+
     /// Objets dont les effets statiques « aura » sont actifs.
     fn static_sources(&self) -> impl Iterator<Item = ObjectId> + '_ {
         let heroes = self.players.iter().map(|p| p.hero);
@@ -605,7 +765,7 @@ impl GameState {
         heroes
             .chain(equip)
             .chain(self.permanents.iter().copied())
-            .filter(|&s| self.db.get(self.obj(s).card).aura.is_some())
+            .filter(|&s| self.db.get(self.obj(s).card).aura.is_some() && !self.lost_abilities(s))
     }
 
     /// Puissance actuelle (CR 2.9.3, jamais négative CR 2.0.3c).
@@ -635,9 +795,102 @@ impl GameState {
             // fixé à sa création (modificateur). Les mots-clés statiques de
             // l'arme (ex. dominate) sont hérités.
             Some(w) => self.keywords(w).without(Keywords::GO_AGAIN),
+            None if self.lost_abilities(id) => Keywords::NONE,
             None => self.db.get(o.card).keywords,
         };
         base | self.continuous_delta(id).grants
+    }
+
+    /// Valeurs actuelles des préventions au choix d'un objet :
+    /// (arcane barrier, ward, spellvoid), CR 8.3.8, 8.3.20, 8.3.15.
+    pub fn prevention_values(&self, id: ObjectId) -> (u8, u8, u8) {
+        let def = self.def(id);
+        let printed = if self.lost_abilities(id) {
+            (0, 0, 0)
+        } else {
+            (def.arcane_barrier, def.ward, def.spellvoid)
+        };
+        let d = self.continuous_delta(id);
+        (
+            printed.0 + d.arcane_barrier,
+            printed.1 + d.ward,
+            printed.2 + d.spellvoid,
+        )
+    }
+
+    /// Total de vie d'un objet vivant : héros (CR 2.5.3) ou allié. `None` si
+    /// l'objet n'a pas la propriété vie.
+    pub fn life_total(&self, id: ObjectId) -> Option<i32> {
+        let o = self.obj(id);
+        if self.player(o.owner).hero == id {
+            return Some(self.player(o.owner).life);
+        }
+        let base = self.def(id).life? as i32;
+        Some((base + o.life_delta as i32).max(0))
+    }
+
+    /// CR 2.5.1a : un permanent qui a la propriété vie (allié…), hors héros.
+    pub fn is_living_permanent(&self, id: ObjectId) -> bool {
+        let o = self.obj(id);
+        o.zone == Zone::Permanent && self.def(id).life.is_some()
+    }
+
+    /// CR 1.4.5a : l'objet peut-il être attaqué ? (permanent vivant, ou spectra)
+    pub fn is_attackable_object(&self, id: ObjectId) -> bool {
+        let o = self.obj(id);
+        if !o.zone.in_arena() || o.zone == Zone::Hero || o.face_down {
+            return false;
+        }
+        // Spectra imprimé seulement (aucune carte des 9 decks ne le donne).
+        self.is_living_permanent(id)
+            || (self.def(id).keywords.has(Keywords::SPECTRA) && !self.lost_abilities(id))
+    }
+
+    /// Les cibles qu'une attaque du joueur `p` peut déclarer (CR 1.4.5) : le
+    /// héros adverse et les objets attaquables qu'un adversaire contrôle.
+    pub fn attack_targets(&self, p: PlayerId) -> Vec<Target> {
+        let opp = p.opponent();
+        let mut v = vec![Target::Player(opp)];
+        for &id in &self.permanents {
+            if self.obj(id).controller == opp && self.is_attackable_object(id) {
+                v.push(Target::Object(self.obj_ref(id)));
+            }
+        }
+        v
+    }
+
+    /// Une cible d'attaque est-elle encore légale (CR 7.2.2c, 7.5.2b) ?
+    pub fn attack_target_legal(&self, attacker: PlayerId, t: Target) -> bool {
+        match t {
+            Target::Player(p) => p != attacker,
+            Target::Object(r) => {
+                self.is_current(r)
+                    && self.obj(r.id).controller != attacker
+                    && self.is_attackable_object(r.id)
+            }
+        }
+    }
+
+    /// Le joueur qui contrôle une cible (héros ou objet).
+    pub fn target_controller(&self, t: Target) -> PlayerId {
+        match t {
+            Target::Player(p) => p,
+            Target::Object(r) => self.obj(r.id).controller,
+        }
+    }
+
+    /// Numéro du prochain tour du joueur `p` (« their next turn »), partie à 2.
+    pub fn next_turn_of(&self, p: PlayerId) -> u32 {
+        if p == self.turn_player {
+            self.turn + 2
+        } else {
+            self.turn + 1
+        }
+    }
+
+    /// Durée « until the end of their next turn ».
+    pub fn end_of_next_turn(&self, p: PlayerId) -> Until {
+        Until::EndOfTurnNumber(self.next_turn_of(p))
     }
 
     /// Le dessus du deck d'un joueur.
