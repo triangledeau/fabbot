@@ -47,7 +47,10 @@ humain) répond par l'index d'une option. Tout choix de joueur passe par là.
 - Textes des cartes : **fichier officiel LSS** (`bash tools/fetch_cards.sh`,
   colonne `face_*_true_textbox` = texte à jour avec errata). La base
   communautaire ne sert que de complément (légalité par format). Voir
-  `docs/cards/README.md`. Vérification : `python3 tools/check_cards.py`.
+  `docs/cards/README.md`. Vérification : `python3 tools/check_cards.py`, et
+  pour les cartes codées `python3 tools/check_coded_cards.py`.
+- Vraies cartes : `crates/cards/src/real/` (texte officiel en commentaire
+  au-dessus de chaque carte).
 - Les 9 decks sont dans `data/decks/` ; `cargo run -p fab-cards --bin deck-stats`.
 - En Silver Age il n'y a pas de sideboard séparé : avant chaque manche, on choisit
   équipement + deck de 40 dans un card-pool de 55 (CR 4.1).
@@ -66,7 +69,8 @@ humain) répond par l'index d'une option. Tout choix de joueur passe par là.
   option légale : un test qui attend une décision doit en tenir compte.
 - Tests de règles : `crates/cards/tests/regles_*.rs`, un test par article du
   CR, nommé `cr_x_y_z_description`. Cartes fictives : `fab_cards::test_set`.
-- Test massif : `cargo run --release -p fab-sim -- --games 100000 --check`.
+- Test massif : `cargo run --release -p fab-sim -- --games 100000 --check`
+  (`--vrais` : vrais decks Hala contre Dorinthea).
 - Organisation du moteur et façon d'écrire une carte : `docs/moteur.md`.
 - Harnais de test commun : `crates/cards/tests/commun/mod.rs` (`partie`, `choisir`,
   `passer_jusqua`, `finir_le_tour`).

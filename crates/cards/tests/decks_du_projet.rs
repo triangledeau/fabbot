@@ -42,3 +42,47 @@ fn chaque_deck_respecte_le_format_silver_age() {
         assert_eq!(d.arena_count() + d.deck_count(), 55, "{name}");
     }
 }
+
+/// Les decks Hala et Dorinthea sont entièrement codés : un choix d'équipement
+/// et de 40 cartes se construit, et 300 parties entre bots aléatoires se
+/// jouent sans incohérence (vérification après chaque décision).
+#[test]
+fn hala_et_dorinthea_jouent_avec_les_vraies_cartes() {
+    use fab_ai::{play_out, RandomAgent};
+    use fab_engine::{GameSetup, GameState, PlayerId};
+    use std::sync::Arc;
+    let db = Arc::new(fab_cards::real::build());
+    let lire = |f: &str| {
+        let text = fs::read_to_string(racine().join("data/decks").join(f)).unwrap();
+        let list = Decklist::parse(&text).unwrap();
+        // Tout le card-pool de 55 doit être codé.
+        for e in &list.deck {
+            let c = match e.color {
+                fab_cards::decklist::Color::Red => fab_engine::Color::Red,
+                fab_cards::decklist::Color::Yellow => fab_engine::Color::Yellow,
+                fab_cards::decklist::Color::Blue => fab_engine::Color::Blue,
+            };
+            fab_cards::real::find(&db, &e.name, Some(c)).unwrap();
+        }
+        for e in &list.arena {
+            fab_cards::real::find(&db, &e.name, None).unwrap();
+        }
+        fab_cards::real::default_loadout(&db, &list).unwrap()
+    };
+    let lo = [lire("02_hala.txt"), lire("03_dorinthea.txt")];
+    assert_eq!(lo[0].deck.len(), 40);
+    assert_eq!(lo[1].deck.len(), 40);
+    for seed in 0..300u64 {
+        let setup = GameSetup {
+            players: lo.clone(),
+            chooser: PlayerId((seed % 2) as u8),
+            seed,
+            shuffle: true,
+            max_turns: 200,
+        };
+        let mut g = GameState::new(db.clone(), setup).unwrap();
+        let mut a = RandomAgent::new(seed ^ 0xA5A5);
+        let mut b = RandomAgent::new(seed ^ 0x5A5A);
+        play_out(&mut g, [&mut a, &mut b], true).unwrap_or_else(|e| panic!("graine {seed} : {e}"));
+    }
+}

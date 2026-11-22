@@ -90,6 +90,13 @@ fn at_your_action_phase(g: &GameState, me: ObjectId, e: &Event) -> bool {
 /// Construit la base des cartes d'essai.
 pub fn build() -> CardDb {
     let mut db = CardDb::new();
+    add_to(&mut db);
+    db
+}
+
+/// Ajoute les cartes d'essai à une base (ex. : base des vraies cartes, pour
+/// les tests qui mélangent vraies cartes et cartes d'essai).
+pub fn add_to(db: &mut CardDb) {
     let hero = |name: &str| CardDef {
         name: name.into(),
         life: Some(20),
@@ -521,8 +528,7 @@ pub fn build() -> CardDb {
         ..Default::default()
     }];
     db.add(b);
-    add_engine_cards(&mut db);
-    db
+    add_engine_cards(db);
 }
 
 /// Une carte de token (CR 8.1.8).

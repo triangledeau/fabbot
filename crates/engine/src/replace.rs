@@ -16,7 +16,7 @@
 //! calcule directement le bon résultat.
 //!
 //! Événements gérés : mise au cimetière, mise sur le dessus d'un deck,
-//! dégâts (avant les préventions, CR 6.5.4-6.5.5), création de tokens.
+//! dégâts (avant les préventions, CR 6.5.4-6.5.5), création de tokens, sharpen.
 //! Les préventions (CR 6.4.10) sont dans `effects.rs` (dégâts).
 
 use crate::decision::{Choice, Decision, DecisionKind};
@@ -36,6 +36,9 @@ pub enum ReplaceKind {
     Damage,
     /// Des tokens vont être créés.
     CreateToken,
+    /// Un objet va être aiguisé (sharpen) `amount` fois (ex. Swordmaster's
+    /// Path : « instead sharpen it an additional time »).
+    Sharpen,
 }
 
 /// L'événement sur le point de se produire, que les remplacements modifient.
@@ -348,13 +351,23 @@ impl GameState {
     fn finish_replaced(&mut self, p: Pending) {
         // Les autres événements (dégâts, déplacements) sont réalisés
         // directement par le moteur.
-        if p.kind == ReplaceKind::CreateToken {
-            if let Some(card) = p.card {
-                for _ in 0..p.amount.max(0) {
-                    let id = self.create_token_raw(p.player, card);
-                    self.last_created.push(id);
+        match p.kind {
+            ReplaceKind::CreateToken => {
+                if let Some(card) = p.card {
+                    for _ in 0..p.amount.max(0) {
+                        let id = self.create_token_raw(p.player, card);
+                        self.last_created.push(id);
+                    }
                 }
             }
+            ReplaceKind::Sharpen => {
+                if let Some(id) = p.object {
+                    for _ in 0..p.amount.max(0) {
+                        self.sharpen_raw(p.player, id);
+                    }
+                }
+            }
+            _ => {}
         }
     }
 }
