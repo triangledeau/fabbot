@@ -26,7 +26,9 @@ pub struct Object {
     /// Somme des compteurs +1/-1 de défense et de puissance (CR 1.15.2a).
     pub defense_counters: i8,
     pub power_counters: i8,
-    /// Autres compteurs (ex. compteurs « verse »).
+    /// Autres compteurs (ex. compteurs « verse »). Pour une attaque-proxy :
+    /// numéro de cette attaque parmi les attaques de son arme ce tour (1 = la
+    /// première), pour « its first attack this turn » (Zenith Blade).
     pub counters: u8,
     /// Pour une attaque-proxy : l'arme qu'elle représente (CR 1.4.3).
     pub proxy_of: Option<ObjectId>,
@@ -104,6 +106,9 @@ pub enum RuleTrigger {
     Temper,
     /// CR 8.3.34 : « … put -1{d} counters on it equal to its {d}. »
     Guardwell,
+    /// CR 8.5.58 : sharpen, partie déclenchée retardée : « at the beginning of
+    /// the end phase, remove all +1{p} counters from it ».
+    Unsharpen,
 }
 
 /// Une couche sur la pile.
@@ -220,6 +225,30 @@ pub struct NextAttackEffect {
     /// Seulement pendant ce tour (« their first attack during their next turn ») ;
     /// `None` = ce tour-ci.
     pub turn: Option<u32>,
+    /// Seulement une attaque de cette arme (« its next attack this turn »,
+    /// ex. Cut n' Carve).
+    pub weapon: Option<ObjRef>,
+}
+
+/// Effet d'un tour sur les attaques d'une arme (CR 5.2.3, 5.1.6).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WeaponEffectKind {
+    /// « Your next attack with it this turn costs {r} less to activate »
+    /// (Sharp Incline) : consommé à la prochaine activation d'attaque.
+    CostLess(u8),
+    /// « You may attack with the weapon twice this turn » (Flurry) : fixe la
+    /// limite d'activation à 2 (CR 5.2.3e ; plusieurs fois = toujours 2).
+    AttackTwice,
+    /// « You may attack an additional time with that weapon this turn »
+    /// (Dorinthea) : dépasse la limite d'une activation (CR 5.2.3, 5.2.3c).
+    AdditionalAttack,
+}
+
+/// Un [`WeaponEffectKind`] en cours, jusqu'à la fin du tour.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct WeaponEffect {
+    pub weapon: ObjRef,
+    pub kind: WeaponEffectKind,
 }
 
 /// Un effet de prévention créé par une capacité (CR 6.4.10), qui protège un héros.
@@ -379,6 +408,11 @@ pub struct GameState {
     /// Un allié a perdu des PV : vérifier s'il est à 0 (CR 1.10.2b).
     pub check_allies: bool,
     pub next_attack_effects: Vec<NextAttackEffect>,
+    /// Effets du tour sur les attaques des armes (coût, limite d'activation).
+    pub weapon_effects: Vec<WeaponEffect>,
+    /// Objets aiguisés ce tour (sharpen, CR 8.5.58) : leurs compteurs +1{p}
+    /// sont retirés au début de la phase de fin.
+    pub sharpened: Vec<ObjRef>,
     pub preventions: Vec<Prevention>,
     /// Effets de remplacement créés par des capacités (CR 6.4).
     pub replacements: Vec<Replacement>,

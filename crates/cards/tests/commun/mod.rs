@@ -51,7 +51,58 @@ pub fn partie_heros(
     arena0: &[&str],
     arena1: &[&str],
 ) -> Partie {
-    let db = Arc::new(test_set::build());
+    partie_db(
+        Arc::new(test_set::build()),
+        heros,
+        main0,
+        suite0,
+        main1,
+        suite1,
+        arena0,
+        arena1,
+    )
+}
+
+/// Base des vraies cartes + cartes d'essai (pour les adversaires et le remplissage).
+pub fn base_vraie() -> CardDb {
+    let mut db = fab_cards::real::build();
+    test_set::add_to(&mut db);
+    db
+}
+
+/// Comme [`partie_heros`], avec les vraies cartes (et les cartes d'essai).
+pub fn partie_vraie(
+    heros: [&str; 2],
+    main0: &[(&str, Option<Color>)],
+    suite0: &[(&str, Option<Color>)],
+    main1: &[(&str, Option<Color>)],
+    suite1: &[(&str, Option<Color>)],
+    arena0: &[&str],
+    arena1: &[&str],
+) -> Partie {
+    partie_db(
+        Arc::new(base_vraie()),
+        heros,
+        main0,
+        suite0,
+        main1,
+        suite1,
+        arena0,
+        arena1,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn partie_db(
+    db: Arc<CardDb>,
+    heros: [&str; 2],
+    main0: &[(&str, Option<Color>)],
+    suite0: &[(&str, Option<Color>)],
+    main1: &[(&str, Option<Color>)],
+    suite1: &[(&str, Option<Color>)],
+    arena0: &[&str],
+    arena1: &[&str],
+) -> Partie {
     let loadout = |hero: &str,
                    main: &[(&str, Option<Color>)],
                    suite: &[(&str, Option<Color>)],
@@ -149,14 +200,19 @@ impl Partie {
         self.g.apply(i).unwrap();
     }
 
-    /// Une carte de la main du joueur, par nom et couleur.
+    /// Une carte de la main du joueur, par nom et couleur (pas encore
+    /// déclarée comme carte qui défend).
     pub fn en_main(&self, p: PlayerId, nom: &str, couleur: Option<Color>) -> ObjectId {
         *self
             .g
             .player(p)
             .hand
             .iter()
-            .find(|&&c| self.g.def(c).name == nom && self.g.def(c).color == couleur)
+            .find(|&&c| {
+                self.g.def(c).name == nom
+                    && self.g.def(c).color == couleur
+                    && !self.g.declared_defenders.contains(&c)
+            })
             .unwrap_or_else(|| panic!("{nom} {couleur:?} absente de la main de {p:?}"))
     }
 

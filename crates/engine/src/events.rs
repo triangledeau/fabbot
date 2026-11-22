@@ -113,6 +113,11 @@ pub enum Event {
         player: PlayerId,
         card: ObjectId,
     },
+    /// Un objet est aiguisé (sharpen, CR 8.5.58) par ce joueur.
+    Sharpened {
+        player: PlayerId,
+        card: ObjectId,
+    },
     /// Un joueur gagne des PV.
     GainedLife {
         player: PlayerId,
@@ -228,6 +233,32 @@ impl GameState {
         self.turn_log.iter().any(
             |e| matches!(e, Event::Banished { owner, power, .. } if *owner == p && *power >= 6),
         )
+    }
+
+    /// Cet objet a-t-il été aiguisé ce tour (CR 8.5.58a) ?
+    pub fn sharpened_this_turn(&self, id: ObjectId) -> bool {
+        self.turn_log
+            .iter()
+            .any(|e| matches!(e, Event::Sharpened { card, .. } if *card == id))
+    }
+
+    /// Le joueur a-t-il aiguisé ce tour un objet qui vérifie `f` (CR 8.5.58a) ?
+    pub fn player_sharpened_this_turn(
+        &self,
+        p: PlayerId,
+        f: impl Fn(&GameState, ObjectId) -> bool,
+    ) -> bool {
+        self.turn_log.iter().any(|e| match *e {
+            Event::Sharpened { player, card } => player == p && f(self, card),
+            _ => false,
+        })
+    }
+
+    /// Une attaque d'arme : attaque-proxy dont la source est une arme (CR 1.4.3).
+    pub fn is_weapon_attack(&self, attack: ObjectId) -> bool {
+        self.obj(attack)
+            .proxy_of
+            .is_some_and(|w| self.def(w).types.has(Types::WEAPON))
     }
 
     pub(crate) fn script_for(&self, layer: &Layer) -> Option<ScriptRef> {

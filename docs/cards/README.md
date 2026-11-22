@@ -31,6 +31,10 @@ désaccord, le fichier officiel l'emporte.
   `data/cards/sources/` (non versionné : on ne republie pas les données de LSS).
 - `python3 tools/check_cards.py` : vérifie que chaque carte des 9 listes existe
   dans le fichier officiel, avec la bonne couleur.
+- `python3 tools/check_coded_cards.py` : compare les cartes **codées**
+  (`crates/cards/src/real/`, listées par `cargo run -p fab-cards --bin
+  card-dump`) au fichier officiel : pitch, coût, puissance, défense, vie,
+  intellect, mots de la ligne de type, mots-clés imprimés.
 
 ## Vérification des 9 decks (2026-11-22, fichier officiel mis à jour le même jour)
 

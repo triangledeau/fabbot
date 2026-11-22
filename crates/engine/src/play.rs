@@ -5,7 +5,9 @@ use crate::decision::{Choice, Decision, DecisionKind};
 use crate::events::Event;
 use crate::ids::{ObjectId, PlayerId};
 use crate::script::{Ctx, ScriptRef, Target, TargetSpec};
-use crate::state::{CombatStep, GameState, Layer, LayerKind, Object, RuleTrigger, Task, Until};
+use crate::state::{
+    CombatStep, GameState, Layer, LayerKind, Object, RuleTrigger, Task, Until, WeaponEffectKind,
+};
 use crate::zones::Zone;
 
 impl GameState {
@@ -193,7 +195,10 @@ impl GameState {
         } else {
             o.controller == p && o.zone.in_arena()
         };
-        if !zone_ok || (a.tap && o.tapped) || (a.once_per_turn && o.activations[i as usize] >= 1) {
+        if !zone_ok
+            || (a.tap && o.tapped)
+            || (a.once_per_turn && o.activations[i as usize] >= self.activation_limit(src, i))
+        {
             return false;
         }
         // « Loses all abilities » : plus de capacités activées.
@@ -214,7 +219,46 @@ impl GameState {
         };
         let except = if a.from_hand { Some(src) } else { None };
         self.targets_available(&a.targets, &ctx)
-            && a.cost as u32 <= self.available_resources(p, except)
+            && self.activation_cost(src, i) <= self.available_resources(p, except)
+    }
+
+    /// Limite d'activation d'une capacité « Once per Turn » ce tour (CR 5.2.3) :
+    /// 1, ou 2 avec « attack twice » (CR 5.2.3e), plus les activations
+    /// additionnelles (CR 5.2.3, 5.2.3c). Seules les capacités d'attaque sont
+    /// concernées par ces effets.
+    pub fn activation_limit(&self, src: ObjectId, i: u8) -> u8 {
+        if !self.def(src).activated[i as usize].attack || self.weapon_effects.is_empty() {
+            return 1;
+        }
+        let r = self.obj_ref(src);
+        let mut twice = false;
+        let mut extra = 0;
+        for e in &self.weapon_effects {
+            if e.weapon == r {
+                match e.kind {
+                    WeaponEffectKind::AttackTwice => twice = true,
+                    WeaponEffectKind::AdditionalAttack => extra += 1,
+                    WeaponEffectKind::CostLess(_) => {}
+                }
+            }
+        }
+        1 + u8::from(twice) + extra
+    }
+
+    /// Coût en ressources d'une capacité activée (CR 5.1.6), réductions
+    /// « your next attack with it costs {r} less » comprises.
+    pub fn activation_cost(&self, src: ObjectId, i: u8) -> u32 {
+        let a = &self.def(src).activated[i as usize];
+        let mut cost = a.cost as i32;
+        if a.attack && !self.weapon_effects.is_empty() {
+            let r = self.obj_ref(src);
+            for e in &self.weapon_effects {
+                if let (true, WeaponEffectKind::CostLess(n)) = (e.weapon == r, e.kind) {
+                    cost -= n as i32;
+                }
+            }
+        }
+        cost.max(0) as u32
     }
 
     /// CR 5.1.2 : annonce, puis les étapes suivantes sous forme de tâches.
@@ -270,6 +314,8 @@ impl GameState {
                 life_delta: 0,
             });
             let proxy = ObjectId(self.objects.len() as u32 - 1);
+            // Numéro de cette attaque parmi celles de l'arme ce tour.
+            self.obj_mut(proxy).counters = self.obj(src).activations[i as usize];
             let r = self.obj_ref(proxy);
             if a.go_again {
                 self.modify(
@@ -430,6 +476,16 @@ impl GameState {
             // CR 5.1.6-5.1.7
             Task::PlayPay => {
                 let resources = self.layer_cost(p) as u8;
+                if let LayerKind::Activated(i) = kind {
+                    if def.activated[i as usize].attack && !self.weapon_effects.is_empty() {
+                        // CR 5.1.6 : la réduction « next attack » est utilisée.
+                        let src = self.top_layer().ctx.source_id().unwrap();
+                        let r = self.obj_ref(src);
+                        self.weapon_effects.retain(|e| {
+                            !(e.weapon == r && matches!(e.kind, WeaponEffectKind::CostLess(_)))
+                        });
+                    }
+                }
                 let action_points = match kind {
                     // CR 5.1.6b : une action non jouée comme instant coûte 1 point d'action.
                     LayerKind::Card => u8::from(def.types.has(Types::ACTION)),
@@ -485,7 +541,10 @@ impl GameState {
                 }
                 c + l.ctx.x as u32
             }
-            LayerKind::Activated(i) => def.activated[i as usize].cost as u32,
+            LayerKind::Activated(i) => match l.ctx.source_id() {
+                Some(src) if self.obj(src).card == l.card => self.activation_cost(src, i),
+                _ => def.activated[i as usize].cost as u32,
+            },
             LayerKind::Trigger(_) | LayerKind::Rule(_) => 0,
         }
     }

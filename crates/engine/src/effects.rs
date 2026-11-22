@@ -9,7 +9,10 @@ use crate::events::Event;
 use crate::ids::{CardId, ObjRef, ObjectId, PlayerId};
 use crate::replace::{Pending, ReplaceKind};
 use crate::script::Target;
-use crate::state::{GameState, Modifier, NextAttackEffect, Object, Prevention, Task, Until};
+use crate::state::{
+    GameState, Modifier, NextAttackEffect, Object, Prevention, Task, Until, WeaponEffect,
+    WeaponEffectKind,
+};
 use crate::zones::Zone;
 
 /// « If you prevent damage this way, … » : joueur protégé, quantité prévenue.
@@ -405,6 +408,10 @@ impl GameState {
             arcane: ev.arcane,
         });
         if ev.hit {
+            // CR 9.3.3 : un héros marqué touché par une source adverse n'est plus marqué.
+            if target_obj.is_none() && player != ev.by {
+                self.player_mut(player).marked = false;
+            }
             // CR 7.5.5 : l'attaque touche.
             if let Some(link) = self.combat.links.last_mut() {
                 link.hit = true;
@@ -553,6 +560,7 @@ impl GameState {
             delta,
             cards_only,
             turn: None,
+            weapon: None,
         });
     }
 
@@ -572,7 +580,81 @@ impl GameState {
             delta,
             cards_only: false,
             turn: Some(turn),
+            weapon: None,
         });
+    }
+
+    /// « Its next attack this turn gets … » : la prochaine attaque de cette
+    /// arme (attaque-proxy, CR 1.4.3) ce tour (ex. Cut n' Carve).
+    pub fn next_attack_with(&mut self, p: PlayerId, weapon: ObjRef, delta: Delta) {
+        self.next_attack_effects.push(NextAttackEffect {
+            player: p,
+            filter: None,
+            delta,
+            cards_only: false,
+            turn: None,
+            weapon: Some(weapon),
+        });
+    }
+
+    /// Effet du tour sur les attaques d'une arme : coût réduit, « attack
+    /// twice », « attack an additional time » (CR 5.2.3).
+    pub fn add_weapon_effect(&mut self, weapon: ObjRef, kind: WeaponEffectKind) {
+        if self.is_current(weapon) {
+            self.weapon_effects.push(WeaponEffect { weapon, kind });
+        }
+    }
+
+    /// Aiguiser (sharpen, CR 8.5.58) : un compteur +1{p}, retiré au début de
+    /// la phase de fin. Passe par les remplacements (Swordmaster's Path).
+    pub fn sharpen(&mut self, p: PlayerId, id: ObjectId) {
+        if !self.obj(id).zone.in_arena() {
+            return;
+        }
+        let mut pending = Pending::new(ReplaceKind::Sharpen, p);
+        pending.object = Some(id);
+        pending.amount = 1;
+        self.run_replace(pending, Vec::new());
+    }
+
+    /// Un sharpen, sans remplacement.
+    pub(crate) fn sharpen_raw(&mut self, p: PlayerId, id: ObjectId) {
+        if !self.obj(id).zone.in_arena() {
+            return;
+        }
+        self.obj_mut(id).power_counters += 1;
+        let r = self.obj_ref(id);
+        if !self.sharpened.contains(&r) {
+            self.sharpened.push(r);
+        }
+        self.emit(Event::Sharpened {
+            player: p,
+            card: id,
+        });
+    }
+
+    /// « … unless you pay {r} » : le joueur paie `n` ressources (il pitche
+    /// si besoin). À n'utiliser que si `available_resources` suffit.
+    pub fn pay(&mut self, p: PlayerId, n: u8) {
+        if n > 0 {
+            self.tasks.push(Task::Pay {
+                player: p,
+                resources: n,
+                action_points: 0,
+            });
+        }
+    }
+
+    /// Renvoie une carte dans la main de son propriétaire (ex. Shove Off :
+    /// une carte qui défend). Elle cesse de défendre (CR 7.0.5a).
+    pub fn return_to_hand(&mut self, id: ObjectId) {
+        if self.obj(id).zone == Zone::Gone {
+            return;
+        }
+        for l in &mut self.combat.links {
+            l.defenders.retain(|&d| d != id);
+        }
+        self.move_to(id, Zone::Hand, true);
     }
 
     /// « Prevent the next N damage that would be dealt to … » : bouclier
@@ -627,6 +709,9 @@ impl GameState {
             let ok = e.player == p
                 && e.turn.is_none_or(|t| t == self.turn)
                 && (is_card || !e.cards_only)
+                && e.weapon.is_none_or(|w| {
+                    self.obj(attack.id).proxy_of == Some(w.id) && self.is_current(w)
+                })
                 && e.filter.is_none_or(|f| f(self, attack.id));
             if ok {
                 self.next_attack_effects.remove(i);

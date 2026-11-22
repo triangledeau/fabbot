@@ -6,12 +6,16 @@
 //! `--mecanismes` : decks d'essai qui utilisent préventions au choix,
 //! remplacements, alliés, spectra… (voir `test_set::mechanics_loadouts`).
 //!
+//! `--vrais` : les vrais decks Hala contre Dorinthea (`data/decks/`), avec un
+//! choix provisoire d'équipement et de 40 cartes (`real::default_loadout`).
+//!
 //! Étape 1 : parties « bot aléatoire contre bot aléatoire » avec les decks
 //! d'essai (cartes fictives). Sert à mesurer la vitesse du moteur et, avec
 //! `--check`, à vérifier la cohérence de l'état après chaque décision.
 
 use fab_ai::{play_out, RandomAgent};
-use fab_cards::test_set;
+use fab_cards::decklist::Decklist;
+use fab_cards::{real, test_set};
 use fab_engine::{EndReason, GameSetup, GameState, Outcome, PlayerId};
 use std::sync::Arc;
 use std::time::Instant;
@@ -48,8 +52,26 @@ fn main() {
     let check = args.iter().any(|a| a == "--check");
     let seed0 = get("--seed", 1);
 
-    let db = Arc::new(test_set::build());
-    let lo = if args.iter().any(|a| a == "--mecanismes") {
+    let vrais = args.iter().any(|a| a == "--vrais");
+    let db = Arc::new(if vrais {
+        real::build()
+    } else {
+        test_set::build()
+    });
+    let (nom0, nom1) = if vrais {
+        ("Hala", "Dorinthea")
+    } else {
+        ("deck agressif", "deck défensif")
+    };
+    let lo = if vrais {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/decks");
+        let lire = |f: &str| {
+            let text = std::fs::read_to_string(dir.join(f)).expect("liste de deck");
+            let list = Decklist::parse(&text).expect("liste valide");
+            real::default_loadout(&db, &list).expect("cartes codées")
+        };
+        [lire("02_hala.txt"), lire("03_dorinthea.txt")]
+    } else if args.iter().any(|a| a == "--mecanismes") {
         test_set::mechanics_loadouts(&db)
     } else {
         [
@@ -129,7 +151,7 @@ fn main() {
         total.games as f64 / secs
     );
     println!(
-        "Victoires : deck agressif {:.1} %, deck défensif {:.1} % — nulles : 2 héros à 0 {}, blocage {}, limite de tours {}",
+        "Victoires : {nom0} {:.1} %, {nom1} {:.1} % — nulles : 2 héros à 0 {}, blocage {}, limite de tours {}",
         100.0 * total.wins[0] as f64 / g,
         100.0 * total.wins[1] as f64 / g,
         total.draws_life,

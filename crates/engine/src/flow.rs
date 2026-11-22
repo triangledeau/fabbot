@@ -374,6 +374,12 @@ impl GameState {
                 let d = self.defense(id) as i8;
                 self.obj_mut(id).defense_counters -= d;
             }
+            // CR 8.5.58 : retirer tous les compteurs +1{p} (les compteurs +1
+            // et -1 sont additionnés dans `power_counters`).
+            RuleTrigger::Unsharpen => {
+                let o = self.obj_mut(id);
+                o.power_counters = o.power_counters.min(0);
+            }
         }
     }
 
@@ -493,6 +499,12 @@ impl GameState {
             // CR 4.3.4 : fin de la phase d'action.
             self.priority = None;
             self.emit(Event::BeginEndPhase(tp));
+            // CR 8.5.58 : déclenchements retardés des sharpen.
+            for r in std::mem::take(&mut self.sharpened) {
+                if self.is_current(r) {
+                    self.push_rule_trigger(RuleTrigger::Unsharpen, r.id);
+                }
+            }
             self.stage = Stage::ResolveThen(AfterResolve::EndArsenal);
             return;
         }
@@ -1077,6 +1089,8 @@ impl GameState {
         self.replacements.retain(|m| !m.until.ends_at_end_of(turn));
         self.next_attack_effects
             .retain(|e| e.turn.is_some_and(|t| t > turn));
+        self.weapon_effects.clear();
+        self.sharpened.clear();
         self.turn_log.clear();
         for o in &mut self.objects {
             o.activations = [0; 4];
