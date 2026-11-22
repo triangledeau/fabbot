@@ -433,9 +433,9 @@ impl GameState {
         }
         let owner = self.obj(id).owner;
         self.clear(id);
-        // TODO(règles) : si la mise au cimetière est remplacée (« instead
-        // banish it »), l'objet est-il encore « détruit » (déclencheurs « when
-        // this is destroyed ») ? On considère que oui. Question au propriétaire.
+        // CR 1.9.3a : si la mise au cimetière est remplacée (« instead banish
+        // it »), l'événement garde son nom : l'objet est bien « détruit »
+        // (déclencheurs « when this is destroyed »).
         self.emit(Event::Destroyed { card: id, owner });
     }
 

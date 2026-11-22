@@ -634,6 +634,39 @@ fn shove_off_ne_renvoie_pas_un_equipement() {
     assert_eq!(t.vie(P1), 18);
 }
 
+#[test]
+fn shove_off_pas_une_carte_d_un_maillon_dont_l_epee_est_partie() {
+    // Notes de Mastery Pack Warrior : une carte qui défend sur un maillon
+    // précédent est une cible valide seulement si l'épée est encore sur ce
+    // maillon. Ici l'épée attaque deux fois (Flurry) : elle quitte le
+    // maillon 1 pour le maillon 2.
+    let mut t = hala(
+        &[("Edict of Steel", R), ("Shove Off", B), RAMPART, RAMPART],
+        &["Zenith Blade"],
+    );
+    let epee = t.equipement(P0, "Zenith Blade");
+    jouer(&mut t, "Edict of Steel", R);
+    resoudre(&mut t);
+    attaquer(&mut t, "Zenith Blade", &[RAMPART]);
+    defendre_avec(&mut t, &[RAMPART]);
+    let rempart = t.g.combat.links[0].defenders[0];
+    passer_jusqua_option(&mut t, Choice::Activate(epee, 0));
+    t.choisir(Choice::Activate(epee, 0));
+    defendre_avec(&mut t, &[]);
+    let so = t.en_main(P0, "Shove Off", B);
+    passer_jusqua_option(&mut t, Choice::Play(so));
+    t.choisir(Choice::Play(so));
+    passer_jusqua_que(&mut t, |t| {
+        t.kind() == DecisionKind::Effect || !t.g.combat.open
+    });
+    assert_ne!(
+        t.kind(),
+        DecisionKind::Effect,
+        "le rempart du maillon 1 ne défend plus une épée"
+    );
+    assert_ne!(t.g.obj(rempart).zone, Zone::Hand);
+}
+
 // ---------------------------------------------------------------------------
 // Actions Warrior
 // ---------------------------------------------------------------------------

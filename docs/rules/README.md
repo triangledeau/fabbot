@@ -6,7 +6,7 @@ Le moteur suit **uniquement** les sources officielles de Legend Story Studios.
 |---|---|---|
 | Comprehensive Rules (CR) | https://rules.fabtcg.com/en/cr/ | 2026-11-22 |
 | Tournament Rules and Policy (TRP), dont 7.4 Silver Age | https://rules.fabtcg.com/en/trp/ | 2026-11-22 |
-| Liste bannies / restreintes / héros au banc | fabtcg.com → Card Legality Policy | **non récupérée** (le site bloque les accès automatisés) |
+| Liste bannies / restreintes / héros au banc | fabtcg.com → Politique de légalité des cartes | copiée à la main par le propriétaire le 2026-11-22 (`config/silver_age.toml`) ; à mettre à jour à chaque saison |
 | Textes officiels des cartes et errata | fabtcg.com / cards.fabtcg.com | à faire (étape 2) |
 
 Le site ne montre pas de numéro de version du CR : on note la date de consultation.

@@ -15,13 +15,11 @@ use std::fmt::Write;
 /// Le joueur `viewer` a-t-il le droit de voir cette carte ?
 ///
 /// Une carte face visible est publique. Une carte face cachée n'est visible
-/// que par son propriétaire, et seulement dans sa main ou son arsenal.
-// TODO(règles) : un joueur peut-il regarder ses propres cartes bannies face
-// cachée ? Prudence : pour l'instant, non (aucune carte de Hala ou
-// Dorinthea ne bannit face cachée).
+/// que par son propriétaire, sauf dans le deck (CR 3.0.3a : main, arsenal,
+/// cartes bannies face cachée…).
 pub fn visible(g: &GameState, viewer: PlayerId, id: ObjectId) -> bool {
     let o = g.obj(id);
-    !o.face_down || (o.owner == viewer && matches!(o.zone, Zone::Hand | Zone::Arsenal))
+    !o.face_down || (o.owner == viewer && o.zone != Zone::Deck)
 }
 
 fn couleur(c: Option<Color>) -> &'static str {

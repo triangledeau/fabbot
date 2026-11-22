@@ -88,8 +88,10 @@ impl GameState {
                 if !self.combat.open {
                     return true;
                 }
-                // TODO(règles) : CR 8.1.1b semble autoriser toute action à l'étape de
-                // résolution, CR 7.0.1a seulement les attaques. On applique 7.0.1a.
+                // CR 7.0.1a, 7.6.3a : pendant le combat, seulement des attaques
+                // (et couches d'attaque), à l'étape de résolution. CR 8.1.1b est
+                // la règle générale, 7.0.1a précise lesquelles (confirmé par le
+                // propriétaire) : une action non-attaque attend la fermeture.
                 is_attack && self.combat.step == Some(CombatStep::Resolution)
             }
             // CR 8.1.2a

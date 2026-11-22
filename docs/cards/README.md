@@ -40,8 +40,11 @@ désaccord, le fichier officiel l'emporte.
 
 - **Les 224 cartes sont présentes** dans le fichier officiel, avec les bonnes couleurs.
 - Les 9 héros sont de sous-type **Young**. Vie 20 (Iyslander 18), intellect 4.
-- Selon la base communautaire, aucune carte n'est illégale ou bannie en Silver Age.
-  La liste officielle des bannissements (fabtcg.com) reste à confirmer à la main.
+- Liste officielle Silver Age (copiée par le propriétaire le 2026-11-22, voir
+  `config/silver_age.toml`) : 40 cartes bannies, aucune restreinte, 4 héros
+  mis sur la touche (Chane, Briar, Oldhim, Oscilio). **Aucune carte ni aucun
+  héros de nos 9 decks n'est concerné** (vérifié par le test
+  `chaque_deck_respecte_le_format_silver_age`).
 - Le fichier officiel classe Florian « Elemental Runeblade » (la liste d'origine
   indique « Earth Runeblade »).
 

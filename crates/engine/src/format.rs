@@ -74,6 +74,18 @@ mod tests {
     }
 
     #[test]
+    fn la_liste_officielle_silver_age_est_renseignee() {
+        let cfg = silver_age();
+        assert!(cfg.legality_list_verified);
+        assert_eq!(cfg.banned.len(), 40);
+        assert_eq!(cfg.copies_allowed("Flic Flak"), 0);
+        assert_eq!(
+            cfg.benched_heroes,
+            vec!["Chane", "Briar", "Oldhim", "Oscilio"]
+        );
+    }
+
+    #[test]
     fn cartes_bannies_et_restreintes() {
         let mut cfg = silver_age();
         cfg.banned = vec!["Carte bannie fictive".into()];

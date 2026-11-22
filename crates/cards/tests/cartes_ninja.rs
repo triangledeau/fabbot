@@ -691,6 +691,33 @@ fn legacy_of_ikaru_pas_de_pioche_sans_edge_of_autumn() {
 }
 
 #[test]
+fn legacy_of_ikaru_sur_une_deuxieme_attaque_d_edge_of_autumn_pioche() {
+    // Edge of Autumn attaque deux fois dans la même chaîne (effet « attack
+    // twice » posé directement) : pour la 2e attaque, la dernière attaque
+    // était Edge of Autumn.
+    let mut t = ira(
+        &[("Legacy of Ikaru", B), RAMPART, RAMPART, RAMPART],
+        &["Edge of Autumn"],
+    );
+    let w = t.equipement(P0, "Edge of Autumn");
+    let r = t.g.obj_ref(w);
+    t.g.add_weapon_effect(r, fab_engine::WeaponEffectKind::AttackTwice);
+    t.g.refresh_priority();
+    attaquer_arme(&mut t, "Edge of Autumn");
+    attaquer_arme(&mut t, "Edge of Autumn");
+    passer_jusqua_que(&mut t, |t| {
+        t.g.combat.step == Some(fab_engine::state::CombatStep::Reaction)
+    });
+    let l = t.en_main(P0, "Legacy of Ikaru", B);
+    t.choisir(Choice::Play(l));
+    passer_jusqua_que(&mut t, |t| t.kind() == DecisionKind::Arsenal);
+    // 1, puis 1 + 1 (Legacy) + 1 (Ira, 2e attaque).
+    assert_eq!(t.vie(P1), 20 - 1 - 3);
+    // Main : 2 Rempart (un a payé les deux attaques) + la carte piochée.
+    assert_eq!(t.g.player(P0).hand.len(), 3);
+}
+
+#[test]
 fn legacy_of_ikaru_seulement_sur_une_attaque_ninja() {
     let mut t = ira(
         &[
