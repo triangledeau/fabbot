@@ -30,9 +30,10 @@ humain) répond par l'index d'une option. Tout choix de joueur passe par là.
   `docs/rules/sources/*.txt`. rules.fabtcg.com est accessible ; fabtcg.com
   bloque les accès automatisés (403) : ne pas chercher à contourner, demander
   au propriétaire de copier le contenu.
-- Textes des cartes : base communautaire (`bash tools/fetch_cards.sh`, voir
-  `docs/cards/README.md`) à confronter au texte officiel. 8 cartes de Levia n'y
-  sont pas : demander leur texte au propriétaire.
+- Textes des cartes : **fichier officiel LSS** (`bash tools/fetch_cards.sh`,
+  colonne `face_*_true_textbox` = texte à jour avec errata). La base
+  communautaire ne sert que de complément (légalité par format). Voir
+  `docs/cards/README.md`. Vérification : `python3 tools/check_cards.py`.
 - Les 9 decks sont dans `data/decks/` ; `cargo run -p fab-cards --bin deck-stats`.
 - En Silver Age il n'y a pas de sideboard séparé : avant chaque manche, on choisit
   équipement + deck de 40 dans un card-pool de 55 (CR 4.1).
