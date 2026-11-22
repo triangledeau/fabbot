@@ -58,7 +58,17 @@ qui la vérifient (`crates/cards/tests/regles_etape1.rs`, tests nommés `cr_…`
 | CR 1.4.3 | Attaque-proxy d'une arme | `engine/src/play.rs`, `state.rs` | ✅ testé |
 | CR 1.8.10 | « Votre prochaine attaque » | `engine/src/effects.rs` | ✅ testé |
 | CR 1.10.2a | Fin de partie (héros à 0) | `engine/src/flow.rs` | ✅ testé |
-| CR 1.10.2d / 6.6.6 | Déclenchements ajoutés à la pile | `flow.rs` | ⚠️ ordre simplifié (voir plus bas) |
+| CR 1.10.2d / 6.6.6 | Déclenchements : cibles, ordre choisi par les joueurs | `flow.rs`, `events.rs` | ✅ testé |
+| CR 1.7.4 / 5.4 | Effets statiques (carte, héros, équipements, permanents) | `state.rs` | ✅ testé |
+| CR 1.7.5 | Modes (« Choose 1 ») | `play.rs` | ✅ testé |
+| CR 1.8.5 / 1.8.9 | Cibles, cible devenue illégale | `play.rs`, `flow.rs` | ✅ testé |
+| CR 1.8.6 | Choix pendant la résolution | `script.rs`, `flow.rs` | ✅ testé |
+| CR 1.3.3 / 5.3.6a | Permanents (auras, objets) | `flow.rs` | ✅ testé |
+| CR 5.1.3 | Coûts optionnels, X | `play.rs` | ✅ testé (X : pas encore de test) |
+| CR 5.1.8-5.1.9 | Coûts d'effet | `play.rs` | ✅ testé |
+| CR 5.2 | Capacités activées (équipement, objet, main, héros) | `play.rs` | ✅ testé |
+| CR 6.4 | Prévention des dégâts (boucliers) | `effects.rs` | ✅ testé |
+| CR 8.5.3 | Dégâts arcaniques | `effects.rs` | ✅ testé |
 | CR 1.11 | Priorité, passer, résolution | `flow.rs` | ✅ testé |
 | CR 1.13 / 1.14 | Points d'action, ressources, pitch | `play.rs` | ✅ testé |
 | CR 2.0.3c / 2.5.3e | Pas de valeur négative | `state.rs`, `effects.rs` | ✅ |
@@ -66,9 +76,8 @@ qui la vérifient (`crates/cards/tests/regles_etape1.rs`, tests nommés `cr_…`
 | CR 3 | Zones, nouvel objet au changement de zone (3.0.9) | `state.rs` | ✅ |
 | CR 4.1 | Mise en place, choix du premier joueur | `setup.rs` | ✅ testé (équipement/deck fournis, choix à l'étape 6) |
 | CR 4.2 à 4.4 | Phases du tour, arsenal, pitch sous le deck, pioche | `flow.rs` | ✅ testé |
-| CR 4.5.4d | Partie nulle par blocage (stalemate) | — | ❌ remplacé par une limite de tours du simulateur |
+| CR 4.5.4d | Partie nulle par blocage (stalemate) | `flow.rs` | ⚠️ cas simple seulement (decks, mains, arsenaux vides) |
 | CR 5.1 | Jouer une carte | `play.rs` | ✅ testé |
-| CR 5.2 | Capacités activées (attaque d'arme) | `play.rs` | ✅ testé (autres capacités : étape 2) |
 | CR 5.3 | Résolution, go again, réactions de défense | `flow.rs` | ✅ testé |
 | CR 7.0 à 7.7 | Chaîne de combat, 6 étapes + fermeture | `flow.rs` | ✅ testé |
 | CR 8.1 | Types : action, réactions, instant, bloc, ressource, arme, équipement | `play.rs`, `flow.rs` | ✅ testé |
@@ -80,18 +89,25 @@ qui la vérifient (`crates/cards/tests/regles_etape1.rs`, tests nommés `cr_…`
 | CR 4.1.3 | Qui choisit le premier joueur (match) | `crates/fab-match` | ✅ testé |
 | TRP 7.4 | Format Silver Age | `config/silver_age.toml` | ✅ testé |
 
-### Simplifications connues de l'étape 1 (à traiter à l'étape 2)
+### Simplifications et manques connus (à traiter à l'étape 2)
 
-- **Ordre des déclenchements simultanés** (CR 6.6.6b) : empilés dans l'ordre de
-  création, sans choix des joueurs.
-- **Blade Break / Battleworn / Temper** appliqués directement à la fermeture de
-  la chaîne au lieu de passer par des couches déclenchées. Le résultat est le
-  même tant qu'aucun autre déclenchement n'a lieu au même moment.
-- **Informations de dernier état** (CR 1.2.3, 7.6.2a) : pas encore gérées.
-- **Étape 7.2.2d** (l'attaque cesse d'exister avant les dégâts) : pas encore
-  gérée, aucune carte d'essai ne peut provoquer ce cas.
-- **Partie nulle par blocage** (CR 4.5.4d) : non détectée ; le simulateur
-  arrête la partie après N tours (partie nulle « limite de tours », signalée
-  comme telle dans les résultats).
+- **Préventions au choix du joueur** : arcane barrier, ward, spellvoid
+  (CR 8.3.8, 8.3.20, 8.3.15) pas encore gérés. Les boucliers simples
+  (« prevent the next N damage ») fonctionnent.
+- **Blade Break / Battleworn / Temper / Guardwell** appliqués directement à la
+  fermeture de la chaîne. Les autres déclenchements de fermeture (ex. Hell
+  Hammer) se résolvent seulement au retour de la priorité, après le retour des
+  permanents dans leur zone (CR 7.7.4-7.7.5).
+- **Coût d'effet impossible à payer** (CR 1.14.4b, 5.1.8a) : pas de retour en
+  arrière ; chaque carte doit vérifier à l'avance qu'elle peut payer
+  (`play_condition`).
+- **Informations de dernier état** (CR 1.2.3) : seulement pour go again à
+  l'étape de résolution (CR 7.6.2a).
+- **Attaquer autre chose qu'un héros** (alliés, spectra) : pas encore géré.
+- **Remplacements** (« instead », ex. « if this would be put into your
+  graveyard, instead banish it ») : pas encore gérés.
+- **« Loses all abilities »**, effets « until the end of their next turn » : à faire.
+- **Partie nulle par blocage** (CR 4.5.4d) : seul le cas simple est détecté ;
+  sinon le simulateur arrête la partie après N tours (« limite de tours »).
 - Mélange des decks fait avant le choix du premier joueur au lieu d'après
   (CR 4.1.8) : sans conséquence, le choix ne dépend pas de l'ordre du deck.

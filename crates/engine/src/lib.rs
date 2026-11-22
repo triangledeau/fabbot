@@ -10,12 +10,15 @@
 //! - [`state`] : l'état de la partie (objets, zones, joueurs, combat) ;
 //! - [`flow`] : le déroulement (phases, priorité, couches, combat) ;
 //! - [`play`] : jouer une carte, activer une arme, payer les coûts ;
-//! - [`effects`] : effets des cartes, modificateurs, déclenchements ;
+//! - [`script`] : les programmes des capacités (suspendables) ;
+//! - [`events`] : événements, journal du tour, déclenchements ;
+//! - [`effects`] : primitives d'effet (piocher, dégâts, détruire…) ;
 //! - [`invariants`] : contrôles de cohérence utilisés par les tests.
 
 pub mod card;
 pub mod decision;
 pub mod effects;
+pub mod events;
 pub mod flow;
 pub mod format;
 pub mod history;
@@ -23,16 +26,22 @@ pub mod ids;
 pub mod invariants;
 pub mod play;
 pub mod rng;
+pub mod script;
 pub mod setup;
 pub mod state;
 pub mod zones;
 
-pub use card::{CardDb, CardDef, Keywords, Op, Subtypes, Types};
+pub use card::{
+    ActivatedDef, CardDb, CardDef, Color, Delta, Keywords, Speed, Subtypes, Supertypes, TriggerDef,
+    Types,
+};
 pub use decision::{Choice, Decision, DecisionKind};
+pub use events::Event;
 pub use format::FormatConfig;
 pub use history::History;
 pub use ids::{CardId, ObjRef, ObjectId, PlayerId};
 pub use rng::Rng;
+pub use script::{Ask, Ctx, Op, ScriptRef, Target, TargetSpec};
 pub use setup::{GameSetup, Loadout, SetupError};
-pub use state::{ApplyError, EndReason, GameState, Outcome};
+pub use state::{ApplyError, EndReason, GameState, Outcome, Until};
 pub use zones::Zone;

@@ -19,6 +19,7 @@ struct Stats {
     wins: [u64; 2],
     draws_life: u64,
     draws_limit: u64,
+    draws_stalemate: u64,
     turns: u64,
     decisions: u64,
     errors: u64,
@@ -107,6 +108,7 @@ fn main() {
                 a.wins[1] += b.wins[1];
                 a.draws_life += b.draws_life;
                 a.draws_limit += b.draws_limit;
+                a.draws_stalemate += b.draws_stalemate;
                 a.turns += b.turns;
                 a.decisions += b.decisions;
                 a.errors += b.errors;
@@ -120,10 +122,11 @@ fn main() {
         total.games as f64 / secs
     );
     println!(
-        "Victoires : deck agressif {:.1} %, deck défensif {:.1} %, nulles (2 héros à 0) {}, limite de tours {}",
+        "Victoires : deck agressif {:.1} %, deck défensif {:.1} % — nulles : 2 héros à 0 {}, blocage {}, limite de tours {}",
         100.0 * total.wins[0] as f64 / g,
         100.0 * total.wins[1] as f64 / g,
         total.draws_life,
+        total.draws_stalemate,
         total.draws_limit
     );
     println!(

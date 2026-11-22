@@ -80,7 +80,14 @@ impl GameState {
                     }
                     seen[i] = 1;
                 }
-                Zone::Gone | Zone::Permanent => seen[i] = 1,
+                Zone::Gone => seen[i] = 1,
+                Zone::Permanent => {
+                    let n = self.permanents.iter().filter(|&&x| x == id).count();
+                    if n != 1 {
+                        errs.push(format!("objet {i} en zone permanente listé {n} fois"));
+                    }
+                    seen[i] += 1;
+                }
                 _ => {}
             }
             if seen[i] != 1 {
@@ -91,8 +98,13 @@ impl GameState {
         for (i, o) in self.objects.iter().enumerate() {
             if o.zone == Zone::Stack {
                 let id = ObjectId(i as u32);
+                // Une couche en cours de résolution est temporairement hors de la pile.
+                let resolving = self.tasks.iter().any(
+                    |t| matches!(t, crate::state::Task::FinishResolve(l) if l.object.id == id),
+                );
                 let on_stack = self.stack.iter().any(|l| l.object.id == id)
-                    || self.combat.queue.iter().any(|(a, _)| a.id == id);
+                    || self.combat.queue.iter().any(|(a, _)| a.id == id)
+                    || resolving;
                 if !on_stack {
                     errs.push(format!("objet {i} en zone pile sans couche"));
                 }

@@ -4,11 +4,13 @@
 //! rouge). Les exemplaires en jeu sont des objets ([`crate::state::Object`]) qui
 //! pointent vers leur définition par un [`CardId`].
 //!
-//! Les capacités sont décrites par de petites listes d'instructions ([`Op`]),
-//! interprétées par le moteur ([`crate::effects`]). Les instructions seront
-//! enrichies à l'étape 2, carte par carte.
+//! Les capacités sont de petits programmes ([`Op`], voir [`crate::script`])
+//! écrits carte par carte dans `fab-cards`.
 
-use crate::ids::CardId;
+use crate::events::Event;
+use crate::ids::{CardId, ObjectId, PlayerId};
+use crate::script::{Op, TargetSpec};
+use crate::state::GameState;
 use std::ops::BitOr;
 
 macro_rules! flags {
@@ -19,13 +21,19 @@ macro_rules! flags {
         impl $name {
             pub const NONE: $name = $name(0);
             $($(#[$fm])* pub const $flag: $name = $name(1 << $bit);)*
+            /// Contient tous les drapeaux de `other` (et `other` n'est pas vide).
             #[inline]
             pub fn has(self, other: $name) -> bool {
                 self.0 & other.0 == other.0 && other.0 != 0
             }
+            /// Contient au moins un des drapeaux de `other`.
             #[inline]
             pub fn any(self, other: $name) -> bool {
                 self.0 & other.0 != 0
+            }
+            #[inline]
+            pub fn without(self, other: $name) -> $name {
+                $name(self.0 & !other.0)
             }
         }
         impl BitOr for $name {
@@ -47,17 +55,29 @@ flags! {
 }
 
 flags! {
-    /// Sous-types (CR 8.2).
-    Subtypes(u32) {
+    /// Sous-types (CR 8.2) et sous-types d'arme.
+    Subtypes(u64) {
         ATTACK = 0, ONE_HAND = 1, TWO_HAND = 2, HEAD = 3, CHEST = 4, ARMS = 5,
         LEGS = 6, OFF_HAND = 7, AURA = 8, ITEM = 9, YOUNG = 10, ALLY = 11,
         LANDMARK = 12, AFFLICTION = 13, ASH = 14, INVOCATION = 15, CONSTRUCT = 16,
-        QUIVER = 17, FIGMENT = 18, ARROW = 19,
+        QUIVER = 17, FIGMENT = 18, ARROW = 19, TRAP = 20,
+        SWORD = 21, AXE = 22, DAGGER = 23, HAMMER = 24, CLUB = 25, STAFF = 26,
+        SCEPTER = 27, BOOK = 28, DRAGON = 29,
     }
 }
 
 flags! {
-    /// Mots-clés de capacité gérés par le moteur (CR 8.3).
+    /// Supertypes : classes et talents (CR 2.11), pour les filtres
+    /// « attaque Ninja », « carte Earth », etc.
+    Supertypes(u32) {
+        NINJA = 0, WARRIOR = 1, GUARDIAN = 2, WIZARD = 3, RUNEBLADE = 4,
+        BRUTE = 5, ILLUSIONIST = 6, ASSASSIN = 7, SHADOW = 8, EARTH = 9,
+        ICE = 10, LIGHTNING = 11, ELEMENTAL = 12, DRACONIC = 13, CHAOS = 14,
+    }
+}
+
+flags! {
+    /// Mots-clés de capacité gérés directement par le moteur (CR 8.3).
     Keywords(u32) {
         /// CR 8.3.5
         GO_AGAIN = 0,
@@ -69,6 +89,14 @@ flags! {
         BATTLEWORN = 3,
         /// CR 8.3.10
         TEMPER = 4,
+        /// CR 8.3.34
+        GUARDWELL = 5,
+        /// CR 8.3.24
+        STEALTH = 6,
+        /// CR 8.3.13
+        PHANTASM = 7,
+        /// CR 8.3.22
+        OVERPOWER = 8,
     }
 }
 
@@ -87,6 +115,21 @@ impl Types {
     }
 }
 
+impl Subtypes {
+    /// Sous-types qui font d'une carte de deck un permanent (CR 1.3.3).
+    pub const PERMANENT: Subtypes = Subtypes(
+        Subtypes::AFFLICTION.0
+            | Subtypes::ALLY.0
+            | Subtypes::ASH.0
+            | Subtypes::AURA.0
+            | Subtypes::CONSTRUCT.0
+            | Subtypes::FIGMENT.0
+            | Subtypes::INVOCATION.0
+            | Subtypes::ITEM.0
+            | Subtypes::LANDMARK.0,
+    );
+}
+
 /// Couleur (barre de couleur) d'une carte de deck.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Color {
@@ -95,31 +138,86 @@ pub enum Color {
     Blue,
 }
 
-/// Une instruction d'effet.
-///
-/// Étape 1 : instructions simples, sans choix du joueur. Les instructions
-/// avec choix (cibles, modes, « vous pouvez ») arrivent à l'étape 2.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Op {
-    /// Le contrôleur pioche N cartes (CR 8.5.6).
-    Draw(u8),
-    /// Le contrôleur gagne N points de vie (CR 8.5.7).
-    GainLife(u8),
-    /// Inflige N dégâts au héros adverse (CR 8.5.3), la source est cette carte.
-    DamageOpposingHero(u8),
-    /// L'attaque de la chaîne active gagne +N de puissance jusqu'à la fin du tour.
-    ActiveAttackGetsPower(i8),
-    /// « Votre prochaine attaque ce tour gagne +N » (CR 1.8.10).
-    NextAttackGetsPower(i8),
+/// Vitesse d'une capacité activée (le TYPE de CR 5.2.1b).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Speed {
+    Action,
+    Instant,
+    AttackReaction,
+    DefenseReaction,
 }
 
-/// Capacité d'attaque d'une arme : « [Once per Turn] Action — {coût} : Attack ».
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct WeaponAttack {
+/// Une capacité activée : « [LIMIT] TYPE — COÛT : EFFETS » (CR 5.2).
+#[derive(Clone, Debug)]
+pub struct ActivatedDef {
+    /// Texte court pour l'interface.
+    pub label: &'static str,
+    pub speed: Speed,
+    /// Coût en ressources.
     pub cost: u8,
+    /// Coût {t} : engager la source.
+    pub tap: bool,
+    /// « Once per Turn ».
     pub once_per_turn: bool,
-    /// L'attaque-proxy a « go again » (ex. « Attack. Go again. »).
+    /// La source doit être dans la main (ex. « Instant — Discard this »).
+    pub from_hand: bool,
+    /// Capacité « Attack » : crée une attaque-proxy (CR 1.4.3, 8.3.1).
+    pub attack: bool,
+    /// La couche activée (ou l'attaque-proxy) a go again.
     pub go_again: bool,
+    /// Condition d'activation (CR 5.2.1e).
+    pub condition: Option<fn(&GameState, PlayerId, ObjectId) -> bool>,
+    pub targets: Vec<TargetSpec>,
+    /// Coûts d'effet (ex. « destroy this », « discard this »), payés à CR 5.1.9.
+    pub effect_cost: Vec<Op>,
+    /// Effets de résolution.
+    pub script: Vec<Op>,
+}
+
+impl Default for ActivatedDef {
+    fn default() -> Self {
+        ActivatedDef {
+            label: "",
+            speed: Speed::Action,
+            cost: 0,
+            tap: false,
+            once_per_turn: false,
+            from_hand: false,
+            attack: false,
+            go_again: false,
+            condition: None,
+            targets: Vec::new(),
+            effect_cost: Vec::new(),
+            script: Vec::new(),
+        }
+    }
+}
+
+/// Une capacité déclenchée (CR 6.6).
+#[derive(Clone, Debug)]
+pub struct TriggerDef {
+    /// La condition de déclenchement : `me` est l'objet qui porte la capacité.
+    pub when: fn(&GameState, ObjectId, &Event) -> bool,
+    /// Le déclenchement fonctionne aussi hors de l'arène (ex. « when this is
+    /// put into your graveyard »). Par défaut : seulement dans l'arène et sur la pile.
+    pub anywhere: bool,
+    pub targets: Vec<TargetSpec>,
+    pub script: Vec<Op>,
+}
+
+/// Modification appliquée par un effet statique.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Delta {
+    pub power: i16,
+    pub defense: i16,
+    pub grants: Keywords,
+}
+
+/// Coût additionnel en ressources (CR 5.4.4a).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AdditionalCost {
+    pub resources: u8,
+    pub optional: bool,
 }
 
 /// Définition complète d'une carte.
@@ -136,14 +234,30 @@ pub struct CardDef {
     pub intellect: Option<u8>,
     pub types: Types,
     pub subtypes: Subtypes,
+    pub supertypes: Supertypes,
     pub keywords: Keywords,
-    pub weapon_attack: Option<WeaponAttack>,
+    /// Le coût contient X (CR 5.1.3a).
+    pub x_cost: bool,
+    /// Modes : « Choose 1 » (CR 1.7.5) ; libellés des modes.
+    pub modes: Vec<&'static str>,
+    /// Cibles déclarées en jouant la carte (CR 5.1.4).
+    pub targets: Vec<TargetSpec>,
+    pub additional_cost: Option<AdditionalCost>,
+    /// Coûts d'effet additionnels (ex. « banish 3 random cards from your graveyard »).
+    pub effect_cost: Vec<Op>,
     /// Capacités de résolution (CR 5.3.4).
-    pub on_resolve: Vec<Op>,
-    /// « When this attacks, … » (CR 7.2.3).
-    pub on_attack: Vec<Op>,
-    /// « When this hits, … » (CR 7.5.5).
-    pub on_hit: Vec<Op>,
+    pub resolve: Vec<Op>,
+    pub triggers: Vec<TriggerDef>,
+    pub activated: Vec<ActivatedDef>,
+    /// « Play this only if … » (CR 5.1.5).
+    pub play_condition: Option<fn(&GameState, PlayerId, ObjectId) -> bool>,
+    /// Modification du coût (négatif = réduction), CR 5.1.6.
+    pub cost_mod: Option<fn(&GameState, PlayerId, ObjectId) -> i16>,
+    /// Effets statiques sur la carte elle-même (« this gets +1{p} if … »).
+    pub self_mod: Option<fn(&GameState, ObjectId) -> Delta>,
+    /// Effets statiques sur d'autres objets, actifs quand la source est dans
+    /// l'arène (héros, équipements, auras). Arguments : source, objet modifié.
+    pub aura: Option<fn(&GameState, ObjectId, ObjectId) -> Delta>,
 }
 
 impl CardDef {
@@ -154,6 +268,11 @@ impl CardDef {
     /// Une carte d'action (type Action) — CR 8.1.1.
     pub fn is_action(&self) -> bool {
         self.types.has(Types::ACTION)
+    }
+
+    /// Valeur de pitch, 0 si la carte n'en a pas (CR 1.8.7a).
+    pub fn pitch_value(&self) -> u8 {
+        self.pitch.unwrap_or(0)
     }
 }
 
@@ -187,6 +306,14 @@ impl CardDb {
             .map(|i| CardId(i as u16))
     }
 
+    /// Premier exemplaire portant ce nom, quelle que soit la couleur.
+    pub fn find_name(&self, name: &str) -> Option<CardId> {
+        self.defs
+            .iter()
+            .position(|d| d.name == name)
+            .map(|i| CardId(i as u16))
+    }
+
     pub fn len(&self) -> usize {
         self.defs.len()
     }
@@ -208,5 +335,6 @@ mod tests {
         assert!(!t.has(Types::NONE));
         assert!(t.is_deck_card());
         assert!(!Types::EQUIPMENT.is_deck_card());
+        assert_eq!(t.without(Types::ACTION), Types::INSTANT);
     }
 }

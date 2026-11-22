@@ -1,13 +1,15 @@
 //! L'état complet d'une partie.
 
-use crate::card::{CardDb, CardDef, Keywords};
+use crate::card::{CardDb, CardDef, Delta, Keywords, Subtypes, Types};
 use crate::decision::Decision;
+use crate::events::Event;
 use crate::ids::{CardId, ObjRef, ObjectId, PlayerId};
 use crate::rng::Rng;
+use crate::script::{Ctx, ScriptRef};
 use crate::zones::Zone;
 use std::sync::Arc;
 
-/// Un objet de la partie : une carte (ou une attaque-proxy d'arme).
+/// Un objet de la partie : une carte, un token, ou une attaque-proxy d'arme.
 #[derive(Clone, Debug)]
 pub struct Object {
     pub card: CardId,
@@ -19,13 +21,15 @@ pub struct Object {
     /// Face cachée (privé), ex. arsenal.
     pub face_down: bool,
     pub tapped: bool,
-    /// Somme des compteurs +1/-1 de défense (CR 1.15.2a).
+    /// Somme des compteurs +1/-1 de défense et de puissance (CR 1.15.2a).
     pub defense_counters: i8,
     pub power_counters: i8,
+    /// Autres compteurs (ex. compteurs « verse »).
+    pub counters: u8,
     /// Pour une attaque-proxy : l'arme qu'elle représente (CR 1.4.3).
     pub proxy_of: Option<ObjectId>,
-    /// Nombre d'activations de capacité ce tour (limite « Once per Turn »).
-    pub activations_this_turn: u8,
+    /// Activations de chaque capacité ce tour (limite « Once per Turn »).
+    pub activations: [u8; 4],
 }
 
 impl Object {
@@ -55,6 +59,8 @@ pub struct PlayerState {
     pub chest: Option<ObjectId>,
     pub arms: Option<ObjectId>,
     pub legs: Option<ObjectId>,
+    /// Le héros est marqué (CR 8.5.50).
+    pub marked: bool,
 }
 
 impl PlayerState {
@@ -71,16 +77,15 @@ impl PlayerState {
 pub enum LayerKind {
     /// Une carte jouée.
     Card,
-    /// Attaque-proxy créée par la capacité d'attaque d'une arme (CR 1.4.3).
-    WeaponAttack,
-    /// Couche déclenchée « when this attacks ».
-    TriggerOnAttack,
-    /// Couche déclenchée « when this hits ».
-    TriggerOnHit,
+    /// Une capacité activée (index dans `CardDef::activated`). Si c'est une
+    /// capacité « Attack », `object` est l'attaque-proxy (CR 1.4.3).
+    Activated(u8),
+    /// Une capacité déclenchée (index dans `CardDef::triggers`).
+    Trigger(u8),
 }
 
 /// Une couche sur la pile.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Layer {
     pub kind: LayerKind,
     /// La carte (ou la proxy) sur la pile ; pour un déclenchement, sa source.
@@ -88,10 +93,12 @@ pub struct Layer {
     /// Définition utilisée pour les effets (reste valable si la source disparaît, CR 1.7.1a).
     pub card: CardId,
     pub controller: PlayerId,
-    /// Cible de l'attaque (CR 1.4.5) ou du déclenchement.
+    /// Cible de l'attaque (CR 1.4.5).
     pub target: Option<PlayerId>,
     /// Zone d'où la carte a été jouée (main, arsenal...).
     pub origin: Zone,
+    /// Cibles, modes, X... déclarés.
+    pub ctx: Box<Ctx>,
 }
 
 /// Les étapes du combat (CR 7).
@@ -112,12 +119,16 @@ pub struct ChainLink {
     pub attack: ObjRef,
     /// L'arme représentée, pour une attaque-proxy.
     pub source: Option<ObjectId>,
+    /// Définition de l'attaque (informations de dernier état, CR 7.0.3c).
+    pub card: CardId,
     pub attacker: PlayerId,
     pub target: PlayerId,
     pub defenders: Vec<ObjectId>,
     /// Nombre de cartes venues de la main qui défendent (pour dominate).
     pub defenders_from_hand: u8,
     pub hit: bool,
+    /// Index du journal du tour au début de ce maillon (« this chain link »).
+    pub log_start: usize,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -127,9 +138,12 @@ pub struct Combat {
     pub links: Vec<ChainLink>,
     /// File d'attente des attaques (CR 3.15.7) : (attaque, cible).
     pub queue: Vec<(ObjRef, PlayerId)>,
+    /// Index du journal du tour à l'ouverture (« this combat chain »).
+    pub log_start: usize,
 }
 
 impl Combat {
+    /// Le maillon actif (CR 7.0.3b) : de l'étape d'attaque à l'étape des dégâts.
     pub fn active_link(&self) -> Option<&ChainLink> {
         match self.step {
             Some(
@@ -147,34 +161,83 @@ pub enum Until {
     CombatChainCloses,
 }
 
-/// Modification d'un objet par un effet continu : « gets +N », « gets go again ».
+/// « X gets +N » : modification d'un objet par un effet continu.
 #[derive(Clone, Copy, Debug)]
 pub struct Modifier {
     pub target: ObjRef,
-    pub power: i16,
-    pub defense: i16,
-    pub grants: Keywords,
+    pub delta: Delta,
     pub until: Until,
 }
 
-/// Effet « votre prochaine attaque ce tour … » en attente (CR 1.8.10).
+/// « Votre prochaine attaque [qui …] ce tour gets … » (CR 1.8.10), en attente.
 #[derive(Clone, Copy, Debug)]
 pub struct NextAttackEffect {
     pub player: PlayerId,
-    pub power: i16,
+    /// Filtre sur l'attaque (ex. « attaque d'arme »), `None` = toute attaque.
+    pub filter: Option<fn(&GameState, ObjectId) -> bool>,
+    pub delta: Delta,
+    /// Seulement pour une carte d'attaque jouée (« next attack action card you play »).
+    pub cards_only: bool,
 }
 
-/// Où en est le déroulement de la partie (hors fenêtre de priorité).
+/// « Prevent the next N damage that would be dealt to … » (CR 6.4).
+#[derive(Clone, Copy, Debug)]
+pub struct Prevention {
+    pub player: PlayerId,
+    pub remaining: i32,
+    pub arcane_only: bool,
+    /// Seulement les dégâts de cette source.
+    pub source: Option<ObjRef>,
+    pub until: Until,
+}
+
+/// Une tâche en attente (pile de tâches) : le moteur exécute toujours la tâche
+/// du dessus avant de continuer le déroulement normal de la partie.
+#[derive(Clone, Debug)]
+pub enum Task {
+    /// Exécuter une capacité à partir de l'instruction `pc`.
+    /// `write_back` : à la fin, recopier le contexte dans la couche du dessus
+    /// de la pile (coûts d'effet dont le résultat sert à la résolution).
+    Script {
+        script: ScriptRef,
+        pc: u16,
+        ctx: Box<Ctx>,
+        write_back: bool,
+    },
+    /// Étapes pour jouer / activer la couche du dessus de la pile (CR 5.1).
+    PlayOptionalCost,
+    PlayX,
+    PlayMode,
+    PlayTarget(u8),
+    PlayPay,
+    PlayEffectCost,
+    PlayFinish,
+    /// Payer des ressources puis des points d'action (CR 1.14.2).
+    Pay {
+        player: PlayerId,
+        resources: u8,
+        action_points: u8,
+    },
+    /// Suite de la résolution d'une couche après ses effets (CR 5.3.5-5.3.7).
+    FinishResolve(Box<Layer>),
+    /// Déclarer les cibles d'une couche déclenchée avant de l'empiler (CR 6.6.6a).
+    TriggerTargets {
+        layer: Box<Layer>,
+        next: u8,
+    },
+}
+
+/// Où en est le déroulement de la partie (hors tâches et priorité).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Stage {
     /// Choix du premier joueur (CR 4.1.3) : décision en attente.
     ChooseFirstPlayer,
     /// Début de tour (CR 4.2).
     StartPhase,
+    /// Résoudre la pile sans priorité, puis passer à l'étape suivante (CR 4.2.2, 4.4.2).
+    ResolveThen(AfterResolve),
     /// Un joueur a ou va recevoir la priorité (CR 1.11).
     Priority,
-    /// Paiement d'un coût en cours (CR 5.1.7).
-    Paying,
     /// Déclaration des cartes qui défendent (CR 7.3.2).
     Defending,
     /// Phase de fin, mise en arsenal (CR 4.4.3b).
@@ -186,14 +249,10 @@ pub enum Stage {
     GameOver,
 }
 
-/// Paiement d'un coût en cours.
-#[derive(Clone, Copy, Debug)]
-pub struct Payment {
-    pub player: PlayerId,
-    /// Ressources restant à payer.
-    pub resources: u8,
-    /// Points d'action à payer après les ressources (CR 1.14.2a).
-    pub action_points: u8,
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AfterResolve {
+    ActionPhase,
+    EndArsenal,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -207,6 +266,9 @@ pub enum Outcome {
 pub enum EndReason {
     /// Un héros est tombé à 0 PV (CR 4.5.3a) ou les deux (CR 4.5.4a).
     LifeZero,
+    /// Plus aucun joueur ne peut faire avancer la partie (CR 4.5.4d), détecté
+    /// dans le cas simple : decks, mains et arsenaux vides des deux côtés.
+    Stalemate,
     /// Limite de tours du simulateur atteinte : **pas une règle du jeu**,
     /// une sécurité pour les simulations (équivalent d'une fin de ronde).
     TurnLimit,
@@ -228,6 +290,8 @@ pub struct GameState {
     pub rng: Rng,
     pub objects: Vec<Object>,
     pub players: [PlayerState; 2],
+    /// Zone permanente partagée (CR 3.13).
+    pub permanents: Vec<ObjectId>,
     pub turn: u32,
     pub turn_player: PlayerId,
     pub first_player: PlayerId,
@@ -243,15 +307,22 @@ pub struct GameState {
     pub combat: Combat,
     pub modifiers: Vec<Modifier>,
     pub next_attack_effects: Vec<NextAttackEffect>,
+    pub preventions: Vec<Prevention>,
     /// Couches déclenchées créées, pas encore ajoutées à la pile (CR 6.6.6).
     pub pending_triggers: Vec<Layer>,
-    pub payment: Option<Payment>,
+    /// Joueur qui empile ses déclenchements en premier (CR 6.6.6b).
+    pub trigger_first: Option<PlayerId>,
+    pub tasks: Vec<Task>,
     /// Cartes déclarées pendant la déclaration de défense en cours.
     pub declared_defenders: Vec<ObjectId>,
+    /// Journal des événements du tour.
+    pub turn_log: Vec<Event>,
     pub pending: Option<Decision>,
     pub outcome: Option<Outcome>,
     pub end_reason: Option<EndReason>,
     pub max_turns: u32,
+    /// Objets dont la carte a des capacités déclenchées (optimisation de `emit`).
+    pub trigger_objects: Vec<ObjectId>,
 }
 
 impl GameState {
@@ -312,6 +383,19 @@ impl GameState {
         Ok(())
     }
 
+    /// Le maillon actif, s'il existe.
+    pub fn active_link(&self) -> Option<&ChainLink> {
+        self.combat.active_link()
+    }
+
+    /// L'attaque du maillon actif (CR 7.0.4).
+    pub fn active_attack(&self) -> Option<ObjectId> {
+        self.combat
+            .active_link()
+            .map(|l| l.attack.id)
+            .filter(|&a| self.obj(a).zone == Zone::CombatChain)
+    }
+
     // ------------------------------------------------------------------
     // Déplacements d'objets (CR 3.0.7)
     // ------------------------------------------------------------------
@@ -321,6 +405,10 @@ impl GameState {
         let o = self.obj(id);
         let owner = o.owner;
         let zone = o.zone;
+        if zone == Zone::Permanent {
+            self.permanents.retain(|x| *x != id);
+            return;
+        }
         let p = self.player_mut(owner);
         let remove = |v: &mut Vec<ObjectId>| {
             if let Some(i) = v.iter().position(|x| *x == id) {
@@ -333,16 +421,11 @@ impl GameState {
             Zone::Pitch => remove(&mut p.pitch),
             Zone::Graveyard => remove(&mut p.graveyard),
             Zone::Banished => remove(&mut p.banished),
-            Zone::Arsenal => {
-                if p.arsenal == Some(id) {
-                    p.arsenal = None;
-                }
-            }
+            Zone::Arsenal if p.arsenal == Some(id) => p.arsenal = None,
             // Les équipements et armes restent « équipés » quand ils sont sur
-            // la chaîne de combat (CR 7.7.5) ; on ne libère leur emplacement
-            // que lorsqu'ils quittent l'arène (voir `move_to`).
-            Zone::Weapon | Zone::Head | Zone::Chest | Zone::Arms | Zone::Legs => {}
-            Zone::Hero | Zone::CombatChain | Zone::Stack | Zone::Permanent | Zone::Gone => {}
+            // la chaîne de combat (CR 7.7.5) ; leur emplacement n'est libéré
+            // que lorsqu'ils quittent l'arène (voir `unequip`).
+            _ => {}
         }
     }
 
@@ -358,15 +441,34 @@ impl GameState {
         }
     }
 
-    /// Déplace un objet vers une zone (hors pile, chaîne de combat et
-    /// équipement, qui ont leurs propres fonctions). Applique CR 3.0.9.
-    pub(crate) fn move_to(&mut self, id: ObjectId, zone: Zone, on_top: bool) {
+    /// Déplace un objet vers une zone d'un joueur (deck, main, cimetière…) ou
+    /// la zone permanente. Applique CR 3.0.9 (nouvel objet hors de l'arène).
+    /// Renvoie la zone d'origine.
+    pub(crate) fn move_to(&mut self, id: ObjectId, zone: Zone, on_top: bool) -> Zone {
+        let from = self.obj(id).zone;
+        let was_in_arena = from.in_arena();
+        // Un token qui quitte l'arène cesse d'exister (CR 8.1.8a).
+        if self.def(id).types.has(Types::TOKEN) && was_in_arena && !zone.in_arena() {
+            self.detach(id);
+            self.unequip(id);
+            let o = self.obj_mut(id);
+            o.zone = Zone::Gone;
+            o.gen += 1;
+            self.emit(Event::LeaveArena {
+                card: id,
+                owner: self.obj(id).owner,
+            });
+            return from;
+        }
         self.detach(id);
         if !zone.in_arena() {
             self.unequip(id);
         }
         let owner = self.obj(id).owner;
         {
+            if zone == Zone::Permanent {
+                self.permanents.push(id);
+            }
             let p = self.player_mut(owner);
             match zone {
                 Zone::Deck => {
@@ -390,12 +492,20 @@ impl GameState {
             o.gen += 1;
             o.defense_counters = 0;
             o.power_counters = 0;
+            o.counters = 0;
             o.tapped = false;
-            o.activations_this_turn = 0;
+            o.activations = [0; 4];
         }
         o.zone = zone;
         o.face_down = matches!(zone, Zone::Deck | Zone::Hand | Zone::Arsenal);
         o.controller = owner;
+        if was_in_arena && !zone.in_arena() {
+            self.emit(Event::LeaveArena { card: id, owner });
+        }
+        if !was_in_arena && zone.in_arena() {
+            self.emit(Event::EnterArena { card: id });
+        }
+        from
     }
 
     /// Met un objet sur la pile ou la chaîne de combat (il garde son identité).
@@ -410,42 +520,92 @@ impl GameState {
 
     /// Retourne un équipement / une arme dans sa zone d'équipement (CR 7.7.5).
     pub(crate) fn return_to_equipment_zone(&mut self, id: ObjectId) {
-        let def = self.def(id);
-        let zone = equipment_zone(def);
+        let zone = equipment_zone(self.def(id));
         let o = self.obj_mut(id);
         o.zone = zone;
         o.controller = o.owner;
+        if zone == Zone::Permanent {
+            self.permanents.push(id);
+        }
     }
 
-    /// « Clear » (CR 3.0.12) : au cimetière du propriétaire ; une proxy cesse d'exister.
+    /// « Clear » (CR 3.0.12) : au cimetière du propriétaire ; une proxy ou un
+    /// token cesse d'exister.
     pub(crate) fn clear(&mut self, id: ObjectId) {
-        if self.obj(id).proxy_of.is_some() || self.def(id).types.has(crate::card::Types::TOKEN) {
+        if self.obj(id).proxy_of.is_some() || self.def(id).types.has(Types::TOKEN) {
+            let was_in_arena = self.obj(id).zone.in_arena();
             self.detach(id);
             self.unequip(id);
+            let owner = self.obj(id).owner;
             let o = self.obj_mut(id);
             o.zone = Zone::Gone;
             o.gen += 1;
+            if was_in_arena && self.obj(id).proxy_of.is_none() {
+                self.emit(Event::LeaveArena { card: id, owner });
+            }
         } else {
-            self.move_to(id, Zone::Graveyard, true);
+            self.put_in_graveyard(id);
+        }
+    }
+
+    /// Met un objet au cimetière de son propriétaire (événement « ToGraveyard »).
+    pub fn put_in_graveyard(&mut self, id: ObjectId) {
+        let owner = self.obj(id).owner;
+        let from = self.move_to(id, Zone::Graveyard, true);
+        if self.obj(id).zone == Zone::Graveyard {
+            self.emit(Event::ToGraveyard {
+                card: id,
+                owner,
+                from,
+            });
         }
     }
 
     // ------------------------------------------------------------------
-    // Valeurs calculées (CR 2)
+    // Valeurs calculées (CR 2, CR 6.3)
     // ------------------------------------------------------------------
 
-    fn modifier_sum(&self, r: ObjRef) -> (i16, i16, Keywords) {
-        let mut p = 0;
-        let mut d = 0;
-        let mut k = Keywords::NONE;
+    /// Somme des effets continus qui s'appliquent à un objet.
+    pub fn continuous_delta(&self, id: ObjectId) -> Delta {
+        let o = self.obj(id);
+        let r = o.obj_ref(id);
+        let mut d = Delta::default();
+        let mut add = |x: Delta| {
+            d.power += x.power;
+            d.defense += x.defense;
+            d.grants = d.grants | x.grants;
+        };
         for m in &self.modifiers {
             if m.target == r {
-                p += m.power;
-                d += m.defense;
-                k = k | m.grants;
+                add(m.delta);
             }
         }
-        (p, d, k)
+        // Effets statiques de la carte elle-même (CR 5.4).
+        if o.proxy_of.is_none() {
+            if let Some(f) = self.db.get(o.card).self_mod {
+                add(f(self, id));
+            }
+        }
+        // Effets statiques des héros, équipements et permanents (CR 1.7.4).
+        for src in self.static_sources() {
+            if let Some(f) = self.def(src).aura {
+                add(f(self, src, id));
+            }
+        }
+        d
+    }
+
+    /// Objets dont les effets statiques « aura » sont actifs.
+    fn static_sources(&self) -> impl Iterator<Item = ObjectId> + '_ {
+        let heroes = self.players.iter().map(|p| p.hero);
+        let equip = self
+            .players
+            .iter()
+            .flat_map(|p| p.equipment().chain(p.weapons.iter().copied()));
+        heroes
+            .chain(equip)
+            .chain(self.permanents.iter().copied())
+            .filter(|&s| self.db.get(self.obj(s).card).aura.is_some())
     }
 
     /// Puissance actuelle (CR 2.9.3, jamais négative CR 2.0.3c).
@@ -456,16 +616,14 @@ impl GameState {
             Some(w) => self.power(w),
             None => self.db.get(o.card).power.unwrap_or(0) as i16 + o.power_counters as i16,
         };
-        let (p, _, _) = self.modifier_sum(o.obj_ref(id));
-        (base + p).max(0)
+        (base + self.continuous_delta(id).power).max(0)
     }
 
     /// Défense actuelle (CR 2.3.3, jamais négative CR 2.0.3c).
     pub fn defense(&self, id: ObjectId) -> i16 {
         let o = self.obj(id);
         let base = self.db.get(o.card).defense.unwrap_or(0) as i16 + o.defense_counters as i16;
-        let (_, d, _) = self.modifier_sum(o.obj_ref(id));
-        (base + d).max(0)
+        (base + self.continuous_delta(id).defense).max(0)
     }
 
     /// Mots-clés actuels (de base + accordés par des effets).
@@ -473,26 +631,23 @@ impl GameState {
         let o = self.obj(id);
         let base = match o.proxy_of {
             // Une proxy n'hérite pas des capacités de résolution de sa source
-            // (CR 1.4.3a) ; son « go again » vient de la capacité d'attaque.
-            Some(w) => {
-                let wa = self.def(w).weapon_attack;
-                let mut k = Keywords::NONE;
-                if wa.is_some_and(|a| a.go_again) {
-                    k = k | Keywords::GO_AGAIN;
-                }
-                // Les mots-clés statiques de l'arme (ex. dominate) sont hérités.
-                k | Keywords(self.def(w).keywords.0 & !Keywords::GO_AGAIN.0)
-            }
+            // (CR 1.4.3a) : son « go again » vient de la capacité d'attaque,
+            // fixé à sa création (modificateur). Les mots-clés statiques de
+            // l'arme (ex. dominate) sont hérités.
+            Some(w) => self.keywords(w).without(Keywords::GO_AGAIN),
             None => self.db.get(o.card).keywords,
         };
-        let (_, _, k) = self.modifier_sum(o.obj_ref(id));
-        base | k
+        base | self.continuous_delta(id).grants
+    }
+
+    /// Le dessus du deck d'un joueur.
+    pub fn top_of_deck(&self, p: PlayerId) -> Option<ObjectId> {
+        self.player(p).deck.last().copied()
     }
 }
 
 /// Zone d'équipement correspondant au sous-type d'une carte (CR 3.2-3.16).
 pub(crate) fn equipment_zone(def: &CardDef) -> Zone {
-    use crate::card::{Subtypes, Types};
     if def.types.has(Types::WEAPON) || def.subtypes.any(Subtypes::OFF_HAND | Subtypes::QUIVER) {
         Zone::Weapon
     } else if def.subtypes.has(Subtypes::HEAD) {

@@ -62,8 +62,9 @@ impl GameState {
                     tapped: false,
                     defense_counters: 0,
                     power_counters: 0,
+                    counters: 0,
                     proxy_of: None,
-                    activations_this_turn: 0,
+                    activations: [0; 4],
                 });
                 ObjectId(objects.len() as u32 - 1)
             };
@@ -89,6 +90,7 @@ impl GameState {
                 chest: None,
                 arms: None,
                 legs: None,
+                marked: false,
             };
             // CR 4.1.4-4.1.5 : cartes d'arène équipées.
             let mut hands_used = 0;
@@ -140,6 +142,7 @@ impl GameState {
             rng: Rng::new(setup.seed),
             objects,
             players: [p0, p1],
+            permanents: Vec::new(),
             turn: 0,
             turn_player: PlayerId::P0,
             first_player: PlayerId::P0,
@@ -151,14 +154,22 @@ impl GameState {
             combat: Combat::default(),
             modifiers: Vec::new(),
             next_attack_effects: Vec::new(),
+            preventions: Vec::new(),
             pending_triggers: Vec::new(),
-            payment: None,
+            trigger_first: None,
+            tasks: Vec::new(),
             declared_defenders: Vec::new(),
+            turn_log: Vec::new(),
             pending: None,
             outcome: None,
             end_reason: None,
             max_turns: setup.max_turns,
+            trigger_objects: Vec::new(),
         };
+        g.trigger_objects = (0..g.objects.len() as u32)
+            .map(ObjectId)
+            .filter(|&o| !g.def(o).triggers.is_empty())
+            .collect();
         // CR 4.1.8 : chaque joueur mélange son deck.
         if setup.shuffle {
             for p in PlayerId::BOTH {
@@ -172,8 +183,8 @@ impl GameState {
             player: setup.chooser,
             kind: DecisionKind::FirstPlayer,
             options: vec![
-                Choice::FirstPlayer(setup.chooser),
-                Choice::FirstPlayer(setup.chooser.opponent()),
+                Choice::Player(setup.chooser),
+                Choice::Player(setup.chooser.opponent()),
             ],
         });
         Ok(g)
@@ -202,17 +213,6 @@ impl GameState {
             if !self.draw(p) {
                 break;
             }
-        }
-    }
-
-    /// Pioche une carte (CR 8.5.6). Échoue si le deck est vide (CR 8.5.6b).
-    pub(crate) fn draw(&mut self, p: PlayerId) -> bool {
-        match self.player(p).deck.last().copied() {
-            Some(id) => {
-                self.move_to(id, Zone::Hand, true);
-                true
-            }
-            None => false,
         }
     }
 }

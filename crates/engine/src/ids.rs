@@ -2,7 +2,7 @@
 //! par du texte : copier un état de partie ne coûte presque rien.
 
 /// Un joueur : 0 ou 1.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct PlayerId(pub u8);
 
 impl PlayerId {
@@ -24,11 +24,11 @@ impl PlayerId {
 
 /// Une *définition* de carte (ex. : « telle carte, version rouge »),
 /// index dans la base de cartes ([`crate::card::CardDb`]).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct CardId(pub u16);
 
 /// Un emplacement d'objet dans la partie.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ObjectId(pub u32);
 
 /// Référence à un objet **tel qu'il existe maintenant**.
@@ -37,7 +37,7 @@ pub struct ObjectId(pub u32);
 /// pile), il devient un nouvel objet sans lien avec le précédent. On le
 /// modélise en augmentant sa « génération » : un effet qui visait l'ancienne
 /// génération ne s'applique plus.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct ObjRef {
     pub id: ObjectId,
     pub gen: u32,

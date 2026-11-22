@@ -1,6 +1,7 @@
 //! Les points de décision : tout choix d'un joueur passe par ici.
 
 use crate::ids::{ObjectId, PlayerId};
+use crate::script::Target;
 
 /// Le type de choix demandé.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -9,10 +10,24 @@ pub enum DecisionKind {
     FirstPlayer,
     /// Le joueur a la priorité : jouer une carte, activer une capacité, ou passer (CR 1.11).
     Priority,
+    /// Payer un coût additionnel optionnel ? (CR 5.1.3b)
+    OptionalCost,
+    /// Valeur de X (CR 5.1.3a).
+    ChooseX,
+    /// Mode d'une capacité modale (CR 1.7.5).
+    Mode,
+    /// Cible (CR 1.8.5, 5.1.4).
+    Target,
     /// Payer un coût en ressources : choisir la prochaine carte à pitcher (CR 1.14.2d).
     Pitch,
     /// Déclarer les cartes qui défendent, une par une, puis « Pass » pour terminer (CR 7.3.2).
     Defend,
+    /// Choix demandé par une capacité pendant sa résolution.
+    Effect,
+    /// Le joueur actif choisit qui empile ses déclenchements en premier (CR 6.6.6b).
+    TriggerFirst,
+    /// Choisir le prochain déclenchement à empiler (CR 6.6.6b).
+    TriggerOrder,
     /// Fin de tour : mettre une carte en arsenal ou passer (CR 4.4.3b).
     Arsenal,
     /// Fin de tour : choisir la prochaine carte du pitch à mettre sous le deck (CR 4.4.3c).
@@ -24,10 +39,13 @@ pub enum DecisionKind {
 pub enum Choice {
     /// Passer / terminer / ne rien faire.
     Pass,
+    /// Oui / non.
+    Yes,
+    No,
     /// Jouer cette carte (depuis la main ou l'arsenal).
     Play(ObjectId),
-    /// Activer la capacité d'attaque de cette arme.
-    Activate(ObjectId),
+    /// Activer la capacité n° `i` de cet objet.
+    Activate(ObjectId, u8),
     /// Pitcher cette carte de la main.
     Pitch(ObjectId),
     /// Déclarer cette carte (main ou équipement) comme carte qui défend.
@@ -36,8 +54,18 @@ pub enum Choice {
     Arsenal(ObjectId),
     /// Mettre cette carte sous le deck maintenant.
     PitchToBottom(ObjectId),
-    /// Désigner ce joueur comme premier joueur.
-    FirstPlayer(PlayerId),
+    /// Désigner ce joueur (premier joueur, ordre des déclenchements…).
+    Player(PlayerId),
+    /// Une cible.
+    Target(Target),
+    /// Un objet (choix pendant une résolution).
+    Object(ObjectId),
+    /// Un nombre (X…).
+    Number(u8),
+    /// Un mode.
+    Mode(u8),
+    /// Le déclenchement n° `i` en attente.
+    Trigger(u8),
 }
 
 /// Ce que le moteur attend : « le joueur X doit choisir parmi ces options ».

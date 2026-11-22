@@ -36,3 +36,8 @@ debug = false
 # car les tests aléatoires massifs jouent beaucoup de parties.
 [profile.test]
 opt-level = 1
+
+# Profil pour mesurer les performances (optimisé, avec symboles).
+[profile.profiling]
+inherits = "release"
+debug = true

@@ -4,176 +4,14 @@
 //! Les decks ne sont pas mélangés : le premier élément de la liste est le
 //! dessus du deck, donc on sait exactement quelles cartes sont piochées.
 
-use fab_cards::test_set::{self, id};
-use fab_engine::card::{CardDb, Color};
+mod commun;
+use commun::*;
+use fab_cards::test_set;
+use fab_engine::card::Color;
 use fab_engine::{
-    Choice, DecisionKind, EndReason, GameSetup, GameState, History, Loadout, ObjectId, Outcome,
-    PlayerId, Zone,
+    Choice, DecisionKind, EndReason, GameSetup, GameState, History, Outcome, PlayerId, Zone,
 };
 use std::sync::Arc;
-
-const R: Option<Color> = Some(Color::Red);
-const Y: Option<Color> = Some(Color::Yellow);
-const B: Option<Color> = Some(Color::Blue);
-const P0: PlayerId = PlayerId::P0;
-const P1: PlayerId = PlayerId::P1;
-
-struct Partie {
-    g: GameState,
-}
-
-/// Une partie où P0 commence. `main0` / `main1` : les 4 premières cartes de
-/// chaque deck (la main de départ), `suite0` / `suite1` : le reste du deck.
-fn partie(
-    main0: &[(&str, Option<Color>)],
-    suite0: &[(&str, Option<Color>)],
-    main1: &[(&str, Option<Color>)],
-    suite1: &[(&str, Option<Color>)],
-    arena0: &[&str],
-    arena1: &[&str],
-) -> Partie {
-    let db = Arc::new(test_set::build());
-    let loadout = |main: &[(&str, Option<Color>)],
-                   suite: &[(&str, Option<Color>)],
-                   arena: &[&str],
-                   db: &CardDb| {
-        let mut deck: Vec<_> = main
-            .iter()
-            .chain(suite)
-            .map(|&(n, c)| id(db, n, c))
-            .collect();
-        // Remplissage neutre : des Essai Rempart (blocs, injouables).
-        while deck.len() < 40 {
-            deck.push(id(db, "Essai Rempart", B));
-        }
-        Loadout {
-            hero: id(db, "Essai Héros", None),
-            arena: arena.iter().map(|n| id(db, n, None)).collect(),
-            deck,
-        }
-    };
-    let setup = GameSetup {
-        players: [
-            loadout(main0, suite0, arena0, &db),
-            loadout(main1, suite1, arena1, &db),
-        ],
-        chooser: P0,
-        seed: 42,
-        shuffle: false,
-        max_turns: 100,
-    };
-    let mut g = GameState::new(db, setup).unwrap();
-    // CR 4.1.3 : P0 choisit de commencer.
-    let i = g
-        .pending_decision()
-        .unwrap()
-        .index_of(Choice::FirstPlayer(P0))
-        .unwrap();
-    g.apply(i).unwrap();
-    Partie { g }
-}
-
-impl Partie {
-    fn kind(&self) -> DecisionKind {
-        self.g
-            .pending_decision()
-            .expect("une décision est attendue")
-            .kind
-    }
-
-    fn joueur(&self) -> PlayerId {
-        self.g
-            .pending_decision()
-            .expect("une décision est attendue")
-            .player
-    }
-
-    fn options(&self) -> Vec<Choice> {
-        self.g
-            .pending_decision()
-            .map(|d| d.options.clone())
-            .unwrap_or_default()
-    }
-
-    fn noms(&self, choices: &[Choice]) -> Vec<String> {
-        choices
-            .iter()
-            .map(|c| match c {
-                Choice::Play(o)
-                | Choice::Activate(o)
-                | Choice::Pitch(o)
-                | Choice::Defend(o)
-                | Choice::Arsenal(o)
-                | Choice::PitchToBottom(o) => {
-                    format!("{c:?}={}", self.g.def(*o).name)
-                }
-                _ => format!("{c:?}"),
-            })
-            .collect()
-    }
-
-    fn choisir(&mut self, c: Choice) {
-        let d = self
-            .g
-            .pending_decision()
-            .expect("une décision est attendue")
-            .clone();
-        let i = d.index_of(c).unwrap_or_else(|| {
-            panic!(
-                "{c:?} indisponible pour {:?} ({:?}) ; options : {:?}",
-                d.player,
-                d.kind,
-                self.noms(&d.options)
-            )
-        });
-        self.g.apply(i).unwrap();
-    }
-
-    /// Une carte de la main du joueur, par nom et couleur.
-    fn en_main(&self, p: PlayerId, nom: &str, couleur: Option<Color>) -> ObjectId {
-        *self
-            .g
-            .player(p)
-            .hand
-            .iter()
-            .find(|&&c| self.g.def(c).name == nom && self.g.def(c).color == couleur)
-            .unwrap_or_else(|| panic!("{nom} {couleur:?} absente de la main de {p:?}"))
-    }
-
-    fn equipement(&self, p: PlayerId, nom: &str) -> ObjectId {
-        let ps = self.g.player(p);
-        ps.equipment()
-            .chain(ps.weapons.iter().copied())
-            .find(|&c| self.g.def(c).name == nom)
-            .unwrap_or_else(|| panic!("{nom} absent de l'équipement de {p:?}"))
-    }
-
-    fn vie(&self, p: PlayerId) -> i32 {
-        self.g.player(p).life
-    }
-
-    fn peut(&self, c: Choice) -> bool {
-        self.options().contains(&c)
-    }
-
-    /// Passe la priorité jusqu'à ce que la décision attendue ne soit plus une priorité.
-    fn passer_jusqua(&mut self, kind: DecisionKind) {
-        for _ in 0..50 {
-            if self.g.is_over() || self.kind() == kind {
-                return;
-            }
-            match self.kind() {
-                DecisionKind::Priority | DecisionKind::Defend | DecisionKind::Arsenal => {
-                    self.choisir(Choice::Pass)
-                }
-                k => panic!("décision {k:?} inattendue en attendant {kind:?}"),
-            }
-        }
-        panic!("{kind:?} jamais atteinte");
-    }
-}
-
-const RIEN: &[(&str, Option<Color>)] = &[];
 
 // ----------------------------------------------------------------------
 // Mise en place et structure du tour
@@ -204,8 +42,7 @@ fn cr_4_1_3_le_choisisseur_peut_faire_commencer_l_adversaire() {
     let mut g = GameState::new(db, setup).unwrap();
     let d = g.pending_decision().unwrap().clone();
     assert_eq!(d.player, P1);
-    g.apply(d.index_of(Choice::FirstPlayer(P0)).unwrap())
-        .unwrap();
+    g.apply(d.index_of(Choice::Player(P0)).unwrap()).unwrap();
     assert_eq!(g.turn_player, P0);
 }
 
@@ -628,13 +465,13 @@ fn cr_1_4_3_attaque_d_arme_une_fois_par_tour_avec_go_again() {
         &[],
     );
     let dague = t.equipement(P0, "Essai Dague");
-    t.choisir(Choice::Activate(dague));
+    t.choisir(Choice::Activate(dague, 0));
     t.choisir(Choice::Pitch(t.en_main(P0, "Essai Frappe", B)));
     t.passer_jusqua(DecisionKind::Defend);
     t.choisir(Choice::Pass);
     // Go again (« Attack. Go again. ») mais « Once per Turn » : plus d'attaque d'arme.
     assert_eq!(t.g.player(P0).action_points, 1);
-    assert!(!t.peut(Choice::Activate(dague)));
+    assert!(!t.peut(Choice::Activate(dague, 0)));
     t.passer_jusqua(DecisionKind::Arsenal);
     assert_eq!(t.vie(P1), 19);
     // CR 7.7.5 : l'arme est revenue dans sa zone.
