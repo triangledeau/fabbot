@@ -17,7 +17,7 @@ du projet est un expert du jeu, mais débute en programmation : explications en
 - `ai` (`fab-ai`) : trait `Agent` et les bots B0 → B3.
 - `fab-match` : matchs en plusieurs manches, phase de side.
 - `sim` (`fab-sim`) : simulateur en ligne de commande.
-- `ui` (`fab-ui`) : interface pour jouer contre le bot.
+- `ui` (`fab-ui`) : interfaces pour jouer contre le bot (texte, et page web locale `fab-web`).
 
 Principe central : le moteur avance jusqu'à une `Decision` ; un `Agent` (bot ou
 humain) répond par l'index d'une option. Tout choix de joueur passe par là.
@@ -78,7 +78,7 @@ humain) répond par l'index d'une option. Tout choix de joueur passe par là.
 - Harnais de test commun : `crates/cards/tests/commun/mod.rs` (`partie`, `choisir`,
   `passer_jusqua`, `finir_le_tour`).
 - Un bot n'a accès qu'à l'information de son joueur.
-- Interface texte (`fab-ui`) : `docs/interface.md`. Tout `Op::Ask` d'une carte
+- Interfaces (`fab-ui` texte, `fab-web` navigateur) : `docs/interface.md`. Tout `Op::Ask` d'une carte
   porte un `label` (la question affichée au joueur).
 
 ## Commandes

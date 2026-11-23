@@ -1,4 +1,59 @@
-# Jouer contre le bot (interface texte)
+# Jouer contre le bot
+
+Deux interfaces, avec les mêmes règles, la même annulation et le même
+principe : vous ne voyez que ce que votre joueur a le droit de voir.
+
+## Dans le navigateur (recommandé)
+
+```
+cargo run --release -p fab-ui --bin fab-web
+```
+
+Puis ouvrez **http://127.0.0.1:8080** dans votre navigateur (Edge, Chrome,
+Firefox). Laissez le terminal ouvert pendant la partie ; `Ctrl+C` dans le
+terminal arrête le serveur. Le serveur n'écoute que sur votre ordinateur
+(personne d'autre sur le réseau ne peut s'y connecter).
+
+Options (les mêmes que l'interface texte, plus `--port`) :
+`--deck hala`, `--bot dorinthea`, `--niveau b1` (**B1 par défaut ici**),
+`--graine 42`, `--port 8081` (si le port 8080 est déjà pris). Exemple :
+
+```
+cargo run --release -p fab-ui --bin fab-web -- --deck levia --bot arakni --niveau b2
+```
+
+Le bouton **Nouvelle partie** permet aussi de changer de decks, de niveau
+et de graine sans relancer le serveur.
+
+### La page
+
+- **En haut** : le bot (héros, PV, points d'action, ressources, taille du
+  deck, nombre de cartes en main, équipement, arsenal, permanents, pitch).
+- **Au milieu** : la chaîne de combat (attaque, cible, puissance,
+  défenseurs) et la pile.
+- **En bas** : vous, avec votre main.
+- **À droite** : la question posée et ses options, la fiche de la carte
+  survolée (avec le **texte officiel**), et le journal de la partie.
+- « Cimetière · Bannies » : cliquez pour déplier le détail.
+
+Sur une carte : coût en haut à droite, ⚔ puissance, ◆ pitch, ⛨ défense,
+la bande de couleur indique sa couleur de pitch. Une carte penchée est
+engagée ; un bord pointillé = carte face cachée (que vous seul voyez).
+
+### Jouer
+
+- Les cartes **surlignées en jaune** ont une option : cliquez pour la
+  choisir (s'il y en a plusieurs, un petit menu s'ouvre). Vous pouvez aussi
+  cliquer une option dans la liste de droite.
+- Clavier : `1` à `9` = option, `P` = passer, `A` ou `Ctrl+Z` = annuler.
+- **↶ Annuler** revient avant votre dernier choix (et avant les réponses du
+  bot qui ont suivi), autant de fois que voulu. Le nombre entre parenthèses
+  dit combien de choix on peut annuler. Après une annulation, le bot peut
+  répondre autrement (B0 et B2 ont une part de hasard).
+- Avec B2, chaque décision du bot prend une fraction de seconde : « Le bot
+  réfléchit… » s'affiche en bas à droite.
+
+## Dans le terminal (interface texte)
 
 ```
 cargo run --release -p fab-ui
@@ -68,8 +123,8 @@ d'abord un test qui échoue, puis sera corrigé.
 
 ## Limites actuelles
 
-- Bot aléatoire seulement (les bots B1 et B2 arrivent à l'étape 4).
 - Équipement et deck de 40 choisis automatiquement (les premières cartes de
   la liste) ; le choix avant chaque manche arrive à l'étape 6.
 - « Look at the top card of your deck » (On the Horizon) n'affiche encore rien.
-- Une page web avec plateau arrive à l'étape 5.
+- Page web : pas d'images de cartes (le nom, la couleur et les valeurs
+  seulement) ; une seule partie à la fois (un nouvel onglet montre la même).

@@ -13,15 +13,23 @@ met à jour à la fin de chaque tâche.
 | 2 | Deux premiers decks complets + interface texte | ✅ (cartes à valider par le propriétaire avec l'interface) |
 | 3 | Les 7 autres decks + simulateur rapide | ✅ (Ira, Bravo, Iyslander, Florian, Levia, Dromai, Arakni ; cartes à valider par le propriétaire) |
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ✅ B0 = 0, B1 = +511, B2 = +785 |
-| 5 | Interface web locale + annulation | ⏳ |
+| 5 | Interface web locale + annulation | ✅ (`fab-web`, à essayer par le propriétaire) |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ⏳ |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
 
-**Branche la plus récente :** `claude/loving-fermi-r75ch8` (bot B2, partie
-de `main` après la fusion du bot B1). Tant qu'elle n'est pas fusionnée dans
-`main`, partir de cette branche.
+**Branche la plus récente :** `claude/youthful-brown-dgcgw0` (interface
+web, partie de `claude/loving-fermi-r75ch8` = bot B2, elle-même pas encore
+fusionnée). Fusionner d'abord la PR de `claude/loving-fermi-r75ch8`, puis
+celle de `claude/youthful-brown-dgcgw0`. Tant qu'elles ne sont pas
+fusionnées dans `main`, partir de `claude/youthful-brown-dgcgw0`.
 
-**Jouer contre le bot :** `cargo run --release -p fab-ui` (mode d'emploi :
+**Jouer dans le navigateur :** `cargo run --release -p fab-ui --bin fab-web`
+puis ouvrir http://127.0.0.1:8080 (plateau, clic sur les cartes, bouton
+« Annuler », texte officiel au survol, journal ; bot B1 par défaut,
+`--niveau b2` ou bouton « Nouvelle partie » pour changer). Mode d'emploi :
+`docs/interface.md`.
+
+**Jouer contre le bot dans le terminal :** `cargo run --release -p fab-ui` (mode d'emploi :
 `docs/interface.md`) ; `--niveau b1` pour le bot heuristique, `--niveau b2`
 pour le bot qui cherche (une fraction de seconde par décision ; `b2-1000` ou
 `b2-500ms` pour le rendre plus fort).
@@ -29,7 +37,7 @@ pour le bot qui cherche (une fraction de seconde par décision ; `b2-1000` ou
 **Bots et Elo :** `docs/bots.md` (règles de B1, tournoi, résultats).
 Tournoi : `cargo run --release -p fab-sim -- --tournoi --bots b1 b0 --games 1000 --check`.
 
-**Chiffres actuels :** 751 tests au vert. **B2 contre B1 : 83,9 % sur les
+**Chiffres actuels :** 759 tests au vert. **B2 contre B1 : 83,9 % sur les
 81 paires des 9 decks (1 620 parties, 0 erreur) → +287 Elo** ; B2 contre
 B0 : 98,8 %. Classement commun : **B0 = 0, B1 = +511, B2 = +796**. B2
 imagine la main adverse dans le **card-pool de 55** (pas les 40 choisies).
@@ -246,13 +254,20 @@ absurdes à corriger simplement.
 
 Essayer aussi le bot B2 (`--niveau b2`) et noter ses erreurs flagrantes.
 
-**Pour Claude :** **étape 5**, interface web locale (jouer contre le bot
-dans le navigateur, avec annulation), en réutilisant `fab-ui` (vue du
-joueur, textes officiels, `History`). Pistes d'amélioration de B2, à
-mesurer plus tard : une estimation qui compte le blood debt et les cartes
-bannies (Levia), garder l'arbre d'une décision à la suivante, aller plus
-vite (plus d'itérations pour le même temps), pondérer les cartes imaginées
-par leur fréquence dans les decks du méta.
+**Pour le propriétaire (étape 5) :** essayer l'interface web
+(`cargo run --release -p fab-ui --bin fab-web`, puis http://127.0.0.1:8080)
+et dire ce qui gêne : lisibilité du plateau, informations manquantes,
+clics peu pratiques. C'est désormais le moyen le plus simple de vérifier
+les cartes.
+
+**Pour Claude :** **étape 6**, matchs en plusieurs manches et choix de
+l'équipement et du deck de 40 avant chaque manche dans le card-pool de 55
+(CR 4.1 ; `fab-match`), d'abord pour les bots (règle simple et mesurée),
+puis dans l'interface web (écran de choix avant chaque manche). Pistes
+d'amélioration de B2, à mesurer plus tard : une estimation qui compte le
+blood debt et les cartes bannies (Levia), garder l'arbre d'une décision à la
+suivante, aller plus vite (plus d'itérations pour le même temps), pondérer
+les cartes imaginées par leur fréquence dans les decks du méta.
 
 ## Journal des sessions
 
@@ -274,3 +289,4 @@ par leur fréquence dans les decks du méta.
 | 2026-11-23 | Étape 3, deck Arakni (fin de l'étape 3) : 28 lignes de STATUS.md + 6 Agents of Chaos + tokens Graphene Chelicera et Bloodrot Pox codés et testés (76 tests de cartes, 11 tests de règles) ; moteur : stealth, marque lue au moment de la touche (`Hit::marked`), dague qui touche par un effet, équiper un token arme, retrieve, become / return to the brood (CR 8.5.25, 8.5.52), traits (CR 2.13), effets sur toutes les attaques du tour, « the next time you attack », go again d'une carte qui quitte la pile (CR 5.3.5a), blocage élargi (CR 4.5.4d) ; deux armes à une main dans le choix provisoire ; `fab-ui --deck arakni` | `claude/dreamy-gates-r3giw6` |
 | 2026-11-23 | Étape 4, B1 : bot heuristique `HeuristicAgent` (attaque à son tour, défense chiffrée, pitch au plus juste) qui ne lit la partie qu'à travers une `Vue` (information de son joueur, lecture d'une carte cachée = panique) ; classement Elo (`fab_ai::elo`, Bradley-Terry) ; `fab-sim --bots a b` et `--tournoi` (81 paires de decks, Elo + matrice) ; `fab-ui --niveau b1` ; `docs/bots.md`. B1 = +512 Elo contre B0 (95,0 %) | `claude/youthful-gauss-iihtxx` |
 | 2026-11-23 | Étape 4, B2 : bot `IsmctsAgent` (ISMCTS) : mondes imaginés (`determinisation`, main adverse et decks redistribués, hasard renouvelé ; test : même choix quelle que soit la vraie main adverse), parties simulées par B1 sur 4 tours puis estimées ; réglages mesurés (arbre limité à la décision présente, 300 itérations) ; `--bots b2`, `b2-N`, `b2-Nms` ; `fab-ui --niveau b2`. B2 = +283 Elo contre B1 (83,6 %), classement B0 0 / B1 +511 / B2 +785 ; puis B2 imagine la main adverse dans le card-pool de 55 (`Loadout::pool`, `GameState::card_pools`) : 83,9 % contre B1, B2 = +796 | `claude/loving-fermi-r75ch8` |
+| 2026-11-23 | Étape 5 : interface web locale `fab-web` (serveur HTTP maison sur 127.0.0.1, sans nouvelle dépendance ; page unique : plateau des deux joueurs, chaîne de combat et pile, options cliquables et cartes jouables surlignées, annulation illimitée, texte officiel au survol, journal, nouvelle partie avec decks / niveau / graine) ; l'état envoyé au navigateur ne contient ni nom ni numéro de carte cachée (testé) ; `docs/interface.md` | `claude/youthful-brown-dgcgw0` |
