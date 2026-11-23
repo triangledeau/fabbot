@@ -29,31 +29,38 @@ ephemeral.
 **Might**, **Vigor** et **Quicken** (créés par les cartes du deck) sont aussi
 codés et testés.
 
+**Étape 3, deck Iyslander (2026-11-22)** : toutes les cartes du deck
+Iyslander sont `Tested` (code : `crates/cards/src/real/wizard.rs` et
+`generic.rs`, tests : `crates/cards/tests/cartes_wizard.rs` et
+`regles_etape3_iyslander.rs`). Les tokens **Frostbite** (créé par Iyslander,
+Ice Eternal et Frost Spike) et **Ponder** (créé par Turn to Mindfire) sont
+aussi codés et testés.
+
 | Carte | Couleur | Utilisée par | Statut |
 |---|---|---|---|
 | **Ira, Crimson Haze** | héros | Ira, Crimson Haze | Tested |
 | **Hala** | héros | Hala | Tested |
 | **Dorinthea** | héros | Dorinthea | Tested |
 | **Bravo, Flattering Showman** | héros | Bravo, Flattering Showman | Tested |
-| **Iyslander** | héros | Iyslander | NotCoded |
+| **Iyslander** | héros | Iyslander | Tested |
 | **Florian** | héros | Florian | NotCoded |
 | **Levia** | héros | Levia | NotCoded |
 | **Dromai** | héros | Dromai | NotCoded |
 | **Arakni, Web of Deceit** | héros | Arakni, Web of Deceit | NotCoded |
-| Aetherstorm Wellingtons | arène | Iyslander | NotCoded |
+| Aetherstorm Wellingtons | arène | Iyslander | Tested |
 | Annals of Sutcliffe | arène | Florian | NotCoded |
 | Arcane Lantern | arène | Florian | NotCoded |
 | Blade Beckoner Boots | arène | Dorinthea, Iyslander | Tested |
-| Blade Beckoner Gauntlets | arène | Iyslander | NotCoded |
+| Blade Beckoner Gauntlets | arène | Iyslander | Tested |
 | Blade Beckoner Helm | arène | Bravo, Flattering Showman, Ira, Crimson Haze, Iyslander | Tested |
-| Blade Beckoner Plating | arène | Iyslander | NotCoded |
+| Blade Beckoner Plating | arène | Iyslander | Tested |
 | Blood Scent | arène | Ira, Crimson Haze | Tested |
 | Bloodied Oval | arène | Florian | NotCoded |
 | Blossom of Spring | arène | Arakni, Web of Deceit, Florian | NotCoded |
 | Buzzard Helm | arène | Levia | NotCoded |
 | Civic Steps | arène | Bravo, Flattering Showman | Tested |
 | Crown of Dichotomy | arène | Florian | NotCoded |
-| Crucible of Aetherweave | arène | Iyslander | NotCoded |
+| Crucible of Aetherweave | arène | Iyslander | Tested |
 | Danger Digits | arène | Arakni, Web of Deceit | NotCoded |
 | Decimator Great Axe | arène | Dorinthea | Tested |
 | Deep Blue | arène | Dromai | NotCoded |
@@ -89,7 +96,7 @@ codés et testés.
 | Silken Shroud | arène | Dromai | NotCoded |
 | Skera Strapping | arène | Levia | NotCoded |
 | Smoldering Scales | arène | Dromai | NotCoded |
-| Spellfire Cloak | arène | Iyslander | NotCoded |
+| Spellfire Cloak | arène | Iyslander | Tested |
 | Stalker's Steps | arène | Arakni, Web of Deceit | NotCoded |
 | Steelbraid Buckler | arène | Bravo, Flattering Showman | Tested |
 | Storm of Sandikai | arène | Dromai | NotCoded |
@@ -101,13 +108,13 @@ codés et testés.
 | Wave of Reality | arène | Dromai | NotCoded |
 | Well Grounded | arène | Florian | NotCoded |
 | Zenith Blade | arène | Hala | Tested |
-| Aethersling | red | Iyslander | NotCoded |
+| Aethersling | red | Iyslander | Tested |
 | Agile Windup | yellow | Levia | NotCoded |
 | Amplify the Arknight | blue | Florian | NotCoded |
 | Amplify the Arknight | red | Florian | NotCoded |
 | Arcane Polarity | red | Arakni, Web of Deceit, Bravo, Flattering Showman, Dorinthea, Florian, Hala, Ira, Crimson Haze, Iyslander | Tested |
 | Arcane Seeds // Life | red | Florian | NotCoded |
-| Arcane Twining | blue | Iyslander | NotCoded |
+| Arcane Twining | blue | Iyslander | Tested |
 | Art of Desire: Body | red | Arakni, Web of Deceit | NotCoded |
 | Aspect of Tiger: Body | red | Ira, Crimson Haze | Tested |
 | Autumn's Touch | blue | Florian | NotCoded |
@@ -171,8 +178,8 @@ codés et testés.
 | Flatten the Field | blue | Bravo, Flattering Showman | Tested |
 | Flying Kick | blue | Ira, Crimson Haze | Tested |
 | Flying Kick | red | Ira, Crimson Haze | Tested |
-| Frost Spike | blue | Iyslander | NotCoded |
-| Frosting | blue | Iyslander | NotCoded |
+| Frost Spike | blue | Iyslander | Tested |
+| Frosting | blue | Iyslander | Tested |
 | Fruits of the Forest | blue | Florian | NotCoded |
 | Fruits of the Forest | yellow | Florian | NotCoded |
 | Fyendal's Fighting Spirit | blue | Dorinthea | Tested |
@@ -185,9 +192,9 @@ codés et testés.
 | Hit and Run | blue | Dorinthea | Tested |
 | Humble | red | Hala, Ira, Crimson Haze | Tested |
 | Hurl | red | Arakni, Web of Deceit | NotCoded |
-| Ice Bolt | blue | Iyslander | NotCoded |
-| Ice Bolt | red | Iyslander | NotCoded |
-| Ice Eternal | blue | Iyslander | NotCoded |
+| Ice Bolt | blue | Iyslander | Tested |
+| Ice Bolt | red | Iyslander | Tested |
+| Ice Eternal | blue | Iyslander | Tested |
 | Infect | red | Arakni, Web of Deceit | NotCoded |
 | Invoke Azvolai | red | Dromai | NotCoded |
 | Invoke Cromai | red | Dromai | NotCoded |
@@ -218,7 +225,7 @@ codés et testés.
 | Overpower | blue | Dorinthea | Tested |
 | Overpower | red | Dorinthea | Tested |
 | Passing Mirage | blue | Dromai | NotCoded |
-| Photon Splicing | blue | Iyslander | NotCoded |
+| Photon Splicing | blue | Iyslander | Tested |
 | Pick Up the Point | red | Arakni, Web of Deceit | NotCoded |
 | Pouncing Qi | blue | Ira, Crimson Haze | Tested |
 | Pouncing Qi | red | Ira, Crimson Haze | Tested |
@@ -226,11 +233,11 @@ codés et testés.
 | Pummel | red | Bravo, Flattering Showman | Tested |
 | Pursue to the Edge of Oblivion | red | Arakni, Web of Deceit | NotCoded |
 | Pursue to the Pits of Despair | red | Arakni, Web of Deceit | NotCoded |
-| Pyroglyphic Protection | blue | Iyslander | NotCoded |
+| Pyroglyphic Protection | blue | Iyslander | Tested |
 | Qi Unleashed | blue | Ira, Crimson Haze | Tested |
 | Raging Onslaught | blue | Dorinthea | Tested |
 | Rake the Embers | red | Dromai | NotCoded |
-| Ravenous Rabble | red | Arakni, Web of Deceit, Dromai, Iyslander | NotCoded |
+| Ravenous Rabble | red | Arakni, Web of Deceit, Dromai, Iyslander | Tested |
 | Razor Reflex | red | Arakni, Web of Deceit, Ira, Crimson Haze | Tested |
 | Razor's Edge | red | Arakni, Web of Deceit | NotCoded |
 | Read the Runes | red | Florian | NotCoded |
@@ -268,7 +275,7 @@ codés et testés.
 | Steelblade Shunt | blue | Dorinthea | Tested |
 | Steelblade Shunt | red | Dorinthea, Hala | Tested |
 | Steelblade Shunt | yellow | Dorinthea | Tested |
-| Stir the Aetherwinds | blue | Iyslander | NotCoded |
+| Stir the Aetherwinds | blue | Iyslander | Tested |
 | Sweeping Blow | red | Dromai | NotCoded |
 | Swordmaster's Path | blue | Hala | Tested |
 | Swordmaster's Path | red | Hala | Tested |
@@ -278,17 +285,17 @@ codés et testés.
 | Thunder Quake | blue | Bravo, Flattering Showman | Tested |
 | Thunk | blue | Bravo, Flattering Showman | Tested |
 | Tiger Eye Reflex | yellow | Ira, Crimson Haze | Tested |
-| Timekeeper's Whim | blue | Iyslander | NotCoded |
-| Timesnap Potion | blue | Dromai, Iyslander | NotCoded |
+| Timekeeper's Whim | blue | Iyslander | Tested |
+| Timesnap Potion | blue | Dromai, Iyslander | Tested |
 | Toe the Line | red | Hala | Tested |
-| Turn to Mindfire | red | Iyslander | NotCoded |
-| Unmovable | red | Iyslander | NotCoded |
+| Turn to Mindfire | red | Iyslander | Tested |
+| Unmovable | red | Iyslander | Tested |
 | Untamed | red | Ira, Crimson Haze | Tested |
 | Vigorous Smashup | blue | Levia | NotCoded |
 | Vigorous Smashup | red | Levia | NotCoded |
 | Vigorous Smashup | yellow | Levia | NotCoded |
-| Voltic Bolt | blue | Iyslander | NotCoded |
-| Voltic Bolt | red | Iyslander | NotCoded |
-| Winter's Bite | blue | Iyslander | NotCoded |
-| Wounded Bull | red | Iyslander | NotCoded |
+| Voltic Bolt | blue | Iyslander | Tested |
+| Voltic Bolt | red | Iyslander | Tested |
+| Winter's Bite | blue | Iyslander | Tested |
+| Wounded Bull | red | Iyslander | Tested |
 | Wrecker Romp | blue | Levia | NotCoded |

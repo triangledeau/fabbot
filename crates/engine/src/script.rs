@@ -76,8 +76,12 @@ pub struct Ctx {
     pub mode: u8,
     /// Valeur de X (CR 5.1.3a).
     pub x: u8,
-    /// Le coût additionnel optionnel a été payé.
+    /// Le coût additionnel optionnel a été payé (ou la carte a été fusionnée,
+    /// CR 8.3.17a).
     pub optional_paid: bool,
+    /// La carte est jouée « as though it were an instant » (CR 8.1.1d) : elle
+    /// ne coûte pas de point d'action.
+    pub as_instant: bool,
     /// Dernière réponse reçue.
     pub answer: Option<Choice>,
     /// Objets choisis / concernés (usage libre par la capacité).

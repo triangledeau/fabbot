@@ -136,8 +136,61 @@ impl GameState {
         if let Some(f) = def.cost_mod {
             cost += f(self, p, c);
         }
+        // CR 5.1.6a : les augmentations, puis les réductions.
+        cost += self.cost_tax(p) as i16;
         cost -= self.cost_reduction(p, c) as i16;
         cost.max(0) as u32
+    }
+
+    /// « Cards and abilities cost you an additional {r} to play or activate »
+    /// (Frostbite) : somme des surcoûts des permanents que `p` contrôle.
+    pub fn cost_tax(&self, p: PlayerId) -> u32 {
+        let ps = self.player(p);
+        self.permanents
+            .iter()
+            .copied()
+            .filter(|&o| self.obj(o).controller == p)
+            .chain(ps.equipment())
+            .map(|o| {
+                let t = self.def(o).cost_tax;
+                if t > 0 && !self.lost_abilities(o) {
+                    t as u32
+                } else {
+                    0
+                }
+            })
+            .sum()
+    }
+
+    /// La carte `c` peut-elle être jouée par `p` « as though it were an
+    /// instant » (CR 8.1.1d) ? Capacités statiques (Iyslander) ou permission
+    /// « your next … » (Stir the Aetherwinds).
+    pub fn may_play_as_instant(&self, p: PlayerId, c: ObjectId) -> bool {
+        if !self.def(c).types.has(Types::ACTION) {
+            return false;
+        }
+        if self
+            .instant_permissions
+            .iter()
+            .any(|x| x.player == p && x.turn == self.turn && (x.filter)(self, c))
+        {
+            return true;
+        }
+        let ps = self.player(p);
+        std::iter::once(ps.hero)
+            .chain(ps.weapons.iter().copied())
+            .chain(ps.equipment())
+            .chain(
+                self.permanents
+                    .iter()
+                    .copied()
+                    .filter(|&o| self.obj(o).controller == p),
+            )
+            .any(|src| {
+                self.def(src)
+                    .play_as_instant
+                    .is_some_and(|f| !self.lost_abilities(src) && f(self, src, c))
+            })
     }
 
     /// Somme des réductions « your next … costs {r} less » qui s'appliquent à
@@ -205,7 +258,9 @@ impl GameState {
         let Some(speed) = self.card_speed(c) else {
             return false;
         };
-        if !self.timing_ok(p, speed, def.is_attack_card()) {
+        if !self.timing_ok(p, speed, def.is_attack_card())
+            && !(speed == Speed::Action && self.may_play_as_instant(p, c))
+        {
             return false;
         }
         // CR 7.4.2c : une réaction de défense doit pouvoir défendre.
@@ -287,7 +342,10 @@ impl GameState {
     /// « your next attack with it costs {r} less » comprises.
     pub fn activation_cost(&self, src: ObjectId, i: u8) -> u32 {
         let a = &self.def(src).activated[i as usize];
-        let mut cost = a.cost as i32;
+        let o = self.obj(src);
+        let who = if a.from_hand { o.owner } else { o.controller };
+        // CR 5.1.6a : augmentations (Frostbite), puis réductions.
+        let mut cost = a.cost as i32 + self.cost_tax(who) as i32;
         if a.attack && !self.weapon_effects.is_empty() {
             let r = self.obj_ref(src);
             for e in &self.weapon_effects {
@@ -302,6 +360,11 @@ impl GameState {
     /// CR 5.1.2 : annonce, puis les étapes suivantes sous forme de tâches.
     pub(crate) fn play_card(&mut self, p: PlayerId, c: ObjectId) {
         let origin = self.obj(c).zone;
+        // CR 5.1.3d, 8.1.1d : une action jouée « as though it were an
+        // instant » ne coûte pas de point d'action. Le joueur n'a jamais
+        // intérêt à ne pas utiliser la permission : elle est déclarée d'office
+        // (calculé avant que la carte quitte sa zone).
+        let as_instant = self.may_play_as_instant(p, c);
         let is_attack = self.def(c).is_attack_card();
         self.place(c, Zone::Stack, p);
         let object = self.obj_ref(c);
@@ -310,6 +373,7 @@ impl GameState {
             controller: p,
             card,
             source: Some(object),
+            as_instant,
             ..Default::default()
         });
         self.stack.push(Layer {
@@ -448,7 +512,11 @@ impl GameState {
                     let spare = self
                         .available_resources(p, None)
                         .saturating_sub(self.layer_cost(p));
-                    let options = (0..=spare.min(20) as u8).map(Choice::Number).collect();
+                    // Coût « XX » (CR 2.1) : chaque unité de X coûte 2.
+                    let per_x = if def.x_twice { 2 } else { 1 };
+                    let options = (0..=(spare / per_x).min(20) as u8)
+                        .map(Choice::Number)
+                        .collect();
                     self.pending = Some(Decision {
                         player: p,
                         kind: DecisionKind::ChooseX,
@@ -544,7 +612,9 @@ impl GameState {
                 }
                 let action_points = match kind {
                     // CR 5.1.6b : une action non jouée comme instant coûte 1 point d'action.
-                    LayerKind::Card => u8::from(def.types.has(Types::ACTION)),
+                    LayerKind::Card => {
+                        u8::from(def.types.has(Types::ACTION) && !self.top_layer().ctx.as_instant)
+                    }
                     LayerKind::Activated(i) => {
                         u8::from(def.activated[i as usize].speed == Speed::Action)
                     }
@@ -595,7 +665,8 @@ impl GameState {
                 if def.additional_cost.is_some_and(|a| a.optional) && l.ctx.optional_paid {
                     c += def.additional_cost.unwrap().resources as u32;
                 }
-                c + l.ctx.x as u32
+                let per_x = if def.x_twice { 2 } else { 1 };
+                c + l.ctx.x as u32 * per_x
             }
             LayerKind::Activated(i) => match l.ctx.source_id() {
                 Some(src) if self.obj(src).card == l.card => self.activation_cost(src, i),
@@ -651,11 +722,25 @@ impl GameState {
         let (p, kind, object, origin) = (l.controller, l.kind, l.object, l.origin);
         let is_attack = self.layer_is_attack(l);
         match kind {
-            LayerKind::Card => self.emit(Event::Played {
-                player: p,
-                card: object.id,
-                from: origin,
-            }),
+            LayerKind::Card => {
+                // « Your next … this turn » : la carte utilise les permissions
+                // d'instant qui la concernent, et les effets « the next card
+                // you play » la mémorisent.
+                if !self.instant_permissions.is_empty() {
+                    let turn = self.turn;
+                    let mut v = std::mem::take(&mut self.instant_permissions);
+                    v.retain(|x| !(x.player == p && x.turn == turn && (x.filter)(self, object.id)));
+                    self.instant_permissions = v;
+                }
+                if !self.replacements.is_empty() {
+                    self.bind_replacements(p, object.id);
+                }
+                self.emit(Event::Played {
+                    player: p,
+                    card: object.id,
+                    from: origin,
+                })
+            }
             LayerKind::Activated(i) => {
                 let source = l.ctx.source_id().unwrap();
                 self.emit(Event::Activated {
