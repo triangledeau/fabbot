@@ -8,7 +8,7 @@ use fab_ai::determinisation::{determiniser, objets_caches};
 use fab_ai::{creer_agent, play_out, Agent, HeuristicAgent, IsmctsAgent, RandomAgent};
 use fab_cards::decklist::Decklist;
 use fab_cards::real;
-use fab_engine::{Choice, DecisionKind, GameSetup, GameState, Loadout, ObjectId, Rng};
+use fab_engine::{CardId, Choice, DecisionKind, GameSetup, GameState, Loadout, ObjectId, Rng};
 use std::sync::Arc;
 
 /// Les 9 vrais decks, dans l'ordre des fichiers.
@@ -93,19 +93,21 @@ fn la_determinisation_garde_tout_ce_que_le_joueur_voit() {
             );
             assert_eq!(d.player(adv).life, g.player(adv).life);
             assert_eq!(d.pending, g.pending);
-            // Les objets que je vois n'ont pas bougé.
+            // Les objets que je vois n'ont pas changé.
             let caches = objets_caches(&g, moi);
             for (i, o) in g.objects.iter().enumerate() {
                 if !caches.contains(&ObjectId(i as u32)) {
                     assert_eq!(d.objects[i].zone, o.zone, "objet visible {i} déplacé");
+                    assert_eq!(d.objects[i].card, o.card, "objet visible {i} changé");
                 }
             }
-            // Les cartes cachées sont les mêmes, redistribuées.
+            // Les zones cachées gardent leurs objets (seule leur carte change).
             let mut a = caches.clone();
             let mut b = objets_caches(&d, moi);
             a.sort();
             b.sort();
             assert_eq!(a, b);
+            assert_eq!(d.player(adv).hand, g.player(adv).hand);
             assert!(
                 d.check_invariants().is_empty(),
                 "{:?}",
@@ -124,11 +126,93 @@ fn la_determinisation_change_la_main_adverse_et_le_hasard() {
     let mondes: Vec<GameState> = (0..20).map(|_| determiniser(&g, moi, &mut r)).collect();
     assert!(mondes
         .iter()
-        .any(|d| d.player(adv).hand != g.player(adv).hand));
+        .any(|d| cartes(d, &d.player(adv).hand) != cartes(&g, &g.player(adv).hand)));
     assert!(mondes
         .iter()
         .any(|d| d.player(moi).deck != g.player(moi).deck));
     assert!(mondes.iter().all(|d| d.rng != g.rng));
+}
+
+/// Les cartes de ces objets, triées.
+fn cartes(g: &GameState, ids: &[ObjectId]) -> Vec<CardId> {
+    let mut v: Vec<CardId> = ids.iter().map(|&i| g.obj(i).card).collect();
+    v.sort();
+    v
+}
+
+/// Retire de `v` un exemplaire de chaque carte de `moins` ; faux si l'une
+/// manque.
+fn retirer(v: &mut Vec<CardId>, moins: &[CardId]) -> bool {
+    for c in moins {
+        match v.iter().position(|x| x == c) {
+            Some(k) => {
+                v.remove(k);
+            }
+            None => return false,
+        }
+    }
+    true
+}
+
+#[test]
+fn les_cartes_imaginees_viennent_du_card_pool_moins_les_cartes_vues() {
+    for graine in 0..12 {
+        let (a, b) = (graine as usize % 9, (graine as usize + 5) % 9);
+        let g = partie_en_cours(a, b, graine, 40 + 10 * graine as usize);
+        let Some(moi) = g.pending_decision().map(|d| d.player) else {
+            continue;
+        };
+        let adv = moi.opponent();
+        let caches_adv: Vec<ObjectId> = objets_caches(&g, moi)
+            .into_iter()
+            .filter(|&o| g.obj(o).owner == adv)
+            .collect();
+        // Cartes de deck de l'adversaire que je vois (hors cartes cachées).
+        let (debut, fin) = g.deck_objects[adv.index()];
+        let vues: Vec<CardId> = (debut..fin)
+            .map(ObjectId)
+            .filter(|o| !caches_adv.contains(o))
+            .map(|o| {
+                let def = g.def(o);
+                def.flip
+                    .map(|f| f.front)
+                    .or(def.split.map(|s| s.whole))
+                    .unwrap_or(g.obj(o).card)
+            })
+            .collect();
+        let mut possibles = g.card_pools[adv.index()].clone();
+        assert!(retirer(&mut possibles, &vues), "graine {graine}");
+        let mut r = Rng::new(graine);
+        for _ in 0..10 {
+            let d = determiniser(&g, moi, &mut r);
+            let mut reste = possibles.clone();
+            assert!(
+                retirer(&mut reste, &cartes(&d, &caches_adv)),
+                "graine {graine} : carte imaginée hors du card-pool"
+            );
+        }
+    }
+}
+
+#[test]
+fn le_bot_imagine_des_cartes_du_pool_que_l_adversaire_n_a_pas_mises_dans_son_deck() {
+    // Ira (adversaire) : 48 cartes de deck dans son card-pool, 40 dans le deck.
+    let g = partie_en_cours(2, 0, 1, 1);
+    let moi = g.pending_decision().unwrap().player;
+    let adv = moi.opponent();
+    assert!(g.card_pools[adv.index()].len() > 40);
+    let caches: Vec<ObjectId> = objets_caches(&g, moi)
+        .into_iter()
+        .filter(|&o| g.obj(o).owner == adv)
+        .collect();
+    let vraies = cartes(&g, &caches);
+    let mut r = Rng::new(3);
+    let hors_du_deck = (0..20).any(|_| {
+        let d = determiniser(&g, moi, &mut r);
+        let mut v = vraies.clone();
+        !retirer(&mut v, &cartes(&d, &caches))
+    });
+    assert!(hors_du_deck);
 }
 
 #[test]

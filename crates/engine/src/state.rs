@@ -560,6 +560,13 @@ pub struct GameState {
     /// de vie (`stale_life`).
     pub stale_turns: u8,
     pub stale_life: [i32; 2],
+    /// Le card-pool de chaque joueur (cartes qui peuvent aller dans son
+    /// deck, `Loadout::pool`), partagé entre les copies de la partie.
+    pub card_pools: Arc<[Vec<CardId>; 2]>,
+    /// Les objets créés pour le deck de chaque joueur à la mise en place :
+    /// identifiants `début..fin` (les cartes créées plus tard, comme Crouching
+    /// Tiger, n'en font pas partie).
+    pub deck_objects: [(u32, u32); 2],
 }
 
 /// « Your attacks [filtrées] get … this turn » (Night's Embrace) : s'applique

@@ -68,9 +68,10 @@ Pour chaque décision qui a au moins deux options différentes, B2 répète
 
 1. **imaginer un monde possible** (`crates/ai/src/determinisation.rs`) :
    une copie de la partie où les cartes cachées de l'adversaire (main, deck,
-   arsenal face cachée) sont mélangées ensemble puis redistribuées, l'ordre
-   de son propre deck est mélangé, et le hasard futur (pioches, tirages)
-   change de graine ;
+   arsenal face cachée) sont tirées au hasard dans son **card-pool** (ses
+   cartes de deck parmi les 55), moins les cartes de son deck déjà vues ;
+   l'ordre de son propre deck est mélangé, et le hasard futur (pioches,
+   tirages) change de graine ;
 2. **choisir une option à essayer** dans ce monde (formule UCB : les
    options au meilleur score moyen, ou encore peu essayées) ;
 3. **continuer la partie pendant 4 tours** avec B1 pour les deux joueurs,
@@ -90,14 +91,16 @@ l'adversaire, variante « un seul observateur » de l'ISMCTS) ; le réglage
 l'arbre limité à la décision présente (profondeur 1) est le plus fort : dans
 un arbre plus profond, l'adversaire imaginé joue moins bien que B1.
 
-**Information** : B2 lit l'information cachée **seulement pour la
-redistribuer au hasard**. Un test le prouve : deux parties qui ne diffèrent
-que par la main adverse et l'ordre des decks donnent exactement le même
-choix (`b2_fait_le_meme_choix_quelle_que_soit_la_vraie_main_adverse`).
-Approximations : B2 connaît la **liste des 40 cartes** adverses (pas leur
-place) ; il oublie les cartes cachées vues un instant (cartes révélées puis
-reprises) ; les cartes bannies face cachée de l'adversaire ne sont pas
-redistribuées.
+**Information** : B2 ne connaît que le **card-pool** de l'adversaire (ses
+55 cartes), pas les 40 qu'il a choisies (décision du propriétaire,
+2026-11-23 ; plus tard, on pondérera par la fréquence des cartes dans les
+decks du méta). Il ne lit pas les cartes cachées : il les **remplace** par
+des cartes imaginées. Un test le prouve : deux parties qui ne diffèrent que
+par la main adverse et l'ordre des decks donnent exactement le même choix
+(`b2_fait_le_meme_choix_quelle_que_soit_la_vraie_main_adverse`).
+Approximations : il oublie les cartes cachées vues un instant (cartes
+révélées puis reprises) ; les cartes bannies face cachée de l'adversaire
+comptent comme vues.
 
 **Réglages** (dans le nom du bot, après `b2-`) : nombre d'itérations
 (`b2-1000`) ou durée par décision (`b2-500ms`), puis `t4` (tours simulés,

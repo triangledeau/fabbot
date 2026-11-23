@@ -25,8 +25,9 @@ use crate::zones::Zone;
 impl GameState {
     /// Change la définition active d'un objet (face d'une carte retournable)
     /// en tenant à jour les listes d'objets à capacités déclenchées et à
-    /// remplacements.
-    pub(crate) fn set_card(&mut self, id: ObjectId, card: CardId) {
+    /// remplacements. Public pour les bots, qui imaginent les cartes cachées
+    /// (`fab_ai::determinisation`).
+    pub fn set_card(&mut self, id: ObjectId, card: CardId) {
         self.obj_mut(id).card = card;
         let def = self.db.get(card);
         if !def.triggers.is_empty() && !self.trigger_objects.contains(&id) {
