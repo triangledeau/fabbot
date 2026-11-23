@@ -1,11 +1,12 @@
 //! fab-ui — jouer contre le bot dans le terminal.
 //!
 //! Usage :
-//!     cargo run --release -p fab-ui -- [--deck ira|hala|dorinthea|bravo|iyslander|florian|levia|dromai|arakni] [--bot …] [--niveau b0|b1] [--graine N]
+//!     cargo run --release -p fab-ui -- [--deck ira|hala|dorinthea|bravo|iyslander|florian|levia|dromai|arakni] [--bot …] [--niveau b0|b1|b2] [--graine N]
 //!
 //! Par défaut : vous jouez Hala, le bot joue Dorinthea, graine tirée de l'heure.
 //! Le bot est B0 (choix au hasard parmi les options légales) ; `--niveau b1`
-//! donne le bot heuristique.
+//! donne le bot heuristique, `--niveau b2` le bot qui cherche (ISMCTS ;
+//! variantes : `b2-500ms`, `b2-1000`…, voir `docs/bots.md`).
 
 use fab_ai::{creer_agent, BOTS};
 use fab_engine::PlayerId;
@@ -47,7 +48,7 @@ fn main() {
     let niveau = valeur("--niveau").unwrap_or_else(|| "b0".into());
     let Some(mut bot) = creer_agent(&niveau, graine ^ 0x5A5A) else {
         eprintln!(
-            "Erreur : niveau de bot inconnu « {niveau} » (connus : {})",
+            "Erreur : niveau de bot inconnu « {niveau} » (connus : {}, b2-N)",
             BOTS.join(", ")
         );
         std::process::exit(1);

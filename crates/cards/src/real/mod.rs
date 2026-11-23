@@ -278,6 +278,13 @@ pub fn default_loadout(db: &CardDb, list: &Decklist) -> Result<Loadout, String> 
             deck.push(id);
         }
     }
+    // Le card-pool : toutes les cartes de deck de la liste (CR 4.1).
+    let pool = deck.clone();
     deck.truncate(40);
-    Ok(Loadout { hero, arena, deck })
+    Ok(Loadout {
+        hero,
+        arena,
+        deck,
+        pool,
+    })
 }

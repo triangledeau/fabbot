@@ -121,6 +121,7 @@ fn partie_db(
             hero: id(db, hero, None),
             arena: arena.iter().map(|n| id(db, n, None)).collect(),
             deck,
+            pool: Vec::new(),
         }
     };
     let setup = GameSetup {

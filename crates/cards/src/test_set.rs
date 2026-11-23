@@ -1080,6 +1080,7 @@ pub fn aggro_loadout(db: &CardDb) -> Loadout {
             id(db, "Essai Bottes", None),
         ],
         deck,
+        pool: Vec::new(),
     }
 }
 
@@ -1124,6 +1125,7 @@ pub fn defensive_loadout(db: &CardDb) -> Loadout {
             id(db, "Essai Bottes", None),
         ],
         deck,
+        pool: Vec::new(),
     }
 }
 
@@ -1183,6 +1185,7 @@ pub fn mechanics_loadouts(db: &CardDb) -> [Loadout; 2] {
                 id(db, "Essai Bottes", None),
             ],
             deck: p0,
+            pool: Vec::new(),
         },
         Loadout {
             hero: id(db, "Essai Ninja", None),
@@ -1193,6 +1196,7 @@ pub fn mechanics_loadouts(db: &CardDb) -> [Loadout; 2] {
                 id(db, "Essai Gantelets", None),
             ],
             deck: p1,
+            pool: Vec::new(),
         },
     ]
 }

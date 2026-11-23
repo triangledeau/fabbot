@@ -21,6 +21,11 @@ pub struct Loadout {
     /// Le deck de départ. Si la partie ne mélange pas, le **premier** élément
     /// est le dessus du deck (pratique pour les tests).
     pub deck: Vec<CardId>,
+    /// Les cartes du card-pool qui peuvent aller dans le deck (CR 4.1 :
+    /// en Silver Age, le deck de 40 est choisi dans un card-pool de 55),
+    /// **y compris** celles de `deck`. Vide : le deck lui-même. Sert aux bots
+    /// qui imaginent les cartes cachées de l'adversaire.
+    pub pool: Vec<CardId>,
 }
 
 #[derive(Clone, Debug)]
@@ -49,6 +54,7 @@ impl GameState {
     pub fn new(db: Arc<CardDb>, setup: GameSetup) -> Result<GameState, SetupError> {
         let mut objects = Vec::new();
         let mut players = Vec::new();
+        let mut deck_objects = [(0, 0); 2];
         for p in PlayerId::BOTH {
             let lo = &setup.players[p.index()];
             let mut new_obj = |card: CardId, zone: Zone| {
@@ -129,13 +135,16 @@ impl GameState {
                 }
             }
             // CR 4.1.6 : le deck.
+            let mut ids_deck = (u32::MAX, 0);
             for &c in lo.deck.iter().rev() {
                 if !db.get(c).types.is_deck_card() {
                     return Err(SetupError::NotADeckCard(p, c));
                 }
                 let id = new_obj(c, Zone::Deck);
                 ps.deck.push(id);
+                ids_deck = (ids_deck.0.min(id.0), id.0 + 1);
             }
+            deck_objects[p.index()] = (ids_deck.0.min(ids_deck.1), ids_deck.1);
             players.push(ps);
         }
         let [p0, p1]: [PlayerState; 2] = players.try_into().unwrap();
@@ -189,6 +198,15 @@ impl GameState {
             attack_buffs: Vec::new(),
             stale_turns: 0,
             stale_life: [0, 0],
+            card_pools: Arc::new(PlayerId::BOTH.map(|p| {
+                let lo = &setup.players[p.index()];
+                if lo.pool.is_empty() {
+                    lo.deck.clone()
+                } else {
+                    lo.pool.clone()
+                }
+            })),
+            deck_objects,
         };
         g.trigger_objects = (0..g.objects.len() as u32)
             .map(ObjectId)
