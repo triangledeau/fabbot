@@ -5,11 +5,29 @@
 //!
 //! Paliers prévus :
 //! - B0 [`RandomAgent`] : aléatoire, sert de référence et de testeur de règles ;
-//! - B1 heuristique (étape 4) ;
+//! - B1 [`HeuristicAgent`] : heuristique simple, sans recherche ;
 //! - B2 ISMCTS (étape 4) ;
 //! - B3 évaluation apprise par auto-jeu (étape 7).
 
 use fab_engine::{Decision, GameState, Rng};
+
+pub mod b1;
+pub mod elo;
+pub mod vue;
+
+pub use b1::HeuristicAgent;
+
+/// Les bots disponibles, par leur nom court (`b0`, `b1`).
+pub const BOTS: [&str; 2] = ["b0", "b1"];
+
+/// Crée un bot à partir de son nom court ; `graine` règle son hasard.
+pub fn creer_agent(nom: &str, graine: u64) -> Option<Box<dyn Agent + Send>> {
+    match nom.to_lowercase().as_str() {
+        "b0" => Some(Box::new(RandomAgent::new(graine))),
+        "b1" => Some(Box::new(HeuristicAgent::new())),
+        _ => None,
+    }
+}
 
 pub trait Agent {
     /// Nom affiché dans les classements Elo et les journaux.
@@ -18,8 +36,8 @@ pub trait Agent {
     /// Renvoie l'index de l'option choisie dans `decision.options`.
     ///
     /// ⚠️ Un bot ne doit utiliser que l'information à laquelle son joueur a
-    /// droit (pas la main adverse ni l'ordre du deck). Le filtrage de
-    /// l'information cachée sera ajouté à l'étape 4.
+    /// droit (pas la main adverse ni l'ordre du deck) : les bots heuristiques
+    /// ne lisent `state` qu'à travers une [`vue::Vue`].
     fn choose(&mut self, state: &GameState, decision: &Decision) -> usize;
 }
 
