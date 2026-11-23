@@ -11,35 +11,32 @@ met à jour à la fin de chaque tâche.
 | 0 | Mise en place, squelette | ✅ |
 | 1 | Cœur des règles + système d'effets | ✅ (manques connus listés dans `docs/rules/README.md`) |
 | 2 | Deux premiers decks complets + interface texte | ✅ (cartes à valider par le propriétaire avec l'interface) |
-| 3 | Les 7 autres decks + simulateur rapide | ⏳ (Ira ✅, Bravo ✅, Iyslander ✅, Florian ✅, Levia ✅, Dromai ✅ ; reste Arakni) |
+| 3 | Les 7 autres decks + simulateur rapide | ✅ (Ira, Bravo, Iyslander, Florian, Levia, Dromai, Arakni ; cartes à valider par le propriétaire) |
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ⏳ |
 | 5 | Interface web locale + annulation | ⏳ |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ⏳ |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
 
-**Branche la plus récente :** `ccr-9b06529e-h1bljg` (deck Dromai, partie
-de `claude/nifty-pasteur-apci3j`, le deck Levia, pas encore fusionné dans
-`main`). Tant qu'elle n'est pas fusionnée dans `main`, partir de cette
-branche.
+**Branche la plus récente :** `claude/dreamy-gates-r3giw6` (deck Arakni,
+partie de `main` après la fusion du deck Dromai). Tant qu'elle n'est pas
+fusionnée dans `main`, partir de cette branche.
 
 **Jouer contre le bot :** `cargo run --release -p fab-ui` (mode d'emploi :
 `docs/interface.md`).
 
-**Chiffres actuels :** 634 tests au vert. Simulateur, bots **aléatoires**
-(ces pourcentages ne disent rien des vrais matchups), 100 000 parties
-vérifiées (`--check`) sans incohérence pour chaque paire, ≈ 3 000 à 10 000
-parties/s pour Dromai dans le conteneur de Claude (4 cœurs ; ses parties
-sont plus longues : 217 décisions en moyenne). Dromai contre chacun des 7
-autres decks et en miroir : 0 erreur (Dromai 74,2 % contre Ira, 94,5 %
-contre Hala, 95,8 % contre Dorinthea, 79,6 % contre Bravo, 99,3 % contre
-Iyslander, 94,5 % contre Florian, 99,1 % contre Levia, 50 % en miroir) : le
-bot aléatoire profite des attaques gratuites des dragons. Environ 1 à 3 %
-des parties contre Ira et Bravo atteignent la limite de 200 tours : decks
-vides, et la détection simple du blocage (CR 4.5.4d) ne conclut pas parce
-que Dromai a une capacité déclenchée (sans effet sans cartes). Inchangé :
-`--vrais` (Hala 49,6 %, Dorinthea 46,8 %), Levia 1,3 % contre Ira ; la
-vitesse des anciens decks est inchangée (≈ 11 500 parties/s Levia–Ira
-avec `--check`).
+**Chiffres actuels :** 721 tests au vert. Simulateur, bots **aléatoires**
+(ces pourcentages ne disent rien des vrais matchups) : Arakni contre chacun
+des 8 autres decks et en miroir, 100 000 parties vérifiées (`--check`) par
+paire, **0 erreur** ; ≈ 7 000 à 17 000 parties/s dans le conteneur de Claude
+(4 cœurs). Arakni gagne 21 % contre Ira, 49 % contre Hala, 54 % contre
+Dorinthea, 52 % contre Bravo, 99 % contre Iyslander, 51 % contre Florian,
+98 % contre Levia, 7 % contre Dromai. Nouveau : le simulateur compte à part
+les nulles par **blocage** (CR 4.5.4d) ; elles étaient comptées avec « 2
+héros à 0 ». Détection élargie : decks et mains vides et aucune vie qui
+change pendant 6 tours (avant, ces parties allaient jusqu'à la limite de 200
+tours, surtout avec Arakni et Dromai dont le héros a des capacités
+déclenchées). Avec les bots aléatoires, 3 à 11 % des parties d'Arakni
+finissent ainsi (une carte injouable reste en arsenal).
 
 **Choix provisoire d'équipement et de deck** (`real::default_loadout`, en
 attendant la phase de side de l'étape 6) : la première carte de chaque
@@ -48,11 +45,43 @@ Plate, Gauntlets of Unity, Pillar of Unity ; Dorinthea : Helm of Unity,
 Plating of Unity, Gauntlets of Unity, Refraction Bolters), et les 40 premières
 cartes de la liste. Les mains d'armes sont respectées (CR 8.2.2b) : Florian
 prend Nebula Blade (2H) et donc aucun off-hand (Annals of Sutcliffe, listée
-« Off-Hand », est en fait une arme 2H).
+« Off-Hand », est en fait une arme 2H). Une arme à une main listée en 2
+exemplaires est équipée deux fois si les mains le permettent (Arakni : deux
+Mark of the Huntsman).
 
 ## Questions ouvertes pour le propriétaire
 
-Aucune question bloquante. Sept choix faits pour Dromai, à confirmer :
+Aucune question bloquante. Huit choix faits pour Arakni, à confirmer :
+
+1. **Agents of Chaos** : « a random Agent of Chaos » tire au hasard (chances
+   égales) parmi les **six** demi-héros du trait (Black Widow, Funnel Web,
+   Orb-Weaver, Redback, Tarantula, Trap-Door), même s'ils ne sont pas dans le
+   card-pool de 55 (CR 2.13.4). Le total de vie ne change pas.
+2. **Mark of the Huntsman** + Bite / Hurl / Danger Digits : la dague a
+   touché puis elle est détruite ; sa capacité « When this hits a hero, you
+   may choose to destroy this and mark them » se résout ensuite. Le moteur
+   laisse quand même **marquer** le héros (« destroy this » échoue). Est-ce
+   bien ça ? (`TODO(règles)` dans le code.)
+3. **« When this hits a marked hero »** (Mark of the Black Widow / Funnel
+   Web) et le go again d'**Arakni** : la marque disparaît pendant la touche
+   (CR 9.3.3) ; le moteur regarde si le héros était marqué **juste avant**
+   la touche, donc ces effets fonctionnent.
+4. **Bite** (« you may have target dagger … ») : le « you may » est le choix
+   de la cible ; sans cible, rien ne se passe.
+5. **Concoct Disorder** : un héros dont l'arsenal est déjà occupé (ou le
+   deck vide) ne met rien en arsenal ; seules les cartes vraiment mises
+   comptent pour le go again.
+6. **Public Bounty** : « the next time you attack a marked hero » s'applique
+   quand l'attaque est déclarée (cible connue) ; si la prochaine attaque vise
+   un héros non marqué, l'effet attend une attaque suivante du tour.
+7. **Arakni, Trap-Door** : la carte trouvée est bannie face cachée ; si c'est
+   un piège (Lair of the Spider), elle peut être jouée pendant le reste de ce
+   tour et pendant le tour de l'adversaire.
+8. **Double Trouble** : compte les réactions d'attaque **jouées ou
+   activées par vous** sur le maillon de Double Trouble (cartes, capacités des
+   Agents, Danger Digits, Prey Spotters, Stalker's Steps).
+
+Sept choix faits pour Dromai, à confirmer :
 
 1. **Phantasm sur une attaque de dragon** : CR 8.3.13 dit « destroy this ».
    Pour une attaque d'allié (attaque-proxy), le moteur détruit **l'allié**
@@ -182,14 +211,13 @@ précédent si l'épée a quitté ce maillon (notes de Mastery Pack Warrior).
 
 Vérifier aussi les cartes d'Ira (`cargo run --release -p fab-ui -- --deck ira`),
 de Bravo (`--deck bravo`), d'Iyslander (`--deck iyslander`), de Florian
-(`--deck florian`), de Levia (`--deck levia`) et de Dromai (`--deck dromai`) ;
-`t <n>` donne le texte officiel (pour un dragon, celui de sa face arrière).
+(`--deck florian`), de Levia (`--deck levia`), de Dromai (`--deck dromai`)
+et d'Arakni (`--deck arakni`) ; `t <n>` donne le texte officiel (pour un
+dragon, celui de sa face arrière).
 
-**Pour Claude (étape 3, fin) :** coder le dernier deck, **Arakni**
-(`data/decks/09_arakni.txt`). Nimblism, Oasis Respite, Ravenous Rabble et
-Blossom of Spring sont déjà codés. Le moteur gère maintenant les alliés qui
-attaquent, le vol d'un allié (steal), les cartes sous un permanent et les
-cartes retournables (`docs/moteur.md`).
+**Pour Claude (étape 4) :** bot **B1** (heuristique simple, sans recherche)
+et classement **Elo** contre B0 (aléatoire), mesuré par le simulateur sur les
+9 decks ; puis B2 (ISMCTS). Un bot n'a accès qu'à l'information de son joueur.
 
 ## Journal des sessions
 
@@ -208,3 +236,4 @@ cartes retournables (`docs/moteur.md`).
 | 2026-11-23 | Étape 3, deck Levia : 34 lignes de STATUS.md + tokens Agility, Gate to i'Arathael et Blasmophet, the Insatiable Hunger codés et testés (76 tests de cartes, 7 tests de règles) ; moteur : blood debt (CR 8.3.11), qui a banni une carte et puissance imprimée hors de l'arène, cibles dans la zone de bannissement, permission « once per turn » de jouer depuis le bannissement (CR 5.1.3d), déclenchements identiques regroupés pour l'ordre, points d'action seulement en phase d'action (CR 1.13.2b) ; `fab-ui --deck levia` | `claude/nifty-pasteur-apci3j` |
 | 2026-11-23 | Étape 3, deck Florian : 32 lignes de STATUS.md + tokens Runechant et Embodiment of Earth codés et testés (64 tests de cartes, 9 tests de règles) ; moteur : cartes doubles et meld (CR 9.2, 8.3.38, 5.3.4d), cibles dans un cimetière (CR 1.8.5a), créateur d'un token (CR 8.5.2c), supertypes « face-up » (Colors of Aria), compteurs à l'entrée, « pitched this way » (`Ctx::log_start`), decompose (CR 8.4.14) ; choix provisoire d'équipement respectant les mains ; `fab-ui --deck florian` | `claude/epic-faraday-pg52sk` |
 | 2026-11-23 | Étape 3, deck Dromai : 30 lignes de STATUS.md + 8 dragons (faces arrière) + tokens Ash, Aether Ashwing, Spectral Shield codés et testés (70 tests de cartes, 16 tests de règles) ; moteur : cartes sous un permanent et material (CR 3.0.14, 8.4.5), transform (CR 8.5.36), invocations et cartes retournables (CR 8.2.13, 9.1.3), phantasm (CR 8.3.13), fermeture de la chaîne quand l'attaque disparaît (CR 7.7.2c), alliés qui attaquent (capacité accordée par Storm of Sandikai), vie des alliés remise à zéro en fin de tour (CR 4.4.3a) et compteurs de vie, prévention propre à un allié (Yendurai), steal / gain control, Themai, opt 1 ; interface : alliés, cartes dessous, texte des dragons ; `fab-ui --deck dromai` | `ccr-9b06529e-h1bljg` |
+| 2026-11-23 | Étape 3, deck Arakni (fin de l'étape 3) : 28 lignes de STATUS.md + 6 Agents of Chaos + tokens Graphene Chelicera et Bloodrot Pox codés et testés (76 tests de cartes, 11 tests de règles) ; moteur : stealth, marque lue au moment de la touche (`Hit::marked`), dague qui touche par un effet, équiper un token arme, retrieve, become / return to the brood (CR 8.5.25, 8.5.52), traits (CR 2.13), effets sur toutes les attaques du tour, « the next time you attack », go again d'une carte qui quitte la pile (CR 5.3.5a), blocage élargi (CR 4.5.4d) ; deux armes à une main dans le choix provisoire ; `fab-ui --deck arakni` | `claude/dreamy-gates-r3giw6` |

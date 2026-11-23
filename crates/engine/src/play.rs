@@ -420,6 +420,14 @@ impl GameState {
         let who = if a.from_hand { o.owner } else { o.controller };
         // CR 5.1.6a : augmentations (Frostbite), puis réductions.
         let mut cost = a.cost as i32 + self.cost_tax(who) as i32;
+        // « Graphene Chelicerae cost you {r} less to activate » (Arakni,
+        // Orb-Weaver) : capacité statique du héros.
+        let hero = self.player(o.controller).hero;
+        if let Some(f) = self.def(hero).activation_discount {
+            if !self.lost_abilities(hero) {
+                cost -= f(self, hero, src) as i32;
+            }
+        }
         if a.attack && !self.weapon_effects.is_empty() {
             let r = self.obj_ref(src);
             for e in &self.weapon_effects {

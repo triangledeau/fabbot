@@ -1,7 +1,7 @@
 //! fab-ui — jouer contre le bot dans le terminal.
 //!
 //! Usage :
-//!     cargo run --release -p fab-ui -- [--deck ira|hala|dorinthea|bravo|iyslander|florian|levia|dromai] [--bot …] [--graine N]
+//!     cargo run --release -p fab-ui -- [--deck ira|hala|dorinthea|bravo|iyslander|florian|levia|dromai|arakni] [--bot …] [--graine N]
 //!
 //! Par défaut : vous jouez Hala, le bot joue Dorinthea, graine tirée de l'heure.
 //! Le bot est B0 (choix au hasard parmi les options légales).

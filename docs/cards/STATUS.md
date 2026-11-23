@@ -58,6 +58,16 @@ Azvolai, Cromai, Kyloria, Miragai, Nekria, Ouvia, Themai, Yendurai) et les
 tokens **Ash**, **Aether Ashwing** et **Spectral Shield** sont aussi codés et
 testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
 
+**Étape 3, deck Arakni (2026-11-23)** : toutes les cartes du deck Arakni
+sont `Tested` (code : `crates/cards/src/real/assassin.rs`, cartes génériques
+Public Bounty, Pursue et Relentless Pursuit dans `generic.rs` ; tests :
+`crates/cards/tests/cartes_assassin.rs` et `regles_etape3_arakni.rs`). Les
+six **Agents of Chaos** (demi-héros qu'Arakni peut devenir : Black Widow,
+Funnel Web, Orb-Weaver, Redback, Tarantula, Trap-Door) et les tokens
+**Graphene Chelicera** et **Bloodrot Pox** sont aussi codés et testés. Toutes
+les couleurs officielles des cartes du deck sont codées (le deck n'utilise
+souvent que la rouge).
+
 | Carte | Couleur | Utilisée par | Statut |
 |---|---|---|---|
 | **Ira, Crimson Haze** | héros | Ira, Crimson Haze | Tested |
@@ -68,7 +78,7 @@ testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
 | **Florian** | héros | Florian | Tested |
 | **Levia** | héros | Levia | Tested |
 | **Dromai** | héros | Dromai | Tested |
-| **Arakni, Web of Deceit** | héros | Arakni, Web of Deceit | NotCoded |
+| **Arakni, Web of Deceit** | héros | Arakni, Web of Deceit | Tested |
 | Aetherstorm Wellingtons | arène | Iyslander | Tested |
 | Annals of Sutcliffe | arène | Florian | Tested |
 | Arcane Lantern | arène | Florian | Tested |
@@ -83,7 +93,7 @@ testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
 | Civic Steps | arène | Bravo, Flattering Showman | Tested |
 | Crown of Dichotomy | arène | Florian | Tested |
 | Crucible of Aetherweave | arène | Iyslander | Tested |
-| Danger Digits | arène | Arakni, Web of Deceit | NotCoded |
+| Danger Digits | arène | Arakni, Web of Deceit | Tested |
 | Decimator Great Axe | arène | Dorinthea | Tested |
 | Deep Blue | arène | Dromai | Tested |
 | Double Cross Strap | arène | Ira, Crimson Haze | Tested |
@@ -97,7 +107,7 @@ testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
 | Helm of Unity | arène | Dorinthea, Hala | Tested |
 | Hex Gauntlet | arène | Levia | Tested |
 | Hooves of the Shadowbeast | arène | Levia | Tested |
-| Mark of the Huntsman | arène | Arakni, Web of Deceit | NotCoded |
+| Mark of the Huntsman | arène | Arakni, Web of Deceit | Tested |
 | Mask of the Swarming Claw | arène | Ira, Crimson Haze | Tested |
 | Miller's Grindstone | arène | Bravo, Flattering Showman | Tested |
 | Nebula Blade | arène | Florian | Tested |
@@ -110,7 +120,7 @@ testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
 | Plume of Evergrowth | arène | Florian | Tested |
 | Pouncing Paws | arène | Ira, Crimson Haze | Tested |
 | Predatory Plating | arène | Levia | Tested |
-| Prey Spotters | arène | Arakni, Web of Deceit | NotCoded |
+| Prey Spotters | arène | Arakni, Web of Deceit | Tested |
 | Refraction Bolters | arène | Dorinthea | Tested |
 | Richter Scale | arène | Bravo, Flattering Showman | Tested |
 | Scepter of Pain | arène | Florian | Tested |
@@ -119,12 +129,12 @@ testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
 | Skera Strapping | arène | Levia | Tested |
 | Smoldering Scales | arène | Dromai | Tested |
 | Spellfire Cloak | arène | Iyslander | Tested |
-| Stalker's Steps | arène | Arakni, Web of Deceit | NotCoded |
+| Stalker's Steps | arène | Arakni, Web of Deceit | Tested |
 | Steelbraid Buckler | arène | Bravo, Flattering Showman | Tested |
 | Storm of Sandikai | arène | Dromai | Tested |
 | Tearing Shuko | arène | Ira, Crimson Haze | Tested |
 | Time Skippers | arène | Dromai | Tested |
-| Topsy Turvy | arène | Arakni, Web of Deceit | NotCoded |
+| Topsy Turvy | arène | Arakni, Web of Deceit | Tested |
 | Unflinching Foothold | arène | Bravo, Flattering Showman, Iyslander | Tested |
 | Unyielding Grip | arène | Florian | Tested |
 | Wave of Reality | arène | Dromai | Tested |
@@ -137,13 +147,13 @@ testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
 | Arcane Polarity | red | Arakni, Web of Deceit, Bravo, Flattering Showman, Dorinthea, Florian, Hala, Ira, Crimson Haze, Iyslander | Tested |
 | Arcane Seeds // Life | red | Florian | Tested |
 | Arcane Twining | blue | Iyslander | Tested |
-| Art of Desire: Body | red | Arakni, Web of Deceit | NotCoded |
+| Art of Desire: Body | red | Arakni, Web of Deceit | Tested |
 | Aspect of Tiger: Body | red | Ira, Crimson Haze | Tested |
 | Autumn's Touch | blue | Florian | Tested |
 | Autumn's Touch | red | Florian | Tested |
 | Autumn's Touch | yellow | Florian | Tested |
 | Billowing Mirage | red | Dromai | Tested |
-| Bite | red | Arakni, Web of Deceit | NotCoded |
+| Bite | red | Arakni, Web of Deceit | Tested |
 | Bittering Thorns | red | Ira, Crimson Haze | Tested |
 | Blaze Headlong | red | Dromai | Tested |
 | Blessing of Qi | red | Ira, Crimson Haze | Tested |
@@ -164,7 +174,7 @@ testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
 | Cleave the Heavens | blue | Levia | Tested |
 | Cleave the Heavens | red | Levia | Tested |
 | Colors of Aria | red | Florian | Tested |
-| Concoct Disorder | red | Arakni, Web of Deceit | NotCoded |
+| Concoct Disorder | red | Arakni, Web of Deceit | Tested |
 | Consuming Strength | yellow | Levia | Tested |
 | Countdown to Extinction | red | Levia | Tested |
 | Crash and Bash | red | Bravo, Flattering Showman | Tested |
@@ -177,7 +187,7 @@ testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
 | Disable | blue | Bravo, Flattering Showman | Tested |
 | Display of Craftsmanship | blue | Dorinthea, Hala | Tested |
 | Display of Craftsmanship | red | Hala | Tested |
-| Double Trouble | red | Arakni, Web of Deceit | NotCoded |
+| Double Trouble | red | Arakni, Web of Deceit | Tested |
 | Dread Screamer | blue | Levia | Tested |
 | Dread Screamer | red | Levia | Tested |
 | Dread Screamer | yellow | Levia | Tested |
@@ -213,11 +223,11 @@ testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
 | Harvest Season | red | Florian | Tested |
 | Hit and Run | blue | Dorinthea | Tested |
 | Humble | red | Hala, Ira, Crimson Haze | Tested |
-| Hurl | red | Arakni, Web of Deceit | NotCoded |
+| Hurl | red | Arakni, Web of Deceit | Tested |
 | Ice Bolt | blue | Iyslander | Tested |
 | Ice Bolt | red | Iyslander | Tested |
 | Ice Eternal | blue | Iyslander | Tested |
-| Infect | red | Arakni, Web of Deceit | NotCoded |
+| Infect | red | Arakni, Web of Deceit | Tested |
 | Invoke Azvolai | red | Dromai | Tested |
 | Invoke Cromai | red | Dromai | Tested |
 | Invoke Kyloria | red | Dromai | Tested |
@@ -229,46 +239,46 @@ testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
 | Ironsong Response | blue | Dorinthea | Tested |
 | Ironsong Response | red | Hala | Tested |
 | Jack Be Quick | red | Dromai | Tested |
-| Lair of the Spider | red | Arakni, Web of Deceit | NotCoded |
+| Lair of the Spider | red | Arakni, Web of Deceit | Tested |
 | Lay Low | yellow | Dorinthea | Tested |
 | Legacy of Ikaru | blue | Ira, Crimson Haze | Tested |
 | Look Tuff | red | Dorinthea, Iyslander | Tested |
 | Macho Grande | blue | Bravo, Flattering Showman | Tested |
-| Mark of the Black Widow | red | Arakni, Web of Deceit | NotCoded |
-| Mark of the Funnel Web | red | Arakni, Web of Deceit | NotCoded |
-| Mark the Prey | red | Arakni, Web of Deceit | NotCoded |
-| Night's Embrace | blue | Arakni, Web of Deceit | NotCoded |
+| Mark of the Black Widow | red | Arakni, Web of Deceit | Tested |
+| Mark of the Funnel Web | red | Arakni, Web of Deceit | Tested |
+| Mark the Prey | red | Arakni, Web of Deceit | Tested |
+| Night's Embrace | blue | Arakni, Web of Deceit | Tested |
 | Nimblism | red | Arakni, Web of Deceit, Dromai | Tested |
 | Oasis Respite | red | Arakni, Web of Deceit, Dromai | Tested |
 | Oath of the Arknight | blue | Florian | Tested |
 | On the Horizon | red | Dorinthea, Dromai, Florian, Hala, Ira, Crimson Haze, Iyslander | Tested |
-| Orb-Weaver Spinneret | red | Arakni, Web of Deceit | NotCoded |
+| Orb-Weaver Spinneret | red | Arakni, Web of Deceit | Tested |
 | Outed | red | Dromai | Tested |
 | Overpower | blue | Dorinthea | Tested |
 | Overpower | red | Dorinthea | Tested |
 | Passing Mirage | blue | Dromai | Tested |
 | Photon Splicing | blue | Iyslander | Tested |
-| Pick Up the Point | red | Arakni, Web of Deceit | NotCoded |
+| Pick Up the Point | red | Arakni, Web of Deceit | Tested |
 | Pouncing Qi | blue | Ira, Crimson Haze | Tested |
 | Pouncing Qi | red | Ira, Crimson Haze | Tested |
-| Public Bounty | red | Arakni, Web of Deceit | NotCoded |
+| Public Bounty | red | Arakni, Web of Deceit | Tested |
 | Pummel | red | Bravo, Flattering Showman | Tested |
-| Pursue to the Edge of Oblivion | red | Arakni, Web of Deceit | NotCoded |
-| Pursue to the Pits of Despair | red | Arakni, Web of Deceit | NotCoded |
+| Pursue to the Edge of Oblivion | red | Arakni, Web of Deceit | Tested |
+| Pursue to the Pits of Despair | red | Arakni, Web of Deceit | Tested |
 | Pyroglyphic Protection | blue | Iyslander | Tested |
 | Qi Unleashed | blue | Ira, Crimson Haze | Tested |
 | Raging Onslaught | blue | Dorinthea | Tested |
 | Rake the Embers | red | Dromai | Tested |
 | Ravenous Rabble | red | Arakni, Web of Deceit, Dromai, Iyslander | Tested |
 | Razor Reflex | red | Arakni, Web of Deceit, Ira, Crimson Haze | Tested |
-| Razor's Edge | red | Arakni, Web of Deceit | NotCoded |
+| Razor's Edge | red | Arakni, Web of Deceit | Tested |
 | Read the Runes | red | Florian | Tested |
-| Reaper's Call | blue | Arakni, Web of Deceit | NotCoded |
+| Reaper's Call | blue | Arakni, Web of Deceit | Tested |
 | Reduce to Runechant | blue | Florian | Tested |
 | Reduce to Runechant | red | Florian | Tested |
 | Reduce to Runechant | yellow | Florian | Tested |
 | Reinforce the Line | red | Ira, Crimson Haze | Tested |
-| Relentless Pursuit | blue | Arakni, Web of Deceit | NotCoded |
+| Relentless Pursuit | blue | Arakni, Web of Deceit | Tested |
 | Rootbound Carapace | red | Florian | Tested |
 | Rootbound Carapace | yellow | Florian | Tested |
 | Runeblood Incantation | red | Florian | Tested |
@@ -281,8 +291,8 @@ testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
 | Sharpen Steel | blue | Dorinthea | Tested |
 | Sharpen Steel | red | Dorinthea | Tested |
 | Shove Off | blue | Hala | Tested |
-| Shred | blue | Arakni, Web of Deceit | NotCoded |
-| Shred | red | Arakni, Web of Deceit | NotCoded |
+| Shred | blue | Arakni, Web of Deceit | Tested |
+| Shred | red | Arakni, Web of Deceit | Tested |
 | Sift | blue | Dorinthea | Tested |
 | Sigil of Silphidae | blue | Florian | Tested |
 | Sirens of Safe Harbor | blue | Dorinthea, Hala, Ira, Crimson Haze | Tested |
@@ -292,7 +302,7 @@ testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
 | Smashback Alehorn | blue | Levia | Tested |
 | Snatch | red | Dromai | Tested |
 | Soul Harvest | blue | Levia | Tested |
-| Stains of the Redback | red | Arakni, Web of Deceit | NotCoded |
+| Stains of the Redback | red | Arakni, Web of Deceit | Tested |
 | Staunch Response | red | Bravo, Flattering Showman | Tested |
 | Steelblade Shunt | blue | Dorinthea | Tested |
 | Steelblade Shunt | red | Dorinthea, Hala | Tested |

@@ -165,7 +165,7 @@ fn banish_this_from_hand(g: &mut GameState, c: &mut Ctx) {
 
 /// Pose une question « choisir un objet » ; pas de question s'il n'y a
 /// qu'un choix possible (voir [`picked`]).
-fn ask_object(p: PlayerId, label: &'static str, options: Vec<ObjectId>) -> Option<Ask> {
+pub(crate) fn ask_object(p: PlayerId, label: &'static str, options: Vec<ObjectId>) -> Option<Ask> {
     (options.len() > 1).then(|| Ask {
         player: p,
         label,
@@ -174,7 +174,7 @@ fn ask_object(p: PlayerId, label: &'static str, options: Vec<ObjectId>) -> Optio
 }
 
 /// L'objet choisi par [`ask_object`], ou le seul candidat.
-fn picked(c: &Ctx, candidates: &[ObjectId]) -> Option<ObjectId> {
+pub(crate) fn picked(c: &Ctx, candidates: &[ObjectId]) -> Option<ObjectId> {
     match c.answer {
         Some(Choice::Object(x)) if candidates.contains(&x) => Some(x),
         _ if candidates.len() == 1 => Some(candidates[0]),

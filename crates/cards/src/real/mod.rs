@@ -14,8 +14,10 @@
 //! - [`wizard`] : cartes Wizard, Elemental et Ice (Iyslander) ;
 //! - [`runeblade`] : cartes Runeblade, Earth et Elemental (Florian) ;
 //! - [`shadow`] : cartes Shadow et Brute (Levia) ;
-//! - [`draconic`] : cartes Draconic et Illusionist (Dromai).
+//! - [`draconic`] : cartes Draconic et Illusionist (Dromai) ;
+//! - [`assassin`] : cartes Assassin et Chaos (Arakni).
 
+pub mod assassin;
 pub mod draconic;
 pub mod generic;
 pub mod guardian;
@@ -41,6 +43,7 @@ pub fn build() -> CardDb {
     runeblade::add(&mut db);
     shadow::add(&mut db);
     draconic::add(&mut db);
+    assassin::add(&mut db);
     db
 }
 
@@ -56,6 +59,7 @@ pub fn build_names() -> Vec<&'static str> {
         .chain(runeblade::NAMES.iter())
         .chain(shadow::NAMES.iter())
         .chain(draconic::NAMES.iter())
+        .chain(assassin::NAMES.iter())
         .copied()
         .collect()
 }
@@ -242,11 +246,29 @@ pub fn default_loadout(db: &CardDb, list: &Decklist) -> Result<Loadout, String> 
         } else {
             0
         };
-        if slots.contains(&e.slot.as_str()) || hands + h > 2 {
+        if h > 0 {
+            // Armes à une main : autant d'exemplaires que de mains libres
+            // (Arakni : deux Mark of the Huntsman).
+            // CR 8.2.10b : un seul off-hand.
+            let off_hand = def.subtypes.has(Subtypes::OFF_HAND);
+            if off_hand && slots.contains(&e.slot.as_str()) {
+                continue;
+            }
+            if off_hand {
+                slots.push(&e.slot);
+            }
+            for _ in 0..if off_hand { 1 } else { e.count } {
+                if hands + h <= 2 {
+                    hands += h;
+                    arena.push(id);
+                }
+            }
+            continue;
+        }
+        if slots.contains(&e.slot.as_str()) {
             continue;
         }
         slots.push(&e.slot);
-        hands += h;
         arena.push(id);
     }
     let mut deck = Vec::new();

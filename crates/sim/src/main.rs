@@ -145,6 +145,9 @@ fn main() {
                                     (Some(Outcome::Draw), Some(EndReason::TurnLimit)) => {
                                         st.draws_limit += 1
                                     }
+                                    (Some(Outcome::Draw), Some(EndReason::Stalemate)) => {
+                                        st.draws_stalemate += 1
+                                    }
                                     _ => st.draws_life += 1,
                                 }
                             }

@@ -282,6 +282,44 @@ ou `add_prevention` (filtre de source, « if you prevent damage this way »).
   ex. Essence of Ancestry: Body).
 - `generic::opt1()` : Opt 1 (CR 8.5.22).
 
+## Stealth, marque, dagues, become (étape 3, deck Arakni)
+
+- **Stealth** (`Keywords::STEALTH`, CR 8.3.24) : `has_stealth(id)` lit la
+  valeur imprimée (celle de l'arme pour une attaque-proxy) ; utilisable dans
+  un calcul de valeurs (`aura`, filtre d'un effet) sans boucle.
+- **Marque** (CR 9.3) : `mark(p)`. La marque disparaît au moment de la
+  touche par une source adverse (CR 9.3.3) ; `Event::Hit::marked` dit si le
+  héros était marqué juste avant (« when this hits a marked hero »).
+- **Dague qui touche par un effet** (« If damage is dealt this way, the
+  dagger has hit », Bite, Hurl, Danger Digits) : `deal_damage_and_hit`. Les
+  dégâts font un événement `Hit` avec `effect: true` (la dague n'est pas
+  l'attaque du maillon ; ses capacités « when this hits » se déclenchent).
+- **Équiper** (CR 8.5.41) : `equip_weapon_token(p, token)` (rien si aucune
+  main libre), `can_equip_weapon`, `daggers_of(p)`. **Retrieve** (CR 8.5.51) :
+  la carte paie {r} puis `equip_from_graveyard(id)` (nouvel objet).
+- **Become / return to the brood** (CR 8.5.25, 8.5.52) : `become_hero(p,
+  carte)` change la définition du héros (même objet, même total de vie),
+  note la carte d'origine dans `GameState::became` et émet `Event::Became` ;
+  `become_random(p, Traits::AGENT_OF_CHAOS)` tire parmi toutes les cartes du
+  trait (CR 2.13.4, `CardDef::traits`) ; `return_to_brood(p)`.
+- **« Your attacks … get … this turn »** (Night's Embrace) :
+  `buff_attacks_this_turn` (`GameState::attack_buffs`, ajouté dans le calcul
+  des valeurs de chaque attaque du joueur, `is_attack(id)`).
+- **« The next time you attack a marked hero this turn »** (Public Bounty) :
+  `next_time_you_attack` (`NextAttackEffect::at_attack`), appliqué à
+  l'événement d'attaque, quand la cible est connue.
+- **Réduction de coût d'activation** d'une capacité du héros
+  (`CardDef::activation_discount`, Arakni, Orb-Weaver).
+- **Déclenchement par la carte elle-même** (« Whenever this banishes a red
+  card », Art of Desire: Body) : `queue_trigger(source, index)` met en
+  attente la capacité n° `index` (dont la condition `when` est toujours fausse).
+- Permission de jouer une carte bannie **face cachée** :
+  `permit_play_face_down` (Arakni, Trap-Door).
+- CR 5.3.5a : une carte que sa propre résolution envoie ailleurs (Relentless
+  Pursuit, sous le deck) garde le go again imprimé de sa couche.
+- Blocage (CR 4.5.4d), cas étendu pour le simulateur : decks et mains vides
+  et aucune vie qui change pendant 6 tours (`no_progress`).
+
 ## Les événements et le journal du tour
 
 Tout ce qui se passe (carte jouée, attaque, défense, touche, pitch, dégâts,

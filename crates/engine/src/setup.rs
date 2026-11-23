@@ -185,6 +185,10 @@ impl GameState {
             trigger_objects: Vec::new(),
             sub_cards: Vec::new(),
             steals: Vec::new(),
+            became: Vec::new(),
+            attack_buffs: Vec::new(),
+            stale_turns: 0,
+            stale_life: [0, 0],
         };
         g.trigger_objects = (0..g.objects.len() as u32)
             .map(ObjectId)

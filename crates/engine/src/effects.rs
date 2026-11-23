@@ -28,6 +28,9 @@ pub struct DamageEvent {
     pub arcane: bool,
     /// Dégâts de combat du maillon actif : événement « hit » (CR 7.5.2a).
     pub hit: bool,
+    /// « If damage is dealt this way, the dagger has hit » (Bite, Hurl,
+    /// Danger Digits) : la source touche, sans être l'attaque du maillon.
+    pub effect_hit: bool,
     /// Les remplacements standards ont déjà été appliqués.
     pub replaced: bool,
     /// Le joueur a refusé les préventions optionnelles restantes.
@@ -145,6 +148,7 @@ impl GameState {
             amount,
             arcane,
             hit: false,
+            effect_hit: false,
             replaced: false,
             declined: false,
             used: Vec::new(),
@@ -465,14 +469,18 @@ impl GameState {
             amount: dealt as u16,
             arcane: ev.arcane,
         });
-        if ev.hit {
-            // CR 9.3.3 : un héros marqué touché par une source adverse n'est plus marqué.
-            if target_obj.is_none() && player != ev.by {
+        if ev.hit || ev.effect_hit {
+            // CR 9.3.3 : un héros marqué touché par une source adverse n'est
+            // plus marqué (au moment de la touche).
+            let marked = target_obj.is_none() && self.player(player).marked;
+            if marked && player != ev.by {
                 self.player_mut(player).marked = false;
             }
             // CR 7.5.5 : l'attaque touche.
-            if let Some(link) = self.combat.links.last_mut() {
-                link.hit = true;
+            if ev.hit {
+                if let Some(link) = self.combat.links.last_mut() {
+                    link.hit = true;
+                }
             }
             self.emit(Event::Hit {
                 attack: ev.source.expect("source de l'attaque"),
@@ -480,6 +488,8 @@ impl GameState {
                 target: player,
                 target_obj,
                 damage: dealt as u16,
+                marked,
+                effect: !ev.hit,
             });
         }
     }
@@ -587,7 +597,7 @@ impl GameState {
     }
 
     /// Un nouvel objet (hors de toute zone) appartenant à `p`.
-    fn new_object(&mut self, p: PlayerId, card: CardId) -> ObjectId {
+    pub(crate) fn new_object(&mut self, p: PlayerId, card: CardId) -> ObjectId {
         self.objects.push(Object {
             card,
             owner: p,
@@ -634,6 +644,7 @@ impl GameState {
             card,
             player: p,
             turn,
+            face_down_ok: false,
         });
     }
 
@@ -641,11 +652,12 @@ impl GameState {
     pub fn play_permitted(&self, p: PlayerId, card: ObjectId) -> bool {
         let o = self.obj(card);
         o.zone == Zone::Banished
-            && !o.face_down
-            && self
-                .play_permissions
-                .iter()
-                .any(|x| x.player == p && x.turn == self.turn && x.card == o.obj_ref(card))
+            && self.play_permissions.iter().any(|x| {
+                x.player == p
+                    && x.turn == self.turn
+                    && x.card == o.obj_ref(card)
+                    && (!o.face_down || x.face_down_ok)
+            })
     }
 
     /// « Target attack gets "When this hits, …" » : accorde à `target` la
@@ -689,6 +701,7 @@ impl GameState {
             turn: None,
             weapon: None,
             combat_chain: false,
+            at_attack: false,
         });
     }
 
@@ -710,6 +723,7 @@ impl GameState {
             turn: None,
             weapon: None,
             combat_chain: true,
+            at_attack: false,
         });
     }
 
@@ -731,6 +745,7 @@ impl GameState {
             turn: Some(turn),
             weapon: None,
             combat_chain: false,
+            at_attack: false,
         });
     }
 
@@ -745,6 +760,7 @@ impl GameState {
             turn: None,
             weapon: Some(weapon),
             combat_chain: false,
+            at_attack: false,
         });
     }
 
@@ -1033,6 +1049,7 @@ impl GameState {
         while i < self.next_attack_effects.len() {
             let e = self.next_attack_effects[i];
             let ok = e.player == p
+                && !e.at_attack
                 && e.turn.is_none_or(|t| t == self.turn)
                 && (is_card || !e.cards_only)
                 && e.weapon.is_none_or(|w| {
