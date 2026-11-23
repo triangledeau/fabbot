@@ -22,7 +22,7 @@
 //! scores du premier bot (ligne : son deck ; colonne : le deck adverse).
 
 use fab_ai::elo::{ecart, ecart_avec_intervalle, Tableau};
-use fab_ai::{creer_agent, play_out, BOTS};
+use fab_ai::{bot_connu, creer_agent, play_out, BOTS};
 use fab_cards::decklist::Decklist;
 use fab_cards::{real, test_set};
 use fab_engine::{CardDb, EndReason, GameSetup, GameState, Loadout, Outcome, PlayerId};
@@ -171,8 +171,8 @@ fn main() {
         None => ["b0".to_string(), "b0".to_string()],
     };
     for b in &bots {
-        if !BOTS.contains(&b.as_str()) {
-            eprintln!("bot inconnu « {b} » (connus : {})", BOTS.join(", "));
+        if !bot_connu(b) {
+            eprintln!("bot inconnu « {b} » (connus : {}, b2-N)", BOTS.join(", "));
             std::process::exit(2);
         }
     }

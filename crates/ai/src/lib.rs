@@ -6,27 +6,46 @@
 //! Paliers prévus :
 //! - B0 [`RandomAgent`] : aléatoire, sert de référence et de testeur de règles ;
 //! - B1 [`HeuristicAgent`] : heuristique simple, sans recherche ;
-//! - B2 ISMCTS (étape 4) ;
+//! - B2 [`IsmctsAgent`] : recherche ISMCTS (mondes imaginés + parties simulées par B1) ;
 //! - B3 évaluation apprise par auto-jeu (étape 7).
 
 use fab_engine::{Decision, GameState, Rng};
 
 pub mod b1;
+pub mod b2;
+pub mod determinisation;
 pub mod elo;
 pub mod vue;
 
 pub use b1::HeuristicAgent;
+pub use b2::IsmctsAgent;
 
-/// Les bots disponibles, par leur nom court (`b0`, `b1`).
-pub const BOTS: [&str; 2] = ["b0", "b1"];
+/// Les bots disponibles, par leur nom court (`b0`, `b1`, `b2`). B2 accepte
+/// aussi un nombre d'itérations par décision : `b2-1000`.
+pub const BOTS: [&str; 3] = ["b0", "b1", "b2"];
 
 /// Crée un bot à partir de son nom court ; `graine` règle son hasard.
+///
+/// Variantes de B2 (voir [`b2::ReglagesB2::depuis_nom`]) : `b2-1000`
+/// (1000 itérations par décision), `b2-500ms` (une demi-seconde par
+/// décision), `b2-200t4` (parties simulées arrêtées après 4 tours),
+/// `b2-200a` (parties simulées par B0).
 pub fn creer_agent(nom: &str, graine: u64) -> Option<Box<dyn Agent + Send>> {
-    match nom.to_lowercase().as_str() {
+    let nom = nom.to_lowercase();
+    match nom.as_str() {
         "b0" => Some(Box::new(RandomAgent::new(graine))),
         "b1" => Some(Box::new(HeuristicAgent::new())),
-        _ => None,
+        "b2" => Some(Box::new(IsmctsAgent::new(graine))),
+        _ => {
+            let reglages = b2::ReglagesB2::depuis_nom(nom.strip_prefix("b2-")?)?;
+            Some(Box::new(IsmctsAgent::avec(graine, reglages)))
+        }
     }
+}
+
+/// Le nom désigne-t-il un bot connu ?
+pub fn bot_connu(nom: &str) -> bool {
+    creer_agent(nom, 0).is_some()
 }
 
 pub trait Agent {
