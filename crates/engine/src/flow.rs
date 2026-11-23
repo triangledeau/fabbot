@@ -97,6 +97,25 @@ impl GameState {
             (DecisionKind::TriggerFirst, Choice::Player(p)) => self.trigger_first = Some(p),
             (DecisionKind::TriggerOrder, Choice::Trigger(i)) => {
                 let layer = self.pending_triggers.remove(i as usize);
+                // Les déclenchements d'un même mot-clé sont interchangeables
+                // (une seule option, voir `flush_triggers`) : ils sont tous
+                // empilés ensemble.
+                if let LayerKind::Rule(_) = layer.kind {
+                    let (kind, controller) = (layer.kind, layer.controller);
+                    let mut k = 0;
+                    while k < self.pending_triggers.len() {
+                        let l = &self.pending_triggers[k];
+                        if l.kind == kind && l.controller == controller {
+                            let same = self.pending_triggers.remove(k);
+                            self.tasks.push(Task::TriggerTargets {
+                                layer: Box::new(same),
+                                next: 0,
+                            });
+                        } else {
+                            k += 1;
+                        }
+                    }
+                }
                 self.tasks.push(Task::TriggerTargets {
                     layer: Box::new(layer),
                     next: 0,
@@ -285,7 +304,19 @@ impl GameState {
             .all(|&i| matches!(self.pending_triggers[i].kind, LayerKind::Rule(_)));
         if mine.len() >= 2 && !all_same && !all_rules {
             // Le joueur choisit l'ordre dans lequel il empile ses déclenchements.
-            let options = mine.iter().map(|&i| Choice::Trigger(i as u8)).collect();
+            // Les déclenchements d'un même mot-clé (ex. blood debt de
+            // plusieurs cartes) sont interchangeables : une seule option.
+            let mut options: Vec<Choice> = Vec::new();
+            for (n, &i) in mine.iter().enumerate() {
+                let kind = self.pending_triggers[i].kind;
+                let dup = matches!(kind, LayerKind::Rule(_))
+                    && mine[..n]
+                        .iter()
+                        .any(|&j| self.pending_triggers[j].kind == kind);
+                if !dup {
+                    options.push(Choice::Trigger(i as u8));
+                }
+            }
             self.pending = Some(Decision {
                 player: p,
                 kind: DecisionKind::TriggerOrder,
@@ -363,6 +394,19 @@ impl GameState {
 
     /// Résolution d'un déclenchement de mot-clé.
     fn resolve_rule_trigger(&mut self, kind: RuleTrigger, obj: crate::ids::ObjRef) {
+        if kind == RuleTrigger::BloodDebt {
+            // CR 1.7.1a : la couche existe indépendamment de sa source ; la
+            // condition (carte publique dans la zone de bannissement) n'est
+            // vérifiée qu'au déclenchement (CR 8.3.11a).
+            let p = self.obj(obj.id).owner;
+            let hero = self.player(p).hero;
+            let immune = !self.lost_abilities(hero)
+                && self.def(hero).blood_debt_immune.is_some_and(|f| f(self, p));
+            if !immune {
+                self.lose_life(p, 1);
+            }
+            return;
+        }
         if !self.is_current(obj) {
             return; // la source a quitté sa zone : nouvel objet (CR 3.0.9)
         }
@@ -401,6 +445,7 @@ impl GameState {
                     self.destroy(id);
                 }
             }
+            RuleTrigger::BloodDebt => unreachable!("traité plus haut"),
         }
     }
 
@@ -536,6 +581,14 @@ impl GameState {
             for r in std::mem::take(&mut self.sharpened) {
                 if self.is_current(r) {
                     self.push_rule_trigger(RuleTrigger::Unsharpen, r.id);
+                }
+            }
+            // CR 8.3.11, 8.3.11a : blood debt, seulement les cartes publiques
+            // de la zone de bannissement du joueur actif.
+            for k in 0..self.player(tp).banished.len() {
+                let c = self.player(tp).banished[k];
+                if !self.obj(c).face_down && self.def(c).keywords.has(Keywords::BLOOD_DEBT) {
+                    self.push_rule_trigger(RuleTrigger::BloodDebt, c);
                 }
             }
             self.stage = Stage::ResolveThen(AfterResolve::EndArsenal);

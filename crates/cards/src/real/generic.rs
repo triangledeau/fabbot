@@ -33,6 +33,7 @@ pub const NAMES: &[&str] = &[
     "Might",
     "Vigor",
     "Quicken",
+    "Agility",
     "Pummel",
     "Unflinching Foothold",
     "Blade Beckoner Plating",
@@ -392,6 +393,7 @@ pub fn add(db: &mut CardDb) {
             },
             optional: false,
             in_graveyard: false,
+            in_banished: false,
         }];
         d.resolve = vec![Op::Do(|g, c| {
             if let Some(r) = target_obj(c, 0) {
@@ -437,6 +439,7 @@ pub fn add(db: &mut CardDb) {
             },
             optional: false,
             in_graveyard: false,
+            in_banished: false,
         }];
         d.resolve = vec![Op::Do(|g, c: &mut Ctx| {
             if let Some(r) = target_obj(c, 0) {
@@ -612,7 +615,7 @@ fn iyslander_generics(db: &mut CardDb) {
     db.add(d);
 }
 
-/// Tokens génériques Might, Vigor et Quicken.
+/// Tokens génériques Might, Vigor, Agility et Quicken.
 fn tokens(db: &mut CardDb) {
     let token = |name: &str, trigger: TriggerDef| CardDef {
         name: name.into(),
@@ -650,6 +653,22 @@ fn tokens(db: &mut CardDb) {
             script: vec![Op::Do(|g, c| {
                 destroy_source(g, c);
                 g.gain_resources(c.controller, 1);
+            })],
+        },
+    ));
+
+    // Agility — Generic Token - Aura (deck Levia).
+    // « At the start of your turn, destroy this, then your next attack this
+    // turn gets go again. »
+    db.add(token(
+        "Agility",
+        TriggerDef {
+            when: start_of_your_turn,
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| {
+                destroy_source(g, c);
+                g.next_attack(c.controller, None, grant(Keywords::GO_AGAIN), false);
             })],
         },
     ));
@@ -750,6 +769,7 @@ fn bravo_generics(db: &mut CardDb) {
         },
         optional: false,
         in_graveyard: false,
+        in_banished: false,
     }];
     d.resolve = vec![Op::Do(|g, c| {
         if let Some(r) = target_obj(c, 0) {

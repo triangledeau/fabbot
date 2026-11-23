@@ -51,6 +51,9 @@ fn main() {
             (Subtypes::SWORD, "Sword"),
             (Subtypes::AXE, "Axe"),
             (Subtypes::DAGGER, "Dagger"),
+            (Subtypes::HAMMER, "Hammer"),
+            (Subtypes::ALLY, "Ally"),
+            (Subtypes::DEMON, "Demon"),
         ] {
             if d.subtypes.has(t) {
                 words.push(w);
@@ -59,6 +62,8 @@ fn main() {
         for (t, w) in [
             (Supertypes::WARRIOR, "Warrior"),
             (Supertypes::NINJA, "Ninja"),
+            (Supertypes::BRUTE, "Brute"),
+            (Supertypes::SHADOW, "Shadow"),
         ] {
             if d.supertypes.has(t) {
                 words.push(w);
@@ -76,6 +81,7 @@ fn main() {
             (Keywords::EPHEMERAL, "Ephemeral"),
             (Keywords::SUSPENSE, "Suspense"),
             (Keywords::CRUSH, "Crush"),
+            (Keywords::BLOOD_DEBT, "Blood Debt"),
         ] {
             if d.keywords.has(k) {
                 kw.push(w);

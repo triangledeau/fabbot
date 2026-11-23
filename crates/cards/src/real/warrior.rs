@@ -234,6 +234,7 @@ fn heroes_and_arena(db: &mut CardDb) {
             },
             optional: false,
             in_graveyard: false,
+            in_banished: false,
         }],
         script: vec![Op::Do(|g, c| {
             if let Some(r) = target_obj(c, 0) {

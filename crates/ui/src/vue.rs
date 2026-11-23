@@ -472,6 +472,7 @@ fn regle(r: RuleTrigger) -> &'static str {
         RuleTrigger::Unsharpen => "fin du sharpen",
         RuleTrigger::SuspenseTick => "suspense : retirer un compteur",
         RuleTrigger::SuspenseEmpty => "suspense : plus de compteur, détruire",
+        RuleTrigger::BloodDebt => "blood debt : perdre 1 PV",
     }
 }
 
@@ -659,10 +660,10 @@ pub fn evenement(g: &GameState, viewer: PlayerId, e: &Event) -> Option<String> {
             format!("{}.", sujet(player, "pitche", "pitchez", &nom(g, card)))
         }
         Event::Destroyed { card, .. } => format!("{} est détruit.", nom(g, card)),
-        Event::Banished { card, owner, .. } => {
+        Event::Banished { card, by, .. } => {
             format!(
                 "{}.",
-                sujet(owner, "bannit", "bannissez", &nom_pour(g, viewer, card))
+                sujet(by, "bannit", "bannissez", &nom_pour(g, viewer, card))
             )
         }
         Event::Drew { player, card } => {

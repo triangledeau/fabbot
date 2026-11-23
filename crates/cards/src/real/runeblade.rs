@@ -59,6 +59,7 @@ const TARGET_OPPOSING_HERO: TargetSpec = TargetSpec {
     filter: |_, c, t| matches!(t, Target::Player(p) if p != c.controller),
     optional: false,
     in_graveyard: false,
+    in_banished: false,
 };
 
 /// « any opposing target » : le héros adverse ou un allié qu'un adversaire
@@ -71,6 +72,7 @@ const ANY_OPPOSING_TARGET: TargetSpec = TargetSpec {
     },
     optional: false,
     in_graveyard: false,
+    in_banished: false,
 };
 
 /// Une carte Earth (Colors of Aria l'est tant qu'elle est face visible).
@@ -229,7 +231,7 @@ fn decompose() -> Vec<Op> {
             if c.flag {
                 for x in c.picked.clone() {
                     if g.obj(x).zone == Zone::Graveyard {
-                        g.banish(x, false);
+                        g.banish(c.controller, x, false);
                     }
                 }
             }
@@ -440,6 +442,7 @@ fn hero_and_arena(db: &mut CardDb) {
                 },
                 optional: false,
                 in_graveyard: true,
+                in_banished: false,
             },
             TargetSpec {
                 label: "carte d'action non-attaque Runeblade de votre cimetière",
@@ -455,6 +458,7 @@ fn hero_and_arena(db: &mut CardDb) {
                 },
                 optional: false,
                 in_graveyard: true,
+                in_banished: false,
             },
         ],
         effect_cost: vec![Op::Do(|g, c| destroy_source(g, c))],
@@ -524,6 +528,7 @@ fn hero_and_arena(db: &mut CardDb) {
             },
             optional: false,
             in_graveyard: true,
+            in_banished: false,
         }],
         effect_cost: vec![Op::Do(|g, c| destroy_source(g, c))],
         script: vec![Op::Do(|g, c| {
@@ -880,7 +885,7 @@ fn deck_cards(db: &mut CardDb) {
                     g.last_damage = 0;
                     if let Some(Choice::Object(x)) = c.answer.take() {
                         if g.obj(x).zone == Zone::Graveyard {
-                            g.banish(x, false);
+                            g.banish(c.controller, x, false);
                             if let Some(t) = c.target(0) {
                                 g.deal_damage_to(c.source_id(), c.controller, t, 1, true);
                             }

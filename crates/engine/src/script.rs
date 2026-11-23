@@ -38,6 +38,10 @@ pub struct TargetSpec {
     /// « target … card from your graveyard » (CR 1.8.5a) : les objets publics
     /// des cimetières sont aussi des cibles possibles.
     pub in_graveyard: bool,
+    /// « target … card from your banished zone » (Gate to i'Arathael) : les
+    /// objets publics (face visible) des zones de bannissement sont aussi
+    /// des cibles possibles (CR 1.8.5a).
+    pub in_banished: bool,
 }
 
 pub type DoFn = fn(&mut GameState, &mut Ctx);

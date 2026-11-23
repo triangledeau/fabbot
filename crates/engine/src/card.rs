@@ -63,7 +63,7 @@ flags! {
         LANDMARK = 12, AFFLICTION = 13, ASH = 14, INVOCATION = 15, CONSTRUCT = 16,
         QUIVER = 17, FIGMENT = 18, ARROW = 19, TRAP = 20,
         SWORD = 21, AXE = 22, DAGGER = 23, HAMMER = 24, CLUB = 25, STAFF = 26,
-        SCEPTER = 27, BOOK = 28, DRAGON = 29,
+        SCEPTER = 27, BOOK = 28, DRAGON = 29, DEMON = 30,
     }
 }
 
@@ -115,6 +115,10 @@ flags! {
         /// « At the start of your turn, remove a suspense counter from this »,
         /// « When this has no suspense counters, destroy it ».
         SUSPENSE = 13,
+        /// CR 8.3.11 : « While this is in your banished zone, at the beginning
+        /// of your end phase, lose 1{h}. » Seulement si la carte est publique
+        /// (face visible) dans la zone de bannissement (CR 8.3.11a).
+        BLOOD_DEBT = 14,
     }
 }
 
@@ -335,6 +339,15 @@ pub struct CardDef {
     /// « While this is face-up in any zone, it's Earth, Ice, and Lightning »
     /// (Colors of Aria) : supertypes ajoutés tant que la carte est face visible.
     pub face_up_supertypes: Supertypes,
+    /// « If …, you don't lose {h} from blood debt during the end phase »
+    /// (Levia) : capacité statique du héros, lue quand le déclenchement de
+    /// blood debt se résout (CR 8.3.11). Argument : le joueur du héros.
+    pub blood_debt_immune: Option<fn(&GameState, PlayerId) -> bool>,
+    /// « Once per turn, you may play [carte filtrée] from your banished
+    /// zone » (Blasmophet, the Insatiable Hunger) : permission statique d'un
+    /// permanent, une fois par tour pour chaque objet qui l'a. Arguments :
+    /// la source, la carte à jouer.
+    pub play_from_banished: Option<fn(&GameState, ObjectId, ObjectId) -> bool>,
 }
 
 impl CardDef {

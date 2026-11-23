@@ -100,9 +100,10 @@ impl GameState {
         self.player_mut(p).resource_points += n;
     }
 
-    /// Gagner des points d'action (CR 1.13.2b : seulement le joueur actif).
+    /// Gagner des points d'action (CR 1.13.2b : seulement le joueur actif,
+    /// pendant sa phase d'action).
     pub fn gain_action_points(&mut self, p: PlayerId, n: u8) {
-        if p == self.turn_player {
+        if p == self.turn_player && self.action_phase {
             self.player_mut(p).action_points += n;
         }
     }
@@ -457,14 +458,13 @@ impl GameState {
         self.emit(Event::Destroyed { card: id, owner });
     }
 
-    /// Bannir (CR 8.5.1). `face_down` : banni face cachée.
-    pub fn banish(&mut self, id: ObjectId, face_down: bool) {
+    /// Bannir (CR 8.5.1) : `by` bannit l'objet. `face_down` : banni face cachée.
+    pub fn banish(&mut self, by: PlayerId, id: ObjectId, face_down: bool) {
         let owner = self.obj(id).owner;
-        // CR 3.0.7a : la puissance est celle de l'objet au moment où il quitte sa zone.
         let power = if face_down {
             0
         } else {
-            self.power_if_public(id)
+            self.power_before_banish(id)
         };
         let from = self.move_to(id, Zone::Banished, true);
         if self.obj(id).zone == Zone::Banished {
@@ -472,10 +472,19 @@ impl GameState {
             self.emit(Event::Banished {
                 card: id,
                 owner,
+                by,
                 from,
                 power,
+                face_down,
             });
         }
+    }
+
+    /// Retourner face cachée une carte de la zone de bannissement (Hex
+    /// Gauntlet) : elle devient privée (CR 3.0.3), ses capacités comme blood
+    /// debt ne fonctionnent plus (CR 8.3.11a).
+    pub fn turn_face_down(&mut self, id: ObjectId) {
+        self.obj_mut(id).face_down = true;
     }
 
     /// Défausser (CR 8.5.5).

@@ -45,6 +45,7 @@ pub(crate) const ANY_TARGET: TargetSpec = TargetSpec {
     },
     optional: false,
     in_graveyard: false,
+    in_banished: false,
 };
 
 /// « target hero ».
@@ -53,6 +54,7 @@ pub(crate) const TARGET_HERO: TargetSpec = TargetSpec {
     filter: |_, _, t| matches!(t, Target::Player(_)),
     optional: false,
     in_graveyard: false,
+    in_banished: false,
 };
 
 /// « Deal N arcane damage to [la cible n° 0] » : la source est la carte.

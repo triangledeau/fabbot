@@ -168,7 +168,7 @@ fn au_cimetiere(t: &mut Partie, p: PlayerId, nom: &str, couleur: Option<Color>) 
 /// Bannit (face visible) une carte du deck (préparation d'un test).
 fn bannir(t: &mut Partie, p: PlayerId, nom: &str, couleur: Option<Color>) -> ObjectId {
     let c = du_deck(t, p, nom, couleur);
-    t.g.banish(c, false);
+    t.g.banish(p, c, false);
     t.g.refresh_priority();
     c
 }

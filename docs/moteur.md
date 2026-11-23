@@ -210,6 +210,32 @@ ou `add_prevention` (filtre de source, « if you prevent damage this way »).
   qui permettent encore de compléter « 2 Earth + 1 action » (3 cartes
   distinctes) sont proposées.
 
+## Blood debt, bannissement, Blasmophet (étape 3, deck Levia)
+
+- **Blood debt** (`Keywords::BLOOD_DEBT`, CR 8.3.11) : au début de la phase
+  de fin du joueur actif, une couche `RuleTrigger::BloodDebt` par carte
+  **face visible** de sa zone de bannissement (CR 8.3.11a) ; à la
+  résolution, il perd 1 PV, sauf si la capacité statique de son héros
+  `CardDef::blood_debt_immune` l'en dispense (Levia). Les déclenchements
+  d'un même mot-clé forment **une seule** option quand le joueur choisit
+  l'ordre de ses déclenchements, et sont empilés ensemble.
+- `banish(par, objet, face_cachée)` : l'événement `Banished` note **qui** a
+  banni (`by`, « if you've banished … »), le propriétaire (`owner`, « put
+  into your banished zone »), la puissance (dernier état dans l'arène, sinon
+  puissance **imprimée**, CR 1.7.4) et `face_down`. Requêtes :
+  `banished_power6_this_turn(p)` (zone de `p`), `you_banished_power6_this_turn(p)`
+  (banni par `p`), `you_banished_blood_debt_this_turn(p)`. `turn_face_down(id)`
+  (Hex Gauntlet).
+- **Cibles dans la zone de bannissement** : `TargetSpec::in_banished`
+  (Gate to i'Arathael), comme `in_graveyard`.
+- **« Once per turn, you may play … from your banished zone »** (Blasmophet,
+  the Insatiable Hunger) : `CardDef::play_from_banished` ; une permission
+  « this turn » (`permit_play`) est utilisée en priorité, sinon celle du
+  permanent, notée pour le tour (CR 5.1.3d). `banished_play_source(p, carte)`.
+- `gain_action_points` ne donne rien hors de la phase d'action du joueur
+  (CR 1.13.2b). `GameState::clear` est public (Unique, CR 8.3.48a, géré par
+  Goremass Summoning).
+
 ## Les événements et le journal du tour
 
 Tout ce qui se passe (carte jouée, attaque, défense, touche, pitch, dégâts,

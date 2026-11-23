@@ -117,6 +117,9 @@ pub enum RuleTrigger {
     SuspenseTick,
     /// CR 8.3.42 : « When this has no suspense counters, destroy it. »
     SuspenseEmpty,
+    /// CR 8.3.11 : « While this is in your banished zone, at the beginning
+    /// of your end phase, lose 1{h}. »
+    BloodDebt,
 }
 
 /// Une couche sur la pile.
@@ -776,7 +779,7 @@ impl GameState {
 
     /// « Clear » (CR 3.0.12) : au cimetière du propriétaire ; une proxy ou un
     /// token cesse d'exister.
-    pub(crate) fn clear(&mut self, id: ObjectId) {
+    pub fn clear(&mut self, id: ObjectId) {
         if self.obj(id).proxy_of.is_some() || self.def(id).types.has(Types::TOKEN) {
             let was_in_arena = self.obj(id).zone.in_arena();
             self.detach(id);
@@ -800,7 +803,7 @@ impl GameState {
         let power = if self.no_replacements() {
             0
         } else {
-            self.power_if_public(id)
+            self.power_before_banish(id)
         };
         let from = self.move_to(id, Zone::Graveyard, true);
         match self.obj(id).zone {
@@ -809,12 +812,16 @@ impl GameState {
                 owner,
                 from,
             }),
-            // Remplacé par « instead banish it » (ex. Embraforged Gauntlet).
+            // Remplacé par « instead banish it » (ex. Embraforged Gauntlet) :
+            // l'effet de remplacement est celui de la carte, contrôlé par son
+            // propriétaire.
             Zone::Banished => self.emit(Event::Banished {
                 card: id,
                 owner,
+                by: owner,
                 from,
                 power,
+                face_down: false,
             }),
             _ => {}
         }
@@ -826,6 +833,18 @@ impl GameState {
             self.power(id) as u16
         } else {
             0
+        }
+    }
+
+    /// Puissance d'un objet qui va être banni face visible : dernier état
+    /// connu s'il est dans l'arène (CR 3.0.7a), sinon puissance imprimée
+    /// (hors de l'arène, ses capacités statiques ne fonctionnent pas, CR 1.7.4 ;
+    /// une carte du deck ou de la main devient publique en arrivant).
+    pub(crate) fn power_before_banish(&self, id: ObjectId) -> u16 {
+        if self.obj(id).zone.in_arena() {
+            self.power_if_public(id)
+        } else {
+            self.def(id).power.unwrap_or(0) as u16
         }
     }
 

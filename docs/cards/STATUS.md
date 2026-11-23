@@ -42,6 +42,14 @@ sont `Tested` (code : `crates/cards/src/real/runeblade.rs`, tests :
 tokens **Runechant** et **Embodiment of Earth** sont aussi codés et testés.
 Blossom of Spring sert aussi au deck Arakni.
 
+**Étape 3, deck Levia (2026-11-23)** : toutes les cartes du deck Levia sont
+`Tested` (code : `crates/cards/src/real/shadow.rs`, token Agility dans
+`generic.rs` ; tests : `crates/cards/tests/cartes_shadow.rs` et
+`regles_etape3_levia.rs`). Les tokens **Agility**, **Gate to i'Arathael** et
+**Blasmophet, the Insatiable Hunger** sont aussi codés et testés. Darkest
+Hour (cherchée par Countdown to Extinction) n'est dans aucun de nos decks :
+elle n'est pas codée.
+
 | Carte | Couleur | Utilisée par | Statut |
 |---|---|---|---|
 | **Ira, Crimson Haze** | héros | Ira, Crimson Haze | Tested |
@@ -50,7 +58,7 @@ Blossom of Spring sert aussi au deck Arakni.
 | **Bravo, Flattering Showman** | héros | Bravo, Flattering Showman | Tested |
 | **Iyslander** | héros | Iyslander | Tested |
 | **Florian** | héros | Florian | Tested |
-| **Levia** | héros | Levia | NotCoded |
+| **Levia** | héros | Levia | Tested |
 | **Dromai** | héros | Dromai | NotCoded |
 | **Arakni, Web of Deceit** | héros | Arakni, Web of Deceit | NotCoded |
 | Aetherstorm Wellingtons | arène | Iyslander | Tested |
@@ -63,7 +71,7 @@ Blossom of Spring sert aussi au deck Arakni.
 | Blood Scent | arène | Ira, Crimson Haze | Tested |
 | Bloodied Oval | arène | Florian | Tested |
 | Blossom of Spring | arène | Arakni, Web of Deceit, Florian | Tested |
-| Buzzard Helm | arène | Levia | NotCoded |
+| Buzzard Helm | arène | Levia | Tested |
 | Civic Steps | arène | Bravo, Flattering Showman | Tested |
 | Crown of Dichotomy | arène | Florian | Tested |
 | Crucible of Aetherweave | arène | Iyslander | Tested |
@@ -73,14 +81,14 @@ Blossom of Spring sert aussi au deck Arakni.
 | Double Cross Strap | arène | Ira, Crimson Haze | Tested |
 | Edge Laden Plate | arène | Hala | Tested |
 | Edge of Autumn | arène | Ira, Crimson Haze | Tested |
-| Embraforged Gauntlet | arène | Levia | NotCoded |
+| Embraforged Gauntlet | arène | Levia | Tested |
 | Gauntlet of Boulderhold | arène | Bravo, Flattering Showman | Tested |
 | Gauntlets of Unity | arène | Dorinthea, Hala | Tested |
-| Hell Hammer | arène | Levia | NotCoded |
+| Hell Hammer | arène | Levia | Tested |
 | Helm of Lignum Vitae | arène | Florian | Tested |
 | Helm of Unity | arène | Dorinthea, Hala | Tested |
-| Hex Gauntlet | arène | Levia | NotCoded |
-| Hooves of the Shadowbeast | arène | Levia | NotCoded |
+| Hex Gauntlet | arène | Levia | Tested |
+| Hooves of the Shadowbeast | arène | Levia | Tested |
 | Mark of the Huntsman | arène | Arakni, Web of Deceit | NotCoded |
 | Mask of the Swarming Claw | arène | Ira, Crimson Haze | Tested |
 | Miller's Grindstone | arène | Bravo, Flattering Showman | Tested |
@@ -93,14 +101,14 @@ Blossom of Spring sert aussi au deck Arakni.
 | Plating of Unity | arène | Dorinthea | Tested |
 | Plume of Evergrowth | arène | Florian | Tested |
 | Pouncing Paws | arène | Ira, Crimson Haze | Tested |
-| Predatory Plating | arène | Levia | NotCoded |
+| Predatory Plating | arène | Levia | Tested |
 | Prey Spotters | arène | Arakni, Web of Deceit | NotCoded |
 | Refraction Bolters | arène | Dorinthea | Tested |
 | Richter Scale | arène | Bravo, Flattering Showman | Tested |
 | Scepter of Pain | arène | Florian | Tested |
 | Seeker's Leggings | arène | Dromai | NotCoded |
 | Silken Shroud | arène | Dromai | NotCoded |
-| Skera Strapping | arène | Levia | NotCoded |
+| Skera Strapping | arène | Levia | Tested |
 | Smoldering Scales | arène | Dromai | NotCoded |
 | Spellfire Cloak | arène | Iyslander | Tested |
 | Stalker's Steps | arène | Arakni, Web of Deceit | NotCoded |
@@ -115,7 +123,7 @@ Blossom of Spring sert aussi au deck Arakni.
 | Well Grounded | arène | Florian | Tested |
 | Zenith Blade | arène | Hala | Tested |
 | Aethersling | red | Iyslander | Tested |
-| Agile Windup | yellow | Levia | NotCoded |
+| Agile Windup | yellow | Levia | Tested |
 | Amplify the Arknight | blue | Florian | Tested |
 | Amplify the Arknight | red | Florian | Tested |
 | Arcane Polarity | red | Arakni, Web of Deceit, Bravo, Flattering Showman, Dorinthea, Florian, Hala, Ira, Crimson Haze, Iyslander | Tested |
@@ -132,7 +140,7 @@ Blossom of Spring sert aussi au deck Arakni.
 | Blaze Headlong | red | Dromai | NotCoded |
 | Blessing of Qi | red | Ira, Crimson Haze | Tested |
 | Bluster Buff | red | Ira, Crimson Haze | Tested |
-| Boneyard Marauder | red | Levia | NotCoded |
+| Boneyard Marauder | red | Levia | Tested |
 | Boulder Drop | blue | Bravo, Flattering Showman | Tested |
 | Boulder Drop | red | Bravo, Flattering Showman | Tested |
 | Brutal Assault | blue | Hala | Tested |
@@ -141,42 +149,42 @@ Blossom of Spring sert aussi au deck Arakni.
 | Chokeslam | blue | Bravo, Flattering Showman | Tested |
 | Chokeslam | red | Bravo, Flattering Showman | Tested |
 | Chorus of Rotwood | red | Florian | Tested |
-| Clash of Agility | blue | Levia | NotCoded |
+| Clash of Agility | blue | Levia | Tested |
 | Clash of Might | blue | Bravo, Flattering Showman | Tested |
 | Clash of Mountains | blue | Bravo, Flattering Showman | Tested |
 | Clash of Vigor | blue | Bravo, Flattering Showman | Tested |
-| Cleave the Heavens | blue | Levia | NotCoded |
-| Cleave the Heavens | red | Levia | NotCoded |
+| Cleave the Heavens | blue | Levia | Tested |
+| Cleave the Heavens | red | Levia | Tested |
 | Colors of Aria | red | Florian | Tested |
 | Concoct Disorder | red | Arakni, Web of Deceit | NotCoded |
-| Consuming Strength | yellow | Levia | NotCoded |
-| Countdown to Extinction | red | Levia | NotCoded |
+| Consuming Strength | yellow | Levia | Tested |
+| Countdown to Extinction | red | Levia | Tested |
 | Crash and Bash | red | Bravo, Flattering Showman | Tested |
 | Crush Confidence | red | Bravo, Flattering Showman | Tested |
 | Cut n' Carve | blue | Hala | Tested |
-| Dam the Shadowake | red | Levia | NotCoded |
-| Deadwood Rumbler | blue | Levia | NotCoded |
+| Dam the Shadowake | red | Levia | Tested |
+| Deadwood Rumbler | blue | Levia | Tested |
 | Debilitate | blue | Bravo, Flattering Showman | Tested |
 | Debilitate | red | Bravo, Flattering Showman | Tested |
 | Disable | blue | Bravo, Flattering Showman | Tested |
 | Display of Craftsmanship | blue | Dorinthea, Hala | Tested |
 | Display of Craftsmanship | red | Hala | Tested |
 | Double Trouble | red | Arakni, Web of Deceit | NotCoded |
-| Dread Screamer | blue | Levia | NotCoded |
-| Dread Screamer | red | Levia | NotCoded |
-| Dread Screamer | yellow | Levia | NotCoded |
+| Dread Screamer | blue | Levia | Tested |
+| Dread Screamer | red | Levia | Tested |
+| Dread Screamer | yellow | Levia | Tested |
 | Dunebreaker Cenipai | red | Dromai | NotCoded |
 | Dustup | red | Dromai | NotCoded |
 | Edict of Steel | blue | Hala | Tested |
 | Edict of Steel | red | Hala | Tested |
 | Edict of Steel | yellow | Hala | Tested |
-| Endless Maw | red | Levia | NotCoded |
-| Engulfing Shadows | yellow | Levia | NotCoded |
+| Endless Maw | red | Levia | Tested |
+| Engulfing Shadows | yellow | Levia | Tested |
 | Essence of Ancestry: Body | red | Dromai | NotCoded |
 | Fatal Engagement | blue | Hala | Tested |
 | Fault Line | red | Bravo, Flattering Showman | Tested |
-| Feasting Shadowbeast | red | Levia | NotCoded |
-| Feeding Frenzy | red | Levia | NotCoded |
+| Feasting Shadowbeast | red | Levia | Tested |
+| Feeding Frenzy | red | Levia | Tested |
 | Feign Vengeance | blue | Ira, Crimson Haze | Tested |
 | Felling Swing | blue | Dorinthea | Tested |
 | Felling Swing | red | Dorinthea | Tested |
@@ -190,9 +198,9 @@ Blossom of Spring sert aussi au deck Arakni.
 | Fruits of the Forest | yellow | Florian | Tested |
 | Fyendal's Fighting Spirit | blue | Dorinthea | Tested |
 | Fyendal's Fighting Spirit | red | Dorinthea, Hala, Iyslander | Tested |
-| Goremass Summoning | blue | Levia | NotCoded |
-| Graveling Growl | red | Levia | NotCoded |
-| Graveling Growl | yellow | Levia | NotCoded |
+| Goremass Summoning | blue | Levia | Tested |
+| Graveling Growl | red | Levia | Tested |
+| Graveling Growl | yellow | Levia | Tested |
 | Growl | red | Ira, Crimson Haze | Tested |
 | Harvest Season | red | Florian | Tested |
 | Hit and Run | blue | Dorinthea | Tested |
@@ -273,9 +281,9 @@ Blossom of Spring sert aussi au deck Arakni.
 | Sirens of Safe Harbor | red | Dorinthea, Hala, Ira, Crimson Haze | Tested |
 | Sirens of Safe Harbor | yellow | Hala, Ira, Crimson Haze | Tested |
 | Sit! | red | Bravo, Flattering Showman | Tested |
-| Smashback Alehorn | blue | Levia | NotCoded |
+| Smashback Alehorn | blue | Levia | Tested |
 | Snatch | red | Dromai | NotCoded |
-| Soul Harvest | blue | Levia | NotCoded |
+| Soul Harvest | blue | Levia | Tested |
 | Stains of the Redback | red | Arakni, Web of Deceit | NotCoded |
 | Staunch Response | red | Bravo, Flattering Showman | Tested |
 | Steelblade Shunt | blue | Dorinthea | Tested |
@@ -285,7 +293,7 @@ Blossom of Spring sert aussi au deck Arakni.
 | Sweeping Blow | red | Dromai | NotCoded |
 | Swordmaster's Path | blue | Hala | Tested |
 | Swordmaster's Path | red | Hala | Tested |
-| Test of Agility | red | Levia | NotCoded |
+| Test of Agility | red | Levia | Tested |
 | Test of Vigor | red | Bravo, Flattering Showman | Tested |
 | The Suspense is Killing Me | blue | Bravo, Flattering Showman | Tested |
 | Thunder Quake | blue | Bravo, Flattering Showman | Tested |
@@ -297,11 +305,11 @@ Blossom of Spring sert aussi au deck Arakni.
 | Turn to Mindfire | red | Iyslander | Tested |
 | Unmovable | red | Iyslander | Tested |
 | Untamed | red | Ira, Crimson Haze | Tested |
-| Vigorous Smashup | blue | Levia | NotCoded |
-| Vigorous Smashup | red | Levia | NotCoded |
-| Vigorous Smashup | yellow | Levia | NotCoded |
+| Vigorous Smashup | blue | Levia | Tested |
+| Vigorous Smashup | red | Levia | Tested |
+| Vigorous Smashup | yellow | Levia | Tested |
 | Voltic Bolt | blue | Iyslander | Tested |
 | Voltic Bolt | red | Iyslander | Tested |
 | Winter's Bite | blue | Iyslander | Tested |
 | Wounded Bull | red | Iyslander | Tested |
-| Wrecker Romp | blue | Levia | NotCoded |
+| Wrecker Romp | blue | Levia | Tested |

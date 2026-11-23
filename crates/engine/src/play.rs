@@ -10,6 +10,12 @@ use crate::state::{
 };
 use crate::zones::Zone;
 
+/// Case de `Object::activations` qui note l'usage, ce tour, de la permission
+/// « Once per turn, you may play … from your banished zone » d'un permanent
+/// (remise à zéro à la fin de chaque tour, comme les activations). Les
+/// permanents qui ont cette permission n'ont pas 4 capacités activées.
+const BANISHED_PLAY_SLOT: usize = 3;
+
 impl GameState {
     /// Toutes les options d'un joueur qui a la priorité. `Pass` est toujours la dernière.
     pub fn legal_priority_options(&self, p: PlayerId) -> Vec<Choice> {
@@ -21,8 +27,8 @@ impl GameState {
             }
         }
         // Objets que le joueur a la permission de jouer depuis sa zone de
-        // bannissement (« you may play it this turn »).
-        if !self.play_permissions.is_empty() {
+        // bannissement (« you may play it this turn », Blasmophet).
+        if !self.play_permissions.is_empty() || self.banished_play_sources(p).next().is_some() {
             for &c in &ps.banished {
                 if self.can_play(p, c) && !opts.contains(&Choice::Play(c)) {
                     opts.push(Choice::Play(c));
@@ -227,7 +233,8 @@ impl GameState {
             // zone publique hors de l'arène.
             let public_here = (o.zone.in_arena() && o.zone != Zone::Hero)
                 || o.zone == Zone::Stack
-                || (spec.in_graveyard && o.zone == Zone::Graveyard);
+                || (spec.in_graveyard && o.zone == Zone::Graveyard)
+                || (spec.in_banished && o.zone == Zone::Banished);
             if !public_here || o.face_down {
                 continue;
             }
@@ -287,7 +294,8 @@ impl GameState {
         // propriétaire, sauf permission (« you may play it [from your banished
         // zone] this turn », CR 1.0.2 : une permission).
         let zone_ok = matches!(o.zone, Zone::Hand | Zone::Arsenal)
-            || (o.zone == Zone::Banished && self.play_permitted(p, c));
+            || (o.zone == Zone::Banished
+                && (self.play_permitted(p, c) || self.banished_play_source(p, c).is_some()));
         if o.owner != p || !zone_ok {
             return false;
         }
@@ -314,6 +322,30 @@ impl GameState {
         };
         self.some_mode_has_targets(&def.targets, def.modes.len(), ctx)
             && self.play_cost_as(p, c, card) <= self.available_resources(p, Some(c))
+    }
+
+    /// Les permanents de `p` qui ont « Once per turn, you may play … from
+    /// your banished zone » et ne l'ont pas encore utilisé ce tour.
+    fn banished_play_sources(&self, p: PlayerId) -> impl Iterator<Item = ObjectId> + '_ {
+        self.permanents.iter().copied().filter(move |&s| {
+            let o = self.obj(s);
+            o.controller == p
+                && o.activations[BANISHED_PLAY_SLOT] == 0
+                && self.def(s).play_from_banished.is_some()
+                && !self.lost_abilities(s)
+        })
+    }
+
+    /// Le permanent dont la permission (« Once per turn, you may play … from
+    /// your banished zone ») permet à `p` de jouer `c` depuis sa zone de
+    /// bannissement (Blasmophet, the Insatiable Hunger).
+    pub fn banished_play_source(&self, p: PlayerId, c: ObjectId) -> Option<ObjectId> {
+        let o = self.obj(c);
+        if o.zone != Zone::Banished || o.face_down || o.owner != p {
+            return None;
+        }
+        self.banished_play_sources(p)
+            .find(|&s| (self.def(s).play_from_banished.unwrap())(self, s, c))
     }
 
     pub(crate) fn can_activate(&self, p: PlayerId, src: ObjectId, i: u8) -> bool {
@@ -434,6 +466,16 @@ impl GameState {
 
     fn play_card_now(&mut self, p: PlayerId, c: ObjectId) {
         let origin = self.obj(c).zone;
+        // CR 5.1.3d : depuis la zone de bannissement, le joueur utilise une
+        // permission « you may play it this turn » s'il en a une ; sinon la
+        // permission « once per turn » d'un permanent (Blasmophet), qui est
+        // alors utilisée pour ce tour. (Le joueur n'a jamais intérêt à
+        // dépenser la permission « once per turn » à la place de l'autre.)
+        if origin == Zone::Banished && !self.play_permitted(p, c) {
+            if let Some(s) = self.banished_play_source(p, c) {
+                self.obj_mut(s).activations[BANISHED_PLAY_SLOT] = 1;
+            }
+        }
         // CR 5.1.3d, 8.1.1d : une action jouée « as though it were an
         // instant » ne coûte pas de point d'action. Le joueur n'a jamais
         // intérêt à ne pas utiliser la permission : elle est déclarée d'office

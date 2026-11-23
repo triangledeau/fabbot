@@ -441,6 +441,7 @@ fn deck_cards(db: &mut CardDb) {
         },
         optional: false,
         in_graveyard: false,
+        in_banished: false,
     }];
     d.resolve = vec![Op::Do(|g, c| {
         if let Some(r) = target_obj(c, 0) {
