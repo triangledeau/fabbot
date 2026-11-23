@@ -236,6 +236,52 @@ ou `add_prevention` (filtre de source, « if you prevent damage this way »).
   (CR 1.13.2b). `GameState::clear` est public (Unique, CR 8.3.48a, géré par
   Goremass Summoning).
 
+## Ash, transform, invocations, alliés (étape 3, deck Dromai)
+
+- **Cartes sous un permanent** (sub-cards, CR 3.0.14) : zone `Zone::Under`
+  (hors de l'arène, CR 3.0.14b) ; `GameState::sub_cards` note les paires
+  (dessous, dessus), `cards_under(top)`. `put_under(objet, top)` : l'objet
+  devient un nouvel objet. Quand le permanent du dessus cesse d'exister ou
+  devient un nouvel objet, ses sub-cards sont « clear » (CR 3.0.14e).
+- **Material** (CR 8.4.5) : `CardDef::material` (mots-clés donnés au
+  permanent du dessus, ex. Ash : phantasm), ajoutés dans `keywords()`.
+- **Transform** (CR 8.5.36) : `transform_into_token(p, objets, token)`
+  (crée le token puis met les objets dessous, CR 8.5.36c-d) et
+  `transform_into_card(p, objets, carte)` (la carte devient d'abord un
+  permanent, CR 8.5.36b).
+- **Cartes retournables** (CR 9.1.3) : `CardDef::flip` ([`Flip`] : face
+  avant, face arrière, deux définitions). Une invocation qui se résout entre
+  dans l'arène face arrière active (CR 8.2.13a, `become_permanent`) ; hors de
+  l'arène, la face avant revient (CR 9.1.3b), **après** l'événement
+  `LeaveArena` (capacités « when this leaves the arena » de la face arrière).
+  `set_card` change la face en tenant à jour les listes d'optimisation.
+  CR 5.3.5a : une carte devenue permanent pendant sa résolution garde le go
+  again de sa couche.
+- **Phantasm** (CR 8.3.13) : `RuleTrigger::Phantasm`, déclenché après les
+  déclarations de défense si une carte d'action d'attaque non-Illusionist de
+  6{p} ou plus défend ; pour une attaque d'allié, c'est l'allié qui est
+  détruit. **CR 7.7.2c** : si l'attaque active (ou la source d'une proxy)
+  disparaît avant les dégâts et que la file est vide, la chaîne se ferme
+  (action de l'état de jeu, `check_attack_gone`).
+- **Alliés qui attaquent** : capacité « Attack » accordée par une capacité
+  statique (`CardDef::grants_attack`, Storm of Sandikai) ; l'allié porte la
+  capacité dans sa définition avec la condition `attack_granted`. Un allié
+  qui attaque est sur la chaîne de combat : il reste un permanent vivant
+  (dégâts, mort, `attacking_allies`), ses capacités statiques fonctionnent.
+- **Vie des alliés** : `Object::life_counters` (compteurs ±1{h}, Nekria) ;
+  CR 4.4.3a, la vie revient à sa base au début de la procédure de fin de
+  tour (`reset_ally_life`). Prévention d'un allié : `CardDef::counter_prevention`
+  (Yendurai, `PreventRef::Counter`).
+- **Contrôle** : `steal_until_end_of_action_phase` (CR 8.5.54, Jack Be
+  Quick, rendu à la fin de la phase d'action), `gain_control` (CR 8.5.35,
+  Kyloria). Un allié qui revient de la chaîne garde son contrôleur.
+- `CardDef::silences_opponents` (Themai) : l'adversaire n'a que « passer »
+  pendant votre tour (`silenced`).
+- Préventions : quand détruire un objet par ward peut déclencher une
+  capacité, le joueur choisit l'ordre même si tout sera utilisé (CR 6.5.5,
+  ex. Essence of Ancestry: Body).
+- `generic::opt1()` : Opt 1 (CR 8.5.22).
+
 ## Les événements et le journal du tour
 
 Tout ce qui se passe (carte jouée, attaque, défense, touche, pitch, dégâts,

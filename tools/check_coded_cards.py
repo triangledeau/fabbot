@@ -47,27 +47,36 @@ problems = 0
 for c in coded:
     # Carte double : « Arcane Seeds // Life » s'écrit « Arcane Seeds||Life ».
     name = c["name"].replace(" // ", "||")
-    r = official.get((name, (c["color"] or "").lower() or None))
+    face = "face_1_"
+    if c.get("back_of"):
+        # Face arrière d'une carte retournable (ex. Azvolai, dos d'Invoke
+        # Azvolai) : la carte officielle est nommée par sa face avant.
+        face = "face_2_"
+        r = official.get((c["back_of"], "red"))
+        if r is not None and r["face_2_true_name"] != c["name"]:
+            r = None
+    else:
+        r = official.get((name, (c["color"] or "").lower() or None))
     if r is None:
         print(f"ABSENTE  {c['name']} {c['color']}")
         problems += 1
         continue
     for field in ["pitch", "cost", "power", "defense", "life", "intellect"]:
-        expected = num(r["face_1_true_" + field])
+        expected = num(r[face + "true_" + field])
         if c[field] != expected:
             print(f"ÉCART    {c['name']} {c['color']} {field} : codé {c[field]}, officiel {expected}")
             problems += 1
-    typebox = r["face_1_true_typebox"]
+    typebox = r[face + "true_typebox"]
     for w in c["typebox"]:
         if w not in typebox:
             print(f"TYPE     {c['name']} {c['color']} : « {w} » absent de « {typebox} »")
             problems += 1
-    text = re.sub(r"_\(.*?\)_", "", r["face_1_true_textbox"])  # sans les rappels
+    text = re.sub(r"_\(.*?\)_", "", r[face + "true_textbox"])  # sans les rappels
     for k in c["keywords"]:
         if k.lower() not in text.lower():
             print(f"MOT-CLÉ  {c['name']} {c['color']} : « {k} » absent du texte")
             problems += 1
-    for k in ["Go again", "Dominate", "Battleworn", "Temper", "Guardwell", "Blade Break", "Ambush", "Ephemeral", "Suspense", "Blood Debt"]:
+    for k in ["Go again", "Dominate", "Battleworn", "Temper", "Guardwell", "Blade Break", "Ambush", "Ephemeral", "Suspense", "Blood Debt", "Phantasm", "Spectra"]:
         # « **Blood Debt ** » : certaines cartes ont une espace avant les **.
         printed = re.search(r"\*\*" + k + r"\s*\*\*\s*(\{br\}|$)", text, re.I)
         if printed and k not in c["keywords"]:

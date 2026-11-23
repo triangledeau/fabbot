@@ -66,6 +66,7 @@ impl GameState {
                     proxy_of: None,
                     activations: [0; 4],
                     life_delta: 0,
+                    life_counters: 0,
                 });
                 ObjectId(objects.len() as u32 - 1)
             };
@@ -182,6 +183,8 @@ impl GameState {
             end_reason: None,
             max_turns: setup.max_turns,
             trigger_objects: Vec::new(),
+            sub_cards: Vec::new(),
+            steals: Vec::new(),
         };
         g.trigger_objects = (0..g.objects.len() as u32)
             .map(ObjectId)

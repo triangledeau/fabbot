@@ -13,8 +13,10 @@
 //! - [`guardian`] : cartes Guardian (Bravo) ;
 //! - [`wizard`] : cartes Wizard, Elemental et Ice (Iyslander) ;
 //! - [`runeblade`] : cartes Runeblade, Earth et Elemental (Florian) ;
-//! - [`shadow`] : cartes Shadow et Brute (Levia).
+//! - [`shadow`] : cartes Shadow et Brute (Levia) ;
+//! - [`draconic`] : cartes Draconic et Illusionist (Dromai).
 
+pub mod draconic;
 pub mod generic;
 pub mod guardian;
 pub mod ninja;
@@ -38,6 +40,7 @@ pub fn build() -> CardDb {
     wizard::add(&mut db);
     runeblade::add(&mut db);
     shadow::add(&mut db);
+    draconic::add(&mut db);
     db
 }
 
@@ -52,6 +55,7 @@ pub fn build_names() -> Vec<&'static str> {
         .chain(wizard::NAMES.iter())
         .chain(runeblade::NAMES.iter())
         .chain(shadow::NAMES.iter())
+        .chain(draconic::NAMES.iter())
         .copied()
         .collect()
 }

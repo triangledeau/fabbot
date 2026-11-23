@@ -52,6 +52,9 @@ pub enum PreventRef {
     /// Prévention statique de cet objet : « If you would be dealt arcane
     /// damage, prevent N of that damage » (`CardDef::prevent_arcane`).
     Static(ObjectId),
+    /// « If this would be dealt damage, remove a counter from it to prevent
+    /// N of that damage » (Yendurai, `CardDef::counter_prevention`).
+    Counter(ObjectId),
 }
 
 struct PreventCandidate {
@@ -189,7 +192,17 @@ impl GameState {
             // Si toutes les préventions sont obligatoires et qu'elles seront
             // toutes entièrement utilisées, l'ordre ne change rien.
             let total: Option<i32> = cands.iter().map(|c| c.amount).sum();
-            if all_mandatory && (cands.len() == 1 || total.is_some_and(|t| t <= ev.amount)) {
+            // Sauf si détruire un objet par ward peut déclencher une capacité
+            // (ex. Essence of Ancestry: Body, dont la condition dépend des
+            // autres auras encore là) : le joueur choisit l'ordre (CR 6.5.5).
+            let order_matters = cands.len() > 1
+                && cands.iter().any(
+                    |c| matches!(c.what, PreventRef::Ward(o) if !self.def(o).triggers.is_empty()),
+                );
+            if all_mandatory
+                && !order_matters
+                && (cands.len() == 1 || total.is_some_and(|t| t <= ev.amount))
+            {
                 self.apply_prevention(&mut ev, cands[0].what);
                 continue;
             }
@@ -214,10 +227,27 @@ impl GameState {
     /// Les préventions actives pour un événement de dégâts (CR 6.4.2).
     fn prevention_candidates(&self, ev: &DamageEvent) -> Vec<PreventCandidate> {
         let mut v = Vec::new();
-        // TODO(règles) : préventions des dégâts infligés à un allié (aucune
-        // carte des 9 decks n'en crée).
-        let Target::Player(p) = ev.target else {
-            return v;
+        // Dégâts à un allié : seule sa propre prévention « remove a counter
+        // to prevent N » (Yendurai) existe dans nos 9 decks.
+        let p = match ev.target {
+            Target::Player(p) => p,
+            Target::Object(r) => {
+                let o = r.id;
+                let n = self.def(o).counter_prevention;
+                let what = PreventRef::Counter(o);
+                if n > 0
+                    && self.obj(o).counters > 0
+                    && !self.lost_abilities(o)
+                    && !ev.used.contains(&what)
+                {
+                    v.push(PreventCandidate {
+                        what,
+                        optional: false,
+                        amount: Some(n as i32),
+                    });
+                }
+                return v;
+            }
         };
         let src_ref = ev.source.map(|s| self.obj_ref(s));
         for prev in &self.preventions {
@@ -315,6 +345,13 @@ impl GameState {
     /// Applique une prévention à l'événement (CR 6.4.10a).
     pub(crate) fn apply_prevention(&mut self, ev: &mut DamageEvent, what: PreventRef) {
         ev.used.push(what);
+        if let PreventRef::Counter(o) = what {
+            let n = (self.def(o).counter_prevention as i32).min(ev.amount);
+            let obj = self.obj_mut(o);
+            obj.counters = obj.counters.saturating_sub(1);
+            ev.amount -= n;
+            return;
+        }
         let Target::Player(p) = ev.target else {
             return;
         };
@@ -357,6 +394,7 @@ impl GameState {
                 let n = (self.def(o).prevent_arcane as i32).min(ev.amount);
                 ev.amount -= n;
             }
+            PreventRef::Counter(_) => unreachable!("traité plus haut"),
         }
     }
 
@@ -412,7 +450,8 @@ impl GameState {
             Target::Object(r) => {
                 let base = self.def(r.id).life.unwrap_or(0) as i16;
                 let o = self.obj_mut(r.id);
-                o.life_delta = (o.life_delta - dealt as i16).max(-base);
+                let max_loss = (base + o.life_counters as i16).max(0);
+                o.life_delta = (o.life_delta - dealt as i16).max(-max_loss);
                 let c = o.controller;
                 self.check_allies = true;
                 (c, Some(r.id))
@@ -563,6 +602,7 @@ impl GameState {
             proxy_of: None,
             activations: [0; 4],
             life_delta: 0,
+            life_counters: 0,
         });
         let id = ObjectId(self.objects.len() as u32 - 1);
         if !self.db.get(card).triggers.is_empty() {

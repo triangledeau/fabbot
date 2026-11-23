@@ -50,6 +50,14 @@ Blossom of Spring sert aussi au deck Arakni.
 Hour (cherchée par Countdown to Extinction) n'est dans aucun de nos decks :
 elle n'est pas codée.
 
+**Étape 3, deck Dromai (2026-11-23)** : toutes les cartes du deck Dromai
+sont `Tested` (code : `crates/cards/src/real/draconic.rs` et `generic.rs` ;
+tests : `crates/cards/tests/cartes_draconic.rs` et
+`regles_etape3_dromai.rs`). Les huit dragons (faces arrière des Invoke :
+Azvolai, Cromai, Kyloria, Miragai, Nekria, Ouvia, Themai, Yendurai) et les
+tokens **Ash**, **Aether Ashwing** et **Spectral Shield** sont aussi codés et
+testés. Nimblism et Oasis Respite servent aussi au deck Arakni.
+
 | Carte | Couleur | Utilisée par | Statut |
 |---|---|---|---|
 | **Ira, Crimson Haze** | héros | Ira, Crimson Haze | Tested |
@@ -59,7 +67,7 @@ elle n'est pas codée.
 | **Iyslander** | héros | Iyslander | Tested |
 | **Florian** | héros | Florian | Tested |
 | **Levia** | héros | Levia | Tested |
-| **Dromai** | héros | Dromai | NotCoded |
+| **Dromai** | héros | Dromai | Tested |
 | **Arakni, Web of Deceit** | héros | Arakni, Web of Deceit | NotCoded |
 | Aetherstorm Wellingtons | arène | Iyslander | Tested |
 | Annals of Sutcliffe | arène | Florian | Tested |
@@ -77,7 +85,7 @@ elle n'est pas codée.
 | Crucible of Aetherweave | arène | Iyslander | Tested |
 | Danger Digits | arène | Arakni, Web of Deceit | NotCoded |
 | Decimator Great Axe | arène | Dorinthea | Tested |
-| Deep Blue | arène | Dromai | NotCoded |
+| Deep Blue | arène | Dromai | Tested |
 | Double Cross Strap | arène | Ira, Crimson Haze | Tested |
 | Edge Laden Plate | arène | Hala | Tested |
 | Edge of Autumn | arène | Ira, Crimson Haze | Tested |
@@ -106,20 +114,20 @@ elle n'est pas codée.
 | Refraction Bolters | arène | Dorinthea | Tested |
 | Richter Scale | arène | Bravo, Flattering Showman | Tested |
 | Scepter of Pain | arène | Florian | Tested |
-| Seeker's Leggings | arène | Dromai | NotCoded |
-| Silken Shroud | arène | Dromai | NotCoded |
+| Seeker's Leggings | arène | Dromai | Tested |
+| Silken Shroud | arène | Dromai | Tested |
 | Skera Strapping | arène | Levia | Tested |
-| Smoldering Scales | arène | Dromai | NotCoded |
+| Smoldering Scales | arène | Dromai | Tested |
 | Spellfire Cloak | arène | Iyslander | Tested |
 | Stalker's Steps | arène | Arakni, Web of Deceit | NotCoded |
 | Steelbraid Buckler | arène | Bravo, Flattering Showman | Tested |
-| Storm of Sandikai | arène | Dromai | NotCoded |
+| Storm of Sandikai | arène | Dromai | Tested |
 | Tearing Shuko | arène | Ira, Crimson Haze | Tested |
-| Time Skippers | arène | Dromai | NotCoded |
+| Time Skippers | arène | Dromai | Tested |
 | Topsy Turvy | arène | Arakni, Web of Deceit | NotCoded |
 | Unflinching Foothold | arène | Bravo, Flattering Showman, Iyslander | Tested |
 | Unyielding Grip | arène | Florian | Tested |
-| Wave of Reality | arène | Dromai | NotCoded |
+| Wave of Reality | arène | Dromai | Tested |
 | Well Grounded | arène | Florian | Tested |
 | Zenith Blade | arène | Hala | Tested |
 | Aethersling | red | Iyslander | Tested |
@@ -134,10 +142,10 @@ elle n'est pas codée.
 | Autumn's Touch | blue | Florian | Tested |
 | Autumn's Touch | red | Florian | Tested |
 | Autumn's Touch | yellow | Florian | Tested |
-| Billowing Mirage | red | Dromai | NotCoded |
+| Billowing Mirage | red | Dromai | Tested |
 | Bite | red | Arakni, Web of Deceit | NotCoded |
 | Bittering Thorns | red | Ira, Crimson Haze | Tested |
-| Blaze Headlong | red | Dromai | NotCoded |
+| Blaze Headlong | red | Dromai | Tested |
 | Blessing of Qi | red | Ira, Crimson Haze | Tested |
 | Bluster Buff | red | Ira, Crimson Haze | Tested |
 | Boneyard Marauder | red | Levia | Tested |
@@ -173,14 +181,14 @@ elle n'est pas codée.
 | Dread Screamer | blue | Levia | Tested |
 | Dread Screamer | red | Levia | Tested |
 | Dread Screamer | yellow | Levia | Tested |
-| Dunebreaker Cenipai | red | Dromai | NotCoded |
-| Dustup | red | Dromai | NotCoded |
+| Dunebreaker Cenipai | red | Dromai | Tested |
+| Dustup | red | Dromai | Tested |
 | Edict of Steel | blue | Hala | Tested |
 | Edict of Steel | red | Hala | Tested |
 | Edict of Steel | yellow | Hala | Tested |
 | Endless Maw | red | Levia | Tested |
 | Engulfing Shadows | yellow | Levia | Tested |
-| Essence of Ancestry: Body | red | Dromai | NotCoded |
+| Essence of Ancestry: Body | red | Dromai | Tested |
 | Fatal Engagement | blue | Hala | Tested |
 | Fault Line | red | Bravo, Flattering Showman | Tested |
 | Feasting Shadowbeast | red | Levia | Tested |
@@ -210,17 +218,17 @@ elle n'est pas codée.
 | Ice Bolt | red | Iyslander | Tested |
 | Ice Eternal | blue | Iyslander | Tested |
 | Infect | red | Arakni, Web of Deceit | NotCoded |
-| Invoke Azvolai | red | Dromai | NotCoded |
-| Invoke Cromai | red | Dromai | NotCoded |
-| Invoke Kyloria | red | Dromai | NotCoded |
-| Invoke Miragai | red | Dromai | NotCoded |
-| Invoke Nekria | red | Dromai | NotCoded |
-| Invoke Ouvia | red | Dromai | NotCoded |
-| Invoke Themai | red | Dromai | NotCoded |
-| Invoke Yendurai | red | Dromai | NotCoded |
+| Invoke Azvolai | red | Dromai | Tested |
+| Invoke Cromai | red | Dromai | Tested |
+| Invoke Kyloria | red | Dromai | Tested |
+| Invoke Miragai | red | Dromai | Tested |
+| Invoke Nekria | red | Dromai | Tested |
+| Invoke Ouvia | red | Dromai | Tested |
+| Invoke Themai | red | Dromai | Tested |
+| Invoke Yendurai | red | Dromai | Tested |
 | Ironsong Response | blue | Dorinthea | Tested |
 | Ironsong Response | red | Hala | Tested |
-| Jack Be Quick | red | Dromai | NotCoded |
+| Jack Be Quick | red | Dromai | Tested |
 | Lair of the Spider | red | Arakni, Web of Deceit | NotCoded |
 | Lay Low | yellow | Dorinthea | Tested |
 | Legacy of Ikaru | blue | Ira, Crimson Haze | Tested |
@@ -230,15 +238,15 @@ elle n'est pas codée.
 | Mark of the Funnel Web | red | Arakni, Web of Deceit | NotCoded |
 | Mark the Prey | red | Arakni, Web of Deceit | NotCoded |
 | Night's Embrace | blue | Arakni, Web of Deceit | NotCoded |
-| Nimblism | red | Arakni, Web of Deceit, Dromai | NotCoded |
-| Oasis Respite | red | Arakni, Web of Deceit, Dromai | NotCoded |
+| Nimblism | red | Arakni, Web of Deceit, Dromai | Tested |
+| Oasis Respite | red | Arakni, Web of Deceit, Dromai | Tested |
 | Oath of the Arknight | blue | Florian | Tested |
 | On the Horizon | red | Dorinthea, Dromai, Florian, Hala, Ira, Crimson Haze, Iyslander | Tested |
 | Orb-Weaver Spinneret | red | Arakni, Web of Deceit | NotCoded |
-| Outed | red | Dromai | NotCoded |
+| Outed | red | Dromai | Tested |
 | Overpower | blue | Dorinthea | Tested |
 | Overpower | red | Dorinthea | Tested |
-| Passing Mirage | blue | Dromai | NotCoded |
+| Passing Mirage | blue | Dromai | Tested |
 | Photon Splicing | blue | Iyslander | Tested |
 | Pick Up the Point | red | Arakni, Web of Deceit | NotCoded |
 | Pouncing Qi | blue | Ira, Crimson Haze | Tested |
@@ -250,7 +258,7 @@ elle n'est pas codée.
 | Pyroglyphic Protection | blue | Iyslander | Tested |
 | Qi Unleashed | blue | Ira, Crimson Haze | Tested |
 | Raging Onslaught | blue | Dorinthea | Tested |
-| Rake the Embers | red | Dromai | NotCoded |
+| Rake the Embers | red | Dromai | Tested |
 | Ravenous Rabble | red | Arakni, Web of Deceit, Dromai, Iyslander | Tested |
 | Razor Reflex | red | Arakni, Web of Deceit, Ira, Crimson Haze | Tested |
 | Razor's Edge | red | Arakni, Web of Deceit | NotCoded |
@@ -264,7 +272,7 @@ elle n'est pas codée.
 | Rootbound Carapace | red | Florian | Tested |
 | Rootbound Carapace | yellow | Florian | Tested |
 | Runeblood Incantation | red | Florian | Tested |
-| Sand Cover | red | Dromai | NotCoded |
+| Sand Cover | red | Dromai | Tested |
 | Scar for a Scar | red | Dromai, Ira, Crimson Haze, Iyslander | Tested |
 | Seek Vengeance | blue | Ira, Crimson Haze | Tested |
 | Seek Vengeance | red | Ira, Crimson Haze | Tested |
@@ -282,7 +290,7 @@ elle n'est pas codée.
 | Sirens of Safe Harbor | yellow | Hala, Ira, Crimson Haze | Tested |
 | Sit! | red | Bravo, Flattering Showman | Tested |
 | Smashback Alehorn | blue | Levia | Tested |
-| Snatch | red | Dromai | NotCoded |
+| Snatch | red | Dromai | Tested |
 | Soul Harvest | blue | Levia | Tested |
 | Stains of the Redback | red | Arakni, Web of Deceit | NotCoded |
 | Staunch Response | red | Bravo, Flattering Showman | Tested |
@@ -290,7 +298,7 @@ elle n'est pas codée.
 | Steelblade Shunt | red | Dorinthea, Hala | Tested |
 | Steelblade Shunt | yellow | Dorinthea | Tested |
 | Stir the Aetherwinds | blue | Iyslander | Tested |
-| Sweeping Blow | red | Dromai | NotCoded |
+| Sweeping Blow | red | Dromai | Tested |
 | Swordmaster's Path | blue | Hala | Tested |
 | Swordmaster's Path | red | Hala | Tested |
 | Test of Agility | red | Levia | Tested |

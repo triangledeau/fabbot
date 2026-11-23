@@ -5,7 +5,7 @@
 //! (une [`Decision`] est alors en attente) ou que la partie soit finie. Les
 //! tâches en attente passent toujours avant le déroulement normal.
 
-use crate::card::{Keywords, Speed, Subtypes, Types};
+use crate::card::{Keywords, Speed, Subtypes, Supertypes, Types};
 use crate::decision::{Choice, Decision, DecisionKind};
 use crate::events::Event;
 use crate::ids::{ObjectId, PlayerId};
@@ -228,6 +228,9 @@ impl GameState {
         if self.check_game_over() {
             return true;
         }
+        if self.check_attack_gone() {
+            return true;
+        }
         // CR 1.10.2b / 2.5.3f : un allié à 0 PV est « clear ». Vérifié
         // seulement quand un allié a perdu des PV (chemin rapide).
         if !self.check_allies {
@@ -238,12 +241,42 @@ impl GameState {
             .permanents
             .iter()
             .copied()
+            .chain(self.attacking_allies())
             .filter(|&o| self.def(o).life.is_some() && self.life_total(o) == Some(0))
             .collect();
         for o in dead {
             self.clear(o);
         }
         false
+    }
+
+    /// CR 7.7.2c : si l'attaque active cesse d'exister avant le calcul des
+    /// dégâts (ex. détruite par phantasm, ou son allié détruit, CR 1.4.3c) et
+    /// qu'il n'y a plus d'attaque dans la file, l'étape de fermeture commence
+    /// (action de l'état de jeu). Renvoie `true` si la chaîne se ferme.
+    fn check_attack_gone(&mut self) -> bool {
+        if !self.combat.open
+            || self.stage == Stage::Closing
+            || !self.combat.queue.is_empty()
+            || !matches!(
+                self.combat.step,
+                Some(CombatStep::Attack | CombatStep::Defend | CombatStep::Reaction)
+            )
+        {
+            return false;
+        }
+        let Some(link) = self.combat.links.last() else {
+            return false;
+        };
+        let gone = !self.is_current(link.attack)
+            || self.obj(link.attack.id).zone != Zone::CombatChain
+            || link
+                .source
+                .is_some_and(|s| self.obj(s).zone != Zone::CombatChain);
+        if gone {
+            self.close_combat_chain();
+        }
+        gone
     }
 
     fn check_game_over(&mut self) -> bool {
@@ -446,6 +479,19 @@ impl GameState {
                 }
             }
             RuleTrigger::BloodDebt => unreachable!("traité plus haut"),
+            // CR 8.3.13a : si la condition est toujours remplie, l'attaque
+            // est détruite. Pour une attaque-proxy d'allié, c'est l'allié
+            // qui est détruit (la proxy cesse alors d'exister, CR 1.4.3c).
+            // TODO(règles) : à confirmer par le propriétaire.
+            RuleTrigger::Phantasm => {
+                let on_active = self.combat.links.last().is_some_and(|l| l.attack == obj);
+                if on_active && self.phantasm_condition() {
+                    match self.obj(id).proxy_of {
+                        Some(src) => self.destroy(src),
+                        None => self.destroy(id),
+                    }
+                }
+            }
         }
     }
 
@@ -576,6 +622,10 @@ impl GameState {
             // CR 4.3.4 : fin de la phase d'action.
             self.priority = None;
             self.action_phase = false;
+            // Steal « until the end of this action phase » (Jack Be Quick).
+            if !self.steals.is_empty() {
+                self.end_steals();
+            }
             self.emit(Event::BeginEndPhase(tp));
             // CR 8.5.58 : déclenchements retardés des sharpen.
             for r in std::mem::take(&mut self.sharpened) {
@@ -689,8 +739,23 @@ impl GameState {
                     }
                 }
                 // CR 5.3.5 : go again.
-                // TODO(règles) CR 5.3.5a : informations de dernier état si la carte a quitté la pile.
-                if alive && self.keywords(id).has(Keywords::GO_AGAIN) {
+                // CR 5.3.5a : une carte devenue permanent pendant sa propre
+                // résolution (invocation transformée, CR 8.5.36b) a quitté
+                // la pile : on lit son go again imprimé (dernier état connu
+                // de la couche) et les effets qui s'appliquent encore à elle.
+                // TODO(règles) CR 5.3.5a : dernier état connu des autres
+                // cartes qui ont quitté la pile pendant leur résolution.
+                let moved_to_arena =
+                    !alive && self.is_current(layer.object) && self.obj(id).zone.in_arena();
+                let go_again = if alive {
+                    self.keywords(id).has(Keywords::GO_AGAIN)
+                } else if moved_to_arena {
+                    (self.db.get(layer.card).keywords | self.continuous_delta(id).grants)
+                        .has(Keywords::GO_AGAIN)
+                } else {
+                    false
+                };
+                if go_again {
                     self.gain_action_points(layer.controller, 1);
                 }
                 if !alive {
@@ -701,9 +766,9 @@ impl GameState {
                     // CR 5.3.6b / 7.4.2d : devient une carte qui défend.
                     self.add_defenders(&[id], layer.origin == Zone::Hand);
                 } else if def.subtypes.any(Subtypes::PERMANENT) {
-                    // CR 5.3.6a : un permanent entre dans l'arène.
-                    self.move_to(id, Zone::Permanent, true);
-                    self.obj_mut(id).controller = layer.controller;
+                    // CR 5.3.6a : un permanent entre dans l'arène (une
+                    // invocation face arrière active, CR 8.2.13a).
+                    self.become_permanent(id, layer.controller);
                 } else {
                     // CR 5.3.7
                     self.clear(id);
@@ -906,6 +971,9 @@ impl GameState {
                 from_hand: h,
             });
         }
+        if !cards.is_empty() {
+            self.check_phantasm();
+        }
         // CR 7.3.3
         let tp = self.turn_player;
         self.give_priority(tp);
@@ -944,6 +1012,47 @@ impl GameState {
                 from_hand,
             });
         }
+        if !cards.is_empty() {
+            self.check_phantasm();
+        }
+    }
+
+    /// CR 8.3.13a : la condition de phantasm est-elle remplie pour
+    /// l'attaque active ? (Elle est défendue par une carte d'action
+    /// d'attaque non-Illusionist qui a 6{p} ou plus.)
+    pub fn phantasm_condition(&self) -> bool {
+        let Some(link) = self.combat.links.last() else {
+            return false;
+        };
+        let a = link.attack.id;
+        self.is_current(link.attack)
+            && self.keywords(a).has(Keywords::PHANTASM)
+            && link.defenders.iter().any(|&d| {
+                let def = self.def(d);
+                self.obj(d).zone == Zone::CombatChain
+                    && !self.obj(d).face_down
+                    && def.is_action()
+                    && def.is_attack_card()
+                    && !self.supertypes(d).has(Supertypes::ILLUSIONIST)
+                    && self.power(d) >= 6
+            })
+    }
+
+    /// CR 8.3.13a : phantasm se déclenche quand sa condition devient vraie
+    /// (une seule couche à la fois).
+    fn check_phantasm(&mut self) {
+        let Some(link) = self.combat.links.last() else {
+            return;
+        };
+        let a = link.attack;
+        let already = self
+            .stack
+            .iter()
+            .chain(self.pending_triggers.iter())
+            .any(|l| l.kind == LayerKind::Rule(RuleTrigger::Phantasm) && l.object == a);
+        if !already && self.phantasm_condition() {
+            self.push_rule_trigger(RuleTrigger::Phantasm, a.id);
+        }
     }
 
     /// CR 7.5 : étape des dégâts.
@@ -955,7 +1064,14 @@ impl GameState {
             Some(r) => Target::Object(r),
             None => Target::Player(link.target),
         };
-        if self.is_current(link.attack) && self.attack_target_legal(link.attacker, target) {
+        // CR 1.4.3c : une proxy dont la source a quitté le maillon n'existe plus.
+        let source_here = link
+            .source
+            .is_none_or(|s| self.obj(s).zone == Zone::CombatChain);
+        if self.is_current(link.attack)
+            && source_here
+            && self.attack_target_legal(link.attacker, target)
+        {
             let power = self.power(link.attack.id);
             // CR 7.5.2 : somme des défenses des cartes publiques qui défendent.
             let defense: i16 = link
@@ -1134,6 +1250,8 @@ impl GameState {
     // ------------------------------------------------------------------
 
     fn end_arsenal(&mut self) {
+        // CR 4.4.3a : la vie des alliés revient à leur vie de base.
+        self.reset_ally_life();
         // CR 4.4.3b
         let tp = self.turn_player;
         let ps = self.player(tp);

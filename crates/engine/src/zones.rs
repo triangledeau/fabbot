@@ -22,6 +22,9 @@ pub enum Zone {
     Stack,
     /// Zone permanente partagée (CR 3.13).
     Permanent,
+    /// Sous un permanent (sub-card, CR 3.0.14) : pas dans l'arène (CR
+    /// 3.0.14b). Le permanent du dessus est noté dans `GameState::sub_cards`.
+    Under,
     /// L'objet a cessé d'exister (token sorti du jeu, attaque-proxy terminée...).
     Gone,
 }

@@ -266,6 +266,17 @@ pub struct Split {
     pub melded: Option<CardId>,
 }
 
+/// Carte retournable (flip-card, CR 9.1.3 : invocation, figment, construct) :
+/// les définitions de ses deux faces. Les deux définitions portent la même
+/// information. Hors de l'arène, la face avant est active (CR 9.1.3a-b) ;
+/// une invocation qui se résout entre dans l'arène face arrière active
+/// (CR 8.2.13a).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Flip {
+    pub front: CardId,
+    pub back: CardId,
+}
+
 /// Définition complète d'une carte.
 #[derive(Clone, Debug, Default)]
 pub struct CardDef {
@@ -348,6 +359,23 @@ pub struct CardDef {
     /// permanent, une fois par tour pour chaque objet qui l'a. Arguments :
     /// la source, la carte à jouer.
     pub play_from_banished: Option<fn(&GameState, ObjectId, ObjectId) -> bool>,
+    /// Carte retournable (CR 9.1.3) : voir [`Flip`].
+    pub flip: Option<Flip>,
+    /// « Material - While this is under a permanent, that permanent gets
+    /// [mots-clés] » (CR 8.4.5, ex. Ash : phantasm).
+    pub material: Keywords,
+    /// « [Alliés filtrés] you control get "Once per Turn Action -- 0:
+    /// Attack" » (Storm of Sandikai) : capacité statique d'une arme, d'un
+    /// équipement, du héros ou d'un permanent. Arguments : la source, l'allié.
+    /// L'allié porte la capacité d'attaque dans sa définition (`activated`),
+    /// avec la condition [`GameState::attack_granted`].
+    pub grants_attack: Option<fn(&GameState, ObjectId, ObjectId) -> bool>,
+    /// « If this would be dealt damage, remove a counter from it to prevent N
+    /// of that damage » (Yendurai) : prévention d'un allié, valeur N.
+    pub counter_prevention: u8,
+    /// « Opponents can't play cards or activate abilities during your turn »
+    /// (Themai).
+    pub silences_opponents: bool,
 }
 
 impl CardDef {

@@ -14,7 +14,8 @@ Par défaut, vous jouez **Hala** et le bot joue **Dorinthea**. Options :
 | `--deck iyslander` | vous jouez Iyslander (le bot prend alors Hala) |
 | `--deck florian` | vous jouez Florian (le bot prend alors Hala) |
 | `--deck levia` | vous jouez Levia (le bot prend alors Hala) |
-| `--bot hala` | deck du bot : `ira`, `hala`, `dorinthea`, `bravo`, `iyslander`, `florian` ou `levia` (on peut faire un miroir : `--deck hala --bot hala`) |
+| `--deck dromai` | vous jouez Dromai (le bot prend alors Hala) |
+| `--bot hala` | deck du bot : `ira`, `hala`, `dorinthea`, `bravo`, `iyslander`, `florian`, `levia` ou `dromai` (on peut faire un miroir : `--deck hala --bot hala`) |
 | `--graine 42` | rejouer exactement la même partie (mêmes mélanges) |
 
 Exemple : `cargo run --release -p fab-ui -- --deck dorinthea --graine 42`
@@ -39,6 +40,11 @@ numérotées. Il passe tout seul quand « passer » est le seul choix possible.
 
 Chaque carte affichée porte un numéro entre crochets, par exemple
 `Edict of Steel (bleu) [9]` : c'est ce numéro qu'on donne à `t`.
+
+La ligne « Permanents » donne, pour un allié (dragon, Aether Ashwing…), sa
+puissance et ses PV actuels, ses compteurs (endurance, vie), les cartes
+qui sont dessous (ex. « dessous : Ash ») et phantasm ; pour une aura ou une
+Ash, son ward. Pour un dragon, `t` affiche le texte de sa face arrière.
 
 Le texte officiel (avec errata) vient du fichier de Legend Story Studios ;
 il faut l'avoir téléchargé une fois avec `bash tools/fetch_cards.sh`.

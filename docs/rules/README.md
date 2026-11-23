@@ -124,25 +124,35 @@ qui la vérifient (`crates/cards/tests/regles_etape1.rs`, tests nommés `cr_…`
 - **Remplacements optionnels** : seulement pour la création de tokens (ex.
   Smoldering Scales). Les déplacements (cimetière, deck) et les dégâts n'en
   acceptent que d'obligatoires (aucune carte des 9 decks n'en a d'autres).
-- **Préventions des dégâts infligés à un allié** : non gérées (aucune carte
-  des 9 decks n'en crée).
+- **Préventions des dégâts infligés à un allié** : seulement la capacité de
+  l'allié lui-même « remove a counter to prevent N » (Yendurai) ; aucune
+  autre carte des 9 decks n'en crée.
 - **Arcane barrier / ward / spellvoid de même type sur un même objet** (valeur
   imprimée + valeur accordée) : additionnées en une seule capacité.
 - **Prévention au choix** : quand les dégâts restants tombent à 0, plus aucune
   prévention n'est appliquée (un ward n'est pas détruit pour rien).
-- **Capacités accordées** : un effet peut donner des mots-clés et des valeurs
-  (ward, arcane barrier, spellvoid), pas encore des capacités activées ou
-  déclenchées (ex. Storm of Sandikai : « Dragon allies you control get
-  "Once per Turn Action — 0: Attack" ») ni spectra.
+- **Capacités accordées** : un effet peut donner des mots-clés, des valeurs
+  (ward, arcane barrier, spellvoid) et des capacités déclenchées. La
+  capacité d'attaque de Storm of Sandikai est écrite dans la définition de
+  chaque dragon, active seulement si son contrôleur contrôle une source qui
+  l'accorde (`CardDef::grants_attack`) ; elle disparaîtrait avec « loses all
+  abilities » (aucune carte des 9 decks ne vise un allié ainsi). Spectra ne
+  peut pas être accordé.
 - **« Loses all abilities »** : l'ordre chronologique entre la perte et une
   capacité accordée plus tôt n'est pas pris en compte (CR 6.3.4).
-- **Fermeture de la chaîne par un effet** (CR 7.7.2c-d : attaque détruite
-  avant les dégâts, effet « close the combat chain ») : pas encore gérée.
+- **Fermeture de la chaîne par un effet** (CR 7.7.2d, « close the combat
+  chain ») : pas encore gérée (aucune carte des 9 decks). CR 7.7.2c (attaque
+  disparue avant les dégâts, file vide) est gérée ; si la file n'est pas
+  vide, le maillon continue sans dégâts.
+- **Phantasm** (CR 8.3.13a) : la condition est vérifiée quand des cartes
+  défendent (et à la résolution), pas si la puissance d'une carte qui défend
+  change ensuite.
 - **Coût d'effet impossible à payer** (CR 1.14.4b, 5.1.8a) : pas de retour en
   arrière ; chaque carte doit vérifier à l'avance qu'elle peut payer
   (`play_condition`).
 - **Informations de dernier état** (CR 1.2.3) : seulement pour go again à
-  l'étape de résolution (CR 7.6.2a).
+  l'étape de résolution (CR 7.6.2a) et pour une carte devenue permanent
+  pendant sa propre résolution (CR 5.3.5a, invocations).
 - **Partie nulle par blocage** (CR 4.5.4d) : seul le cas simple est détecté ;
   sinon le simulateur arrête la partie après N tours (« limite de tours »).
 - **Heave** (CR 5.4.7b) : le choix « déclencher ou non » de la capacité

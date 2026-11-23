@@ -20,6 +20,12 @@ impl GameState {
     /// Toutes les options d'un joueur qui a la priorité. `Pass` est toujours la dernière.
     pub fn legal_priority_options(&self, p: PlayerId) -> Vec<Choice> {
         let mut opts = Vec::new();
+        // Themai : « Opponents can't play cards or activate abilities during
+        // your turn. »
+        if self.silenced(p) {
+            opts.push(Choice::Pass);
+            return opts;
+        }
         let ps = self.player(p);
         for &c in ps.hand.iter().chain(ps.arsenal.iter()) {
             if self.can_play(p, c) {
@@ -531,6 +537,7 @@ impl GameState {
                 proxy_of: Some(src),
                 activations: [0; 4],
                 life_delta: 0,
+                life_counters: 0,
             });
             let proxy = ObjectId(self.objects.len() as u32 - 1);
             // Numéro de cette attaque parmi celles de l'arme ce tour.

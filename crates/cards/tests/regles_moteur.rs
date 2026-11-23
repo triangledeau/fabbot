@@ -233,8 +233,13 @@ fn cr_8_3_20_ward_d_un_token_et_d_un_equipement_ensemble() {
     t.choisir(Choice::Pitch(t.en_main(P0, "Essai Frappe", B)));
     t.passer_jusqua(DecisionKind::Defend);
     t.choisir(Choice::Pass);
+    // Les deux wards sont entièrement utilisés (2 ≤ 4) ; comme détruire
+    // Essai Voile déclenche une capacité, le joueur choisit l'ordre (CR 6.5.5,
+    // l'ordre peut compter : ex. Essence of Ancestry: Body).
+    t.passer_jusqua(DecisionKind::Prevention);
+    assert_eq!(t.joueur(), P1);
+    t.choisir(t.options()[0]);
     t.passer_jusqua(DecisionKind::Arsenal);
-    // Les deux wards sont entièrement utilisés (2 ≤ 4) : pas de question.
     assert_eq!(t.g.obj(ecran).zone, Zone::Gone); // un token détruit cesse d'exister
     assert_eq!(t.vie(P1), 20 - 2 + 1);
 }
@@ -673,8 +678,15 @@ fn cr_2_5_3_allie_blesse_mais_vivant() {
     t.choisir(Choice::Play(t.en_main(P0, "Essai Tigre", R)));
     t.choisir(Choice::Target(Target::Object(r)));
     t.passer_jusqua(DecisionKind::Arsenal);
-    assert_eq!(t.g.life_total(dragon), Some(1));
+    // 1 dégât (2{h} → 1{h}) : l'allié survit…
+    assert!(t.g.turn_events().iter().any(|e| matches!(
+        e,
+        Event::Damage { target_obj: Some(o), amount: 1, .. } if *o == dragon
+    )));
     assert_eq!(t.g.obj(dragon).zone, Zone::Permanent);
+    // … et sa vie revient à sa base au début de la procédure de fin de
+    // tour (CR 4.4.3a), avant la mise en arsenal.
+    assert_eq!(t.g.life_total(dragon), Some(2));
 }
 
 #[test]
