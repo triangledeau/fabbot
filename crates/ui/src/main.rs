@@ -1,12 +1,13 @@
 //! fab-ui — jouer contre le bot dans le terminal.
 //!
 //! Usage :
-//!     cargo run --release -p fab-ui -- [--deck ira|hala|dorinthea|bravo|iyslander|florian|levia|dromai|arakni] [--bot …] [--graine N]
+//!     cargo run --release -p fab-ui -- [--deck ira|hala|dorinthea|bravo|iyslander|florian|levia|dromai|arakni] [--bot …] [--niveau b0|b1] [--graine N]
 //!
 //! Par défaut : vous jouez Hala, le bot joue Dorinthea, graine tirée de l'heure.
-//! Le bot est B0 (choix au hasard parmi les options légales).
+//! Le bot est B0 (choix au hasard parmi les options légales) ; `--niveau b1`
+//! donne le bot heuristique.
 
-use fab_ai::RandomAgent;
+use fab_ai::{creer_agent, BOTS};
 use fab_engine::PlayerId;
 use fab_ui::jeu::{Fin, Interface};
 use fab_ui::textes::Textes;
@@ -43,16 +44,26 @@ fn main() {
             std::process::exit(1);
         }
     };
+    let niveau = valeur("--niveau").unwrap_or_else(|| "b0".into());
+    let Some(mut bot) = creer_agent(&niveau, graine ^ 0x5A5A) else {
+        eprintln!(
+            "Erreur : niveau de bot inconnu « {niveau} » (connus : {})",
+            BOTS.join(", ")
+        );
+        std::process::exit(1);
+    };
     let textes = Textes::charger();
-    println!("fab-ui — vous ({deck}) contre le bot B0 aléatoire ({deck_bot}), graine {graine}");
+    println!(
+        "fab-ui — vous ({deck}) contre le bot {} ({deck_bot}), graine {graine}",
+        bot.name()
+    );
     println!("(rejouer la même partie : --graine {graine})");
     if textes.is_none() {
         println!("Textes officiels des cartes absents : lancez « bash tools/fetch_cards.sh » pour la commande « t ».");
     }
-    let mut bot = RandomAgent::new(graine ^ 0x5A5A);
     let mut ui = Interface {
         humain: PlayerId::P0,
-        bot: &mut bot,
+        bot: &mut *bot,
         textes: textes.as_ref(),
     };
     let stdin = io::stdin();
