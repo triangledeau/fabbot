@@ -36,12 +36,18 @@ def num(v):
     # géré par `x_cost` / `x_twice`.
     if v and set(v) == {"X"}:
         return 0
+    # Valeur « * » : définie par une capacité de la carte (ex. Bloodied Oval) ;
+    # codée comme une base de 0 plus un effet statique.
+    if v == "*":
+        return 0
     return int(v) if v.isdigit() else None
 
 
 problems = 0
 for c in coded:
-    r = official.get((c["name"], (c["color"] or "").lower() or None))
+    # Carte double : « Arcane Seeds // Life » s'écrit « Arcane Seeds||Life ».
+    name = c["name"].replace(" // ", "||")
+    r = official.get((name, (c["color"] or "").lower() or None))
     if r is None:
         print(f"ABSENTE  {c['name']} {c['color']}")
         problems += 1

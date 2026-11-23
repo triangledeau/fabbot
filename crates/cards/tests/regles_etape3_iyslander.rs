@@ -130,7 +130,7 @@ fn cr_3_0_1a_zone_exposee_sans_rien_dedans_ni_equipe() {
 fn cr_8_5_2c_token_cree_dans_la_zone_d_un_joueur_sous_son_controle() {
     let mut t = iys(&[ETINCELLE, RAMPART, RAMPART, RAMPART], &[]);
     let fb = token(&t, "Frostbite");
-    t.g.create_token_in_zone(P1, fb, Zone::Legs);
+    t.g.create_token_in_zone(P0, P1, fb, Zone::Legs);
     let o = t.g.player(P1).legs.expect("token dans la zone de jambes");
     assert_eq!(t.g.obj(o).controller, P1);
     assert_eq!(t.g.obj(o).zone, Zone::Legs);

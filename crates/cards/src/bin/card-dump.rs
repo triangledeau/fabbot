@@ -12,6 +12,11 @@ fn main() {
     let db = real::build();
     for i in 0..db.len() {
         let d = db.get(fab_engine::CardId(i as u16));
+        // Carte double : seule la carte entière est dans le fichier officiel
+        // (ses côtés et sa version fusionnée sont des définitions internes).
+        if d.split.is_some_and(|s| s.whole.0 as usize != i) {
+            continue;
+        }
         let color = d.color.map(|c| match c {
             Color::Red => "Red",
             Color::Yellow => "Yellow",

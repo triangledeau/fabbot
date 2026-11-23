@@ -19,6 +19,7 @@ pub const DECKS: &[(&str, &str)] = &[
     ("dorinthea", "03_dorinthea.txt"),
     ("bravo", "04_bravo.txt"),
     ("iyslander", "05_iyslander.txt"),
+    ("florian", "06_florian.txt"),
 ];
 
 /// Charge un deck jouable par son nom court, avec le choix provisoire

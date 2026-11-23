@@ -5,8 +5,8 @@
 //!    leurs conditions (« si vous avez joué une autre carte rouge ce tour ») ;
 //! 2. comparé aux capacités déclenchées des objets concernés.
 
-use crate::card::Types;
-use crate::ids::{ObjRef, ObjectId, PlayerId};
+use crate::card::{CardDef, Supertypes, Types};
+use crate::ids::{CardId, ObjRef, ObjectId, PlayerId};
 use crate::script::{Ctx, ScriptRef};
 use crate::state::{GameState, Layer, LayerKind};
 use crate::zones::Zone;
@@ -25,6 +25,10 @@ pub enum Event {
         player: PlayerId,
         card: ObjectId,
         from: Zone,
+        /// Définition de la carte telle qu'elle a été jouée (informations de
+        /// dernier état, CR 1.2.3) : pour une carte double, le côté joué
+        /// (CR 9.2.3), alors qu'au cimetière elle redevient la carte entière.
+        def: CardId,
     },
     /// Une capacité a été activée.
     Activated {
@@ -243,6 +247,28 @@ impl GameState {
             }
             _ => false,
         })
+    }
+
+    /// A-t-on joué ce tour une carte dont la définition, **telle qu'elle a
+    /// été jouée**, vérifie `f` ? (Une carte double jouée d'un seul côté n'a
+    /// que les propriétés de ce côté, CR 9.2.3.)
+    pub fn played_def_this_turn(&self, p: PlayerId, f: impl Fn(&CardDef) -> bool) -> bool {
+        self.turn_log.iter().any(|e| match *e {
+            Event::Played { player, def, .. } => player == p && f(self.db.get(def)),
+            _ => false,
+        })
+    }
+
+    /// Supertypes actuels d'un objet (CR 2.11) : imprimés, plus ceux qu'il a
+    /// tant qu'il est face visible (Colors of Aria).
+    pub fn supertypes(&self, id: ObjectId) -> Supertypes {
+        let o = self.obj(id);
+        let d = self.db.get(o.card);
+        if o.face_down {
+            d.supertypes
+        } else {
+            d.supertypes | d.face_up_supertypes
+        }
     }
 
     /// Nombre d'attaques de ce joueur ce tour.

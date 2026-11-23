@@ -391,6 +391,7 @@ pub fn add(db: &mut CardDb) {
                 }
             },
             optional: false,
+            in_graveyard: false,
         }];
         d.resolve = vec![Op::Do(|g, c| {
             if let Some(r) = target_obj(c, 0) {
@@ -435,6 +436,7 @@ pub fn add(db: &mut CardDb) {
                     && is_attack_action_card(g, r.id))
             },
             optional: false,
+            in_graveyard: false,
         }];
         d.resolve = vec![Op::Do(|g, c: &mut Ctx| {
             if let Some(r) = target_obj(c, 0) {
@@ -747,6 +749,7 @@ fn bravo_generics(db: &mut CardDb) {
             }
         },
         optional: false,
+        in_graveyard: false,
     }];
     d.resolve = vec![Op::Do(|g, c| {
         if let Some(r) = target_obj(c, 0) {

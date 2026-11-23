@@ -930,9 +930,11 @@ impl GameState {
     /// Crée un token dans une zone d'équipement exposée du joueur `p` (Frost
     /// Spike) : il entre sous le contrôle de ce joueur (CR 8.5.2c). Passe par
     /// les remplacements de création de tokens.
-    pub fn create_token_in_zone(&mut self, p: PlayerId, card: CardId, zone: Zone) {
+    /// `by` : le joueur qui crée le token.
+    pub fn create_token_in_zone(&mut self, by: PlayerId, p: PlayerId, card: CardId, zone: Zone) {
         self.last_created.clear();
         let mut pending = Pending::new(ReplaceKind::CreateToken, p);
+        pending.by = by;
         pending.card = Some(card);
         pending.amount = 1;
         pending.zone = zone;

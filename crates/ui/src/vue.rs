@@ -125,6 +125,7 @@ fn prevention(g: &GameState, viewer: PlayerId, r: PreventRef) -> String {
 pub fn source_decision(g: &GameState) -> Option<String> {
     let card = match g.tasks.last()? {
         Task::Script { ctx, .. } => ctx.card,
+        Task::PlaySide(c) => g.obj(*c).card,
         Task::TriggerTargets { layer, .. } => layer.card,
         Task::PlayOptionalCost
         | Task::PlayX
@@ -310,10 +311,12 @@ pub fn option(g: &GameState, d: &Decision, c: Choice) -> String {
         Choice::Object(id) => nom_pour(g, v, id),
         Choice::Number(n) => n.to_string(),
         Choice::Mode(m) => {
-            let label = g
-                .stack
-                .last()
-                .and_then(|l| g.db.get(l.card).modes.get(m as usize).copied());
+            // Côté d'une carte double (CR 5.1.2c) ou mode de la carte jouée.
+            let card = match g.tasks.last() {
+                Some(Task::PlaySide(c)) => Some(g.obj(*c).card),
+                _ => g.stack.last().map(|l| l.card),
+            };
+            let label = card.and_then(|c| g.db.get(c).modes.get(m as usize).copied());
             match label {
                 Some(l) => format!("Mode {} : {l}", m + 1),
                 None => format!("Mode {}", m + 1),
@@ -590,7 +593,9 @@ pub fn evenement(g: &GameState, viewer: PlayerId, e: &Event) -> Option<String> {
             "═══ Début du tour du bot ═══"
         }
         .into(),
-        Event::Played { player, card, from } => {
+        Event::Played {
+            player, card, from, ..
+        } => {
             let depuis = if from == Zone::Arsenal {
                 " depuis l'arsenal"
             } else {

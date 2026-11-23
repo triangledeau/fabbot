@@ -440,6 +440,7 @@ fn deck_cards(db: &mut CardDb) {
                 && g.def(r.id).supertypes.has(Supertypes::NINJA))
         },
         optional: false,
+        in_graveyard: false,
     }];
     d.resolve = vec![Op::Do(|g, c| {
         if let Some(r) = target_obj(c, 0) {

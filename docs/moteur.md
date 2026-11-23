@@ -177,6 +177,39 @@ ou `add_prevention` (filtre de source, « if you prevent damage this way »).
 - « Has an arcane damage effect » : `CardDef::arcane_damage`, à cocher sur
   chaque carte qui inflige des dégâts arcaniques.
 
+## Cartes doubles, meld, decompose, Runechant (étape 3, deck Florian)
+
+- **Carte double** (split-card, CR 9.2, ex. Arcane Seeds // Life) : quatre
+  définitions (la carte entière, le côté gauche, le côté droit, la version
+  fusionnée), reliées par `CardDef::split` ([`Split`]). Hors de la pile, la
+  carte a les propriétés des deux côtés (CR 9.2.2). En la jouant, le joueur
+  choisit un côté jouable (`Task::PlaySide`, réponse `Choice::Mode`, libellés
+  dans `modes` de la carte entière) ; sur la pile, l'objet pointe vers la
+  définition du côté choisi (CR 9.2.3) et revient à la carte entière dès
+  qu'il quitte la pile (`move_to`).
+- **Meld** (CR 8.3.38) : la version fusionnée a les types des deux côtés ;
+  c'est une action (1 point d'action, pile vide). `Ctx::melded` : elle se
+  résout d'abord avec le côté droit, le joueur actif reçoit la priorité,
+  puis le côté gauche (CR 5.3.4d, dans `finish_resolve`).
+- `Event::Played { def, .. }` garde la définition **telle qu'elle a été
+  jouée** ; « if you've played a non-attack action card this turn » :
+  `played_def_this_turn`.
+- **Cibles dans un cimetière** (CR 1.8.5a) : `TargetSpec::in_graveyard`.
+- **Supertypes variables** : `GameState::supertypes(id)` ajoute
+  `CardDef::face_up_supertypes` tant que la carte est face visible (Colors
+  of Aria est Earth, Ice et Lightning).
+- **Compteurs à l'entrée** : `CardDef::enter_counters` (« enters the arena
+  with N verse counters », compteurs dans `Object::counters`).
+- **Créateur d'un token** : `create_tokens_by(créateur, contrôleur, …)` ;
+  `Pending::by` permet à Florian de ne doubler que les tokens qu'il crée
+  lui-même (CR 8.5.2c).
+- **« Pitched this way »** (Annals of Sutcliffe) : `Ctx::log_start` donne
+  l'index du journal du tour au moment où la carte est jouée ou la capacité
+  activée ; les événements `Pitched` qui suivent viennent du paiement.
+- **Decompose** (CR 8.4.14) : `runeblade::decompose()` ; seules les cartes
+  qui permettent encore de compléter « 2 Earth + 1 action » (3 cartes
+  distinctes) sont proposées.
+
 ## Les événements et le journal du tour
 
 Tout ce qui se passe (carte jouée, attaque, défense, touche, pitch, dégâts,

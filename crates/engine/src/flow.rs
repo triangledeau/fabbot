@@ -66,7 +66,14 @@ impl GameState {
                 self.stack.last_mut().unwrap().ctx.optional_paid = c == Choice::Yes
             }
             (DecisionKind::ChooseX, Choice::Number(x)) => self.stack.last_mut().unwrap().ctx.x = x,
-            (DecisionKind::Mode, Choice::Mode(m)) => self.stack.last_mut().unwrap().ctx.mode = m,
+            (DecisionKind::Mode, Choice::Mode(m)) => {
+                if let Some(&Task::PlaySide(c)) = self.tasks.last() {
+                    self.tasks.pop();
+                    self.play_card_side(player, c, m);
+                } else {
+                    self.stack.last_mut().unwrap().ctx.mode = m
+                }
+            }
             (DecisionKind::Target, c) => {
                 let t = match c {
                     Choice::Target(t) => Some(t),
@@ -611,11 +618,23 @@ impl GameState {
     }
 
     /// CR 5.3.5 à 5.3.7.
-    fn finish_resolve(&mut self, layer: Layer) {
+    fn finish_resolve(&mut self, mut layer: Layer) {
         match layer.kind {
             LayerKind::Card => {
                 let id = layer.object.id;
                 let alive = self.is_current(layer.object) && self.obj(id).zone == Zone::Stack;
+                // CR 5.3.4d : une carte fusionnée se résout d'abord avec les
+                // effets du côté droit ; la résolution s'arrête et le joueur
+                // actif reçoit la priorité. La seconde fois, le côté gauche.
+                if alive && layer.ctx.melded {
+                    let sp = self.def(id).split.expect("carte double");
+                    if layer.card != sp.left {
+                        layer.card = sp.left;
+                        layer.ctx.card = sp.left;
+                        self.stack.push(layer);
+                        return;
+                    }
+                }
                 // CR 5.3.5 : go again.
                 // TODO(règles) CR 5.3.5a : informations de dernier état si la carte a quitté la pile.
                 if alive && self.keywords(id).has(Keywords::GO_AGAIN) {

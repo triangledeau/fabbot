@@ -35,6 +35,9 @@ pub struct TargetSpec {
     pub filter: fn(&GameState, &Ctx, Target) -> bool,
     /// « up to 1 target » : le joueur peut ne rien choisir.
     pub optional: bool,
+    /// « target … card from your graveyard » (CR 1.8.5a) : les objets publics
+    /// des cimetières sont aussi des cibles possibles.
+    pub in_graveyard: bool,
 }
 
 pub type DoFn = fn(&mut GameState, &mut Ctx);
@@ -82,6 +85,13 @@ pub struct Ctx {
     /// La carte est jouée « as though it were an instant » (CR 8.1.1d) : elle
     /// ne coûte pas de point d'action.
     pub as_instant: bool,
+    /// Index du journal du tour (`turn_log`) au moment où la carte a été
+    /// jouée ou la capacité activée : les événements qui suivent (cartes
+    /// pitchées pour payer, « pitched this way ») viennent de ce paiement.
+    pub log_start: u32,
+    /// La carte a été jouée fusionnée (meld, CR 8.3.38a) : elle se résout
+    /// deux fois (CR 5.3.4d).
+    pub melded: bool,
     /// Dernière réponse reçue.
     pub answer: Option<Choice>,
     /// Objets choisis / concernés (usage libre par la capacité).

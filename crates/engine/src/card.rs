@@ -248,6 +248,20 @@ pub struct AdditionalCost {
     pub optional: bool,
 }
 
+/// Carte double (split-card, CR 9.2) : les définitions de la carte entière
+/// et de chacun de ses côtés. Chaque définition concernée porte la même
+/// information. La carte entière a les propriétés des deux côtés (CR 9.2.2) ;
+/// sur la pile, elle n'a que celles du côté choisi (CR 9.2.3), ou des deux si
+/// elle est fusionnée (meld, CR 8.3.38c).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Split {
+    pub whole: CardId,
+    pub left: CardId,
+    pub right: CardId,
+    /// La définition « fusionnée » (les deux côtés), si la carte a meld.
+    pub melded: Option<CardId>,
+}
+
 /// Définition complète d'une carte.
 #[derive(Clone, Debug, Default)]
 pub struct CardDef {
@@ -314,6 +328,13 @@ pub struct CardDef {
     /// capacité statique du héros, des équipements ou des permanents.
     /// Arguments : source de la capacité, carte que son contrôleur veut jouer.
     pub play_as_instant: Option<fn(&GameState, ObjectId, ObjectId) -> bool>,
+    /// Carte double (CR 9.2) : voir [`Split`].
+    pub split: Option<Split>,
+    /// « This enters the arena with N verse counters » (Runeblood Incantation).
+    pub enter_counters: u8,
+    /// « While this is face-up in any zone, it's Earth, Ice, and Lightning »
+    /// (Colors of Aria) : supertypes ajoutés tant que la carte est face visible.
+    pub face_up_supertypes: Supertypes,
 }
 
 impl CardDef {
