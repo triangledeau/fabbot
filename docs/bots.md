@@ -6,7 +6,7 @@
 |---|---|---|
 | **B0** | `RandomAgent` (`crates/ai/src/lib.rs`) | au hasard parmi les options légales ; sert de référence (Elo 0) et de testeur de règles |
 | **B1** | `HeuristicAgent` (`crates/ai/src/b1.rs`) | règles fixes, sans recherche (détail ci-dessous) |
-| B2 | à venir | recherche ISMCTS |
+| **B2** | `IsmctsAgent` (`crates/ai/src/b2.rs`) | recherche ISMCTS : mondes imaginés + parties simulées par B1 (détail ci-dessous) |
 | B3 | à venir (étape 7) | évaluation apprise |
 
 ### Un bot ne voit que l'information de son joueur
@@ -61,6 +61,73 @@ recherche) doit corriger ce genre de défaut.
 | ne jamais mettre en arsenal | +1 (sans effet) |
 | activer toutes les capacités non-attaque | +3 (sans effet, la version prudente est gardée) |
 
+### B2 : la recherche (ISMCTS)
+
+Pour chaque décision qui a au moins deux options différentes, B2 répète
+300 fois :
+
+1. **imaginer un monde possible** (`crates/ai/src/determinisation.rs`) :
+   une copie de la partie où les cartes cachées de l'adversaire (main, deck,
+   arsenal face cachée) sont mélangées ensemble puis redistribuées, l'ordre
+   de son propre deck est mélangé, et le hasard futur (pioches, tirages)
+   change de graine ;
+2. **choisir une option à essayer** dans ce monde (formule UCB : les
+   options au meilleur score moyen, ou encore peu essayées) ;
+3. **continuer la partie pendant 4 tours** avec B1 pour les deux joueurs,
+   puis **estimer** le résultat : vie + 1,5 par carte en main ou en arsenal
+   + 0,25 par carte du deck, l'écart entre les deux joueurs étant ramené
+   entre 0 et 1 (une partie finie avant compte 1, ½ ou 0) ;
+4. noter le résultat pour l'option essayée.
+
+Il joue ensuite l'option la plus essayée (c'est-à-dire celle qui a le
+meilleur score, la formule UCB y revenant le plus souvent). Deux
+exemplaires identiques d'une carte en main comptent comme une seule
+option.
+
+Le code sait construire un **arbre** de décisions (les siennes et celles de
+l'adversaire, variante « un seul observateur » de l'ISMCTS) ; le réglage
+`profondeur` le limite. Les mesures ci-dessous montrent qu'avec ce budget,
+l'arbre limité à la décision présente (profondeur 1) est le plus fort : dans
+un arbre plus profond, l'adversaire imaginé joue moins bien que B1.
+
+**Information** : B2 lit l'information cachée **seulement pour la
+redistribuer au hasard**. Un test le prouve : deux parties qui ne diffèrent
+que par la main adverse et l'ordre des decks donnent exactement le même
+choix (`b2_fait_le_meme_choix_quelle_que_soit_la_vraie_main_adverse`).
+Approximations : B2 connaît la **liste des 40 cartes** adverses (pas leur
+place) ; il oublie les cartes cachées vues un instant (cartes révélées puis
+reprises) ; les cartes bannies face cachée de l'adversaire ne sont pas
+redistribuées.
+
+**Réglages** (dans le nom du bot, après `b2-`) : nombre d'itérations
+(`b2-1000`) ou durée par décision (`b2-500ms`), puis `t4` (tours simulés,
+`t0` : jusqu'à la fin), `p1` (profondeur de l'arbre, `p0` : sans limite),
+`c0.4` (exploration), `v1.5` (valeur d'une carte), `a` (parties simulées
+par B0). `b2` = `b2-300t4p1c0.4v1.5`. Une durée rend les parties non
+reproductibles (elles dépendent de la vitesse de la machine) : les tournois
+utilisent un nombre d'itérations.
+
+**Coût** : ≈ 2 s de calcul par partie complète (sur un cœur), contre
+0,5 ms pour B1.
+
+#### Réglages essayés (B2 contre B1, 81 paires × 2 ou 4 parties)
+
+| Variante | Score | Elo |
+|---|---|---|
+| 100 itérations, parties simulées jusqu'à la fin, arbre complet | 59 % | +65 |
+| idem, exploration 0,4 / 1,2 | 57 % / 59 % | +52 / +65 |
+| idem, parties simulées par B0 | 36 % | −99 |
+| 100 itérations, **4 tours simulés**, arbre complet | 77 % | +205 |
+| 2 / 3 / 6 tours simulés | 63 % / 68 % / 70 % | +94 / +134 / +145 |
+| 4 tours, carte = 3 PV / 0,75 PV | 69 % / 70 % | +141 / +150 |
+| 300 itérations, 4 tours, arbre complet | 78 % | +218 |
+| 100 itérations, 4 tours, **profondeur 1** | 78 % | +221 |
+| idem, profondeur 2 / 3 | 75 % / 75 % | +192 / +187 |
+| idem, 5 tours | 78 % | +224 |
+| idem, exploration 0,4 / 1,2 | 81 % / 78 % | +250 / +218 |
+| 30 itérations, 4 tours, profondeur 1 | 67 % | +122 |
+| **300 itérations, 4 tours, profondeur 1** | **84 %** | **+283** |
+
 ## Le classement Elo
 
 Si A a `d` points d'Elo de plus que B, A marque en moyenne
@@ -79,9 +146,50 @@ decks (81 paires, miroirs compris), `--games` parties par paire, en
 alternant les places et le joueur qui choisit qui commence. Le simulateur
 affiche l'écart d'Elo avec son intervalle à 95 % et la matrice des scores.
 
-`--bots b1 b0` marche aussi avec `--decks a b` (une seule paire).
+`--bots b1 b0` marche aussi avec `--decks a b` (une seule paire). Pour B2 :
 
-### Résultats (2026-11-23, 81 000 parties, 0 erreur)
+```bash
+cargo run --release -p fab-sim -- --tournoi --bots b2 b1 --games 20 --check
+cargo run --release -p fab-sim -- --tournoi --bots b2 b0 --games 20 --check
+```
+
+(≈ 15 et 9 minutes dans le conteneur de Claude, 4 cœurs.)
+
+### Classement commun (2026-11-23)
+
+| Bot | Elo | Mesuré sur |
+|---|---|---|
+| B0 | 0 | référence |
+| B1 | **+511** | 81 000 parties contre B0 |
+| B2 | **+785** | 1 620 parties contre B1 (83,6 %, +283 ± 23) et 1 620 contre B0 (98,1 %) |
+
+Calcul commun par Bradley-Terry sur les trois confrontations (contre B0
+seul, B2 obtient +690 : à 98 %, l'écart est mal mesuré).
+
+**B2 contre B1 : 83,6 %, 0 erreur (vérification `--check`).** Score de B2
+(%), ligne = deck de B2, colonne = deck de B1 (20 parties par case) :
+
+| B2 \ B1 | ira | hala | dorint. | bravo | iyslan. | florian | levia | dromai | arakni | moy. |
+|---|---|---|---|---|---|---|---|---|---|---|
+| ira | 100 | 85 | 100 | 80 | 100 | 100 | 100 | 70 | 100 | 93 |
+| hala | 80 | 95 | 80 | 85 | 100 | 95 | 100 | 50 | 100 | 87 |
+| dorinthea | 100 | 100 | 100 | 100 | 100 | 75 | 100 | 55 | 100 | 92 |
+| bravo | 100 | 100 | 100 | 100 | 100 | 75 | 100 | 100 | 100 | 97 |
+| iyslander | 95 | 90 | 95 | 90 | 95 | 75 | 95 | 25 | 100 | 84 |
+| florian | 100 | 95 | 95 | 90 | 100 | 100 | 100 | 80 | 100 | 96 |
+| levia | 30 | 15 | 10 | 15 | 65 | 40 | 90 | 10 | 35 | 34 |
+| dromai | 100 | 100 | 100 | 95 | 100 | 100 | 100 | 100 | 100 | 99 |
+| arakni | 90 | 50 | 35 | 65 | 100 | 55 | 100 | 30 | 100 | 69 |
+
+Points faibles restants : **Levia** (34 %, le blood debt : B1, qui joue
+les décisions suivantes et les parties simulées, ne le comprend pas, et
+4 tours simulés sont trop courts pour en voir le coût) et **Arakni**
+(69 %). Dromai reste très fort, aussi entre les mains de B1.
+
+**B2 contre B0 : 98,1 %** (1 590 victoires, 30 défaites, 0 erreur), dont
+84 % avec Levia ; 100 % avec 7 decks.
+
+### Résultats de B1 (2026-11-23, 81 000 parties, 0 erreur)
 
 **B1 contre B0 : 95,0 % → B1 = +512 Elo** (intervalle à 95 % : +506 à +517).
 

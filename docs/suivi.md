@@ -12,22 +12,31 @@ met à jour à la fin de chaque tâche.
 | 1 | Cœur des règles + système d'effets | ✅ (manques connus listés dans `docs/rules/README.md`) |
 | 2 | Deux premiers decks complets + interface texte | ✅ (cartes à valider par le propriétaire avec l'interface) |
 | 3 | Les 7 autres decks + simulateur rapide | ✅ (Ira, Bravo, Iyslander, Florian, Levia, Dromai, Arakni ; cartes à valider par le propriétaire) |
-| 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | 🔶 B1 + Elo faits (B1 = +512 contre B0) ; B2 à faire |
+| 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ✅ B0 = 0, B1 = +511, B2 = +785 |
 | 5 | Interface web locale + annulation | ⏳ |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ⏳ |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
 
-**Branche la plus récente :** `claude/youthful-gauss-iihtxx` (bot B1 et
-classement Elo, partie de `main` après la fusion du deck Arakni). Tant
-qu'elle n'est pas fusionnée dans `main`, partir de cette branche.
+**Branche la plus récente :** `claude/loving-fermi-r75ch8` (bot B2, partie
+de `main` après la fusion du bot B1). Tant qu'elle n'est pas fusionnée dans
+`main`, partir de cette branche.
 
 **Jouer contre le bot :** `cargo run --release -p fab-ui` (mode d'emploi :
-`docs/interface.md`) ; `--niveau b1` pour le bot heuristique.
+`docs/interface.md`) ; `--niveau b1` pour le bot heuristique, `--niveau b2`
+pour le bot qui cherche (une fraction de seconde par décision ; `b2-1000` ou
+`b2-500ms` pour le rendre plus fort).
 
 **Bots et Elo :** `docs/bots.md` (règles de B1, tournoi, résultats).
 Tournoi : `cargo run --release -p fab-sim -- --tournoi --bots b1 b0 --games 1000 --check`.
 
-**Chiffres actuels :** 739 tests au vert. **B1 contre B0 : 95,0 % sur les
+**Chiffres actuels :** 749 tests au vert. **B2 contre B1 : 83,6 % sur les
+81 paires des 9 decks (1 620 parties, 0 erreur) → +283 Elo** ; B2 contre
+B0 : 98,1 %. Classement commun : **B0 = 0, B1 = +511, B2 = +785**. B2 ne
+perd que 34 % avec Levia (blood debt toujours mal compris) et gagne 69 %
+avec Arakni, 84 à 99 % avec les autres decks. Détail et réglages essayés :
+`docs/bots.md`.
+
+Étape 4, B1 : **B1 contre B0 : 95,0 % sur les
 81 paires des 9 decks (81 000 parties, 0 erreur) → B1 = +512 Elo**
 (intervalle à 95 % : +506 à +517). B1 gagne 96 à 100 % avec 8 decks, mais
 seulement 64 % avec Levia : il perd plus de 12 PV par partie à cause du
@@ -60,9 +69,15 @@ Mark of the Huntsman).
 
 ## Questions ouvertes pour le propriétaire
 
-Aucune question bloquante. Bot B1 : par défaut, `fab-ui` garde le bot B0
-(au hasard), plus utile pour vérifier les cartes ; `--niveau b1` donne le
-bot heuristique. Préférez-vous B1 par défaut ? Huit choix faits pour Arakni, à confirmer :
+Aucune question bloquante. Bots : par défaut, `fab-ui` garde le bot B0
+(au hasard), plus utile pour vérifier les cartes ; `--niveau b1` / `b2`
+donnent les bots plus forts. Préférez-vous B2 par défaut ?
+
+**B2 et l'information cachée** : pour imaginer la main adverse, B2 suppose
+qu'il connaît la **liste des 40 cartes** de l'adversaire (pas leur ordre ni
+la main). En Silver Age on choisit ses 40 cartes parmi 55 avant chaque
+manche : est-ce acceptable (comme une liste de deck connue), ou faut-il
+que B2 ne connaisse que le card-pool de 55, voire seulement le héros ? Huit choix faits pour Arakni, à confirmer :
 
 1. **Agents of Chaos** : « a random Agent of Chaos » tire au hasard (chances
    égales) parmi les **six** demi-héros du trait (Black Widow, Funnel Web,
@@ -229,13 +244,14 @@ dragon, celui de sa face arrière).
 Essayer aussi le bot B1 (`--niveau b1`) et dire s'il fait des choix
 absurdes à corriger simplement.
 
-**Pour Claude (suite de l'étape 4) :** bot **B2** (ISMCTS) : déterminiser
-l'information cachée du point de vue du bot (main adverse et decks mélangés
-au hasard, en gardant les cartes connues), recherche sur des copies de
-`GameState`, parties simulées par B1 ou B0 ; budget de temps réglable.
-Le classer avec `--tournoi --bots b2 b1` puis `b2 b0` (ajouter B2 à
-`fab_ai::creer_agent` et `BOTS`). Un bot n'a accès qu'à l'information de son
-joueur.
+Essayer aussi le bot B2 (`--niveau b2`) et noter ses erreurs flagrantes.
+
+**Pour Claude :** **étape 5**, interface web locale (jouer contre le bot
+dans le navigateur, avec annulation), en réutilisant `fab-ui` (vue du
+joueur, textes officiels, `History`). Pistes d'amélioration de B2, à
+mesurer plus tard : une estimation qui compte le blood debt et les cartes
+bannies (Levia), garder l'arbre d'une décision à la suivante, aller plus
+vite (plus d'itérations pour le même temps).
 
 ## Journal des sessions
 
@@ -256,3 +272,4 @@ joueur.
 | 2026-11-23 | Étape 3, deck Dromai : 30 lignes de STATUS.md + 8 dragons (faces arrière) + tokens Ash, Aether Ashwing, Spectral Shield codés et testés (70 tests de cartes, 16 tests de règles) ; moteur : cartes sous un permanent et material (CR 3.0.14, 8.4.5), transform (CR 8.5.36), invocations et cartes retournables (CR 8.2.13, 9.1.3), phantasm (CR 8.3.13), fermeture de la chaîne quand l'attaque disparaît (CR 7.7.2c), alliés qui attaquent (capacité accordée par Storm of Sandikai), vie des alliés remise à zéro en fin de tour (CR 4.4.3a) et compteurs de vie, prévention propre à un allié (Yendurai), steal / gain control, Themai, opt 1 ; interface : alliés, cartes dessous, texte des dragons ; `fab-ui --deck dromai` | `ccr-9b06529e-h1bljg` |
 | 2026-11-23 | Étape 3, deck Arakni (fin de l'étape 3) : 28 lignes de STATUS.md + 6 Agents of Chaos + tokens Graphene Chelicera et Bloodrot Pox codés et testés (76 tests de cartes, 11 tests de règles) ; moteur : stealth, marque lue au moment de la touche (`Hit::marked`), dague qui touche par un effet, équiper un token arme, retrieve, become / return to the brood (CR 8.5.25, 8.5.52), traits (CR 2.13), effets sur toutes les attaques du tour, « the next time you attack », go again d'une carte qui quitte la pile (CR 5.3.5a), blocage élargi (CR 4.5.4d) ; deux armes à une main dans le choix provisoire ; `fab-ui --deck arakni` | `claude/dreamy-gates-r3giw6` |
 | 2026-11-23 | Étape 4, B1 : bot heuristique `HeuristicAgent` (attaque à son tour, défense chiffrée, pitch au plus juste) qui ne lit la partie qu'à travers une `Vue` (information de son joueur, lecture d'une carte cachée = panique) ; classement Elo (`fab_ai::elo`, Bradley-Terry) ; `fab-sim --bots a b` et `--tournoi` (81 paires de decks, Elo + matrice) ; `fab-ui --niveau b1` ; `docs/bots.md`. B1 = +512 Elo contre B0 (95,0 %) | `claude/youthful-gauss-iihtxx` |
+| 2026-11-23 | Étape 4, B2 : bot `IsmctsAgent` (ISMCTS) : mondes imaginés (`determinisation`, main adverse et decks redistribués, hasard renouvelé ; test : même choix quelle que soit la vraie main adverse), parties simulées par B1 sur 4 tours puis estimées ; réglages mesurés (arbre limité à la décision présente, 300 itérations) ; `--bots b2`, `b2-N`, `b2-Nms` ; `fab-ui --niveau b2`. B2 = +283 Elo contre B1 (83,6 %), classement B0 0 / B1 +511 / B2 +785 | `claude/loving-fermi-r75ch8` |
