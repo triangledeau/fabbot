@@ -718,6 +718,14 @@ pub fn evenement(g: &GameState, viewer: PlayerId, e: &Event) -> Option<String> {
             )
         }
         Event::CombatChainClosed => "La chaîne de combat se ferme.".into(),
+        Event::Became { player, card } => {
+            let n = &g.db.get(card).name;
+            if player == viewer {
+                format!("Votre héros devient {n}.")
+            } else {
+                format!("Le héros du bot devient {n}.")
+            }
+        }
         Event::Revealed { player, card } => {
             format!("{}.", sujet(player, "révèle", "révélez", &nom(g, card)))
         }

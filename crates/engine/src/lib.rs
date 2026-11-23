@@ -17,6 +17,7 @@
 //! - [`invariants`] : contrôles de cohérence utilisés par les tests.
 
 pub mod card;
+pub mod chaos;
 pub mod decision;
 pub mod effects;
 pub mod events;
@@ -36,7 +37,7 @@ pub mod zones;
 
 pub use card::{
     ActivatedDef, CardDb, CardDef, Color, Delta, Flip, Keywords, Speed, Subtypes, Supertypes,
-    TriggerDef, Types,
+    Traits, TriggerDef, Types,
 };
 pub use decision::{Choice, Decision, DecisionKind};
 pub use effects::{DamageEvent, PreventRef};

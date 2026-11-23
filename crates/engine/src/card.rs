@@ -63,7 +63,7 @@ flags! {
         LANDMARK = 12, AFFLICTION = 13, ASH = 14, INVOCATION = 15, CONSTRUCT = 16,
         QUIVER = 17, FIGMENT = 18, ARROW = 19, TRAP = 20,
         SWORD = 21, AXE = 22, DAGGER = 23, HAMMER = 24, CLUB = 25, STAFF = 26,
-        SCEPTER = 27, BOOK = 28, DRAGON = 29, DEMON = 30,
+        SCEPTER = 27, BOOK = 28, DRAGON = 29, DEMON = 30, DISEASE = 31,
     }
 }
 
@@ -119,6 +119,14 @@ flags! {
         /// of your end phase, lose 1{h}. » Seulement si la carte est publique
         /// (face visible) dans la zone de bannissement (CR 8.3.11a).
         BLOOD_DEBT = 14,
+    }
+}
+
+flags! {
+    /// Traits (CR 2.13) : mots non fonctionnels qui désignent un groupe de
+    /// cartes (CR 2.13.4, « a random Agent of Chaos »).
+    Traits(u8) {
+        AGENT_OF_CHAOS = 0,
     }
 }
 
@@ -293,6 +301,8 @@ pub struct CardDef {
     pub subtypes: Subtypes,
     pub supertypes: Supertypes,
     pub keywords: Keywords,
+    /// Traits (CR 2.13), ex. Agent of Chaos.
+    pub traits: Traits,
     /// Le coût contient X (CR 5.1.3a).
     pub x_cost: bool,
     /// Coût imprimé « XX » : le coût de base est X+X (CR 2.1, exemple de
@@ -376,6 +386,11 @@ pub struct CardDef {
     /// « Opponents can't play cards or activate abilities during your turn »
     /// (Themai).
     pub silences_opponents: bool,
+    /// « [Objets filtrés] cost you {r} less to activate » (Arakni,
+    /// Orb-Weaver : les Graphene Chelicerae) : capacité statique du héros.
+    /// Arguments : le héros, l'objet dont on active une capacité. Renvoie la
+    /// réduction (CR 5.1.6).
+    pub activation_discount: Option<fn(&GameState, ObjectId, ObjectId) -> u8>,
 }
 
 impl CardDef {

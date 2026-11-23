@@ -747,11 +747,19 @@ impl GameState {
                 // cartes qui ont quitté la pile pendant leur résolution.
                 let moved_to_arena =
                     !alive && self.is_current(layer.object) && self.obj(id).zone.in_arena();
+                // CR 5.3.5a : une carte que sa propre résolution a mise
+                // ailleurs (Relentless Pursuit : « put this on the bottom of
+                // its owner's deck ») garde le go again imprimé de sa couche.
+                let left_stack = !alive
+                    && !moved_to_arena
+                    && !matches!(self.obj(id).zone, Zone::Gone | Zone::Stack);
                 let go_again = if alive {
                     self.keywords(id).has(Keywords::GO_AGAIN)
                 } else if moved_to_arena {
                     (self.db.get(layer.card).keywords | self.continuous_delta(id).grants)
                         .has(Keywords::GO_AGAIN)
+                } else if left_stack {
+                    self.db.get(layer.card).keywords.has(Keywords::GO_AGAIN)
                 } else {
                     false
                 };
@@ -854,6 +862,11 @@ impl GameState {
             log_start: self.turn_log.len(),
         });
         self.combat.step = Some(CombatStep::Attack);
+        // « The next time you attack a marked hero this turn » (Public Bounty).
+        if self.next_attack_effects.iter().any(|e| e.at_attack) {
+            let r = self.obj_ref(id);
+            self.apply_at_attack_effects(controller, r);
+        }
         // CR 7.2.3 : événement « attack ».
         let link = self.combat.links.len() as u8;
         self.emit(Event::Attack {
@@ -1093,6 +1106,7 @@ impl GameState {
                     amount: (power - defense) as i32,
                     arcane: false,
                     hit: true,
+                    effect_hit: false,
                     replaced: false,
                     declined: false,
                     used: Vec::new(),
@@ -1322,6 +1336,7 @@ impl GameState {
         self.replacements.retain(|m| !m.until.ends_at_end_of(turn));
         self.next_attack_effects
             .retain(|e| e.turn.is_some_and(|t| t > turn));
+        self.attack_buffs.clear();
         self.weapon_effects.clear();
         self.play_permissions.retain(|x| x.turn > turn);
         self.cost_reductions.retain(|x| x.turn > turn);
@@ -1334,7 +1349,7 @@ impl GameState {
         for o in &mut self.objects {
             o.activations = [0; 4];
         }
-        if self.is_stalemate() {
+        if self.is_stalemate() || self.no_progress() {
             self.end_game(Outcome::Draw, EndReason::Stalemate);
             return;
         }
@@ -1364,6 +1379,27 @@ impl GameState {
                 });
             no_cards && !free_ability
         })
+    }
+
+    /// CR 4.5.4d-e, cas étendu (heuristique du simulateur) : plus aucune
+    /// carte dans les decks et les mains, et aucun total de vie n'a changé
+    /// pendant 6 tours de suite. Ce qui reste (une carte injouable en
+    /// arsenal, des capacités déclenchées du héros comme pour Arakni ou
+    /// Dromai) ne fait plus avancer la partie. Appelé une fois à la fin de
+    /// chaque tour.
+    fn no_progress(&mut self) -> bool {
+        let no_cards = PlayerId::BOTH.iter().all(|&p| {
+            let ps = self.player(p);
+            ps.deck.is_empty() && ps.hand.is_empty()
+        });
+        let life = [self.players[0].life, self.players[1].life];
+        if !no_cards || life != self.stale_life {
+            self.stale_turns = 0;
+            self.stale_life = life;
+            return false;
+        }
+        self.stale_turns += 1;
+        self.stale_turns >= 6
     }
 
     /// Exécute un script hors pile (ex. coûts), pour les tests et les cartes.

@@ -15,7 +15,8 @@ Par défaut, vous jouez **Hala** et le bot joue **Dorinthea**. Options :
 | `--deck florian` | vous jouez Florian (le bot prend alors Hala) |
 | `--deck levia` | vous jouez Levia (le bot prend alors Hala) |
 | `--deck dromai` | vous jouez Dromai (le bot prend alors Hala) |
-| `--bot hala` | deck du bot : `ira`, `hala`, `dorinthea`, `bravo`, `iyslander`, `florian`, `levia` ou `dromai` (on peut faire un miroir : `--deck hala --bot hala`) |
+| `--deck arakni` | vous jouez Arakni, Web of Deceit (le bot prend alors Hala) |
+| `--bot hala` | deck du bot : `ira`, `hala`, `dorinthea`, `bravo`, `iyslander`, `florian`, `levia`, `dromai` ou `arakni` (on peut faire un miroir : `--deck hala --bot hala`) |
 | `--graine 42` | rejouer exactement la même partie (mêmes mélanges) |
 
 Exemple : `cargo run --release -p fab-ui -- --deck dorinthea --graine 42`

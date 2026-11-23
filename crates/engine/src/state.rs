@@ -249,6 +249,11 @@ pub struct NextAttackEffect {
     /// L'effet se termine quand la chaîne de combat se ferme (« … you play
     /// this combat chain », ex. Growl), CR 7.7.7.
     pub combat_chain: bool,
+    /// « The next time you attack [un héros marqué] this turn » (Public
+    /// Bounty) : appliqué à l'événement d'attaque (CR 7.2.3), quand la cible
+    /// est connue, et non à l'annonce de l'attaque. Le filtre peut alors lire
+    /// le maillon actif.
+    pub at_attack: bool,
 }
 
 /// « Your next [carte filtrée] this turn costs {r} less to play » (ex. le
@@ -283,6 +288,9 @@ pub struct PlayPermission {
     pub player: PlayerId,
     /// Le tour pendant lequel la carte peut être jouée.
     pub turn: u32,
+    /// La carte peut être jouée même face cachée (Arakni, Trap-Door : la
+    /// carte est bannie face cachée).
+    pub face_down_ok: bool,
 }
 
 /// Une capacité déclenchée accordée à un objet par un effet (CR 6.2,
@@ -435,7 +443,9 @@ pub enum EndReason {
     /// Un héros est tombé à 0 PV (CR 4.5.3a) ou les deux (CR 4.5.4a).
     LifeZero,
     /// Plus aucun joueur ne peut faire avancer la partie (CR 4.5.4d), détecté
-    /// dans le cas simple : decks, mains et arsenaux vides des deux côtés.
+    /// dans le cas simple (decks, mains et arsenaux vides des deux côtés,
+    /// aucune capacité gratuite) ou quand, decks et mains vides, aucun total
+    /// de vie ne change pendant 6 tours.
     Stalemate,
     /// Limite de tours du simulateur atteinte : **pas une règle du jeu**,
     /// une sécurité pour les simulations (équivalent d'une fin de ronde).
@@ -538,6 +548,30 @@ pub struct GameState {
     /// Quick) : (objet, contrôleur précédent), rendu à la fin de la phase
     /// d'action (CR 8.5.54).
     pub steals: Vec<(ObjRef, PlayerId)>,
+    /// Effets « become » en cours sur un héros (CR 8.5.25) : (joueur, carte
+    /// d'origine du héros). « Return to the brood » les fait cesser
+    /// (CR 8.5.52).
+    pub became: Vec<(PlayerId, CardId)>,
+    /// « Your attacks with stealth get +1{p} this turn » (Night's Embrace) :
+    /// effets du tour sur toutes les attaques d'un joueur, présentes et futures.
+    pub attack_buffs: Vec<AttackBuff>,
+    /// Blocage (CR 4.5.4d), cas étendu : nombre de tours de suite terminés
+    /// sans carte dans les decks et les mains, et sans changement des totaux
+    /// de vie (`stale_life`).
+    pub stale_turns: u8,
+    pub stale_life: [i32; 2],
+}
+
+/// « Your attacks [filtrées] get … this turn » (Night's Embrace) : s'applique
+/// à chaque attaque du joueur (carte ou proxy, sur la pile ou la chaîne de
+/// combat) jusqu'à la fin du tour.
+#[derive(Clone, Copy, Debug)]
+pub struct AttackBuff {
+    pub player: PlayerId,
+    /// Filtre sur l'attaque. Il est appelé pendant le calcul des valeurs :
+    /// il ne doit pas lire les valeurs modifiées (`power`, `keywords`…).
+    pub filter: fn(&GameState, ObjectId) -> bool,
+    pub delta: Delta,
 }
 
 impl GameState {
@@ -911,6 +945,12 @@ impl GameState {
         for m in &self.modifiers {
             if m.target == r {
                 add(m.delta);
+            }
+        }
+        // « Your attacks with stealth get +1{p} this turn » (Night's Embrace).
+        if !self.attack_buffs.is_empty() {
+            if let Some(x) = self.attack_buff_delta(id) {
+                add(x);
             }
         }
         // Effets statiques de la carte elle-même (CR 5.4), sauf si elle a

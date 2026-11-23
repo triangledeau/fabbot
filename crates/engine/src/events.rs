@@ -62,6 +62,13 @@ pub enum Event {
         /// L'allié touché ; `None` = le héros (« when this hits a hero »).
         target_obj: Option<ObjectId>,
         damage: u16,
+        /// Le héros touché était marqué juste avant (CR 9.3.3 : la marque
+        /// disparaît au moment de la touche ; « when this hits a marked hero »).
+        marked: bool,
+        /// Touche par un effet (« If damage is dealt this way, the dagger
+        /// has hit », Bite, Hurl, Danger Digits) et non par des dégâts de
+        /// combat : `attack` est alors la dague, qui n'attaque pas.
+        effect: bool,
     },
     /// Un maillon se résout (CR 7.6.2).
     ChainLinkResolved {
@@ -139,6 +146,12 @@ pub enum Event {
     Revealed {
         player: PlayerId,
         card: ObjectId,
+    },
+    /// Le héros de ce joueur devient cette carte (become, CR 8.5.25 ; ex.
+    /// Arakni : « you become a random Agent of Chaos »).
+    Became {
+        player: PlayerId,
+        card: CardId,
     },
     /// Un joueur gagne un clash en révélant cette carte (CR 8.5.45a).
     ClashWon {

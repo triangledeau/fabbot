@@ -1,4 +1,4 @@
-//! Cartes génériques (sans classe) des decks Hala, Dorinthea, Ira et Bravo.
+//! Cartes génériques (sans classe) des 9 decks.
 
 use super::{by_color, deck_card, equipment, grant, power, target_obj, COLORS};
 use fab_engine::card::{CardDb, CardDef, Color, Delta, Keywords, Subtypes, Supertypes, Types};
@@ -50,6 +50,10 @@ pub const NAMES: &[&str] = &[
     "Oasis Respite",
     "Outed",
     "Snatch",
+    "Public Bounty",
+    "Pursue to the Edge of Oblivion",
+    "Pursue to the Pits of Despair",
+    "Relentless Pursuit",
 ];
 
 const G: Supertypes = Supertypes::NONE;
@@ -496,6 +500,7 @@ pub fn add(db: &mut CardDb) {
     bravo_generics(db);
     iyslander_generics(db);
     dromai_generics(db);
+    arakni_generics(db);
 }
 
 /// Cartes génériques du deck Iyslander.
@@ -1232,4 +1237,116 @@ fn possible_sources(g: &GameState) -> Vec<ObjectId> {
             (x.zone.in_arena() || x.zone == Zone::Stack) && !x.face_down && x.proxy_of.is_none()
         })
         .collect()
+}
+
+/// « If you've attacked [ce héros] this turn » : `p` a attaqué le héros de `q`.
+fn attacked_hero_this_turn(
+    g: &GameState,
+    p: fab_engine::PlayerId,
+    q: fab_engine::PlayerId,
+) -> bool {
+    g.turn_events().iter().any(|e| {
+        matches!(*e, Event::Attack { attacker, target, target_obj: None, .. } if attacker == p && target == q)
+    })
+}
+
+/// Cartes génériques du deck Arakni.
+fn arakni_generics(db: &mut CardDb) {
+    use super::assassin::{this_hits_a_hero, TARGET_OPPOSING_HERO};
+    let hit_mark = || TriggerDef {
+        when: this_hits_a_hero,
+        anywhere: false,
+        targets: vec![],
+        script: vec![Op::Do(|g, c| {
+            if let Some(Event::Hit { target, .. }) = c.event {
+                g.mark(target);
+            }
+        })],
+    };
+
+    // Public Bounty — Generic Action, coût 1, déf. 2.
+    // « **Mark** target opposing hero.
+    // The next time you attack a **marked** hero this turn, the attack gets
+    // +3{p} / +2{p} / +1{p}.
+    // **Go again** »
+    for c in COLORS {
+        let mut d = deck_card("Public Bounty", c, G, Types::ACTION, Some(1), None, Some(2));
+        d.keywords = Keywords::GO_AGAIN;
+        d.targets = vec![TARGET_OPPOSING_HERO];
+        d.resolve = vec![Op::Do(|g, c| {
+            if let Some(Target::Player(p)) = c.target(0) {
+                g.mark(p);
+            }
+            let n = by_color(g, c, [3, 2, 1]);
+            // L'attaque qui devient l'attaque active vise un héros marqué.
+            g.next_time_you_attack(
+                c.controller,
+                |g, a| {
+                    g.active_link().is_some_and(|l| {
+                        l.attack.id == a && l.target_obj.is_none() && g.player(l.target).marked
+                    })
+                },
+                power(n),
+            );
+        })];
+        db.add(d);
+    }
+
+    // Pursue to the Edge of Oblivion (rouge) — Generic Action - Attack, 4{p},
+    // coût 0, déf. 3. « When this hits a hero, **mark** them. »
+    let mut d = deck_card(
+        "Pursue to the Edge of Oblivion",
+        Color::Red,
+        G,
+        Types::ACTION,
+        Some(0),
+        Some(4),
+        Some(3),
+    );
+    d.triggers = vec![hit_mark()];
+    db.add(d);
+
+    // Pursue to the Pits of Despair (rouge) — Generic Action - Attack, 5{p},
+    // coût 1, déf. 3. « When this hits a hero, **mark** them. »
+    let mut d = deck_card(
+        "Pursue to the Pits of Despair",
+        Color::Red,
+        G,
+        Types::ACTION,
+        Some(1),
+        Some(5),
+        Some(3),
+    );
+    d.triggers = vec![hit_mark()];
+    db.add(d);
+
+    // Relentless Pursuit (bleu) — Generic Action, coût 0, déf. 3.
+    // « **Mark** target opposing hero.
+    // If you've attacked them this turn, put this on the bottom of its
+    // owner's deck.
+    // **Go again** »
+    // La carte quitte la pile pendant sa résolution : son go again est lu
+    // sur la couche (CR 5.3.5a).
+    let mut d = deck_card(
+        "Relentless Pursuit",
+        Color::Blue,
+        G,
+        Types::ACTION,
+        Some(0),
+        None,
+        Some(3),
+    );
+    d.keywords = Keywords::GO_AGAIN;
+    d.targets = vec![TARGET_OPPOSING_HERO];
+    d.resolve = vec![Op::Do(|g, c| {
+        if let Some(Target::Player(p)) = c.target(0) {
+            g.mark(p);
+            if attacked_hero_this_turn(g, c.controller, p) {
+                if let Some(s) = c.source.filter(|&s| g.is_current(s)) {
+                    g.put_on_bottom(s.id);
+                }
+            }
+        }
+    })];
+    db.add(d);
 }

@@ -31,6 +31,7 @@ fn main() {
             (Types::EQUIPMENT, "Equipment"),
             (Types::WEAPON, "Weapon"),
             (Types::HERO, "Hero"),
+            (Types::DEMI_HERO, "Demi-Hero"),
             (Types::TOKEN, "Token"),
             (Types::BLOCK, "Block"),
         ] {
@@ -59,6 +60,8 @@ fn main() {
             (Subtypes::ASH, "Ash"),
             (Subtypes::ITEM, "Item"),
             (Subtypes::SCEPTER, "Scepter"),
+            (Subtypes::TRAP, "Trap"),
+            (Subtypes::DISEASE, "Disease"),
         ] {
             if d.subtypes.has(t) {
                 words.push(w);
@@ -71,6 +74,8 @@ fn main() {
             (Supertypes::SHADOW, "Shadow"),
             (Supertypes::DRACONIC, "Draconic"),
             (Supertypes::ILLUSIONIST, "Illusionist"),
+            (Supertypes::ASSASSIN, "Assassin"),
+            (Supertypes::CHAOS, "Chaos"),
         ] {
             if d.supertypes.has(t) {
                 words.push(w);
@@ -91,6 +96,7 @@ fn main() {
             (Keywords::BLOOD_DEBT, "Blood Debt"),
             (Keywords::PHANTASM, "Phantasm"),
             (Keywords::SPECTRA, "Spectra"),
+            (Keywords::STEALTH, "Stealth"),
         ] {
             if d.keywords.has(k) {
                 kw.push(w);
