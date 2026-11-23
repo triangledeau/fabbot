@@ -164,33 +164,37 @@ cargo run --release -p fab-sim -- --tournoi --bots b2 b0 --games 20 --check
 |---|---|---|
 | B0 | 0 | référence |
 | B1 | **+511** | 81 000 parties contre B0 |
-| B2 | **+785** | 1 620 parties contre B1 (83,6 %, +283 ± 23) et 1 620 contre B0 (98,1 %) |
+| B2 | **+796** | 1 620 parties contre B1 (83,9 %, +287 ± 23) et 1 620 contre B0 (98,8 %) |
 
 Calcul commun par Bradley-Terry sur les trois confrontations (contre B0
-seul, B2 obtient +690 : à 98 %, l'écart est mal mesuré).
+seul, B2 obtient +770 : à 99 %, l'écart est mal mesuré). Ces mesures sont
+faites avec B2 qui imagine la main adverse dans le **card-pool** ; quand il
+connaissait les 40 cartes exactes, il faisait 83,6 % contre B1 (même force,
+à la précision près).
 
-**B2 contre B1 : 83,6 %, 0 erreur (vérification `--check`).** Score de B2
-(%), ligne = deck de B2, colonne = deck de B1 (20 parties par case) :
+**B2 contre B1 : 83,9 %, 0 erreur (vérification `--check`), 2 nulles par
+blocage.** Score de B2 (%), ligne = deck de B2, colonne = deck de B1
+(20 parties par case) :
 
 | B2 \ B1 | ira | hala | dorint. | bravo | iyslan. | florian | levia | dromai | arakni | moy. |
 |---|---|---|---|---|---|---|---|---|---|---|
-| ira | 100 | 85 | 100 | 80 | 100 | 100 | 100 | 70 | 100 | 93 |
-| hala | 80 | 95 | 80 | 85 | 100 | 95 | 100 | 50 | 100 | 87 |
-| dorinthea | 100 | 100 | 100 | 100 | 100 | 75 | 100 | 55 | 100 | 92 |
-| bravo | 100 | 100 | 100 | 100 | 100 | 75 | 100 | 100 | 100 | 97 |
-| iyslander | 95 | 90 | 95 | 90 | 95 | 75 | 95 | 25 | 100 | 84 |
-| florian | 100 | 95 | 95 | 90 | 100 | 100 | 100 | 80 | 100 | 96 |
-| levia | 30 | 15 | 10 | 15 | 65 | 40 | 90 | 10 | 35 | 34 |
-| dromai | 100 | 100 | 100 | 95 | 100 | 100 | 100 | 100 | 100 | 99 |
-| arakni | 90 | 50 | 35 | 65 | 100 | 55 | 100 | 30 | 100 | 69 |
+| ira | 100 | 85 | 95 | 90 | 100 | 100 | 100 | 65 | 100 | 93 |
+| hala | 85 | 98 | 95 | 90 | 100 | 90 | 100 | 35 | 100 | 88 |
+| dorinthea | 100 | 100 | 100 | 100 | 100 | 85 | 100 | 40 | 100 | 92 |
+| bravo | 100 | 100 | 100 | 95 | 100 | 95 | 100 | 100 | 100 | 99 |
+| iyslander | 80 | 85 | 90 | 85 | 100 | 70 | 95 | 30 | 100 | 82 |
+| florian | 100 | 80 | 100 | 100 | 100 | 100 | 100 | 55 | 100 | 93 |
+| levia | 50 | 5 | 0 | 30 | 70 | 25 | 80 | 15 | 55 | 37 |
+| dromai | 100 | 100 | 100 | 95 | 100 | 100 | 100 | 90 | 100 | 98 |
+| arakni | 100 | 52 | 40 | 75 | 100 | 65 | 100 | 35 | 100 | 74 |
 
-Points faibles restants : **Levia** (34 %, le blood debt : B1, qui joue
+Points faibles restants : **Levia** (37 %, le blood debt : B1, qui joue
 les décisions suivantes et les parties simulées, ne le comprend pas, et
 4 tours simulés sont trop courts pour en voir le coût) et **Arakni**
-(69 %). Dromai reste très fort, aussi entre les mains de B1.
+(74 %). Dromai reste très fort, aussi entre les mains de B1.
 
-**B2 contre B0 : 98,1 %** (1 590 victoires, 30 défaites, 0 erreur), dont
-84 % avec Levia ; 100 % avec 7 decks.
+**B2 contre B0 : 98,8 %** (1 600 victoires, 18 défaites, 2 nulles,
+0 erreur), dont 91 % avec Levia.
 
 ### Résultats de B1 (2026-11-23, 81 000 parties, 0 erreur)
 
