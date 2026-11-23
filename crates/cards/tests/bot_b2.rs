@@ -252,6 +252,9 @@ fn les_reglages_de_b2_se_lisent_dans_son_nom() {
     assert_eq!(r.politique, fab_ai::b2::Politique::Aleatoire);
     let r = ReglagesB2::depuis_nom("500ms").unwrap();
     assert_eq!(r.duree_max, Some(std::time::Duration::from_millis(500)));
+    let r = ReglagesB2::depuis_nom("100t0p0").unwrap();
+    assert_eq!(r.tours_simules, None);
+    assert_eq!(r.profondeur, u32::MAX);
     assert!(ReglagesB2::depuis_nom("0").is_none());
     assert!(ReglagesB2::depuis_nom("12x").is_none());
     assert!(creer_agent("b2-50", 1).is_some());

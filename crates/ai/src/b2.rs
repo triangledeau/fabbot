@@ -16,6 +16,14 @@
 //!
 //! À la fin, il joue l'option de la racine la plus souvent choisie.
 //!
+//! **Réglages par défaut** (mesurés, voir `docs/bots.md`) : 300 itérations,
+//! arbre limité à la décision présente (`profondeur = 1` : les décisions
+//! suivantes sont jouées par B1), parties simulées arrêtées après 4 tours
+//! puis estimées (vies + cartes en main). Avec peu d'itérations, un arbre
+//! plus profond fait jouer l'adversaire imaginé moins bien que B1, et B1
+//! joue mal la fin de partie de certains decks : les deux font perdre des
+//! points.
+//!
 //! C'est la variante « un seul observateur » (SO-ISMCTS, Cowling, Powley et
 //! Whitehouse, 2012) : un seul arbre, vu depuis l'information de B2. Comme
 //! les options changent d'un monde à l'autre (la main adverse change), on
@@ -78,12 +86,12 @@ pub struct ReglagesB2 {
 impl Default for ReglagesB2 {
     fn default() -> Self {
         ReglagesB2 {
-            iterations: 200,
+            iterations: 300,
             duree_max: None,
-            exploration: 0.7,
+            exploration: 0.4,
             politique: Politique::Heuristique,
-            tours_simules: None,
-            profondeur: u32::MAX,
+            tours_simules: Some(4),
+            profondeur: 1,
             valeur_carte: 1.5,
         }
     }
@@ -93,8 +101,9 @@ impl ReglagesB2 {
     /// Lit des réglages écrits après « b2- » : un nombre d'itérations
     /// (`1000`) ou une durée (`500ms`), puis des options : `t4` (parties
     /// simulées arrêtées après 4 tours), `a` (parties simulées par B0),
-    /// `c0.5` (constante d'exploration), `p2` (profondeur de l'arbre), `v3`
-    /// (valeur d'une carte pour l'estimation).
+    /// `c0.5` (constante d'exploration), `p2` (profondeur de l'arbre ; `p0` :
+    /// sans limite), `v3` (valeur d'une carte pour l'estimation), `t0` :
+    /// parties simulées jusqu'à la fin.
     /// Ex. : `300t6`, `500ms`, `200c1.2`, `400p1`.
     pub fn depuis_nom(texte: &str) -> Option<Self> {
         let mut r = ReglagesB2::default();
@@ -123,8 +132,11 @@ impl ReglagesB2 {
                     let (n, l) = nombre(reste);
                     reste = &reste[l..];
                     match c {
-                        't' => r.tours_simules = Some(n.parse().ok()?),
-                        'p' => r.profondeur = n.parse().ok().filter(|&p| p > 0)?,
+                        't' => r.tours_simules = Some(n.parse().ok()?).filter(|&t| t > 0),
+                        'p' => {
+                            r.profondeur =
+                                Some(n.parse().ok()?).filter(|&p| p > 0).unwrap_or(u32::MAX)
+                        }
                         'v' => r.valeur_carte = n.parse().ok()?,
                         _ => r.exploration = n.parse().ok()?,
                     }
