@@ -180,6 +180,7 @@ pub fn add_to(db: &mut CardDb) {
             filter: active_attack,
             optional: false,
             in_graveyard: false,
+            in_banished: false,
         }];
         d.resolve = vec![Op::Do(match i {
             0 => |g: &mut GameState, c: &mut Ctx| buff_target(g, c, 3),
@@ -203,6 +204,7 @@ pub fn add_to(db: &mut CardDb) {
             filter: opposing_hero,
             optional: false,
             in_graveyard: false,
+            in_banished: false,
         }];
         d.resolve = vec![Op::Do(|g, c| {
             if let Some(Target::Player(p)) = c.target(0) {
@@ -251,6 +253,7 @@ pub fn add_to(db: &mut CardDb) {
         filter: active_attack,
         optional: false,
         in_graveyard: false,
+        in_banished: false,
     }];
     d.resolve = vec![Op::Do(|g, c| {
         if let Some(Target::Object(r)) = c.target(0) {
@@ -370,6 +373,7 @@ pub fn add_to(db: &mut CardDb) {
         filter: any_hero,
         optional: false,
         in_graveyard: false,
+        in_banished: false,
     }];
     d.resolve = vec![Op::Do(|g, c| {
         if let Some(Target::Player(p)) = c.target(0) {
@@ -640,7 +644,7 @@ fn add_engine_cards(db: &mut CardDb) {
             targets: vec![],
             script: vec![Op::Do(|g, c| {
                 if let Some(s) = c.source.filter(|&s| g.is_current(s)) {
-                    g.banish(s.id, false);
+                    g.banish(c.controller, s.id, false);
                 }
             })],
         }],
@@ -710,6 +714,7 @@ fn add_engine_cards(db: &mut CardDb) {
         filter: any_hero,
         optional: false,
         in_graveyard: false,
+        in_banished: false,
     }];
     d.resolve = vec![Op::Do(|g, c| {
         if let Some(Target::Player(p)) = c.target(0) {
@@ -763,6 +768,7 @@ fn add_engine_cards(db: &mut CardDb) {
         },
         optional: false,
         in_graveyard: false,
+        in_banished: false,
     }];
     d.resolve = vec![Op::Do(|g, c| {
         if let Some(Target::Object(r)) = c.target(0) {
@@ -981,6 +987,7 @@ fn add_step3_cards(db: &mut CardDb) {
         filter: active_attack,
         optional: false,
         in_graveyard: false,
+        in_banished: false,
     }];
     d.resolve = vec![Op::Do(|g, c| {
         if let Some(Target::Object(r)) = c.target(0) {
@@ -1013,6 +1020,7 @@ fn add_step3_cards(db: &mut CardDb) {
         },
         optional: false,
         in_graveyard: false,
+        in_banished: false,
     }];
     d.resolve = vec![Op::Do(|g, c| {
         let n = if c.mode == 0 { 3 } else { 1 };

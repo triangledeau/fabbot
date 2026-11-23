@@ -33,6 +33,7 @@ pub const NAMES: &[&str] = &[
     "Might",
     "Vigor",
     "Quicken",
+    "Agility",
     "Pummel",
     "Unflinching Foothold",
     "Blade Beckoner Plating",
@@ -41,6 +42,14 @@ pub const NAMES: &[&str] = &[
     "Wounded Bull",
     "Unmovable",
     "Timesnap Potion",
+    "Deep Blue",
+    "Seeker's Leggings",
+    "Time Skippers",
+    "Jack Be Quick",
+    "Nimblism",
+    "Oasis Respite",
+    "Outed",
+    "Snatch",
 ];
 
 const G: Supertypes = Supertypes::NONE;
@@ -392,6 +401,7 @@ pub fn add(db: &mut CardDb) {
             },
             optional: false,
             in_graveyard: false,
+            in_banished: false,
         }];
         d.resolve = vec![Op::Do(|g, c| {
             if let Some(r) = target_obj(c, 0) {
@@ -437,6 +447,7 @@ pub fn add(db: &mut CardDb) {
             },
             optional: false,
             in_graveyard: false,
+            in_banished: false,
         }];
         d.resolve = vec![Op::Do(|g, c: &mut Ctx| {
             if let Some(r) = target_obj(c, 0) {
@@ -484,6 +495,7 @@ pub fn add(db: &mut CardDb) {
     tokens(db);
     bravo_generics(db);
     iyslander_generics(db);
+    dromai_generics(db);
 }
 
 /// Cartes génériques du deck Iyslander.
@@ -612,7 +624,7 @@ fn iyslander_generics(db: &mut CardDb) {
     db.add(d);
 }
 
-/// Tokens génériques Might, Vigor et Quicken.
+/// Tokens génériques Might, Vigor, Agility et Quicken.
 fn tokens(db: &mut CardDb) {
     let token = |name: &str, trigger: TriggerDef| CardDef {
         name: name.into(),
@@ -650,6 +662,22 @@ fn tokens(db: &mut CardDb) {
             script: vec![Op::Do(|g, c| {
                 destroy_source(g, c);
                 g.gain_resources(c.controller, 1);
+            })],
+        },
+    ));
+
+    // Agility — Generic Token - Aura (deck Levia).
+    // « At the start of your turn, destroy this, then your next attack this
+    // turn gets go again. »
+    db.add(token(
+        "Agility",
+        TriggerDef {
+            when: start_of_your_turn,
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| {
+                destroy_source(g, c);
+                g.next_attack(c.controller, None, grant(Keywords::GO_AGAIN), false);
             })],
         },
     ));
@@ -750,6 +778,7 @@ fn bravo_generics(db: &mut CardDb) {
         },
         optional: false,
         in_graveyard: false,
+        in_banished: false,
     }];
     d.resolve = vec![Op::Do(|g, c| {
         if let Some(r) = target_obj(c, 0) {
@@ -851,4 +880,356 @@ pub(crate) fn is_attack_action_card(g: &GameState, id: ObjectId) -> bool {
 pub(crate) fn this_hits(g: &GameState, me: ObjectId, e: &Event) -> bool {
     matches!(e, Event::Hit { attack, .. }
         if *attack == me || g.obj(me).proxy_of == Some(*attack))
+}
+
+/// Opt 1 (CR 8.5.22) : le joueur regarde la carte du dessus de son deck, puis
+/// la laisse dessus ou la met dessous (CR 8.5.22b : rien si le deck est vide).
+pub(crate) fn opt1() -> Vec<Op> {
+    vec![
+        Op::Ask(|g, c| {
+            g.top_of_deck(c.controller).map(|top| Ask {
+                player: c.controller,
+                label: "Opt 1 : garder cette carte sur le deck ? (Passer : la mettre dessous)",
+                options: vec![Choice::Object(top), Choice::Pass],
+            })
+        }),
+        Op::Do(|g, c| {
+            if c.answer.take() == Some(Choice::Pass) {
+                if let Some(top) = g.top_of_deck(c.controller) {
+                    g.put_on_bottom(top);
+                }
+            }
+        }),
+    ]
+}
+
+/// Cartes génériques du deck Dromai.
+fn dromai_generics(db: &mut CardDb) {
+    // Deep Blue — Generic Equipment - Chest, déf. 0.
+    // « Action -- Put a card from your hand on the bottom of your deck,
+    //   destroy this: Gain {r}{r}{r}. Go again »
+    let mut d = equipment("Deep Blue", G, Subtypes::CHEST, 0);
+    d.activated = vec![ActivatedDef {
+        label: "Carte de la main sous le deck, détruire : gagner {r}{r}{r}",
+        speed: Speed::Action,
+        go_again: true,
+        condition: Some(|g, p, _| !g.player(p).hand.is_empty()),
+        effect_cost: vec![
+            Op::Ask(|g, c| {
+                let hand = &g.player(c.controller).hand;
+                (hand.len() > 1).then(|| Ask {
+                    player: c.controller,
+                    label: "Carte de la main à mettre sous le deck",
+                    options: hand.iter().map(|&x| Choice::Object(x)).collect(),
+                })
+            }),
+            Op::Do(|g, c| {
+                let card = match c.answer.take() {
+                    Some(Choice::Object(x)) if g.obj(x).zone == Zone::Hand => Some(x),
+                    _ => g.player(c.controller).hand.first().copied(),
+                };
+                if let Some(x) = card {
+                    g.put_on_bottom(x);
+                }
+                destroy_source(g, c);
+            }),
+        ],
+        script: vec![Op::Do(|g, c| g.gain_resources(c.controller, 3))],
+        ..Default::default()
+    }];
+    db.add(d);
+
+    // Seeker's Leggings — Generic Equipment - Legs (pas de défense).
+    // « Instant -- {r}, destroy this: Prevent the next 1 damage that would be
+    //   dealt to you this turn. Opt 1 »
+    let mut d = equipment("Seeker's Leggings", G, Subtypes::LEGS, 0);
+    d.defense = None;
+    let mut script = vec![Op::Do(|g, c| g.prevent_next(c.controller, 1, false, None))];
+    script.extend(opt1());
+    d.activated = vec![ActivatedDef {
+        label: "{r}, détruire : prévenir 1 dégât, opt 1",
+        speed: Speed::Instant,
+        cost: 1,
+        effect_cost: vec![Op::Do(|g, c| destroy_source(g, c))],
+        script,
+        ..Default::default()
+    }];
+    db.add(d);
+
+    // Time Skippers — Generic Equipment - Legs, déf. 0.
+    // « Action -- {r}{r}{r}, destroy this: Gain 2 action points. »
+    let mut d = equipment("Time Skippers", G, Subtypes::LEGS, 0);
+    d.activated = vec![ActivatedDef {
+        label: "{r}{r}{r}, détruire : gagner 2 points d'action",
+        speed: Speed::Action,
+        cost: 3,
+        effect_cost: vec![Op::Do(|g, c| destroy_source(g, c))],
+        script: vec![Op::Do(|g, c| g.gain_action_points(c.controller, 2))],
+        ..Default::default()
+    }];
+    db.add(d);
+
+    // Jack Be Quick (rouge) — Generic Action - Attack, coût 0, 3{p} 3{d}.
+    // « When this attacks, you may banish a Nimblism from your graveyard. If
+    //   you do, this gets +1{p} and go again.
+    //   When this hits a hero, {u} an ally they control, then steal it until
+    //   the end of this action phase. »
+    let mut d = deck_card(
+        "Jack Be Quick",
+        Color::Red,
+        G,
+        Types::ACTION,
+        Some(0),
+        Some(3),
+        Some(3),
+    );
+    d.triggers = vec![
+        TriggerDef {
+            when: when_this_attacks,
+            anywhere: false,
+            targets: vec![],
+            script: vec![
+                Op::Ask(|g, c| {
+                    let n: Vec<ObjectId> = nimblisms_in_graveyard(g, c.controller);
+                    (!n.is_empty()).then(|| Ask {
+                        player: c.controller,
+                        label: "Bannir un Nimblism de votre cimetière (+1{p} et go again) ?",
+                        options: n
+                            .into_iter()
+                            .map(Choice::Object)
+                            .chain(std::iter::once(Choice::Pass))
+                            .collect(),
+                    })
+                }),
+                Op::Do(|g, c| {
+                    if let Some(Choice::Object(x)) = c.answer.take() {
+                        if g.obj(x).zone == Zone::Graveyard {
+                            g.banish(c.controller, x, false);
+                            if let Some(s) = c.source.filter(|&s| g.is_current(s)) {
+                                let delta = Delta {
+                                    power: 1,
+                                    grants: Keywords::GO_AGAIN,
+                                    ..Default::default()
+                                };
+                                g.modify(s, delta, Until::EndOfTurn);
+                            }
+                        }
+                    }
+                }),
+            ],
+        },
+        TriggerDef {
+            when: |_, me, e| matches!(e, Event::Hit { attack, target_obj: None, .. } if *attack == me),
+            anywhere: false,
+            targets: vec![],
+            script: vec![
+                Op::Ask(|g, c| {
+                    let allies = allies_of(g, hit_target(c)?);
+                    (allies.len() > 1).then(|| Ask {
+                        player: c.controller,
+                        label: "Allié à dégager puis voler",
+                        options: allies.into_iter().map(Choice::Object).collect(),
+                    })
+                }),
+                Op::Do(|g, c| {
+                    let Some(them) = hit_target(c) else { return };
+                    let allies = allies_of(g, them);
+                    let pick = match c.answer.take() {
+                        Some(Choice::Object(x)) if allies.contains(&x) => Some(x),
+                        _ => allies.first().copied(),
+                    };
+                    if let Some(x) = pick {
+                        // {u} : dégager (CR 8.5.56), puis steal (CR 8.5.54).
+                        g.obj_mut(x).tapped = false;
+                        g.steal_until_end_of_action_phase(c.controller, x);
+                    }
+                }),
+            ],
+        },
+    ];
+    db.add(d);
+
+    // Nimblism (rouge) — Generic Action, coût 0, déf. 2.
+    // « The next attack action card with cost 1 or less you play this turn
+    //   gets +3{p}.
+    //   Go again »
+    let mut d = deck_card(
+        "Nimblism",
+        Color::Red,
+        G,
+        Types::ACTION,
+        Some(0),
+        None,
+        Some(2),
+    );
+    d.keywords = Keywords::GO_AGAIN;
+    d.resolve = vec![Op::Do(|g, c| {
+        g.next_attack(
+            c.controller,
+            Some(|g, a| is_attack_action_card(g, a) && g.def(a).cost.unwrap_or(0) <= 1),
+            power(3),
+            true,
+        );
+    })];
+    db.add(d);
+
+    // Oasis Respite (rouge) — Generic Instant, coût 1.
+    // « Prevent the next 4 damage that would be dealt to target hero this
+    //   turn by a source of your choice. If they have less {h} than each
+    //   other hero, they may gain 1{h}. »
+    // La source est choisie à la résolution, parmi les objets publics de
+    // l'arène et de la pile (CR 9.1.2c : l'effet suit une carte retournable).
+    let mut d = deck_card(
+        "Oasis Respite",
+        Color::Red,
+        G,
+        Types::INSTANT,
+        Some(1),
+        None,
+        None,
+    );
+    d.targets = vec![super::wizard::TARGET_HERO];
+    d.resolve = vec![
+        Op::Ask(|g, c| {
+            hero_target(c)?;
+            Some(Ask {
+                player: c.controller,
+                label: "Source dont les dégâts sont prévenus",
+                options: possible_sources(g)
+                    .into_iter()
+                    .map(Choice::Object)
+                    .collect(),
+            })
+        }),
+        Op::Do(|g, c| {
+            let Some(p) = hero_target(c) else { return };
+            let src = match c.answer.take() {
+                Some(Choice::Object(x)) => x,
+                _ => return,
+            };
+            let source = Some(g.obj_ref(src));
+            g.add_prevention(fab_engine::Prevention {
+                id: 0,
+                player: p,
+                remaining: Some(4),
+                arcane_only: false,
+                source,
+                source_filter: None,
+                fixed: false,
+                on_prevent: None,
+                until: Until::EndOfTurn,
+            });
+        }),
+        Op::Ask(|g, c| {
+            let p = hero_target(c)?;
+            (g.player(p).life < g.player(p.opponent()).life).then(|| Ask {
+                player: p,
+                label: "Gagner 1 PV ?",
+                options: vec![Choice::Yes, Choice::No],
+            })
+        }),
+        Op::Do(|g, c| {
+            if let (Some(Choice::Yes), Some(p)) = (c.answer.take(), hero_target(c)) {
+                g.gain_life(p, 1);
+            }
+        }),
+    ];
+    db.add(d);
+
+    // Outed (rouge) — Generic Action - Attack, coût 0, 3{p} (pas de défense).
+    // « If you are marked, you can't play this.
+    //   If the defending hero is marked, this gets +1{p}.
+    //   Go again »
+    let mut d = deck_card(
+        "Outed",
+        Color::Red,
+        G,
+        Types::ACTION,
+        Some(0),
+        Some(3),
+        None,
+    );
+    d.keywords = Keywords::GO_AGAIN;
+    d.play_condition = Some(|g, p, _| !g.player(p).marked);
+    d.self_mod = Some(|g, me| {
+        let defending_marked = g
+            .combat
+            .links
+            .iter()
+            .any(|l| l.attack.id == me && g.player(l.target).marked);
+        if defending_marked {
+            power(1)
+        } else {
+            Delta::default()
+        }
+    });
+    db.add(d);
+
+    // Snatch (rouge) — Generic Action - Attack, coût 0, 4{p} 2{d}.
+    // « When this hits, draw a card. »
+    let mut d = deck_card(
+        "Snatch",
+        Color::Red,
+        G,
+        Types::ACTION,
+        Some(0),
+        Some(4),
+        Some(2),
+    );
+    d.triggers = vec![TriggerDef {
+        when: this_hits,
+        anywhere: false,
+        targets: vec![],
+        script: vec![Op::Do(|g, c| {
+            g.draw(c.controller);
+        })],
+    }];
+    db.add(d);
+}
+
+/// Les Nimblism du cimetière de `p`.
+fn nimblisms_in_graveyard(g: &GameState, p: fab_engine::PlayerId) -> Vec<ObjectId> {
+    g.player(p)
+        .graveyard
+        .iter()
+        .copied()
+        .filter(|&x| g.def(x).name == "Nimblism")
+        .collect()
+}
+
+/// Les alliés que `p` contrôle.
+fn allies_of(g: &GameState, p: fab_engine::PlayerId) -> Vec<ObjectId> {
+    g.permanents
+        .iter()
+        .copied()
+        .filter(|&o| g.obj(o).controller == p && g.def(o).subtypes.has(Subtypes::ALLY))
+        .collect()
+}
+
+/// Le héros touché (« they ») d'une capacité « when this hits a hero ».
+fn hit_target(c: &Ctx) -> Option<fab_engine::PlayerId> {
+    match c.event {
+        Some(Event::Hit { target, .. }) => Some(target),
+        _ => None,
+    }
+}
+
+/// Le héros ciblé (cible n° 0), s'il l'est encore.
+fn hero_target(c: &Ctx) -> Option<fab_engine::PlayerId> {
+    match c.target(0) {
+        Some(Target::Player(p)) => Some(p),
+        _ => None,
+    }
+}
+
+/// « A source of your choice » : les objets publics de l'arène (héros,
+/// armes, équipements, permanents, chaîne de combat) et de la pile.
+fn possible_sources(g: &GameState) -> Vec<ObjectId> {
+    (0..g.objects.len() as u32)
+        .map(ObjectId)
+        .filter(|&o| {
+            let x = g.obj(o);
+            (x.zone.in_arena() || x.zone == Zone::Stack) && !x.face_down && x.proxy_of.is_none()
+        })
+        .collect()
 }

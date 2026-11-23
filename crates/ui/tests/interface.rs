@@ -203,7 +203,7 @@ fn une_carte_bannie_face_cachee_est_visible_par_son_proprietaire_seulement() {
         g.apply(i).unwrap();
     }
     let c = g.player(P0).hand[0];
-    g.banish(c, true);
+    g.banish(P0, c, true);
     assert_eq!(g.obj(c).zone, Zone::Banished);
     assert!(vue::visible(&g, P0, c));
     assert!(!vue::visible(&g, PlayerId::P1, c));

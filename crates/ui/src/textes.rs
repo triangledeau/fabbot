@@ -83,6 +83,14 @@ impl Textes {
         ) else {
             return Textes::default();
         };
+        // Face arrière d'une carte retournable (ex. Azvolai, dos d'Invoke
+        // Azvolai) : colonnes facultatives `face_2_…`.
+        let face2 = (
+            col("face_2_true_name"),
+            col("face_2_true_color"),
+            col("face_2_true_textbox"),
+            col("face_2_true_typebox"),
+        );
         let mut cartes = HashMap::new();
         for l in lignes {
             if l.get(langue).map(String::as_str) != Some("en") {
@@ -96,6 +104,17 @@ impl Textes {
             cartes
                 .entry((n.clone(), c.clone()))
                 .or_insert_with(|| (t.clone(), b.clone()));
+            if let (Some(n2), Some(c2), Some(b2), Some(t2)) = face2 {
+                if let (Some(n), Some(c), Some(b), Some(t)) =
+                    (l.get(n2), l.get(c2), l.get(b2), l.get(t2))
+                {
+                    if !n.is_empty() {
+                        cartes
+                            .entry((n.clone(), c.clone()))
+                            .or_insert_with(|| (t.clone(), b.clone()));
+                    }
+                }
+            }
         }
         Textes { cartes }
     }

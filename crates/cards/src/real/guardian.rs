@@ -82,14 +82,14 @@ fn crushed(c: &Ctx) -> Option<PlayerId> {
 }
 
 /// Crée `n` tokens `name` pour le joueur `p`.
-fn create(g: &mut GameState, p: PlayerId, name: &str, n: u8) {
+pub(crate) fn create(g: &mut GameState, p: PlayerId, name: &str, n: u8) {
     let t = card_named(g, name);
     g.create_tokens(p, t, n);
 }
 
 /// Clash of Might / Vigor / Mountains, Test of Vigor : « clash with the
 /// attacking hero. The winner creates a [token] token. »
-fn clash_with_attacker(g: &mut GameState, c: &Ctx, token: &str) {
+pub(crate) fn clash_with_attacker(g: &mut GameState, c: &Ctx, token: &str) {
     let Some(Event::Defend { attack, .. }) = c.event else {
         return;
     };
@@ -404,6 +404,7 @@ fn deck_cards(db: &mut CardDb) {
         },
         optional: false,
         in_graveyard: false,
+        in_banished: false,
     }];
     d.triggers[0].script = vec![Op::Do(|g, c| {
         if let Some(r) = target_obj(c, 0) {

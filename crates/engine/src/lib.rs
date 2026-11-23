@@ -31,11 +31,12 @@ pub mod rng;
 pub mod script;
 pub mod setup;
 pub mod state;
+pub mod transform;
 pub mod zones;
 
 pub use card::{
-    ActivatedDef, CardDb, CardDef, Color, Delta, Keywords, Speed, Subtypes, Supertypes, TriggerDef,
-    Types,
+    ActivatedDef, CardDb, CardDef, Color, Delta, Flip, Keywords, Speed, Subtypes, Supertypes,
+    TriggerDef, Types,
 };
 pub use decision::{Choice, Decision, DecisionKind};
 pub use effects::{DamageEvent, PreventRef};

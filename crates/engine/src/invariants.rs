@@ -81,6 +81,20 @@ impl GameState {
                     seen[i] = 1;
                 }
                 Zone::Gone => seen[i] = 1,
+                Zone::Under => {
+                    let tops: Vec<ObjectId> = self
+                        .sub_cards
+                        .iter()
+                        .filter(|&&(s, _)| s == id)
+                        .map(|&(_, t)| t)
+                        .collect();
+                    if tops.len() != 1 {
+                        errs.push(format!("objet {i} sous {} permanents", tops.len()));
+                    } else if !self.obj(tops[0]).zone.in_arena() {
+                        errs.push(format!("objet {i} sous un objet hors de l'arène"));
+                    }
+                    seen[i] += 1;
+                }
                 Zone::Permanent => {
                     let n = self.permanents.iter().filter(|&&x| x == id).count();
                     if n != 1 {
@@ -92,6 +106,15 @@ impl GameState {
             }
             if seen[i] != 1 {
                 errs.push(format!("objet {i} ({:?}) présent {} fois", o.zone, seen[i]));
+            }
+        }
+        for &(s, _) in &self.sub_cards {
+            if self.obj(s).zone != Zone::Under {
+                errs.push(format!(
+                    "objet {} noté sous un permanent, zone {:?}",
+                    s.0,
+                    self.obj(s).zone
+                ));
             }
         }
         // Chaque objet en zone pile est soit une couche, soit dans la file d'attente.

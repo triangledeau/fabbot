@@ -11,33 +11,35 @@ met à jour à la fin de chaque tâche.
 | 0 | Mise en place, squelette | ✅ |
 | 1 | Cœur des règles + système d'effets | ✅ (manques connus listés dans `docs/rules/README.md`) |
 | 2 | Deux premiers decks complets + interface texte | ✅ (cartes à valider par le propriétaire avec l'interface) |
-| 3 | Les 7 autres decks + simulateur rapide | ⏳ (Ira ✅, Bravo ✅, Iyslander ✅, Florian ✅ ; restent Levia, Dromai, Arakni) |
+| 3 | Les 7 autres decks + simulateur rapide | ⏳ (Ira ✅, Bravo ✅, Iyslander ✅, Florian ✅, Levia ✅, Dromai ✅ ; reste Arakni) |
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ⏳ |
 | 5 | Interface web locale + annulation | ⏳ |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ⏳ |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
 
-**Branche la plus récente :** `claude/epic-faraday-pg52sk` (deck Florian,
-partie de `main` après la fusion du deck Iyslander). Tant qu'elle n'est pas
-fusionnée dans `main`, partir de cette branche.
+**Branche la plus récente :** `ccr-9b06529e-h1bljg` (deck Dromai, partie
+de `claude/nifty-pasteur-apci3j`, le deck Levia, pas encore fusionné dans
+`main`). Tant qu'elle n'est pas fusionnée dans `main`, partir de cette
+branche.
 
 **Jouer contre le bot :** `cargo run --release -p fab-ui` (mode d'emploi :
 `docs/interface.md`).
 
-**Chiffres actuels :** 465 tests au vert. Simulateur, bots **aléatoires**
+**Chiffres actuels :** 634 tests au vert. Simulateur, bots **aléatoires**
 (ces pourcentages ne disent rien des vrais matchups), 100 000 parties
-vérifiées (`--check`) sans incohérence pour chaque paire, ≈ 6 000 à 17 000
-parties/s dans le conteneur de Claude (4 cœurs). Florian contre chacun des
-5 autres decks et en miroir : 0 erreur (Florian 8,9 % contre Ira, 47,7 %
-contre Hala, 52,1 % contre Dorinthea, 48,8 % contre Bravo, 99,8 % contre
-Iyslander). Session précédente : Iyslander contre chacun des
-4 autres decks et en miroir : 0 erreur ; Iyslander perd ≈ 99 % contre les
-autres decks avec un bot aléatoire, qui envoie la moitié de ses sorts « any
-target » sur son propre héros (normal pour B0, à revoir avec B1). Avant :
-`--decks bravo ira` (Bravo 16,0 %), `--decks bravo hala` (Bravo 59,5 %),
-`--decks bravo dorinthea` (Bravo 61,8 %), `--decks bravo bravo`,
-`--vrais` (Hala 49,8 %, Dorinthea 46,5 %, inchangé). Ira contre Dorinthea :
-83,5 % (session précédente).
+vérifiées (`--check`) sans incohérence pour chaque paire, ≈ 3 000 à 10 000
+parties/s pour Dromai dans le conteneur de Claude (4 cœurs ; ses parties
+sont plus longues : 217 décisions en moyenne). Dromai contre chacun des 7
+autres decks et en miroir : 0 erreur (Dromai 74,2 % contre Ira, 94,5 %
+contre Hala, 95,8 % contre Dorinthea, 79,6 % contre Bravo, 99,3 % contre
+Iyslander, 94,5 % contre Florian, 99,1 % contre Levia, 50 % en miroir) : le
+bot aléatoire profite des attaques gratuites des dragons. Environ 1 à 3 %
+des parties contre Ira et Bravo atteignent la limite de 200 tours : decks
+vides, et la détection simple du blocage (CR 4.5.4d) ne conclut pas parce
+que Dromai a une capacité déclenchée (sans effet sans cartes). Inchangé :
+`--vrais` (Hala 49,6 %, Dorinthea 46,8 %), Levia 1,3 % contre Ira ; la
+vitesse des anciens decks est inchangée (≈ 11 500 parties/s Levia–Ira
+avec `--check`).
 
 **Choix provisoire d'équipement et de deck** (`real::default_loadout`, en
 attendant la phase de side de l'étape 6) : la première carte de chaque
@@ -50,7 +52,68 @@ prend Nebula Blade (2H) et donc aucun off-hand (Annals of Sutcliffe, listée
 
 ## Questions ouvertes pour le propriétaire
 
-Aucune question bloquante. Cinq choix faits pour Florian, à confirmer :
+Aucune question bloquante. Sept choix faits pour Dromai, à confirmer :
+
+1. **Phantasm sur une attaque de dragon** : CR 8.3.13 dit « destroy this ».
+   Pour une attaque d'allié (attaque-proxy), le moteur détruit **l'allié**
+   (le dragon va au cimetière, son Ash disparaît, la chaîne se ferme si
+   c'était avant les dégâts, CR 7.7.2c). Est-ce bien ça ?
+2. **Aether Ashwing** (Arcane Barrier 1) et **Sand Cover** (ward 4 sur une
+   Ash) : « you » est le contrôleur du permanent (CR 1.1.2b) ; ils protègent
+   donc le **héros**, pas l'allié lui-même. Une Ash avec ward est détruite
+   pour prévenir des dégâts faits à votre héros.
+3. **Invoke X** dont l'Ash ciblée a disparu : la carte entre quand même dans
+   l'arène, face dragon, sans Ash dessous (donc sans phantasm) (CR 5.3.6a,
+   8.2.13a). Une Invoke ne peut pas être jouée sans Ash à cibler.
+4. **Miragai / Passing Mirage** : « your first dragon (Illusionist) attack
+   each turn » = la première attaque de ce type du tour, même si elle a eu
+   lieu avant que Miragai / Passing Mirage soit en jeu (alors aucune autre
+   attaque n'en profite ce tour).
+5. **Cromai** (« Once per turn, when Cromai attacks or leaves the arena ») :
+   s'il a déjà attaqué ce tour, il ne redonne pas de point d'action en
+   quittant l'arène le même tour.
+6. **Oasis Respite** : « a source of your choice » est choisie à la
+   résolution parmi les objets publics de l'arène et de la pile (des deux
+   joueurs).
+7. **Plusieurs wards sur les mêmes dégâts** : si détruire l'un d'eux
+   déclenche une capacité (Silken Shroud, Wave of Reality, Essence of
+   Ancestry: Body), le joueur choisit l'ordre, même si tous seront utilisés
+   (pour Essence of Ancestry, l'ordre décide si une autre aura Illusionist
+   est encore là quand elle quitte l'arène).
+
+Six choix faits pour Levia, à confirmer :
+
+1. **Puissance « 6 or more » hors de l'arène** : pour une carte de la main,
+   du deck, du cimetière ou du pitch (défaussée, bannie, pitchée), on lit la
+   puissance **imprimée** (CR 1.7.4 : ses capacités statiques ne
+   fonctionnent pas hors de l'arène). Ex. un Feasting Shadowbeast jaune (5)
+   n'est pas une carte de 6 quand on le bannit, même si un 6 a déjà été
+   banni ce tour. Dans l'arène (Hell Hammer, carte sur la chaîne), on lit la
+   puissance actuelle.
+2. **« You've banished » / « put into your banished zone »** : le premier
+   compte les cartes que **vous** avez bannies (Feasting Shadowbeast, Feeding
+   Frenzy, Goremass Summoning, Blasmophet), le second les cartes arrivées
+   dans **votre** zone de bannissement, quel que soit le responsable (Levia,
+   Graveling Growl, Hooves). Une carte bannie « au lieu d'aller au
+   cimetière » (Embraforged Gauntlet, Engulfing Shadows) est bannie par son
+   propriétaire.
+3. **Hex Gauntlet** peut se retourner lui-même face cachée (il est déjà dans
+   la zone de bannissement quand sa capacité se résout).
+4. **Blasmophet, the Insatiable Hunger** n'a pas de capacité « Attack » dans
+   le texte officiel : il ne peut pas attaquer (mais on peut l'attaquer).
+   Unique (CR 8.3.48a) : si Goremass Summoning en crée un 2e, le joueur
+   choisit celui qu'il garde.
+5. **Gate to i'Arathael + Blasmophet** (CR 5.1.3d) : une carte qui a une
+   permission « this turn » (Gate) l'utilise ; la permission « once per
+   turn » de Blasmophet reste disponible pour une autre carte.
+6. **Countdown to Extinction** : la question « chercher un Darkest Hour ? »
+   est posée à chaque touche, même sans Darkest Hour dans le deck (aucun de
+   nos decks n'en a) ; si oui, le deck est mélangé.
+
+Correction de règle au passage : on ne gagne plus de point d'action hors de
+sa phase d'action (CR 1.13.2b), ex. Hooves détruit pendant la phase de fin.
+
+Cinq choix faits pour Florian, à confirmer :
 
 1. **Meld** (Arcane Seeds // Life) : jouée fusionnée, la carte a les types
    Action et Instant (CR 8.3.38c). Le moteur la traite comme une **action**
@@ -118,15 +181,15 @@ précédent si l'épée a quitté ce maillon (notes de Mastery Pack Warrior).
 `Validated` dans `docs/cards/STATUS.md` ; signaler tout comportement faux.
 
 Vérifier aussi les cartes d'Ira (`cargo run --release -p fab-ui -- --deck ira`),
-de Bravo (`--deck bravo`), d'Iyslander (`--deck iyslander`) et de Florian
-(`--deck florian`) ; `t <n>` donne le texte officiel.
+de Bravo (`--deck bravo`), d'Iyslander (`--deck iyslander`), de Florian
+(`--deck florian`), de Levia (`--deck levia`) et de Dromai (`--deck dromai`) ;
+`t <n>` donne le texte officiel (pour un dragon, celui de sa face arrière).
 
-**Pour Claude (étape 3, suite) :** coder le deck suivant de la liste,
-**Levia** (`data/decks/07_levia.txt`). Puis Dromai, Arakni.
-Le moteur sait maintenant accorder des
-capacités **déclenchées** (`CardDef::granted`) ; pour Dromai il faudra aussi
-accorder une capacité **activée** (Storm of Sandikai donne une capacité
-d'attaque aux dragons). Vérifier « clash » et « crush » au fil des cartes.
+**Pour Claude (étape 3, fin) :** coder le dernier deck, **Arakni**
+(`data/decks/09_arakni.txt`). Nimblism, Oasis Respite, Ravenous Rabble et
+Blossom of Spring sont déjà codés. Le moteur gère maintenant les alliés qui
+attaquent, le vol d'un allié (steal), les cartes sous un permanent et les
+cartes retournables (`docs/moteur.md`).
 
 ## Journal des sessions
 
@@ -142,4 +205,6 @@ d'attaque aux dragons). Vérifier « clash » et « crush » au fil des cartes.
 | 2026-11-22 | Liste officielle Silver Age (40 cartes bannies, 4 héros mis sur la touche) dans `config/silver_age.toml`, noms français traduits par le fichier officiel ; aucune carte de nos decks concernée | `claude/intelligent-mayer-kvrq5b` |
 | 2026-11-22 | Étape 3, deck Bravo : 35 lignes de STATUS.md + tokens Seismic Surge, Might, Vigor, Quicken codés et testés (61 tests de cartes, 7 tests de règles) ; moteur : clash (CR 8.5.45), « win a clash revealing this » depuis le deck, crush (CR 8.4.2, sur les dégâts), heave (capacité cachée depuis la main), suspense (CR 8.3.42), réductions « your next … costs {r} less », « can't gain {p} » (Chokeslam), « loses and can't gain dominate » ; `fab-ui --deck bravo` | `claude/wizardly-pasteur-r91h2w` |
 | 2026-11-22 | Étape 3, deck Iyslander : 25 lignes de STATUS.md + tokens Frostbite et Ponder codés et testés (67 tests de cartes, 8 tests de règles) ; moteur : jouer une action « as though it were an instant » (CR 8.1.1d), surcoût Frostbite (CR 5.1.6a), coût « XX », amp (CR 8.5.47), tap (CR 8.5.55), « the next card you play … plus N » (`Replacement::bind`), zones exposées et token créé dans une zone d'équipement (CR 3.0.1a, 8.5.2c), prévention statique (Pyroglyphic Protection) ; `fab-ui --deck iyslander` | `claude/gallant-thompson-jslxg7` |
+| 2026-11-23 | Étape 3, deck Levia : 34 lignes de STATUS.md + tokens Agility, Gate to i'Arathael et Blasmophet, the Insatiable Hunger codés et testés (76 tests de cartes, 7 tests de règles) ; moteur : blood debt (CR 8.3.11), qui a banni une carte et puissance imprimée hors de l'arène, cibles dans la zone de bannissement, permission « once per turn » de jouer depuis le bannissement (CR 5.1.3d), déclenchements identiques regroupés pour l'ordre, points d'action seulement en phase d'action (CR 1.13.2b) ; `fab-ui --deck levia` | `claude/nifty-pasteur-apci3j` |
 | 2026-11-23 | Étape 3, deck Florian : 32 lignes de STATUS.md + tokens Runechant et Embodiment of Earth codés et testés (64 tests de cartes, 9 tests de règles) ; moteur : cartes doubles et meld (CR 9.2, 8.3.38, 5.3.4d), cibles dans un cimetière (CR 1.8.5a), créateur d'un token (CR 8.5.2c), supertypes « face-up » (Colors of Aria), compteurs à l'entrée, « pitched this way » (`Ctx::log_start`), decompose (CR 8.4.14) ; choix provisoire d'équipement respectant les mains ; `fab-ui --deck florian` | `claude/epic-faraday-pg52sk` |
+| 2026-11-23 | Étape 3, deck Dromai : 30 lignes de STATUS.md + 8 dragons (faces arrière) + tokens Ash, Aether Ashwing, Spectral Shield codés et testés (70 tests de cartes, 16 tests de règles) ; moteur : cartes sous un permanent et material (CR 3.0.14, 8.4.5), transform (CR 8.5.36), invocations et cartes retournables (CR 8.2.13, 9.1.3), phantasm (CR 8.3.13), fermeture de la chaîne quand l'attaque disparaît (CR 7.7.2c), alliés qui attaquent (capacité accordée par Storm of Sandikai), vie des alliés remise à zéro en fin de tour (CR 4.4.3a) et compteurs de vie, prévention propre à un allié (Yendurai), steal / gain control, Themai, opt 1 ; interface : alliés, cartes dessous, texte des dragons ; `fab-ui --deck dromai` | `ccr-9b06529e-h1bljg` |

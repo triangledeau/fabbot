@@ -34,8 +34,12 @@ pub struct Object {
     pub proxy_of: Option<ObjectId>,
     /// Activations de chaque capacité ce tour (limite « Once per Turn »).
     pub activations: [u8; 4],
-    /// Vie gagnée moins vie perdue, pour un allié (CR 2.5.3a).
+    /// Vie gagnée moins vie perdue, pour un allié (CR 2.5.3a). Remise à 0
+    /// au début de la procédure de fin de tour (CR 4.4.3a, 8.2.8b).
     pub life_delta: i16,
+    /// Compteurs +1{h} / -1{h} d'un allié (ex. Nekria) : ils modifient sa vie
+    /// de base, y compris après la remise à zéro de fin de tour (CR 4.4.3a).
+    pub life_counters: i8,
 }
 
 impl Object {
@@ -117,6 +121,12 @@ pub enum RuleTrigger {
     SuspenseTick,
     /// CR 8.3.42 : « When this has no suspense counters, destroy it. »
     SuspenseEmpty,
+    /// CR 8.3.11 : « While this is in your banished zone, at the beginning
+    /// of your end phase, lose 1{h}. »
+    BloodDebt,
+    /// CR 8.3.13 : « Whenever this is defended by a non-Illusionist attack
+    /// action card with 6 or more {p}, destroy this. »
+    Phantasm,
 }
 
 /// Une couche sur la pile.
@@ -522,6 +532,12 @@ pub struct GameState {
     pub max_turns: u32,
     /// Objets dont la carte a des capacités déclenchées (optimisation de `emit`).
     pub trigger_objects: Vec<ObjectId>,
+    /// Cartes sous un permanent (CR 3.0.14) : (sub-card, top-card).
+    pub sub_cards: Vec<(ObjectId, ObjectId)>,
+    /// Contrôle gagné « until the end of this action phase » (steal, Jack Be
+    /// Quick) : (objet, contrôleur précédent), rendu à la fin de la phase
+    /// d'action (CR 8.5.54).
+    pub steals: Vec<(ObjRef, PlayerId)>,
 }
 
 impl GameState {
@@ -621,6 +637,10 @@ impl GameState {
             self.permanents.retain(|x| *x != id);
             return;
         }
+        if zone == Zone::Under {
+            self.sub_cards.retain(|&(s, _)| s != id);
+            return;
+        }
         let p = self.player_mut(owner);
         let remove = |v: &mut Vec<ObjectId>| {
             if let Some(i) = v.iter().position(|x| *x == id) {
@@ -642,7 +662,7 @@ impl GameState {
     }
 
     /// Libère l'emplacement d'équipement de l'objet s'il en occupait un.
-    fn unequip(&mut self, id: ObjectId) {
+    pub(crate) fn unequip(&mut self, id: ObjectId) {
         let owner = self.obj(id).owner;
         let p = self.player_mut(owner);
         p.weapons.retain(|x| *x != id);
@@ -669,6 +689,7 @@ impl GameState {
             let o = self.obj_mut(id);
             o.zone = Zone::Gone;
             o.gen += 1;
+            self.clear_sub_cards(id);
             if was_in_arena {
                 self.emit(Event::LeaveArena { card: id, owner });
             }
@@ -682,6 +703,7 @@ impl GameState {
             let o = self.obj_mut(id);
             o.zone = Zone::Gone;
             o.gen += 1;
+            self.clear_sub_cards(id);
             self.emit(Event::LeaveArena {
                 card: id,
                 owner: self.obj(id).owner,
@@ -731,12 +753,23 @@ impl GameState {
             o.tapped = false;
             o.activations = [0; 4];
             o.life_delta = 0;
+            o.life_counters = 0;
         }
         o.zone = zone;
         o.face_down = matches!(zone, Zone::Deck | Zone::Hand | Zone::Arsenal);
         o.controller = owner;
+        if !zone.in_arena() && zone != Zone::Stack {
+            // CR 3.0.14e : nouvel objet, ses sub-cards sont « clear ».
+            self.clear_sub_cards(id);
+        }
         if was_in_arena && !zone.in_arena() {
             self.emit(Event::LeaveArena { card: id, owner });
+        }
+        // CR 9.1.3b : une carte retournable redevient face avant hors de
+        // l'arène (après l'événement, pour les capacités « when this leaves
+        // the arena » de sa face arrière, CR 5.4.6a).
+        if !zone.in_arena() && zone != Zone::Stack {
+            self.restore_front_face(id);
         }
         if !was_in_arena && zone.in_arena() {
             // CR 8.3.42 : « This enters the arena with 2 suspense counters. »
@@ -768,7 +801,11 @@ impl GameState {
         let zone = equipment_zone(self.def(id));
         let o = self.obj_mut(id);
         o.zone = zone;
-        o.controller = o.owner;
+        // Un allié (volé, Jack Be Quick) garde son contrôleur ; un équipement
+        // revient à son propriétaire.
+        if zone != Zone::Permanent {
+            o.controller = o.owner;
+        }
         if zone == Zone::Permanent {
             self.permanents.push(id);
         }
@@ -776,7 +813,7 @@ impl GameState {
 
     /// « Clear » (CR 3.0.12) : au cimetière du propriétaire ; une proxy ou un
     /// token cesse d'exister.
-    pub(crate) fn clear(&mut self, id: ObjectId) {
+    pub fn clear(&mut self, id: ObjectId) {
         if self.obj(id).proxy_of.is_some() || self.def(id).types.has(Types::TOKEN) {
             let was_in_arena = self.obj(id).zone.in_arena();
             self.detach(id);
@@ -785,6 +822,7 @@ impl GameState {
             let o = self.obj_mut(id);
             o.zone = Zone::Gone;
             o.gen += 1;
+            self.clear_sub_cards(id);
             if was_in_arena && self.obj(id).proxy_of.is_none() {
                 self.emit(Event::LeaveArena { card: id, owner });
             }
@@ -800,7 +838,7 @@ impl GameState {
         let power = if self.no_replacements() {
             0
         } else {
-            self.power_if_public(id)
+            self.power_before_banish(id)
         };
         let from = self.move_to(id, Zone::Graveyard, true);
         match self.obj(id).zone {
@@ -809,12 +847,16 @@ impl GameState {
                 owner,
                 from,
             }),
-            // Remplacé par « instead banish it » (ex. Embraforged Gauntlet).
+            // Remplacé par « instead banish it » (ex. Embraforged Gauntlet) :
+            // l'effet de remplacement est celui de la carte, contrôlé par son
+            // propriétaire.
             Zone::Banished => self.emit(Event::Banished {
                 card: id,
                 owner,
+                by: owner,
                 from,
                 power,
+                face_down: false,
             }),
             _ => {}
         }
@@ -826,6 +868,18 @@ impl GameState {
             self.power(id) as u16
         } else {
             0
+        }
+    }
+
+    /// Puissance d'un objet qui va être banni face visible : dernier état
+    /// connu s'il est dans l'arène (CR 3.0.7a), sinon puissance imprimée
+    /// (hors de l'arène, ses capacités statiques ne fonctionnent pas, CR 1.7.4 ;
+    /// une carte du deck ou de la main devient publique en arrivant).
+    pub(crate) fn power_before_banish(&self, id: ObjectId) -> u16 {
+        if self.obj(id).zone.in_arena() {
+            self.power_if_public(id)
+        } else {
+            self.def(id).power.unwrap_or(0) as u16
         }
     }
 
@@ -899,9 +953,12 @@ impl GameState {
             .players
             .iter()
             .flat_map(|p| p.equipment().chain(p.weapons.iter().copied()));
+        // Un allié qui attaque est sur la chaîne de combat, toujours dans
+        // l'arène : ses capacités statiques fonctionnent (ex. Miragai).
         heroes
             .chain(equip)
             .chain(self.permanents.iter().copied())
+            .chain(self.attacking_allies())
             .filter(|&s| self.db.get(self.obj(s).card).aura.is_some() && !self.lost_abilities(s))
     }
 
@@ -949,8 +1006,8 @@ impl GameState {
             // fixé à sa création (modificateur). Les mots-clés statiques de
             // l'arme (ex. dominate) sont hérités.
             Some(w) => self.keywords(w).without(Keywords::GO_AGAIN),
-            None if self.lost_abilities(id) => Keywords::NONE,
-            None => self.db.get(o.card).keywords,
+            None if self.lost_abilities(id) => self.material_keywords(id),
+            None => self.db.get(o.card).keywords | self.material_keywords(id),
         };
         let d = self.continuous_delta(id);
         // « Loses and can't gain » l'emporte sur les mots-clés accordés.
@@ -982,13 +1039,18 @@ impl GameState {
             return Some(self.player(o.owner).life);
         }
         let base = self.def(id).life? as i32;
-        Some((base + o.life_delta as i32).max(0))
+        Some((base + o.life_counters as i32 + o.life_delta as i32).max(0))
     }
 
     /// CR 2.5.1a : un permanent qui a la propriété vie (allié…), hors héros.
+    /// Un allié qui attaque (sur la chaîne de combat) reste un permanent.
     pub fn is_living_permanent(&self, id: ObjectId) -> bool {
         let o = self.obj(id);
-        o.zone == Zone::Permanent && self.def(id).life.is_some()
+        self.def(id).life.is_some()
+            && (o.zone == Zone::Permanent
+                || (o.zone == Zone::CombatChain
+                    && o.proxy_of.is_none()
+                    && self.combat.links.iter().any(|l| l.source == Some(id))))
     }
 
     /// CR 1.4.5a : l'objet peut-il être attaqué ? (permanent vivant, ou spectra)

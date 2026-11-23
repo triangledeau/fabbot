@@ -117,6 +117,7 @@ fn prevention(g: &GameState, viewer: PlayerId, r: PreventRef) -> String {
         PreventRef::Ward(id) => format!("Ward de {}", nom(g, id)),
         PreventRef::Spellvoid(id) => format!("Spellvoid de {}", nom(g, id)),
         PreventRef::Static(id) => format!("Prévention de {}", nom(g, id)),
+        PreventRef::Counter(id) => format!("Compteur de {}", nom(g, id)),
     }
 }
 
@@ -429,8 +430,43 @@ fn bloc_joueur(g: &GameState, viewer: PlayerId, p: PlayerId, complet: bool) -> S
             .iter()
             .map(|&id| {
                 let mut n = nom_pour(g, viewer, id);
-                if g.def(id).keywords.has(fab_engine::Keywords::SUSPENSE) {
-                    let _ = write!(n, " ({} compteur(s) suspense)", g.obj(id).counters);
+                let d = g.def(id);
+                let o = g.obj(id);
+                let mut extra: Vec<String> = Vec::new();
+                if d.keywords.has(fab_engine::Keywords::SUSPENSE) {
+                    extra.push(format!("{} compteur(s) suspense", o.counters));
+                }
+                // Allié : puissance et vie actuelles (CR 2.5.3), compteurs.
+                if let Some(vie) = g.life_total(id) {
+                    extra.push(format!("{}{{p}}, {vie} PV", g.power(id)));
+                    if d.counter_prevention > 0 {
+                        extra.push(format!("{} compteur(s) endurance", o.counters));
+                    }
+                    if o.life_counters != 0 {
+                        extra.push(format!("{:+} compteur(s) vie", o.life_counters));
+                    }
+                }
+                // Cartes dessous (CR 3.0.14) et mots-clés qu'elles donnent.
+                let dessous: Vec<String> =
+                    g.cards_under(id).map(|c| g.def(c).name.clone()).collect();
+                if !dessous.is_empty() {
+                    extra.push(format!("dessous : {}", dessous.join(", ")));
+                }
+                if g.keywords(id).has(fab_engine::Keywords::PHANTASM) {
+                    extra.push("phantasm".into());
+                }
+                let (_, ward, _) = g.prevention_values(id);
+                if ward > 0 {
+                    extra.push(format!("ward {ward}"));
+                }
+                if o.tapped {
+                    extra.push("engagé".into());
+                }
+                if o.controller != o.owner {
+                    extra.push("volé".into());
+                }
+                if !extra.is_empty() {
+                    let _ = write!(n, " ({})", extra.join(", "));
                 }
                 n
             })
@@ -472,6 +508,8 @@ fn regle(r: RuleTrigger) -> &'static str {
         RuleTrigger::Unsharpen => "fin du sharpen",
         RuleTrigger::SuspenseTick => "suspense : retirer un compteur",
         RuleTrigger::SuspenseEmpty => "suspense : plus de compteur, détruire",
+        RuleTrigger::BloodDebt => "blood debt : perdre 1 PV",
+        RuleTrigger::Phantasm => "phantasm : détruire l'attaque",
     }
 }
 
@@ -659,10 +697,10 @@ pub fn evenement(g: &GameState, viewer: PlayerId, e: &Event) -> Option<String> {
             format!("{}.", sujet(player, "pitche", "pitchez", &nom(g, card)))
         }
         Event::Destroyed { card, .. } => format!("{} est détruit.", nom(g, card)),
-        Event::Banished { card, owner, .. } => {
+        Event::Banished { card, by, .. } => {
             format!(
                 "{}.",
-                sujet(owner, "bannit", "bannissez", &nom_pour(g, viewer, card))
+                sujet(by, "bannit", "bannissez", &nom_pour(g, viewer, card))
             )
         }
         Event::Drew { player, card } => {
@@ -764,6 +802,7 @@ pub fn fiche(g: &GameState, id: ObjectId) -> String {
         Zone::CombatChain => "chaîne de combat",
         Zone::Stack => "pile",
         Zone::Permanent => "permanents",
+        Zone::Under => "sous un permanent",
         Zone::Gone => "hors jeu",
     };
     let _ = write!(s, " — zone : {zone}");

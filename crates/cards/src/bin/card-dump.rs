@@ -51,6 +51,14 @@ fn main() {
             (Subtypes::SWORD, "Sword"),
             (Subtypes::AXE, "Axe"),
             (Subtypes::DAGGER, "Dagger"),
+            (Subtypes::HAMMER, "Hammer"),
+            (Subtypes::ALLY, "Ally"),
+            (Subtypes::DEMON, "Demon"),
+            (Subtypes::DRAGON, "Dragon"),
+            (Subtypes::INVOCATION, "Invocation"),
+            (Subtypes::ASH, "Ash"),
+            (Subtypes::ITEM, "Item"),
+            (Subtypes::SCEPTER, "Scepter"),
         ] {
             if d.subtypes.has(t) {
                 words.push(w);
@@ -59,6 +67,10 @@ fn main() {
         for (t, w) in [
             (Supertypes::WARRIOR, "Warrior"),
             (Supertypes::NINJA, "Ninja"),
+            (Supertypes::BRUTE, "Brute"),
+            (Supertypes::SHADOW, "Shadow"),
+            (Supertypes::DRACONIC, "Draconic"),
+            (Supertypes::ILLUSIONIST, "Illusionist"),
         ] {
             if d.supertypes.has(t) {
                 words.push(w);
@@ -76,6 +88,9 @@ fn main() {
             (Keywords::EPHEMERAL, "Ephemeral"),
             (Keywords::SUSPENSE, "Suspense"),
             (Keywords::CRUSH, "Crush"),
+            (Keywords::BLOOD_DEBT, "Blood Debt"),
+            (Keywords::PHANTASM, "Phantasm"),
+            (Keywords::SPECTRA, "Spectra"),
         ] {
             if d.keywords.has(k) {
                 kw.push(w);
@@ -88,6 +103,15 @@ fn main() {
         if d.arcane_barrier > 0 {
             kw.push("Arcane Barrier");
         }
+        if d.ward > 0 {
+            kw.push("Ward");
+        }
+        // Face arrière d'une carte retournable (CR 9.1.3) : comparée à la
+        // face 2 de la carte (nommée par sa face avant) dans le fichier officiel.
+        let back_of = d
+            .flip
+            .filter(|f| f.back.0 as usize == i)
+            .map(|f| db.get(f.front).name.clone());
         let line = json!({
             "name": d.name,
             "color": color,
@@ -100,6 +124,7 @@ fn main() {
             "arcane_barrier": d.arcane_barrier,
             "typebox": words,
             "keywords": kw,
+            "back_of": back_of,
         });
         println!("{line}");
     }

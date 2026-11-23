@@ -207,7 +207,7 @@ fn cr_8_5_2c_le_createur_d_un_token_n_est_pas_forcement_son_controleur() {
         ("Autumn's Touch", B),
     ] {
         let x = du_deck(&t, n, c);
-        t.g.banish(x, false);
+        t.g.banish(P0, x, false);
     }
     let rc = t.g.db.find_name("Runechant").unwrap();
     t.g.create_tokens_by(P1, P0, rc, 2);

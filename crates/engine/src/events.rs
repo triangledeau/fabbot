@@ -101,8 +101,16 @@ pub enum Event {
     Banished {
         card: ObjectId,
         owner: PlayerId,
+        /// Le joueur qui a banni la carte (« if you've banished … this turn ») :
+        /// le contrôleur de l'effet.
+        by: PlayerId,
         from: Zone,
+        /// Puissance de la carte bannie (0 si elle n'en a pas ou si elle est
+        /// bannie face cachée) : dernier état connu dans l'arène, sinon
+        /// puissance imprimée (CR 1.7.4 : hors de l'arène, ses capacités
+        /// statiques ne fonctionnent pas).
         power: u16,
+        face_down: bool,
     },
     /// Un objet entre dans l'arène / la quitte.
     EnterArena {
@@ -302,6 +310,24 @@ impl GameState {
         self.turn_log.iter().any(
             |e| matches!(e, Event::Banished { owner, power, .. } if *owner == p && *power >= 6),
         )
+    }
+
+    /// Ce joueur a-t-il banni ce tour une carte de puissance 6 ou plus (« if
+    /// you've banished a card with 6 or more {p} this turn ») ?
+    pub fn you_banished_power6_this_turn(&self, p: PlayerId) -> bool {
+        self.turn_log
+            .iter()
+            .any(|e| matches!(e, Event::Banished { by, power, .. } if *by == p && *power >= 6))
+    }
+
+    /// Ce joueur a-t-il banni ce tour une carte avec blood debt (« if you
+    /// haven't banished a card with blood debt this turn ») ? Une carte bannie
+    /// face cachée n'a pas de propriétés visibles (CR 3.0.3).
+    pub fn you_banished_blood_debt_this_turn(&self, p: PlayerId) -> bool {
+        self.turn_log.iter().any(|e| {
+            matches!(e, Event::Banished { by, card, face_down: false, .. }
+                if *by == p && self.def(*card).keywords.has(crate::card::Keywords::BLOOD_DEBT))
+        })
     }
 
     /// Cet objet a-t-il été aiguisé ce tour (CR 8.5.58a) ?
