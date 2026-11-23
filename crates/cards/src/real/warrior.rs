@@ -233,6 +233,7 @@ fn heroes_and_arena(db: &mut CardDb) {
                     && g.combat.links.iter().any(|l| l.defenders.contains(&r.id)))
             },
             optional: false,
+            in_graveyard: false,
         }],
         script: vec![Op::Do(|g, c| {
             if let Some(r) = target_obj(c, 0) {

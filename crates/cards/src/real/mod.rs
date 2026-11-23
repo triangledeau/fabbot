@@ -11,11 +11,13 @@
 //! - [`warrior`] : cartes Warrior (Hala, Dorinthea) ;
 //! - [`ninja`] : cartes Ninja (Ira) ;
 //! - [`guardian`] : cartes Guardian (Bravo) ;
-//! - [`wizard`] : cartes Wizard, Elemental et Ice (Iyslander).
+//! - [`wizard`] : cartes Wizard, Elemental et Ice (Iyslander) ;
+//! - [`runeblade`] : cartes Runeblade, Earth et Elemental (Florian).
 
 pub mod generic;
 pub mod guardian;
 pub mod ninja;
+pub mod runeblade;
 pub mod warrior;
 pub mod wizard;
 
@@ -32,6 +34,7 @@ pub fn build() -> CardDb {
     ninja::add(&mut db);
     guardian::add(&mut db);
     wizard::add(&mut db);
+    runeblade::add(&mut db);
     db
 }
 
@@ -44,6 +47,7 @@ pub fn build_names() -> Vec<&'static str> {
         .chain(ninja::NAMES.iter())
         .chain(guardian::NAMES.iter())
         .chain(wizard::NAMES.iter())
+        .chain(runeblade::NAMES.iter())
         .copied()
         .collect()
 }
@@ -126,6 +130,7 @@ pub(crate) const TARGET_ATTACK: TargetSpec = TargetSpec {
     label: "attaque",
     filter: |g, _, t| matches!(t, Target::Object(r) if g.active_attack() == Some(r.id)),
     optional: false,
+    in_graveyard: false,
 };
 
 /// Cible « target weapon attack » : l'attaque du maillon actif, si c'est une
@@ -134,6 +139,7 @@ pub(crate) const TARGET_WEAPON_ATTACK: TargetSpec = TargetSpec {
     label: "attaque d'arme",
     filter: |g, _, t| matches!(t, Target::Object(r) if g.active_attack() == Some(r.id) && g.is_weapon_attack(r.id)),
     optional: false,
+    in_graveyard: false,
 };
 
 /// Cible « target sword you control » : une épée (pas une attaque-proxy).
@@ -149,6 +155,7 @@ pub(crate) const TARGET_SWORD_YOU_CONTROL: TargetSpec = TargetSpec {
         Target::Player(_) => false,
     },
     optional: false,
+    in_graveyard: false,
 };
 
 /// L'objet ciblé n° `i`, s'il est encore là.
@@ -208,12 +215,28 @@ pub fn default_loadout(db: &CardDb, list: &Decklist) -> Result<Loadout, String> 
     let hero = find(db, &list.hero, None)?;
     let mut arena = Vec::new();
     let mut slots: Vec<&str> = Vec::new();
+    // CR 8.2.2b : deux mains au plus pour les armes et les off-hands (une
+    // arme 2H occupe les deux ; ex. Florian : Nebula Blade, puis aucun
+    // off-hand ni Annals of Sutcliffe).
+    let mut hands = 0;
     for e in &list.arena {
-        if slots.contains(&e.slot.as_str()) {
+        let id = find(db, &e.name, None)?;
+        let def = db.get(id);
+        let h = if def.types.has(Types::WEAPON) || def.subtypes.has(Subtypes::OFF_HAND) {
+            if def.subtypes.has(Subtypes::TWO_HAND) {
+                2
+            } else {
+                1
+            }
+        } else {
+            0
+        };
+        if slots.contains(&e.slot.as_str()) || hands + h > 2 {
             continue;
         }
         slots.push(&e.slot);
-        arena.push(find(db, &e.name, None)?);
+        hands += h;
+        arena.push(id);
     }
     let mut deck = Vec::new();
     for e in &list.deck {

@@ -44,6 +44,7 @@ pub(crate) const ANY_TARGET: TargetSpec = TargetSpec {
         Target::Object(r) => g.is_living_permanent(r.id),
     },
     optional: false,
+    in_graveyard: false,
 };
 
 /// « target hero ».
@@ -51,6 +52,7 @@ pub(crate) const TARGET_HERO: TargetSpec = TargetSpec {
     label: "héros",
     filter: |_, _, t| matches!(t, Target::Player(_)),
     optional: false,
+    in_graveyard: false,
 };
 
 /// « Deal N arcane damage to [la cible n° 0] » : la source est la carte.
@@ -180,7 +182,7 @@ pub fn add(db: &mut CardDb) {
                 let them = g.turn_player;
                 if them != c.controller {
                     let f = card_named(g, FROSTBITE);
-                    g.create_tokens(them, f, 1);
+                    g.create_tokens_by(c.controller, them, f, 1);
                 }
             })],
         }],
@@ -474,7 +476,7 @@ pub fn add(db: &mut CardDb) {
         Op::Do(|g, c| {
             if let Some(Target::Player(p)) = c.target(0) {
                 let f = card_named(g, FROSTBITE);
-                g.create_tokens(p, f, c.x);
+                g.create_tokens_by(c.controller, p, f, c.x);
             }
         }),
         Op::Do(|g, c| {
@@ -512,7 +514,7 @@ pub fn add(db: &mut CardDb) {
         Op::Do(|g, c| {
             if let Some(Choice::Zone(p, z)) = c.answer.take() {
                 let f = card_named(g, FROSTBITE);
-                g.create_token_in_zone(p, f, z);
+                g.create_token_in_zone(c.controller, p, f, z);
             }
         }),
     ];

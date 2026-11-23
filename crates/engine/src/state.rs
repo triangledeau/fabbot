@@ -346,6 +346,9 @@ pub enum Task {
         ctx: Box<Ctx>,
         write_back: bool,
     },
+    /// Choix du côté d'une carte double (CR 5.1.2c), avant de la jouer :
+    /// la réponse (`Choice::Mode`) est lue par `answer`.
+    PlaySide(ObjectId),
     /// Étapes pour jouer / activer la couche du dessus de la pile (CR 5.1).
     PlayOptionalCost,
     PlayX,
@@ -711,6 +714,13 @@ impl GameState {
                 _ => {}
             }
         }
+        // CR 9.2.3 : une carte double n'a les propriétés du côté choisi que
+        // tant qu'elle est sur la pile ; ailleurs, elle a celles des deux côtés.
+        if let Some(sp) = self.def(id).split {
+            if !zone.in_arena() && zone != Zone::Stack {
+                self.obj_mut(id).card = sp.whole;
+            }
+        }
         let o = self.obj_mut(id);
         // CR 3.0.9 : entrer dans une zone hors arène (sauf pile) = nouvel objet.
         if !zone.in_arena() && zone != Zone::Stack {
@@ -732,6 +742,11 @@ impl GameState {
             // CR 8.3.42 : « This enters the arena with 2 suspense counters. »
             if zone == Zone::Permanent && self.def(id).keywords.has(Keywords::SUSPENSE) {
                 self.obj_mut(id).counters = 2;
+            }
+            // « This enters the arena with N verse counters » (Runeblood Incantation).
+            let n = self.def(id).enter_counters;
+            if n > 0 {
+                self.obj_mut(id).counters = n;
             }
             self.emit(Event::EnterArena { card: id });
         }

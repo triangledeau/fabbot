@@ -51,6 +51,10 @@ pub struct Pending {
     /// Propriétaire de l'objet déplacé, joueur qui inflige les dégâts, ou
     /// joueur sous le contrôle duquel les tokens sont créés.
     pub player: PlayerId,
+    /// Création de tokens : le joueur qui les crée (« if you would create »),
+    /// qui peut les créer sous le contrôle d'un autre (CR 8.5.2c). Ailleurs :
+    /// égal à `player`.
+    pub by: PlayerId,
     /// Destination d'un déplacement. `Zone::Gone` = retiré de la partie.
     pub zone: Zone,
     pub on_top: bool,
@@ -69,6 +73,7 @@ impl Pending {
             kind,
             object: None,
             player,
+            by: player,
             zone: Zone::Gone,
             on_top: true,
             amount: 0,
@@ -337,8 +342,16 @@ impl GameState {
     /// this »). Peut demander un choix : les tokens sont alors créés après la
     /// réponse. Les tokens créés sont dans `last_created`.
     pub fn create_tokens(&mut self, p: PlayerId, card: CardId, n: u8) {
+        self.create_tokens_by(p, p, card, n);
+    }
+
+    /// Le joueur `by` crée `n` tokens sous le contrôle de `p` (CR 8.5.2c,
+    /// ex. Ice Eternal : « target hero creates » ou Iyslander : « create a
+    /// Frostbite token under their control »).
+    pub fn create_tokens_by(&mut self, by: PlayerId, p: PlayerId, card: CardId, n: u8) {
         self.last_created.clear();
         let mut pending = Pending::new(ReplaceKind::CreateToken, p);
+        pending.by = by;
         pending.card = Some(card);
         pending.amount = n as i32;
         pending.zone = Zone::Permanent;

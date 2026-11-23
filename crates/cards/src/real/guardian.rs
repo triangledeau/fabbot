@@ -403,6 +403,7 @@ fn deck_cards(db: &mut CardDb) {
                 && Some(g.obj(r.id).controller) == crushed(c)
         },
         optional: false,
+        in_graveyard: false,
     }];
     d.triggers[0].script = vec![Op::Do(|g, c| {
         if let Some(r) = target_obj(c, 0) {

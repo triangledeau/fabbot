@@ -1,9 +1,9 @@
 //! Jouer une carte (CR 5.1), activer une capacité (CR 5.2) et payer les coûts (CR 1.14).
 
-use crate::card::{Delta, Keywords, Speed, Subtypes, Types};
+use crate::card::{Delta, Keywords, Speed, Split, Subtypes, Types};
 use crate::decision::{Choice, Decision, DecisionKind};
 use crate::events::Event;
-use crate::ids::{ObjectId, PlayerId};
+use crate::ids::{CardId, ObjectId, PlayerId};
 use crate::script::{Ctx, ScriptRef, Target, TargetSpec};
 use crate::state::{
     CombatStep, GameState, Layer, LayerKind, Object, RuleTrigger, Task, Until, WeaponEffectKind,
@@ -109,12 +109,15 @@ impl GameState {
         }
     }
 
-    fn card_speed(&self, c: ObjectId) -> Option<Speed> {
-        let t = self.def(c).types;
-        if t.has(Types::INSTANT) {
-            Some(Speed::Instant)
-        } else if t.has(Types::ACTION) {
+    fn card_speed(&self, card: CardId) -> Option<Speed> {
+        let t = self.db.get(card).types;
+        // CR 8.3.38c : une carte fusionnée a les types des deux côtés (Action
+        // et Instant) ; c'est une carte d'action, soumise à CR 8.1.1a-c.
+        // TODO(règles) : à confirmer par le propriétaire (Arcane Seeds // Life).
+        if t.has(Types::ACTION) {
             Some(Speed::Action)
+        } else if t.has(Types::INSTANT) {
+            Some(Speed::Instant)
         } else if t.has(Types::ATTACK_REACTION) {
             Some(Speed::AttackReaction)
         } else if t.has(Types::DEFENSE_REACTION) {
@@ -126,7 +129,13 @@ impl GameState {
 
     /// Coût en ressources d'une carte (CR 5.1.6), sans coût optionnel ni X.
     pub fn play_cost(&self, p: PlayerId, c: ObjectId) -> u32 {
-        let def = self.def(c);
+        self.play_cost_as(p, c, self.obj(c).card)
+    }
+
+    /// Coût de la carte `c` jouée avec la définition `card` (côté d'une carte
+    /// double, CR 9.2.3 ; fusionnée : deux fois le coût de base, CR 8.3.38b).
+    fn play_cost_as(&self, p: PlayerId, c: ObjectId, card: CardId) -> u32 {
+        let def = self.db.get(card);
         let mut cost = def.cost.unwrap_or(0) as i16;
         if let Some(a) = def.additional_cost {
             if !a.optional {
@@ -214,7 +223,11 @@ impl GameState {
             }
         }
         for (i, o) in self.objects.iter().enumerate() {
-            let public_here = (o.zone.in_arena() && o.zone != Zone::Hero) || o.zone == Zone::Stack;
+            // CR 1.8.5a : « target … card from your graveyard » précise une
+            // zone publique hors de l'arène.
+            let public_here = (o.zone.in_arena() && o.zone != Zone::Hero)
+                || o.zone == Zone::Stack
+                || (spec.in_graveyard && o.zone == Zone::Graveyard);
             if !public_here || o.face_down {
                 continue;
             }
@@ -245,8 +258,31 @@ impl GameState {
     }
 
     pub(crate) fn can_play(&self, p: PlayerId, c: ObjectId) -> bool {
+        match self.def(c).split {
+            // CR 5.1.2c : une carte double est jouée avec un de ses côtés,
+            // ou les deux (meld).
+            Some(sp) => !self.playable_sides(p, c, sp).is_empty(),
+            None => self.can_play_as(p, c, self.obj(c).card),
+        }
+    }
+
+    /// Les façons de jouer une carte double (CR 5.1.2c) : 0 = côté gauche,
+    /// 1 = côté droit, 2 = fusionnée (meld, CR 8.3.38).
+    fn playable_sides(&self, p: PlayerId, c: ObjectId, sp: Split) -> Vec<u8> {
+        [Some(sp.left), Some(sp.right), sp.melded]
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, card)| {
+                card.filter(|&card| self.can_play_as(p, c, card))
+                    .map(|_| i as u8)
+            })
+            .collect()
+    }
+
+    /// La carte `c` peut-elle être jouée avec la définition `card` ?
+    fn can_play_as(&self, p: PlayerId, c: ObjectId, card: CardId) -> bool {
         let o = self.obj(c);
-        let def = self.def(c);
+        let def = self.db.get(card);
         // CR 5.1.1a : seulement depuis la main ou l'arsenal, par son
         // propriétaire, sauf permission (« you may play it [from your banished
         // zone] this turn », CR 1.0.2 : une permission).
@@ -255,7 +291,7 @@ impl GameState {
         if o.owner != p || !zone_ok {
             return false;
         }
-        let Some(speed) = self.card_speed(c) else {
+        let Some(speed) = self.card_speed(card) else {
             return false;
         };
         if !self.timing_ok(p, speed, def.is_attack_card())
@@ -272,12 +308,12 @@ impl GameState {
         }
         let ctx = Ctx {
             controller: p,
-            card: o.card,
+            card,
             source: Some(self.obj_ref(c)),
             ..Default::default()
         };
         self.some_mode_has_targets(&def.targets, def.modes.len(), ctx)
-            && self.play_cost(p, c) <= self.available_resources(p, Some(c))
+            && self.play_cost_as(p, c, card) <= self.available_resources(p, Some(c))
     }
 
     pub(crate) fn can_activate(&self, p: PlayerId, src: ObjectId, i: u8) -> bool {
@@ -359,6 +395,44 @@ impl GameState {
 
     /// CR 5.1.2 : annonce, puis les étapes suivantes sous forme de tâches.
     pub(crate) fn play_card(&mut self, p: PlayerId, c: ObjectId) {
+        if let Some(sp) = self.def(c).split {
+            // CR 5.1.2c : le joueur déclare le côté (ou les deux, meld).
+            let sides = self.playable_sides(p, c, sp);
+            if let [side] = sides[..] {
+                self.play_card_side(p, c, side);
+            } else {
+                self.priority = None;
+                self.tasks.push(Task::PlaySide(c));
+                self.pending = Some(Decision {
+                    player: p,
+                    kind: DecisionKind::Mode,
+                    options: sides.into_iter().map(Choice::Mode).collect(),
+                });
+            }
+            return;
+        }
+        self.play_card_now(p, c);
+    }
+
+    /// Joue une carte double avec le côté `side` (0 = gauche, 1 = droit,
+    /// 2 = fusionnée) : sur la pile, elle n'a que les propriétés de ce côté
+    /// (CR 9.2.3), ou des deux (CR 8.3.38c).
+    pub(crate) fn play_card_side(&mut self, p: PlayerId, c: ObjectId, side: u8) {
+        let sp = self.def(c).split.expect("carte double");
+        let card = match side {
+            0 => sp.left,
+            1 => sp.right,
+            _ => sp.melded.expect("meld"),
+        };
+        self.obj_mut(c).card = card;
+        self.play_card_now(p, c);
+        if side == 2 {
+            // CR 8.3.38a : la carte est fusionnée.
+            self.stack.last_mut().unwrap().ctx.melded = true;
+        }
+    }
+
+    fn play_card_now(&mut self, p: PlayerId, c: ObjectId) {
         let origin = self.obj(c).zone;
         // CR 5.1.3d, 8.1.1d : une action jouée « as though it were an
         // instant » ne coûte pas de point d'action. Le joueur n'a jamais
@@ -374,6 +448,7 @@ impl GameState {
             card,
             source: Some(object),
             as_instant,
+            log_start: self.turn_log.len() as u32,
             ..Default::default()
         });
         self.stack.push(Layer {
@@ -438,6 +513,7 @@ impl GameState {
             controller: p,
             card,
             source: Some(self.obj_ref(src)),
+            log_start: self.turn_log.len() as u32,
             ..Default::default()
         });
         self.stack.push(Layer {
@@ -735,10 +811,12 @@ impl GameState {
                 if !self.replacements.is_empty() {
                     self.bind_replacements(p, object.id);
                 }
+                let def = self.obj(object.id).card;
                 self.emit(Event::Played {
                     player: p,
                     card: object.id,
                     from: origin,
+                    def,
                 })
             }
             LayerKind::Activated(i) => {

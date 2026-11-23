@@ -11,23 +11,26 @@ met à jour à la fin de chaque tâche.
 | 0 | Mise en place, squelette | ✅ |
 | 1 | Cœur des règles + système d'effets | ✅ (manques connus listés dans `docs/rules/README.md`) |
 | 2 | Deux premiers decks complets + interface texte | ✅ (cartes à valider par le propriétaire avec l'interface) |
-| 3 | Les 7 autres decks + simulateur rapide | ⏳ (Ira ✅, Bravo ✅, Iyslander ✅ ; restent Florian, Levia, Dromai, Arakni) |
+| 3 | Les 7 autres decks + simulateur rapide | ⏳ (Ira ✅, Bravo ✅, Iyslander ✅, Florian ✅ ; restent Levia, Dromai, Arakni) |
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ⏳ |
 | 5 | Interface web locale + annulation | ⏳ |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ⏳ |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
 
-**Branche la plus récente :** `claude/gallant-thompson-jslxg7` (deck
-Iyslander, partie de `main` après la fusion du deck Bravo). Tant qu'elle n'est
-pas fusionnée dans `main`, partir de cette branche.
+**Branche la plus récente :** `claude/epic-faraday-pg52sk` (deck Florian,
+partie de `main` après la fusion du deck Iyslander). Tant qu'elle n'est pas
+fusionnée dans `main`, partir de cette branche.
 
 **Jouer contre le bot :** `cargo run --release -p fab-ui` (mode d'emploi :
 `docs/interface.md`).
 
-**Chiffres actuels :** 392 tests au vert. Simulateur, bots **aléatoires**
+**Chiffres actuels :** 465 tests au vert. Simulateur, bots **aléatoires**
 (ces pourcentages ne disent rien des vrais matchups), 100 000 parties
-vérifiées (`--check`) sans incohérence pour chaque paire, ≈ 8 000 à 17 000
-parties/s dans le conteneur de Claude (4 cœurs). Iyslander contre chacun des
+vérifiées (`--check`) sans incohérence pour chaque paire, ≈ 6 000 à 17 000
+parties/s dans le conteneur de Claude (4 cœurs). Florian contre chacun des
+5 autres decks et en miroir : 0 erreur (Florian 8,9 % contre Ira, 47,7 %
+contre Hala, 52,1 % contre Dorinthea, 48,8 % contre Bravo, 99,8 % contre
+Iyslander). Session précédente : Iyslander contre chacun des
 4 autres decks et en miroir : 0 erreur ; Iyslander perd ≈ 99 % contre les
 autres decks avec un bot aléatoire, qui envoie la moitié de ses sorts « any
 target » sur son propre héros (normal pour B0, à revoir avec B1). Avant :
@@ -41,11 +44,33 @@ attendant la phase de side de l'étape 6) : la première carte de chaque
 emplacement d'arène dans l'ordre de la liste (Hala : Helm of Unity, Edge Laden
 Plate, Gauntlets of Unity, Pillar of Unity ; Dorinthea : Helm of Unity,
 Plating of Unity, Gauntlets of Unity, Refraction Bolters), et les 40 premières
-cartes de la liste.
+cartes de la liste. Les mains d'armes sont respectées (CR 8.2.2b) : Florian
+prend Nebula Blade (2H) et donc aucun off-hand (Annals of Sutcliffe, listée
+« Off-Hand », est en fait une arme 2H).
 
 ## Questions ouvertes pour le propriétaire
 
-Aucune question bloquante. Trois choix faits pour Iyslander, à confirmer :
+Aucune question bloquante. Cinq choix faits pour Florian, à confirmer :
+
+1. **Meld** (Arcane Seeds // Life) : jouée fusionnée, la carte a les types
+   Action et Instant (CR 8.3.38c). Le moteur la traite comme une **action**
+   (pile vide, pendant votre tour, 1 point d'action, CR 8.1.1). Pendant le
+   tour adverse, seul le côté Life est proposé. Est-ce bien ça ?
+2. **Florian** : « If you would create … aura tokens » ne concerne que les
+   tokens que **Florian crée** lui-même : un Frostbite créé chez lui par
+   Iyslander (CR 8.5.2c, contrôlé par Florian) n'est pas doublé.
+3. **Cartes Earth bannies face cachée** : elles comptent pour Florian, Helm
+   of Lignum Vitae et Well Grounded (on lit leur texte imprimé). Colors of
+   Aria n'est Earth que face visible. Faut-il plutôt ne compter que les
+   cartes face visible ?
+4. **Annals of Sutcliffe** : « pitched this way » = seulement les cartes
+   pitchées pour payer cette activation (des ressources restées d'un
+   paiement précédent ne comptent pas).
+5. **Sigil of Silphidae** : la cible (« target hero ») est choisie quand la
+   capacité se déclenche, même s'il n'y a aucune autre aura à bannir ; le
+   choix de bannir se fait à la résolution.
+
+Trois choix faits pour Iyslander, à confirmer :
 
 1. **Frost Spike** : « Create a Frostbite token in an exposed head, chest,
    arms, or legs zone ». Le joueur de Frost Spike choisit à la résolution
@@ -93,11 +118,11 @@ précédent si l'épée a quitté ce maillon (notes de Mastery Pack Warrior).
 `Validated` dans `docs/cards/STATUS.md` ; signaler tout comportement faux.
 
 Vérifier aussi les cartes d'Ira (`cargo run --release -p fab-ui -- --deck ira`),
-de Bravo (`--deck bravo`) et d'Iyslander (`--deck iyslander`) ; `t <n>` donne
-le texte officiel.
+de Bravo (`--deck bravo`), d'Iyslander (`--deck iyslander`) et de Florian
+(`--deck florian`) ; `t <n>` donne le texte officiel.
 
 **Pour Claude (étape 3, suite) :** coder le deck suivant de la liste,
-**Florian** (`data/decks/06_florian.txt`). Puis Levia, Dromai, Arakni.
+**Levia** (`data/decks/07_levia.txt`). Puis Dromai, Arakni.
 Le moteur sait maintenant accorder des
 capacités **déclenchées** (`CardDef::granted`) ; pour Dromai il faudra aussi
 accorder une capacité **activée** (Storm of Sandikai donne une capacité
@@ -117,3 +142,4 @@ d'attaque aux dragons). Vérifier « clash » et « crush » au fil des cartes.
 | 2026-11-22 | Liste officielle Silver Age (40 cartes bannies, 4 héros mis sur la touche) dans `config/silver_age.toml`, noms français traduits par le fichier officiel ; aucune carte de nos decks concernée | `claude/intelligent-mayer-kvrq5b` |
 | 2026-11-22 | Étape 3, deck Bravo : 35 lignes de STATUS.md + tokens Seismic Surge, Might, Vigor, Quicken codés et testés (61 tests de cartes, 7 tests de règles) ; moteur : clash (CR 8.5.45), « win a clash revealing this » depuis le deck, crush (CR 8.4.2, sur les dégâts), heave (capacité cachée depuis la main), suspense (CR 8.3.42), réductions « your next … costs {r} less », « can't gain {p} » (Chokeslam), « loses and can't gain dominate » ; `fab-ui --deck bravo` | `claude/wizardly-pasteur-r91h2w` |
 | 2026-11-22 | Étape 3, deck Iyslander : 25 lignes de STATUS.md + tokens Frostbite et Ponder codés et testés (67 tests de cartes, 8 tests de règles) ; moteur : jouer une action « as though it were an instant » (CR 8.1.1d), surcoût Frostbite (CR 5.1.6a), coût « XX », amp (CR 8.5.47), tap (CR 8.5.55), « the next card you play … plus N » (`Replacement::bind`), zones exposées et token créé dans une zone d'équipement (CR 3.0.1a, 8.5.2c), prévention statique (Pyroglyphic Protection) ; `fab-ui --deck iyslander` | `claude/gallant-thompson-jslxg7` |
+| 2026-11-23 | Étape 3, deck Florian : 32 lignes de STATUS.md + tokens Runechant et Embodiment of Earth codés et testés (64 tests de cartes, 9 tests de règles) ; moteur : cartes doubles et meld (CR 9.2, 8.3.38, 5.3.4d), cibles dans un cimetière (CR 1.8.5a), créateur d'un token (CR 8.5.2c), supertypes « face-up » (Colors of Aria), compteurs à l'entrée, « pitched this way » (`Ctx::log_start`), decompose (CR 8.4.14) ; choix provisoire d'équipement respectant les mains ; `fab-ui --deck florian` | `claude/epic-faraday-pg52sk` |
