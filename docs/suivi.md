@@ -14,7 +14,7 @@ met à jour à la fin de chaque tâche.
 | 3 | Les 7 autres decks + simulateur rapide | ✅ (Ira, Bravo, Iyslander, Florian, Levia, Dromai, Arakni ; cartes à valider par le propriétaire) |
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ✅ B0 = 0, B1 = +511, B2 = +785 |
 | 5 | Interface web locale + annulation | ✅ (`fab-web`, à essayer par le propriétaire) |
-| 6 | Matchs + choix équipement/deck (« phase de side ») | ⏳ |
+| 6 | Choix de l'équipement et des 40 cartes avant chaque partie | ⏳ (les matchs en plusieurs manches sont abandonnés, décision du propriétaire) |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
 
 **Branche la plus récente :** `claude/youthful-brown-dgcgw0` (interface
@@ -67,7 +67,7 @@ déclenchées). Avec les bots aléatoires, 3 à 11 % des parties d'Arakni
 finissent ainsi (une carte injouable reste en arsenal).
 
 **Choix provisoire d'équipement et de deck** (`real::default_loadout`, en
-attendant la phase de side de l'étape 6) : la première carte de chaque
+attendant le choix avant chaque partie de l'étape 6) : la première carte de chaque
 emplacement d'arène dans l'ordre de la liste (Hala : Helm of Unity, Edge Laden
 Plate, Gauntlets of Unity, Pillar of Unity ; Dorinthea : Helm of Unity,
 Plating of Unity, Gauntlets of Unity, Refraction Bolters), et les 40 premières
@@ -260,10 +260,12 @@ Essayer aussi le bot B2 (`--niveau b2`) et noter ses erreurs flagrantes.
 clics peu pratiques. C'est désormais le moyen le plus simple de vérifier
 les cartes.
 
-**Pour Claude :** **étape 6**, matchs en plusieurs manches et choix de
-l'équipement et du deck de 40 avant chaque manche dans le card-pool de 55
-(CR 4.1 ; `fab-match`), d'abord pour les bots (règle simple et mesurée),
-puis dans l'interface web (écran de choix avant chaque manche). Pistes
+**Pour Claude :** **étape 6**, choix de l'équipement et du deck de 40
+dans le card-pool de 55 **avant chaque partie** (CR 4.1). Pas de matchs en
+plusieurs manches (abandonnés par le propriétaire le 2026-11-25). D'abord
+pour les bots (règle simple, selon le deck adverse, et **mesurée** contre le
+choix automatique actuel), puis dans l'interface web (écran de choix avant
+la partie, le choix automatique proposé par défaut). Pistes
 d'amélioration de B2, à mesurer plus tard : une estimation qui compte le
 blood debt et les cartes bannies (Levia), garder l'arbre d'une décision à la
 suivante, aller plus vite (plus d'itérations pour le même temps), pondérer
@@ -291,3 +293,4 @@ les cartes imaginées par leur fréquence dans les decks du méta.
 | 2026-11-23 | Étape 4, B2 : bot `IsmctsAgent` (ISMCTS) : mondes imaginés (`determinisation`, main adverse et decks redistribués, hasard renouvelé ; test : même choix quelle que soit la vraie main adverse), parties simulées par B1 sur 4 tours puis estimées ; réglages mesurés (arbre limité à la décision présente, 300 itérations) ; `--bots b2`, `b2-N`, `b2-Nms` ; `fab-ui --niveau b2`. B2 = +283 Elo contre B1 (83,6 %), classement B0 0 / B1 +511 / B2 +785 ; puis B2 imagine la main adverse dans le card-pool de 55 (`Loadout::pool`, `GameState::card_pools`) : 83,9 % contre B1, B2 = +796 | `claude/loving-fermi-r75ch8` |
 | 2026-11-23 | Étape 5 : interface web locale `fab-web` (serveur HTTP maison sur 127.0.0.1, sans nouvelle dépendance ; page unique : plateau des deux joueurs, chaîne de combat et pile, options cliquables et cartes jouables surlignées, annulation illimitée, texte officiel au survol, journal, nouvelle partie avec decks / niveau / graine) ; l'état envoyé au navigateur ne contient ni nom ni numéro de carte cachée (testé) ; `docs/interface.md` | `claude/youthful-brown-dgcgw0` |
 | 2026-11-25 | Lancement simplifié à la demande du propriétaire : `Jouer.bat` (double-clic : `git pull`, textes officiels, compilation, lancement) ; `fab-web` ouvre lui-même le navigateur et prend le premier port libre | `claude/youthful-brown-dgcgw0` |
+| 2026-11-25 | Décision du propriétaire : pas de matchs en plusieurs manches ; l'étape 6 se limite au choix de l'équipement et des 40 cartes avant chaque partie | `claude/youthful-brown-dgcgw0` |

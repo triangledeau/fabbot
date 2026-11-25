@@ -15,7 +15,7 @@ du projet est un expert du jeu, mais débute en programmation : explications en
 - `engine` (`fab-engine`) : état de partie, règles, points de décision, RNG déterministe, historique d'annulation.
 - `cards` (`fab-cards`) : données des cartes + effets + statut de validation.
 - `ai` (`fab-ai`) : trait `Agent` et les bots B0 → B3.
-- `fab-match` : matchs en plusieurs manches, phase de side.
+- `fab-match` : choix de l'équipement et des 40 cartes avant une partie (pas de matchs en plusieurs manches).
 - `sim` (`fab-sim`) : simulateur en ligne de commande.
 - `ui` (`fab-ui`) : interfaces pour jouer contre le bot (texte, et page web locale `fab-web`).
 
@@ -52,7 +52,7 @@ humain) répond par l'index d'une option. Tout choix de joueur passe par là.
 - Vraies cartes : `crates/cards/src/real/` (texte officiel en commentaire
   au-dessus de chaque carte).
 - Les 9 decks sont dans `data/decks/` ; `cargo run -p fab-cards --bin deck-stats`.
-- En Silver Age il n'y a pas de sideboard séparé : avant chaque manche, on choisit
+- En Silver Age il n'y a pas de sideboard séparé : avant chaque partie, on choisit
   équipement + deck de 40 dans un card-pool de 55 (CR 4.1).
 - **Chaque carte** suit le cycle : `NotCoded` → `Coded` → `Tested` → `Validated`.
   Seul le propriétaire passe une carte en `Validated`. Tenir `docs/cards/STATUS.md` à jour.
