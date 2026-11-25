@@ -64,8 +64,7 @@ fn stat(v: Option<[i16; 3]>, ci: usize) -> String {
     v.map(|a| a[ci].to_string()).unwrap_or_default()
 }
 
-fn verifier(base: &Base) -> bool {
-    let file = langage::program(ProgramId::Warrior);
+fn verifier(base: &Base, file: &File) -> bool {
     let (mut ok, mut ecarts, mut avec_natif) = (0, 0, 0);
     for card in &file.cards {
         let nat = natives(card, file);
@@ -323,7 +322,22 @@ fn main() {
     };
     match args.first().map(String::as_str) {
         Some("verifier") => {
-            if !verifier(&base) {
+            // `--fichier F` : vérifier un autre fichier (sortie d'un modèle).
+            let file: &File = match args.iter().position(|a| a == "--fichier") {
+                Some(i) => {
+                    let path = args.get(i + 1).expect("--fichier CHEMIN");
+                    let text = std::fs::read_to_string(path).expect("fichier illisible");
+                    match langage::parse(&text) {
+                        Ok(f) => Box::leak(Box::new(f)),
+                        Err(e) => {
+                            println!("ERREUR DE LECTURE {e}");
+                            std::process::exit(3);
+                        }
+                    }
+                }
+                None => langage::program(ProgramId::Warrior),
+            };
+            if !verifier(&base, file) {
                 std::process::exit(1);
             }
         }
