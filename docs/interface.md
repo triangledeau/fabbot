@@ -16,17 +16,41 @@ principe : vous ne voyez que ce que votre joueur a le droit de voir.
 La fenêtre noire doit rester ouverte pendant la partie ; la fermer arrête
 le jeu. Le serveur n'écoute que sur votre ordinateur.
 
-Les decks, le niveau du bot (B1 par défaut) et la graine se choisissent
-dans la page, avec le bouton **Nouvelle partie**.
+Les decks, le niveau du bot (B1 par défaut), le nombre de manches à gagner
+(2 par défaut : au meilleur des 3) et la graine se choisissent dans la page,
+avec le bouton **Nouveau match**.
 
 Pour les curieux, la commande équivalente (options : `--deck`, `--bot`,
-`--niveau`, `--graine`, `--port`, `--sans-navigateur`) :
+`--niveau`, `--graine`, `--manches`, `--port`, `--sans-navigateur`) :
 
 ```
 cargo run --release -p fab-ui --bin fab-web -- --deck levia --bot arakni --niveau b2
 ```
 
 Si le port 8080 est déjà pris, le jeu prend le suivant libre (8081…).
+
+### Avant chaque manche : équipement et deck
+
+Comme en tournoi (CR 4.1.3 à 4.1.6), avant chaque manche :
+
+1. **Qui commence ?** Le joueur désigné choisit : à la première manche, il
+   est tiré au sort ; ensuite, c'est le perdant de la manche précédente. Le
+   bot choisit toujours de commencer.
+2. **Votre équipement** : cliquez une carte par zone (cliquer à nouveau la
+   retire ; une zone peut rester vide). Pour les armes, deux mains au plus
+   et un seul off-hand. Le bot choisit le sien **sans voir** le vôtre.
+3. **Votre deck** : l'équipement du bot est maintenant montré ; réglez le
+   nombre d'exemplaires de chaque carte avec − et +. Le compteur doit
+   indiquer **40 / 40** pour valider.
+
+Ce qui est proposé par défaut : votre choix de la manche précédente (à la
+première manche, l'équipement et les 40 premières cartes de la liste).
+Survolez une carte pour son texte officiel. Le bot choisit avec sa table
+apprise (`docs/bots.md`, « La phase de side »).
+
+En fin de manche, le bouton **Manche suivante** lance la préparation de la
+suivante ; le score du match est affiché en haut. Annuler un coup après la
+fin d'une manche la fait reprendre (le résultat n'est plus compté).
 
 ### La page
 
@@ -126,8 +150,9 @@ d'abord un test qui échoue, puis sera corrigé.
 
 ## Limites actuelles
 
-- Équipement et deck de 40 choisis automatiquement (les premières cartes de
-  la liste) ; le choix avant chaque manche arrive à l'étape 6.
+- Terminal : pas d'écran de choix ; vous jouez l'équipement et les 40
+  premières cartes de la liste, le bot son choix appris. Le choix complet
+  avant chaque manche est dans la page web.
 - « Look at the top card of your deck » (On the Horizon) n'affiche encore rien.
 - Page web : pas d'images de cartes (le nom, la couleur et les valeurs
   seulement) ; une seule partie à la fois (un nouvel onglet montre la même).

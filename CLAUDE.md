@@ -74,6 +74,9 @@ humain) répond par l'index d'une option. Tout choix de joueur passe par là.
   `--bots b1 b0` : bots des deux joueurs).
 - Classement Elo des bots : `cargo run --release -p fab-sim -- --tournoi --bots b1 b0 --games 1000`
   (81 paires de decks ; voir `docs/bots.md`). Les bots lisent la partie via `fab_ai::vue::Vue`.
+- Phase de side (équipement + 40 cartes avant chaque partie) : `fab_match::preparer_manche`,
+  trait `Side` ; table apprise `data/side/b1.txt` (`fab-sim --apprendre-side`, à refaire
+  quand un deck ou B1 change) ; `--side appris liste` pour comparer.
 - Organisation du moteur et façon d'écrire une carte : `docs/moteur.md`.
 - Harnais de test commun : `crates/cards/tests/commun/mod.rs` (`partie`, `choisir`,
   `passer_jusqua`, `finir_le_tour`).

@@ -2,9 +2,12 @@
 //!
 //! - étape 2 : interface texte dans le terminal ([`jeu`], [`vue`]) ;
 //! - étape 5 : page web locale ([`serveur`], [`web`] ; plateau, boutons de
-//!   choix, « Annuler », journal), lancée par `cargo run --release -p fab-ui --bin fab-web`.
+//!   choix, « Annuler », journal), lancée par `cargo run --release -p fab-ui --bin fab-web` ;
+//! - étape 6 : matchs en plusieurs manches et choix de l'équipement et du
+//!   deck avant chaque manche dans la page web ([`match_web`]).
 
 pub mod jeu;
+pub mod match_web;
 pub mod serveur;
 pub mod textes;
 pub mod vue;

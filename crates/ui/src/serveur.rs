@@ -12,10 +12,16 @@
 //! | `GET /api/carte?id=12` | fiche et texte officiel de la carte `[12]` |
 //! | `POST /api/choix?i=3` | choisir l'option 3 (à partir de 0) |
 //! | `POST /api/annuler` | annuler le dernier choix |
-//! | `POST /api/nouvelle?deck=hala&bot=dorinthea&niveau=b1&graine=42` | nouvelle partie |
+//! | `POST /api/nouvelle?deck=hala&bot=dorinthea&niveau=b1&graine=42&manches=2` | nouveau match (`manches` : manches à gagner) |
+//! | `POST /api/premier?qui=vous` | qui commence la manche (`vous` ou `bot`, CR 4.1.3) |
+//! | `POST /api/arene?cartes=0,2,5` | cartes d'arène choisies (positions dans le card-pool, CR 4.1.4) |
+//! | `POST /api/deck?n=2,2,1,…` | exemplaires de chaque carte de deck (CR 4.1.6) |
+//! | `POST /api/manche-suivante` | préparer la manche suivante |
+//! | `GET /api/carte-pool?id=7` | texte d'une carte du card-pool (écran de préparation) |
 
+use crate::match_web::{Etape, MatchWeb};
 use crate::textes::Textes;
-use crate::web::{Reglages, Session};
+use crate::web::Reglages;
 use crate::DECKS;
 use fab_ai::BOTS;
 use serde_json::{json, Value};
@@ -55,7 +61,7 @@ impl Reponse {
 
 /// Ce que le serveur garde entre deux requêtes.
 pub struct Etat {
-    pub session: Option<Session>,
+    pub partie: Option<MatchWeb>,
     pub textes: Option<Textes>,
     /// Réglages de la partie lancée au démarrage.
     pub depart: Reglages,
@@ -123,39 +129,86 @@ pub fn repondre(methode: &str, requete: &str, etat: &mut Etat) -> Reponse {
             "niveaux": BOTS,
             "textes": etat.textes.is_some(),
         })),
-        ("GET", "/api/etat") => match &etat.session {
-            Some(s) => Reponse::json(s.etat()),
+        ("GET", "/api/etat") => match &etat.partie {
+            Some(m) => Reponse::json(m.etat()),
             None => Reponse::json(json!({ "aucune_partie": true })),
         },
         ("GET", "/api/carte") => {
             let Some(id) = param("id").and_then(|v| v.parse::<u32>().ok()) else {
                 return Reponse::erreur(400, "paramètre id manquant");
             };
-            match &etat.session {
+            match etat.partie.as_ref().and_then(|m| m.session.as_ref()) {
                 Some(s) => Reponse::json(s.carte(id, etat.textes.as_ref())),
                 None => Reponse::erreur(400, "aucune partie en cours"),
+            }
+        }
+        ("GET", "/api/carte-pool") => {
+            let Some(id) = param("id").and_then(|v| v.parse::<u32>().ok()) else {
+                return Reponse::erreur(400, "paramètre id manquant");
+            };
+            match &etat.partie {
+                Some(m) => Reponse::json(m.carte_pool(id, etat.textes.as_ref())),
+                None => Reponse::erreur(400, "aucun match en cours"),
             }
         }
         ("POST", "/api/choix") => {
             let Some(i) = param("i").and_then(|v| v.parse::<usize>().ok()) else {
                 return Reponse::erreur(400, "paramètre i manquant");
             };
-            let Some(s) = etat.session.as_mut() else {
+            let Some(m) = etat.partie.as_mut() else {
                 return Reponse::erreur(400, "aucune partie en cours");
             };
-            match s.choisir(i) {
-                Ok(()) => Reponse::json(s.etat()),
+            let Some(s) = m.session.as_mut().filter(|_| m.etape == Etape::Partie) else {
+                return Reponse::erreur(400, "la manche n'a pas commencé");
+            };
+            let r = s.choisir(i);
+            m.apres_coup();
+            match r {
+                Ok(()) => Reponse::json(m.etat()),
                 Err(e) => Reponse::erreur(400, e),
             }
         }
         ("POST", "/api/annuler") => {
-            let Some(s) = etat.session.as_mut() else {
+            let Some(m) = etat.partie.as_mut() else {
                 return Reponse::erreur(400, "aucune partie en cours");
             };
+            let Some(s) = m.session.as_mut().filter(|_| m.etape == Etape::Partie) else {
+                return Reponse::erreur(400, "la manche n'a pas commencé");
+            };
             if s.annuler() {
-                Reponse::json(s.etat())
+                m.apres_coup();
+                Reponse::json(m.etat())
             } else {
                 Reponse::erreur(400, "rien à annuler")
+            }
+        }
+        ("POST", "/api/premier")
+        | ("POST", "/api/arene")
+        | ("POST", "/api/deck")
+        | ("POST", "/api/manche-suivante") => {
+            let Some(m) = etat.partie.as_mut() else {
+                return Reponse::erreur(400, "aucun match en cours");
+            };
+            let nombres = |k: &str| -> Result<Vec<usize>, String> {
+                let v = param(k).unwrap_or_default();
+                v.split(',')
+                    .map(str::trim)
+                    .filter(|x| !x.is_empty())
+                    .map(|x| {
+                        x.parse::<usize>()
+                            .map_err(|_| format!("nombre invalide : {x}"))
+                    })
+                    .collect()
+            };
+            let r = match chemin {
+                "/api/premier" => m.premier_joueur(&param("qui").unwrap_or_default()),
+                "/api/arene" => nombres("cartes").and_then(|v| m.arene(&v)),
+                "/api/deck" => nombres("n").and_then(|v| m.deck(&v)),
+                _ => m.manche_suivante(),
+            };
+            match r {
+                Ok(()) => Reponse::json(m.etat()),
+                Err(e) => Reponse::erreur(400, e),
             }
         }
         ("POST", "/api/nouvelle") => {
@@ -167,16 +220,24 @@ pub fn repondre(methode: &str, requete: &str, etat: &mut Etat) -> Reponse {
                 },
             };
             let d = &etat.depart;
+            let manches = match param("manches").filter(|g| !g.trim().is_empty()) {
+                None => d.manches,
+                Some(n) => match n.trim().parse::<u8>() {
+                    Ok(n) => n,
+                    Err(_) => return Reponse::erreur(400, "manches : 1, 2 ou 3"),
+                },
+            };
             let r = Reglages {
                 deck: param("deck").unwrap_or_else(|| d.deck.clone()),
                 deck_bot: param("bot").unwrap_or_else(|| d.deck_bot.clone()),
                 niveau: param("niveau").unwrap_or_else(|| d.niveau.clone()),
                 graine,
+                manches,
             };
-            match Session::nouvelle(r) {
-                Ok(s) => {
-                    let v = s.etat();
-                    etat.session = Some(s);
+            match MatchWeb::nouveau(r) {
+                Ok(m) => {
+                    let v = m.etat();
+                    etat.partie = Some(m);
                     Reponse::json(v)
                 }
                 Err(e) => Reponse::erreur(400, e),

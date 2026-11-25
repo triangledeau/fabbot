@@ -13,6 +13,7 @@ fn reglages(deck: &str, bot: &str, graine: u64) -> Reglages {
         deck_bot: bot.into(),
         niveau: "b0".into(),
         graine,
+        manches: 2,
     }
 }
 
@@ -155,7 +156,7 @@ fn fiche_d_une_carte_visible_mais_pas_d_une_carte_cachee() {
 
 fn etat_serveur() -> Etat {
     Etat {
-        session: None,
+        partie: None,
         textes: None,
         depart: reglages("hala", "dorinthea", 1),
     }
@@ -189,6 +190,11 @@ fn routes_du_serveur() {
     assert_eq!(v["reglages"]["deck"], "florian");
     assert_eq!(v["reglages"]["niveau"], "b1");
     assert_eq!(v["reglages"]["graine"], "5");
+    assert_eq!(v["phase"], "preparation");
+    // Pas de partie avant la phase de side.
+    assert_eq!(repondre("POST", "/api/choix?i=0", &mut e).code, 400);
+    let v = preparer_avec_la_proposition(&mut e, v);
+    assert_eq!(v["phase"], "partie");
     let premier = v.clone();
 
     assert_eq!(repondre("POST", "/api/annuler", &mut e).code, 400);
@@ -220,4 +226,167 @@ fn routes_du_serveur() {
     );
     assert_eq!(repondre("GET", "/inconnu", &mut e).code, 404);
     assert_eq!(repondre("GET", "/api/choix?i=0", &mut e).code, 404);
+}
+
+/// Passe la préparation d'une manche en gardant la proposition par défaut
+/// (en commençant si c'est à l'humain de choisir).
+fn preparer_avec_la_proposition(e: &mut Etat, v: Value) -> Value {
+    let mut v = v;
+    if v["preparation"]["etape"] == "premier" {
+        let r = repondre("POST", "/api/premier?qui=vous", e);
+        assert_eq!(r.code, 200, "{}", r.corps);
+        v = json(&r);
+    }
+    assert_eq!(v["preparation"]["etape"], "arene");
+    let cartes: Vec<String> = v["preparation"]["arene"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|c| c["propose"] == true)
+        .map(|c| c["i"].to_string())
+        .collect();
+    let r = repondre(
+        "POST",
+        &format!("/api/arene?cartes={}", cartes.join(",")),
+        e,
+    );
+    assert_eq!(r.code, 200, "{}", r.corps);
+    let v = json(&r);
+    assert_eq!(v["preparation"]["etape"], "deck");
+    let n: Vec<String> = v["preparation"]["deck"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["propose"].to_string())
+        .collect();
+    let r = repondre("POST", &format!("/api/deck?n={}", n.join(",")), e);
+    assert_eq!(r.code, 200, "{}", r.corps);
+    json(&r)
+}
+
+fn nouveau_match(e: &mut Etat, requete: &str) -> Value {
+    let r = repondre("POST", requete, e);
+    assert_eq!(r.code, 200, "{}", r.corps);
+    json(&r)
+}
+
+// CR 4.1.4 : l'arène du bot n'est pas montrée avant le choix de l'humain ;
+// CR 4.1.5 : elle l'est ensuite ; le deck du bot ne l'est jamais.
+#[test]
+fn l_arene_du_bot_n_est_montree_qu_apres_le_choix_de_l_humain() {
+    let mut e = etat_serveur();
+    let mut v = nouveau_match(
+        &mut e,
+        "/api/nouvelle?deck=ira&bot=arakni&niveau=b0&graine=4",
+    );
+    if v["preparation"]["etape"] == "premier" {
+        v = json(&repondre("POST", "/api/premier?qui=bot", &mut e));
+        assert_eq!(v["preparation"]["premier"], "bot");
+    }
+    assert_eq!(v["preparation"]["etape"], "arene");
+    assert!(v["preparation"]["arene_bot"].is_null());
+    // Texte d'une carte d'arène du bot : refusé tant qu'elle n'est pas présentée.
+    let digits = fab_cards::real::build()
+        .find_name("Danger Digits")
+        .unwrap()
+        .0;
+    let r = repondre("GET", &format!("/api/carte-pool?id={digits}"), &mut e);
+    assert!(json(&r)["erreur"].is_string());
+    // Choix d'arène illégal : deux têtes.
+    let arene = v["preparation"]["arene"].as_array().unwrap();
+    let tetes: Vec<String> = arene
+        .iter()
+        .filter(|c| c["zone"] == "Tête")
+        .map(|c| c["i"].to_string())
+        .collect();
+    assert!(tetes.len() >= 2);
+    let r = repondre(
+        "POST",
+        &format!("/api/arene?cartes={}", tetes.join(",")),
+        &mut e,
+    );
+    assert_eq!(r.code, 400);
+    // Aucune carte d'arène : légal (« up to », CR 4.1.4a).
+    let r = repondre("POST", "/api/arene?cartes=", &mut e);
+    assert_eq!(r.code, 200, "{}", r.corps);
+    let v = json(&r);
+    let bot = v["preparation"]["arene_bot"].as_array().unwrap();
+    assert!(!bot.is_empty());
+    assert!(!v.to_string().contains("deck_bot\":["));
+    // Deck de 39 cartes : refusé (TRP 7.4).
+    let mut n: Vec<u64> = v["preparation"]["deck"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["propose"].as_u64().unwrap())
+        .collect();
+    let k = n.iter().position(|&x| x > 0).unwrap();
+    n[k] -= 1;
+    let texte: Vec<String> = n.iter().map(|x| x.to_string()).collect();
+    let r = repondre("POST", &format!("/api/deck?n={}", texte.join(",")), &mut e);
+    assert_eq!(r.code, 400);
+    assert!(json(&r)["erreur"].as_str().unwrap().contains("40"));
+    // Trop d'exemplaires d'une carte : refusé.
+    n[k] += 1;
+    let j = n.iter().position(|&x| x == 0).unwrap_or(k);
+    n[j] = 3;
+    let texte: Vec<String> = n.iter().map(|x| x.to_string()).collect();
+    assert_eq!(
+        repondre("POST", &format!("/api/deck?n={}", texte.join(",")), &mut e).code,
+        400
+    );
+}
+
+#[test]
+fn un_match_en_deux_manches_gagnantes_se_joue_jusqu_au_bout() {
+    let mut e = etat_serveur();
+    let mut v = nouveau_match(
+        &mut e,
+        "/api/nouvelle?deck=hala&bot=dorinthea&niveau=b0&graine=8&manches=2",
+    );
+    assert_eq!(v["reglages"]["manches"], 2);
+    let mut manches = 0;
+    loop {
+        v = preparer_avec_la_proposition(&mut e, v);
+        manches += 1;
+        // Choisir toujours la première option jusqu'à la fin de la manche.
+        let mut n = 0;
+        while v["fini"] != true {
+            v = json(&repondre("POST", "/api/choix?i=0", &mut e));
+            n += 1;
+            assert!(n < 20_000, "manche trop longue");
+        }
+        assert_eq!(v["match"]["jouees"], manches);
+        if v["match"]["gagnant"].is_string() {
+            assert_eq!(v["manche_suivante"], false);
+            assert_eq!(repondre("POST", "/api/manche-suivante", &mut e).code, 400);
+            break;
+        }
+        assert_eq!(v["manche_suivante"], true);
+        v = json(&repondre("POST", "/api/manche-suivante", &mut e));
+        assert_eq!(v["phase"], "preparation");
+        assert!(manches < 5);
+    }
+    let s = &v["match"];
+    assert!(s["vous"] == 2 || s["bot"] == 2, "{s}");
+    assert!(manches >= 2);
+}
+
+// Annuler le dernier choix d'une manche finie la fait reprendre, et le
+// résultat n'est plus compté.
+#[test]
+fn annuler_apres_la_fin_d_une_manche_decompte_le_resultat() {
+    let mut e = etat_serveur();
+    let v = nouveau_match(
+        &mut e,
+        "/api/nouvelle?deck=hala&bot=dorinthea&niveau=b0&graine=2&manches=2",
+    );
+    let mut v = preparer_avec_la_proposition(&mut e, v);
+    while v["fini"] != true {
+        v = json(&repondre("POST", "/api/choix?i=0", &mut e));
+    }
+    assert_eq!(v["match"]["jouees"], 1);
+    let v = json(&repondre("POST", "/api/annuler", &mut e));
+    assert_eq!(v["fini"], false);
+    assert_eq!(v["match"]["jouees"], 0);
 }

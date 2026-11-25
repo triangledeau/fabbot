@@ -110,6 +110,20 @@ dialog label { display: block; margin: 8px 0; }
 dialog select, dialog input { font: inherit; padding: 4px; margin-left: 6px; }
 details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 .aide { color: var(--doux); font-size: 12px; }
+#score { font-weight: 700; color: var(--accent); }
+#preparation { display: none; flex-direction: column; gap: 10px; min-width: 0; }
+#preparation .bloc { background: var(--tapis); border: 1px solid var(--bord); border-radius: 10px; padding: 10px; }
+#preparation h2 { font-size: 15px; margin: 0 0 6px; }
+.carte.choisie { border-color: var(--ok); box-shadow: 0 0 0 3px rgba(111,207,143,.45), 0 1px 3px rgba(0,0,0,.4); }
+.carte.non-choisie { opacity: .55; }
+.carte-deck { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.qte { display: flex; align-items: center; gap: 4px; }
+.qte button { padding: 0 9px; }
+.qte b { min-width: 34px; text-align: center; }
+#total { font-size: 18px; font-weight: 800; }
+#total.ok { color: var(--ok); }
+#total.ko { color: var(--danger); }
+.barre { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: sticky; top: 0; z-index: 2; background: var(--tapis); padding: 4px 0; }
 </style>
 </head>
 <body>
@@ -117,10 +131,12 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
   <h1>fabbot</h1>
   <span class="info" id="info">Chargement…</span>
   <button id="b-annuler" title="Annuler votre dernier choix (touche A ou Ctrl+Z)">↶ Annuler</button>
-  <button id="b-nouvelle">Nouvelle partie</button>
+  <span id="score"></span>
+  <button id="b-nouvelle">Nouveau match</button>
 </header>
 <main>
-  <section class="plateau">
+  <section id="preparation"></section>
+  <section class="plateau" id="plateau">
     <div class="joueur" id="j-bot"></div>
     <div class="milieu" id="milieu"></div>
     <div class="joueur" id="j-vous"></div>
@@ -129,6 +145,7 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
     <div class="panneau">
       <h2>Votre choix</h2>
       <div id="resultat"></div>
+      <div id="suite"></div>
       <div id="question"></div>
       <div id="options"></div>
       <div id="erreur"></div>
@@ -143,12 +160,13 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 
 <dialog id="d-nouvelle">
   <form method="dialog" id="f-nouvelle">
-    <h2 style="margin-top:0">Nouvelle partie</h2>
+    <h2 style="margin-top:0">Nouveau match</h2>
     <label>Votre deck <select name="deck"></select></label>
     <label>Deck du bot <select name="bot"></select></label>
     <label>Niveau du bot <select name="niveau"></select></label>
+    <label>Manches à gagner <select name="manches"><option value="1">1 (une seule manche)</option><option value="2" selected>2 (au meilleur des 3)</option><option value="3">3 (au meilleur des 5)</option></select></label>
     <label>Graine <input name="graine" placeholder="au hasard" size="22"></label>
-    <p class="aide">Même graine + mêmes decks = mêmes mélanges.</p>
+    <p class="aide">Avant chaque manche, vous choisissez votre équipement et vos 40 cartes parmi les 55. Même graine + mêmes decks = mêmes mélanges.</p>
     <button value="annuler" formnovalidate>Fermer</button>
     <button value="ok" class="principal">Lancer</button>
   </form>
@@ -224,6 +242,10 @@ function carte(c, petite) {
   s.appendChild(el("span", "pitch", c.pitch ? "◆" + c.pitch : ""));
   s.appendChild(el("span", "def", c.defense !== null && c.defense !== undefined ? c.defense + " ⛨" : ""));
   e.appendChild(s);
+  if (c.carte_id !== undefined) {
+    e.addEventListener("mouseenter", () => montrerPool(c.carte_id));
+    return e;
+  }
   const opts = optionsDeCarte(c.id);
   if (opts.length) {
     e.classList.add("jouable");
@@ -272,6 +294,127 @@ async function montrer(id) {
     if (v.type) d.appendChild(el("div", "type", v.type));
     d.appendChild(el("div", "texte", v.texte));
   } catch (e) { /* carte cachée : rien à montrer */ }
+}
+
+async function montrerPool(id) {
+  const cle = "pool-" + id;
+  if (cle === detailDemande) return;
+  detailDemande = cle;
+  try {
+    const v = await api("GET", "/api/carte-pool?id=" + id);
+    if (detailDemande !== cle) return;
+    const d = $("detail");
+    d.replaceChildren(el("h2", null, "Carte"), el("div", "fiche", v.fiche));
+    if (v.type) d.appendChild(el("div", "type", v.type));
+    d.appendChild(el("div", "texte", v.texte));
+  } catch (e) { /* rien à montrer */ }
+}
+
+// ---------- préparation d'une manche (phase de side) ----------
+
+// Choix en cours de l'humain (gardé tant que l'étape ne change pas).
+let choixArene = null;   // ensemble des positions choisies
+let choixDeck = null;    // quantité par carte distincte
+let etapeVue = null;
+
+function preparation() {
+  const p = etat.preparation;
+  const cle = etat.match.jouees + "-" + p.etape;
+  if (cle !== etapeVue) {
+    etapeVue = cle;
+    choixArene = new Set(p.arene.filter(c => c.propose).map(c => c.i));
+    choixDeck = p.deck.map(c => c.propose);
+  }
+  const s = $("preparation");
+  s.replaceChildren();
+  const manche = etat.match.jouees + 1;
+  const tete = el("div", "bloc");
+  tete.appendChild(el("h2", null, `Manche ${manche} — vous (${p.heros}) contre le bot (${p.heros_bot})`));
+  const prem = p.premier ? (p.premier === "vous" ? "Vous commencez." : "Le bot commence.") : "";
+  tete.appendChild(el("div", null, (p.choisit_premier === "vous" ? "Vous choisissez qui commence. " : "Le bot choisit qui commence. ") + prem));
+  s.appendChild(tete);
+
+  if (p.etape === "premier") {
+    const b = el("div", "bloc");
+    b.appendChild(el("div", null, "Qui commence la manche ? (CR 4.1.3 : choisi avant l'équipement et le deck)"));
+    const l = el("div", "barre");
+    const b1 = el("button", "principal", "Je commence");
+    b1.addEventListener("click", () => action("POST", "/api/premier?qui=vous"));
+    const b2 = el("button", null, "Le bot commence");
+    b2.addEventListener("click", () => action("POST", "/api/premier?qui=bot"));
+    l.append(b1, b2);
+    b.appendChild(l);
+    s.appendChild(b);
+  } else if (p.etape === "arene") {
+    const b = el("div", "bloc");
+    const barre = el("div", "barre");
+    const v = el("button", "principal", "Valider l'équipement");
+    v.addEventListener("click", () => action("POST", "/api/arene?cartes=" + [...choixArene].join(",")));
+    barre.appendChild(v);
+    barre.appendChild(el("span", "aide", "Une carte par zone (deux mains pour les armes). Le bot choisit le sien sans voir le vôtre ; vous le verrez ensuite."));
+    b.appendChild(barre);
+    const zones = [];
+    for (const c of p.arene) if (!zones.includes(c.zone)) zones.push(c.zone);
+    for (const z of zones) {
+      const cartes = p.arene.filter(c => c.zone === z);
+      const zz = el("div", "zone");
+      zz.appendChild(el("div", "titre", z));
+      const r = el("div", "cartes");
+      for (const c of cartes) {
+        const e = carte(c, true);
+        e.classList.add(choixArene.has(c.i) ? "choisie" : "non-choisie");
+        e.style.cursor = "pointer";
+        e.addEventListener("click", () => {
+          if (choixArene.has(c.i)) choixArene.delete(c.i);
+          else {
+            // Hors armes : une seule carte par zone.
+            if (z !== "Armes") for (const o of cartes) choixArene.delete(o.i);
+            choixArene.add(c.i);
+          }
+          preparation();
+        });
+        r.appendChild(e);
+      }
+      zz.appendChild(r);
+      b.appendChild(zz);
+    }
+    s.appendChild(b);
+  } else if (p.etape === "deck") {
+    const ab = el("div", "bloc");
+    ab.appendChild(zone("Équipement du bot (présenté, CR 4.1.5)", p.arene_bot, true));
+    s.appendChild(ab);
+    const b = el("div", "bloc");
+    const total = choixDeck.reduce((a, n) => a + n, 0);
+    const barre = el("div", "barre");
+    const t = el("span", total === p.taille_deck ? "ok" : "ko", `${total} / ${p.taille_deck} cartes`);
+    t.id = "total";
+    const v = el("button", "principal", "Valider le deck");
+    v.disabled = total !== p.taille_deck;
+    v.addEventListener("click", () => action("POST", "/api/deck?n=" + choixDeck.join(",")));
+    const r0 = el("button", null, "Revenir à la proposition");
+    r0.addEventListener("click", () => { choixDeck = p.deck.map(c => c.propose); preparation(); });
+    barre.append(t, v, r0, el("span", "aide", "Choisissez exactement 40 cartes parmi celles de votre card-pool."));
+    b.appendChild(barre);
+    const r = el("div", "cartes");
+    p.deck.forEach((c, k) => {
+      const box = el("div", "carte-deck");
+      const e = carte(c, true);
+      if (choixDeck[k] === 0) e.classList.add("non-choisie");
+      box.appendChild(e);
+      const q = el("div", "qte");
+      const moins = el("button", null, "−");
+      moins.disabled = choixDeck[k] === 0;
+      moins.addEventListener("click", () => { choixDeck[k]--; preparation(); });
+      const plus = el("button", null, "+");
+      plus.disabled = choixDeck[k] >= c.max;
+      plus.addEventListener("click", () => { choixDeck[k]++; preparation(); });
+      q.append(moins, el("b", null, `${choixDeck[k]}/${c.max}`), plus);
+      box.appendChild(q);
+      r.appendChild(box);
+    });
+    b.appendChild(r);
+    s.appendChild(b);
+  }
 }
 
 // ---------- affichage ----------
@@ -388,19 +531,50 @@ function journal() {
 function afficher() {
   document.querySelectorAll("button").forEach(b => b.disabled = false);
   if (!etat || etat.aucune_partie) {
-    $("info").textContent = "Aucune partie : cliquez « Nouvelle partie ».";
+    $("info").textContent = "Aucun match : cliquez « Nouveau match ».";
     $("b-annuler").disabled = true;
     return;
   }
+  const m = etat.match;
+  $("score").textContent = m ? `Match : vous ${m.vous} – ${m.bot} bot (${m.manches} manche${m.manches > 1 ? "s" : ""} à gagner)` : "";
+  const prep = etat.phase === "preparation";
+  $("preparation").style.display = prep ? "flex" : "none";
+  $("plateau").style.display = prep ? "none" : "flex";
+  if (prep) {
+    const r = etat.reglages;
+    $("info").textContent = `Préparation de la manche ${m.jouees + 1} · vous : ${r.deck} · bot ${r.niveau} : ${r.deck_bot}`;
+    $("b-annuler").disabled = true;
+    $("resultat").textContent = "";
+    $("suite").replaceChildren();
+    $("question").textContent = "Choisissez votre équipement et votre deck (à gauche).";
+    $("options").replaceChildren();
+    preparation();
+    return;
+  }
   const r = etat.reglages;
-  $("info").textContent = `Tour ${etat.tour} (${etat.votre_tour ? "votre tour" : "tour du bot"}) · vous : ${r.deck} · bot ${r.nom_bot} : ${r.deck_bot} · graine ${r.graine}`;
+  $("info").textContent = `Manche ${m ? m.jouees + (etat.fini ? 0 : 1) : 1} · tour ${etat.tour} (${etat.votre_tour ? "votre tour" : "tour du bot"}) · vous : ${r.deck} · bot ${r.nom_bot} : ${r.deck_bot} · graine ${r.graine}`;
   $("b-annuler").disabled = etat.annulables === 0;
   $("b-annuler").textContent = "↶ Annuler" + (etat.annulables ? ` (${etat.annulables})` : "");
   joueur(etat.bot, false, !etat.votre_tour);
   milieu();
   joueur(etat.vous, true, etat.votre_tour);
   panneau();
+  suite();
   journal();
+}
+
+function suite() {
+  const s = $("suite");
+  s.replaceChildren();
+  const m = etat.match;
+  if (!etat.fini || !m) return;
+  if (m.gagnant) {
+    s.appendChild(el("div", null, m.gagnant === "vous" ? `Vous gagnez le match ${m.vous}–${m.bot} !` : `Le bot gagne le match ${m.bot}–${m.vous}.`));
+  } else if (etat.manche_suivante) {
+    const b = el("button", "principal", "Manche suivante");
+    b.addEventListener("click", () => action("POST", "/api/manche-suivante"));
+    s.appendChild(b);
+  }
 }
 
 // ---------- nouvelle partie ----------
@@ -420,6 +594,7 @@ $("b-nouvelle").addEventListener("click", () => {
     f.deck.value = etat.reglages.deck;
     f.bot.value = etat.reglages.deck_bot;
     f.niveau.value = etat.reglages.niveau;
+    if (etat.reglages.manches) f.manches.value = String(etat.reglages.manches);
   }
   f.graine.value = "";
   $("d-nouvelle").showModal();
@@ -427,13 +602,14 @@ $("b-nouvelle").addEventListener("click", () => {
 $("d-nouvelle").addEventListener("close", () => {
   if ($("d-nouvelle").returnValue !== "ok") return;
   const f = $("f-nouvelle");
-  const q = new URLSearchParams({ deck: f.deck.value, bot: f.bot.value, niveau: f.niveau.value, graine: f.graine.value.trim() });
+  const q = new URLSearchParams({ deck: f.deck.value, bot: f.bot.value, niveau: f.niveau.value, manches: f.manches.value, graine: f.graine.value.trim() });
   action("POST", "/api/nouvelle?" + q.toString());
 });
 $("b-annuler").addEventListener("click", annuler);
 
 document.addEventListener("keydown", (e) => {
   if ($("d-nouvelle").open || e.target.tagName === "INPUT") return;
+  if (etat && etat.phase === "preparation") return;
   if ((e.key === "z" && (e.ctrlKey || e.metaKey)) || e.key === "a" || e.key === "A") { e.preventDefault(); annuler(); return; }
   const d = etat && etat.decision;
   if (!d) return;

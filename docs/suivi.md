@@ -14,20 +14,22 @@ met à jour à la fin de chaque tâche.
 | 3 | Les 7 autres decks + simulateur rapide | ✅ (Ira, Bravo, Iyslander, Florian, Levia, Dromai, Arakni ; cartes à valider par le propriétaire) |
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ✅ B0 = 0, B1 = +511, B2 = +785 |
 | 5 | Interface web locale + annulation | ✅ (`fab-web`, à essayer par le propriétaire) |
-| 6 | Matchs + choix équipement/deck (« phase de side ») | ⏳ |
+| 6 | Matchs + choix équipement/deck (« phase de side ») | ✅ bots (choix appris, +96 Elo) et page web (écran avant chaque manche) ; à essayer par le propriétaire |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
 
-**Branche la plus récente :** `claude/youthful-brown-dgcgw0` (interface
-web, partie de `claude/loving-fermi-r75ch8` = bot B2, elle-même pas encore
-fusionnée). Fusionner d'abord la PR de `claude/loving-fermi-r75ch8`, puis
-celle de `claude/youthful-brown-dgcgw0`. Tant qu'elles ne sont pas
-fusionnées dans `main`, partir de `claude/youthful-brown-dgcgw0`.
+**Branche la plus récente :** `claude/brave-wozniak-d52twv` (étape 6,
+partie de `main` après la fusion de `claude/youthful-brown-dgcgw0`). Tant
+que sa PR n'est pas fusionnée dans `main`, partir de
+`claude/brave-wozniak-d52twv`.
 
 **Jouer dans le navigateur :** double-cliquer sur **`Jouer.bat`** (mise à
 jour, textes des cartes, compilation et ouverture du navigateur en un
 clic ; plateau, clic sur les cartes, bouton
 « Annuler », texte officiel au survol, journal ; bot B1 par défaut,
-`--niveau b2` ou bouton « Nouvelle partie » pour changer). Mode d'emploi :
+`--niveau b2` ou bouton « Nouveau match » pour changer). **Étape 6 :** un
+match se joue en plusieurs manches (2 manches gagnantes par défaut) et,
+avant chaque manche, un écran fait choisir qui commence (si c'est à vous),
+votre équipement, puis vos 40 cartes parmi les 55. Mode d'emploi :
 `docs/interface.md`.
 
 **Jouer contre le bot dans le terminal :** `cargo run --release -p fab-ui` (mode d'emploi :
@@ -38,7 +40,7 @@ pour le bot qui cherche (une fraction de seconde par décision ; `b2-1000` ou
 **Bots et Elo :** `docs/bots.md` (règles de B1, tournoi, résultats).
 Tournoi : `cargo run --release -p fab-sim -- --tournoi --bots b1 b0 --games 1000 --check`.
 
-**Chiffres actuels :** 759 tests au vert. **B2 contre B1 : 83,9 % sur les
+**Chiffres actuels :** 782 tests au vert. **B2 contre B1 : 83,9 % sur les
 81 paires des 9 decks (1 620 parties, 0 erreur) → +287 Elo** ; B2 contre
 B0 : 98,8 %. Classement commun : **B0 = 0, B1 = +511, B2 = +796**. B2
 imagine la main adverse dans le **card-pool de 55** (pas les 40 choisies).
@@ -66,8 +68,16 @@ tours, surtout avec Arakni et Dromai dont le héros a des capacités
 déclenchées). Avec les bots aléatoires, 3 à 11 % des parties d'Arakni
 finissent ainsi (une carte injouable reste en arsenal).
 
-**Choix provisoire d'équipement et de deck** (`real::default_loadout`, en
-attendant la phase de side de l'étape 6) : la première carte de chaque
+**Phase de side des bots (étape 6)** : chaque bot choisit son équipement
+et ses 40 cartes avec une **table apprise** par simulation
+(`data/side/b1.txt`, une entrée par paire de héros, lisible ; méthode et
+mesures : `docs/bots.md`, « La phase de side »). **B1 avec la table contre
+B1 avec le choix « liste » : 63,5 % sur 324 000 parties (+96 Elo, 0
+erreur).** B2_SUIVI Les tournois du simulateur utilisent la table par
+défaut (`--side liste liste` pour l'ancien choix).
+
+**Choix « liste »** (`real::default_loadout`, ancien choix provisoire,
+toujours utilisé par les tests et par l'humain dans le terminal) : la première carte de chaque
 emplacement d'arène dans l'ordre de la liste (Hala : Helm of Unity, Edge Laden
 Plate, Gauntlets of Unity, Pillar of Unity ; Dorinthea : Helm of Unity,
 Plating of Unity, Gauntlets of Unity, Refraction Bolters), et les 40 premières
@@ -78,6 +88,16 @@ exemplaires est équipée deux fois si les mains le permettent (Arakni : deux
 Mark of the Huntsman).
 
 ## Questions ouvertes pour le propriétaire
+
+**Étape 6, à regarder :** le fichier `data/side/b1.txt` (choix appris des
+bots, paire par paire, avec l'écart estimé de chaque carte laissée hors du
+deck). Ces choix reflètent ce qui réussit **à B1** : par exemple B1 retire
+souvent Arcane Polarity, Reinforce the Line ou Oasis Respite, sans doute
+parce qu'il les joue mal. Si un choix vous paraît absurde pour un humain,
+dites-le : c'est une piste pour améliorer B1. Une question de règle :
+CR 4.1.4a dit « up to one arena-card for each of their … weapon zones » ;
+le moteur accepte deux armes à une main (Arakni : deux Mark of the
+Huntsman), comme le choix provisoire le faisait déjà. Est-ce bien ça ?
 
 Aucune question bloquante. Bots : par défaut, `fab-ui` garde le bot B0
 (au hasard), plus utile pour vérifier les cartes ; `--niveau b1` / `b2`
@@ -260,11 +280,16 @@ Essayer aussi le bot B2 (`--niveau b2`) et noter ses erreurs flagrantes.
 clics peu pratiques. C'est désormais le moyen le plus simple de vérifier
 les cartes.
 
-**Pour Claude :** **étape 6**, matchs en plusieurs manches et choix de
-l'équipement et du deck de 40 avant chaque manche dans le card-pool de 55
-(CR 4.1 ; `fab-match`), d'abord pour les bots (règle simple et mesurée),
-puis dans l'interface web (écran de choix avant chaque manche). Pistes
-d'amélioration de B2, à mesurer plus tard : une estimation qui compte le
+**Pour le propriétaire (étape 6) :** jouer un match dans la page web
+(`Jouer.bat`) et essayer l'écran de choix avant chaque manche ; dire ce
+qui gêne. Relire `data/side/b1.txt`.
+
+**Pour Claude :** **étape 7**, bot B3 (évaluation apprise par auto-jeu) et
+procédure « nouveau deck » (ajouter un 10e deck : liste, cartes, tests,
+`--apprendre-side`). Pistes pour la phase de side : apprendre avec B2
+plutôt que B1, tenir compte du premier joueur et de l'arène adverse
+(variables croisées), refaire l'apprentissage contre l'adversaire qui
+utilise lui-même la table. Pistes d'amélioration de B2, à mesurer plus tard : une estimation qui compte le
 blood debt et les cartes bannies (Levia), garder l'arbre d'une décision à la
 suivante, aller plus vite (plus d'itérations pour le même temps), pondérer
 les cartes imaginées par leur fréquence dans les decks du méta.
@@ -290,4 +315,5 @@ les cartes imaginées par leur fréquence dans les decks du méta.
 | 2026-11-23 | Étape 4, B1 : bot heuristique `HeuristicAgent` (attaque à son tour, défense chiffrée, pitch au plus juste) qui ne lit la partie qu'à travers une `Vue` (information de son joueur, lecture d'une carte cachée = panique) ; classement Elo (`fab_ai::elo`, Bradley-Terry) ; `fab-sim --bots a b` et `--tournoi` (81 paires de decks, Elo + matrice) ; `fab-ui --niveau b1` ; `docs/bots.md`. B1 = +512 Elo contre B0 (95,0 %) | `claude/youthful-gauss-iihtxx` |
 | 2026-11-23 | Étape 4, B2 : bot `IsmctsAgent` (ISMCTS) : mondes imaginés (`determinisation`, main adverse et decks redistribués, hasard renouvelé ; test : même choix quelle que soit la vraie main adverse), parties simulées par B1 sur 4 tours puis estimées ; réglages mesurés (arbre limité à la décision présente, 300 itérations) ; `--bots b2`, `b2-N`, `b2-Nms` ; `fab-ui --niveau b2`. B2 = +283 Elo contre B1 (83,6 %), classement B0 0 / B1 +511 / B2 +785 ; puis B2 imagine la main adverse dans le card-pool de 55 (`Loadout::pool`, `GameState::card_pools`) : 83,9 % contre B1, B2 = +796 | `claude/loving-fermi-r75ch8` |
 | 2026-11-23 | Étape 5 : interface web locale `fab-web` (serveur HTTP maison sur 127.0.0.1, sans nouvelle dépendance ; page unique : plateau des deux joueurs, chaîne de combat et pile, options cliquables et cartes jouables surlignées, annulation illimitée, texte officiel au survol, journal, nouvelle partie avec decks / niveau / graine) ; l'état envoyé au navigateur ne contient ni nom ni numéro de carte cachée (testé) ; `docs/interface.md` | `claude/youthful-brown-dgcgw0` |
+| 2026-11-25 | Étape 6 : `CardPool` et vérification d'un choix (CR 4.1.4a, 4.1.6a, 8.2.2b, 8.2.10b, TRP 7.4) ; `fab_match::preparer_manche` (ordre CR 4.1.3 à 4.1.6, trait `Side`) ; choix appris des bots par simulation et régression (`fab_ai::side`, `data/side/b1.txt`, `fab-sim --apprendre-side`, `--side`) : B1 appris contre B1 liste 63,5 % (+96 Elo) ; page web : matchs en plusieurs manches, écran de choix (qui commence, équipement, 40 cartes) avant chaque manche, score ; bot du terminal avec le choix appris ; 22 nouveaux tests (782 au total) | `claude/brave-wozniak-d52twv` |
 | 2026-11-25 | Lancement simplifié à la demande du propriétaire : `Jouer.bat` (double-clic : `git pull`, textes officiels, compilation, lancement) ; `fab-web` ouvre lui-même le navigateur et prend le premier port libre | `claude/youthful-brown-dgcgw0` |

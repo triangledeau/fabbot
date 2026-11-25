@@ -219,6 +219,15 @@ impl MatchScore {
         self.results.len()
     }
 
+    /// Les manches jouées : résultat et joueur qui avait choisi le premier joueur.
+    pub fn historique(&self) -> Vec<(Outcome, PlayerId)> {
+        self.results
+            .iter()
+            .copied()
+            .zip(self.choosers.iter().copied())
+            .collect()
+    }
+
     /// Le vainqueur du match, s'il est décidé.
     pub fn winner(&self) -> Option<PlayerId> {
         [PlayerId::P0, PlayerId::P1]

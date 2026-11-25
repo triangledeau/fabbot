@@ -131,6 +131,65 @@ utilisent un nombre d'itérations.
 | 30 itérations, 4 tours, profondeur 1 | 67 % | +122 |
 | **300 itérations, 4 tours, profondeur 1** | **84 %** | **+283** |
 
+## La phase de side (étape 6)
+
+Avant chaque partie, chaque joueur choisit son équipement et les 40 cartes
+de son deck dans son card-pool de 55 (CR 4.1.4 à 4.1.6, TRP 7.4), dans
+l'ordre officiel : premier joueur (CR 4.1.3), arène sans voir celle de
+l'adversaire, présentation des arènes (CR 4.1.5), puis deck. Code :
+`fab_match::preparer_manche` et le trait `Side` ; façons de choisir des
+bots : `crates/ai/src/side.rs`.
+
+| Side | Règle |
+|---|---|
+| `liste` | la première carte de chaque zone qui trouve sa place, les 40 premières cartes de la liste (l'ancien choix provisoire) |
+| `appris` | la table apprise `data/side/b1.txt`, propre à chaque paire de héros (par défaut) |
+| `general` | la même table, mais l'entrée « contre n'importe qui » du héros (sert à mesurer) |
+| `hasard` | tout au hasard (sert à apprendre) |
+
+**Apprentissage** (`--apprendre-side`, ≈ 3 minutes sur 4 cœurs) : pour
+chacune des 81 paires, 20 000 parties B1 contre B1 où le premier deck tire
+son équipement (une option par zone) et ses 40 cartes au hasard, l'autre
+gardant le choix `liste`. Une régression linéaire estime ce que chaque
+exemplaire de carte et chaque équipement change aux chances de gagner
+(avec « je commence » comme variable à part). L'estimation d'une paire est
+tirée vers l'estimation générale du deck (pénalité « ridge » λ = 1 000).
+Le choix appris garde le meilleur équipement de chaque zone et les 40
+exemplaires les mieux notés.
+
+```bash
+cargo run --release -p fab-sim -- --apprendre-side --games 20000
+cargo run --release -p fab-sim -- --tournoi --bots b1 b1 --side appris liste --games 4000 --check
+```
+
+La table est un fichier texte lisible : pour chaque paire, l'arène choisie,
+les cartes laissées hors du deck et, entre crochets, l'écart estimé (en
+points de % de victoire par exemplaire) par rapport à la meilleure option de
+la zone ou à la moins bonne carte gardée. ⚠️ Ces écarts mesurent ce qui
+réussit **à B1** : une carte que B1 joue mal (Arcane Polarity, par exemple)
+est mal notée même si elle est bonne entre les mains d'un humain.
+
+### Résultats (2026-11-25, graines différentes de l'apprentissage)
+
+| Mesure | Parties | Score | Écart d'Elo (intervalle à 95 %) |
+|---|---|---|---|
+| B1 `appris` contre B1 `liste` | 324 000 | **63,5 %** | **+96** (+95 à +98) |
+| B1 `general` contre B1 `liste` | 162 000 | 62,0 % | +85 (+83 à +87) |
+| B1 `appris` contre B1 `general` (λ = 5 000) | 324 000 | 51,8 % | +12 (+11 à +14) |
+| B1 `appris` contre B1 `general` (λ = 1 000, retenu) | 324 000 | 52,0 % | +14 (+13 à +15) |
+| B1 `appris` contre B1 `general` (λ = 250) | 324 000 | 52,0 % | +14 (+13 à +15) |
+B2_LIGNE
+
+0 erreur. Le gain vient surtout de l'équipement (ex. Florian : Nebula Blade
+plutôt qu'Annals of Sutcliffe, −12,8 points estimés pour Annals ; Ira : Blade
+Beckoner Helm plutôt que Mask of the Swarming Claw) et de quelques cartes
+que B1 joue mal. B1 `appris` gagne même ses 9 miroirs contre B1 `liste`
+(60 à 87 %).
+
+Les tournois (`--tournoi`) et `--decks` utilisent maintenant `--side appris
+appris` par défaut ; les chiffres B0 / B1 / B2 plus haut ont été mesurés
+avec le choix `liste` des deux côtés.
+
 ## Le classement Elo
 
 Si A a `d` points d'Elo de plus que B, A marque en moyenne

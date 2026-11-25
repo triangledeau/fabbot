@@ -10,7 +10,7 @@
 use crate::textes::Textes;
 use crate::vue;
 use fab_ai::{creer_agent, Agent, BOTS};
-use fab_engine::card::{Color, Types};
+use fab_engine::card::{CardDef, Color, Types};
 use fab_engine::{
     Choice, DecisionKind, Event, GameState, History, ObjectId, PlayerId, Target, Zone,
 };
@@ -40,6 +40,8 @@ pub struct Reglages {
     pub deck_bot: String,
     pub niveau: String,
     pub graine: u64,
+    /// Nombre de manches à gagner pour remporter le match (1 à 3).
+    pub manches: u8,
 }
 
 pub struct Session {
@@ -58,6 +60,15 @@ impl Session {
     /// jusqu'au premier choix de l'humain (le bot répond aux siens).
     pub fn nouvelle(r: Reglages) -> Result<Session, String> {
         let g = crate::nouvelle_partie(&r.deck, &r.deck_bot, r.graine)?;
+        Session::avec_partie(g, r)
+    }
+
+    /// Session sur une partie déjà créée (manche d'un match, après la
+    /// phase de side). L'humain est le joueur 0.
+    pub fn avec_partie(mut g: GameState, r: Reglages) -> Result<Session, String> {
+        if g.record.is_none() {
+            g.record = Some(Vec::new());
+        }
         let bot = creer_agent(&r.niveau, r.graine ^ 0x5A5A).ok_or_else(|| {
             format!(
                 "niveau de bot inconnu « {} » (connus : {}, b2-N)",
@@ -279,7 +290,31 @@ pub fn carte_de_l_option(g: &GameState, viewer: PlayerId, c: Choice) -> Option<O
     vue::visible(g, viewer, id).then_some(id)
 }
 
-fn nom_couleur(c: Option<Color>) -> &'static str {
+/// Le genre d'une carte, en français (« action », « arme »…).
+pub fn genre_de(d: &CardDef) -> &'static str {
+    let est = |t| d.types.has(t);
+    if est(Types::WEAPON) {
+        "arme"
+    } else if est(Types::EQUIPMENT) {
+        "équipement"
+    } else if est(Types::ATTACK_REACTION) {
+        "réaction d'attaque"
+    } else if est(Types::DEFENSE_REACTION) {
+        "réaction de défense"
+    } else if est(Types::INSTANT) {
+        "instant"
+    } else if est(Types::ACTION) {
+        "action"
+    } else if est(Types::TOKEN) {
+        "token"
+    } else if est(Types::RESOURCE) {
+        "ressource"
+    } else {
+        ""
+    }
+}
+
+pub fn nom_couleur(c: Option<Color>) -> &'static str {
     match c {
         Some(Color::Red) => "rouge",
         Some(Color::Yellow) => "jaune",
@@ -304,26 +339,7 @@ pub fn carte(g: &GameState, viewer: PlayerId, id: ObjectId) -> Value {
         }
         _ => Vec::new(),
     };
-    let est = |t| d.types.has(t);
-    let genre = if est(Types::WEAPON) {
-        "arme"
-    } else if est(Types::EQUIPMENT) {
-        "équipement"
-    } else if est(Types::ATTACK_REACTION) {
-        "réaction d'attaque"
-    } else if est(Types::DEFENSE_REACTION) {
-        "réaction de défense"
-    } else if est(Types::INSTANT) {
-        "instant"
-    } else if est(Types::ACTION) {
-        "action"
-    } else if est(Types::TOKEN) {
-        "token"
-    } else if est(Types::RESOURCE) {
-        "ressource"
-    } else {
-        ""
-    };
+    let genre = genre_de(d);
     json!({
         "id": id.0,
         "nom": d.name,
@@ -335,7 +351,8 @@ pub fn carte(g: &GameState, viewer: PlayerId, id: ObjectId) -> Value {
         "defense": d.defense.map(|_| g.defense(id)),
         "pitch": d.pitch,
         "engage": o.tapped,
-        "face_cachee": o.face_down,
+        // Une carte en main est privée, pas « face cachée » au sens du plateau.
+        "face_cachee": o.face_down && o.zone != Zone::Hand,
         "details": details,
     })
 }
