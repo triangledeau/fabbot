@@ -1,11 +1,14 @@
 //! fab-ui — jouer contre le bot.
 //!
 //! - étape 2 : interface texte dans le terminal ([`jeu`], [`vue`]) ;
-//! - étape 5 : page web locale (plateau, boutons de choix, « Annuler », journal).
+//! - étape 5 : page web locale ([`serveur`], [`web`] ; plateau, boutons de
+//!   choix, « Annuler », journal), lancée par `cargo run --release -p fab-ui --bin fab-web`.
 
 pub mod jeu;
+pub mod serveur;
 pub mod textes;
 pub mod vue;
+pub mod web;
 
 use fab_cards::decklist::Decklist;
 use fab_cards::real;

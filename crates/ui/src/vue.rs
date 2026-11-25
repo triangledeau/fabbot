@@ -81,7 +81,7 @@ fn joueur(viewer: PlayerId, p: PlayerId) -> &'static str {
     }
 }
 
-fn heros(g: &GameState, p: PlayerId) -> String {
+pub fn heros(g: &GameState, p: PlayerId) -> String {
     g.def(g.player(p).hero).name.clone()
 }
 
@@ -361,18 +361,11 @@ fn liste(g: &GameState, viewer: PlayerId, ids: &[ObjectId]) -> String {
         .join(", ")
 }
 
-fn equipement(g: &GameState, id: ObjectId) -> String {
+/// Précisions sur une arme ou un équipement (en plus de sa puissance ou de
+/// sa défense) : compteurs, engagé.
+pub fn details_equipement(g: &GameState, id: ObjectId) -> Vec<String> {
     let o = g.obj(id);
-    let mut s = nom(g, id);
     let mut extra = Vec::new();
-    let d = g.def(id);
-    if d.types.has(Types::WEAPON) {
-        if d.power.is_some() {
-            extra.push(format!("{} puissance", g.power(id)));
-        }
-    } else if d.defense.is_some() {
-        extra.push(format!("{} défense", g.defense(id)));
-    }
     if o.power_counters != 0 {
         extra.push(format!("{:+} compteur(s) puissance", o.power_counters));
     }
@@ -382,10 +375,65 @@ fn equipement(g: &GameState, id: ObjectId) -> String {
     if o.tapped {
         extra.push("engagé".into());
     }
+    extra
+}
+
+fn equipement(g: &GameState, id: ObjectId) -> String {
+    let mut s = nom(g, id);
+    let d = g.def(id);
+    let mut extra = Vec::new();
+    if d.types.has(Types::WEAPON) {
+        if d.power.is_some() {
+            extra.push(format!("{} puissance", g.power(id)));
+        }
+    } else if d.defense.is_some() {
+        extra.push(format!("{} défense", g.defense(id)));
+    }
+    extra.extend(details_equipement(g, id));
     if !extra.is_empty() {
         let _ = write!(s, " ({})", extra.join(", "));
     }
     s
+}
+
+/// Précisions sur un permanent : suspense, puissance et vie d'un allié,
+/// compteurs, cartes dessous, phantasm, ward, engagé, volé.
+pub fn details_permanent(g: &GameState, id: ObjectId) -> Vec<String> {
+    let d = g.def(id);
+    let o = g.obj(id);
+    let mut extra: Vec<String> = Vec::new();
+    if d.keywords.has(fab_engine::Keywords::SUSPENSE) {
+        extra.push(format!("{} compteur(s) suspense", o.counters));
+    }
+    // Allié : puissance et vie actuelles (CR 2.5.3), compteurs.
+    if let Some(vie) = g.life_total(id) {
+        extra.push(format!("{}{{p}}, {vie} PV", g.power(id)));
+        if d.counter_prevention > 0 {
+            extra.push(format!("{} compteur(s) endurance", o.counters));
+        }
+        if o.life_counters != 0 {
+            extra.push(format!("{:+} compteur(s) vie", o.life_counters));
+        }
+    }
+    // Cartes dessous (CR 3.0.14) et mots-clés qu'elles donnent.
+    let dessous: Vec<String> = g.cards_under(id).map(|c| g.def(c).name.clone()).collect();
+    if !dessous.is_empty() {
+        extra.push(format!("dessous : {}", dessous.join(", ")));
+    }
+    if g.keywords(id).has(fab_engine::Keywords::PHANTASM) {
+        extra.push("phantasm".into());
+    }
+    let (_, ward, _) = g.prevention_values(id);
+    if ward > 0 {
+        extra.push(format!("ward {ward}"));
+    }
+    if o.tapped {
+        extra.push("engagé".into());
+    }
+    if o.controller != o.owner {
+        extra.push("volé".into());
+    }
+    extra
 }
 
 /// Le bloc d'un joueur : héros, PV, zones.
@@ -430,41 +478,7 @@ fn bloc_joueur(g: &GameState, viewer: PlayerId, p: PlayerId, complet: bool) -> S
             .iter()
             .map(|&id| {
                 let mut n = nom_pour(g, viewer, id);
-                let d = g.def(id);
-                let o = g.obj(id);
-                let mut extra: Vec<String> = Vec::new();
-                if d.keywords.has(fab_engine::Keywords::SUSPENSE) {
-                    extra.push(format!("{} compteur(s) suspense", o.counters));
-                }
-                // Allié : puissance et vie actuelles (CR 2.5.3), compteurs.
-                if let Some(vie) = g.life_total(id) {
-                    extra.push(format!("{}{{p}}, {vie} PV", g.power(id)));
-                    if d.counter_prevention > 0 {
-                        extra.push(format!("{} compteur(s) endurance", o.counters));
-                    }
-                    if o.life_counters != 0 {
-                        extra.push(format!("{:+} compteur(s) vie", o.life_counters));
-                    }
-                }
-                // Cartes dessous (CR 3.0.14) et mots-clés qu'elles donnent.
-                let dessous: Vec<String> =
-                    g.cards_under(id).map(|c| g.def(c).name.clone()).collect();
-                if !dessous.is_empty() {
-                    extra.push(format!("dessous : {}", dessous.join(", ")));
-                }
-                if g.keywords(id).has(fab_engine::Keywords::PHANTASM) {
-                    extra.push("phantasm".into());
-                }
-                let (_, ward, _) = g.prevention_values(id);
-                if ward > 0 {
-                    extra.push(format!("ward {ward}"));
-                }
-                if o.tapped {
-                    extra.push("engagé".into());
-                }
-                if o.controller != o.owner {
-                    extra.push("volé".into());
-                }
+                let extra = details_permanent(g, id);
                 if !extra.is_empty() {
                     let _ = write!(n, " ({})", extra.join(", "));
                 }
@@ -487,7 +501,7 @@ fn bloc_joueur(g: &GameState, viewer: PlayerId, p: PlayerId, complet: bool) -> S
     s
 }
 
-fn etape(step: CombatStep) -> &'static str {
+pub fn etape(step: CombatStep) -> &'static str {
     match step {
         CombatStep::Layer => "couche",
         CombatStep::Attack => "attaque",
@@ -511,6 +525,44 @@ fn regle(r: RuleTrigger) -> &'static str {
         RuleTrigger::BloodDebt => "blood debt : perdre 1 PV",
         RuleTrigger::Phantasm => "phantasm : détruire l'attaque",
     }
+}
+
+/// Une couche de la pile en une ligne : « Edict of Steel (rouge) [9] (le bot) → … ».
+pub fn couche(g: &GameState, viewer: PlayerId, l: &fab_engine::state::Layer) -> String {
+    let qui = joueur(viewer, l.controller);
+    let quoi = match l.kind {
+        LayerKind::Card => nom(g, l.object.id),
+        LayerKind::Activated(a)
+            if g.db
+                .get(l.card)
+                .activated
+                .get(a as usize)
+                .is_some_and(|x| x.attack) =>
+        {
+            format!("attaque avec {}", nom(g, l.object.id))
+        }
+        LayerKind::Activated(_) => format!("capacité de {}", g.db.get(l.card).name),
+        LayerKind::Trigger(_) => format!("déclenchement de {}", g.db.get(l.card).name),
+        LayerKind::Granted(_) => format!(
+            "déclenchement de {} (accordé par {})",
+            nom(g, l.object.id),
+            g.db.get(l.card).name
+        ),
+        LayerKind::Rule(r) => format!("{} ({})", regle(r), g.db.get(l.card).name),
+    };
+    let cibles: Vec<String> = l
+        .ctx
+        .targets
+        .iter()
+        .flatten()
+        .map(|&t| cible(g, viewer, t))
+        .collect();
+    let c = if cibles.is_empty() {
+        String::new()
+    } else {
+        format!(" → {}", cibles.join(", "))
+    };
+    format!("{quoi} ({}){c}", qui.to_lowercase())
 }
 
 /// La chaîne de combat et la pile.
@@ -554,40 +606,7 @@ fn combat_et_pile(g: &GameState, viewer: PlayerId) -> String {
     if !g.stack.is_empty() {
         let _ = writeln!(s, "PILE (du dessus vers le dessous)");
         for l in g.stack.iter().rev() {
-            let qui = joueur(viewer, l.controller);
-            let quoi = match l.kind {
-                LayerKind::Card => nom(g, l.object.id),
-                LayerKind::Activated(a)
-                    if g.db
-                        .get(l.card)
-                        .activated
-                        .get(a as usize)
-                        .is_some_and(|x| x.attack) =>
-                {
-                    format!("attaque avec {}", nom(g, l.object.id))
-                }
-                LayerKind::Activated(_) => format!("capacité de {}", g.db.get(l.card).name),
-                LayerKind::Trigger(_) => format!("déclenchement de {}", g.db.get(l.card).name),
-                LayerKind::Granted(_) => format!(
-                    "déclenchement de {} (accordé par {})",
-                    nom(g, l.object.id),
-                    g.db.get(l.card).name
-                ),
-                LayerKind::Rule(r) => format!("{} ({})", regle(r), g.db.get(l.card).name),
-            };
-            let cibles: Vec<String> = l
-                .ctx
-                .targets
-                .iter()
-                .flatten()
-                .map(|&t| cible(g, viewer, t))
-                .collect();
-            let c = if cibles.is_empty() {
-                String::new()
-            } else {
-                format!(" → {}", cibles.join(", "))
-            };
-            let _ = writeln!(s, "  {quoi} ({}){c}", qui.to_lowercase());
+            let _ = writeln!(s, "  {}", couche(g, viewer, l));
         }
     }
     s

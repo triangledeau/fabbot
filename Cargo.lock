@@ -57,6 +57,7 @@ dependencies = [
  "fab-cards",
  "fab-engine",
  "fab-match",
+ "serde_json",
 ]
 
 [[package]]

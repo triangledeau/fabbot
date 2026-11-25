@@ -1,0 +1,332 @@
+//! Un tout petit serveur HTTP local (sans bibliothèque extérieure) pour
+//! jouer dans le navigateur.
+//!
+//! Il n'écoute que sur `127.0.0.1` (votre ordinateur) et refuse les
+//! requêtes dont l'en-tête `Host` n'est pas local. Les routes :
+//!
+//! | Requête | Réponse |
+//! |---|---|
+//! | `GET /` | la page de jeu |
+//! | `GET /api/etat` | l'état vu par l'humain (JSON) |
+//! | `GET /api/decks` | decks et niveaux de bot proposés |
+//! | `GET /api/carte?id=12` | fiche et texte officiel de la carte `[12]` |
+//! | `POST /api/choix?i=3` | choisir l'option 3 (à partir de 0) |
+//! | `POST /api/annuler` | annuler le dernier choix |
+//! | `POST /api/nouvelle?deck=hala&bot=dorinthea&niveau=b1&graine=42` | nouvelle partie |
+
+use crate::textes::Textes;
+use crate::web::{Reglages, Session};
+use crate::DECKS;
+use fab_ai::BOTS;
+use serde_json::{json, Value};
+use std::io::{self, BufRead, BufReader, Read, Write};
+use std::net::{TcpListener, TcpStream};
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+
+/// La page de jeu (HTML, CSS et JavaScript dans un seul fichier).
+pub const PAGE: &str = include_str!("../web/index.html");
+
+/// Une réponse : code HTTP, type de contenu, corps.
+#[derive(Debug)]
+pub struct Reponse {
+    pub code: u16,
+    pub type_contenu: &'static str,
+    pub corps: String,
+}
+
+impl Reponse {
+    fn json(v: Value) -> Reponse {
+        Reponse {
+            code: 200,
+            type_contenu: "application/json; charset=utf-8",
+            corps: v.to_string(),
+        }
+    }
+
+    fn erreur(code: u16, message: impl Into<String>) -> Reponse {
+        Reponse {
+            code,
+            type_contenu: "application/json; charset=utf-8",
+            corps: json!({ "erreur": message.into() }).to_string(),
+        }
+    }
+}
+
+/// Ce que le serveur garde entre deux requêtes.
+pub struct Etat {
+    pub session: Option<Session>,
+    pub textes: Option<Textes>,
+    /// Réglages de la partie lancée au démarrage.
+    pub depart: Reglages,
+}
+
+/// Décode `%C3%A9` et `+` dans un paramètre d'URL.
+fn decoder(s: &str) -> String {
+    let b = s.as_bytes();
+    let mut out = Vec::with_capacity(b.len());
+    let mut i = 0;
+    while i < b.len() {
+        match b[i] {
+            b'+' => out.push(b' '),
+            b'%' if i + 2 < b.len() => {
+                let hex = std::str::from_utf8(&b[i + 1..i + 3]).unwrap_or("");
+                match u8::from_str_radix(hex, 16) {
+                    Ok(v) => {
+                        out.push(v);
+                        i += 2;
+                    }
+                    Err(_) => out.push(b'%'),
+                }
+            }
+            c => out.push(c),
+        }
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+/// Les paramètres `?a=1&b=2` d'un chemin.
+fn parametres(requete: &str) -> (&str, Vec<(String, String)>) {
+    let (chemin, q) = requete.split_once('?').unwrap_or((requete, ""));
+    let ps = q
+        .split('&')
+        .filter(|p| !p.is_empty())
+        .map(|p| {
+            let (k, v) = p.split_once('=').unwrap_or((p, ""));
+            (decoder(k), decoder(v))
+        })
+        .collect();
+    (chemin, ps)
+}
+
+/// Graine tirée de l'heure (quand on n'en donne pas).
+pub fn graine_horloge() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos() as u64)
+        .unwrap_or(1)
+}
+
+/// Traite une requête (sans réseau : testable directement).
+pub fn repondre(methode: &str, requete: &str, etat: &mut Etat) -> Reponse {
+    let (chemin, ps) = parametres(requete);
+    let param = |k: &str| ps.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone());
+    match (methode, chemin) {
+        ("GET", "/") | ("GET", "/index.html") => Reponse {
+            code: 200,
+            type_contenu: "text/html; charset=utf-8",
+            corps: PAGE.to_string(),
+        },
+        ("GET", "/api/decks") => Reponse::json(json!({
+            "decks": DECKS.iter().map(|(n, _)| *n).collect::<Vec<_>>(),
+            "niveaux": BOTS,
+            "textes": etat.textes.is_some(),
+        })),
+        ("GET", "/api/etat") => match &etat.session {
+            Some(s) => Reponse::json(s.etat()),
+            None => Reponse::json(json!({ "aucune_partie": true })),
+        },
+        ("GET", "/api/carte") => {
+            let Some(id) = param("id").and_then(|v| v.parse::<u32>().ok()) else {
+                return Reponse::erreur(400, "paramètre id manquant");
+            };
+            match &etat.session {
+                Some(s) => Reponse::json(s.carte(id, etat.textes.as_ref())),
+                None => Reponse::erreur(400, "aucune partie en cours"),
+            }
+        }
+        ("POST", "/api/choix") => {
+            let Some(i) = param("i").and_then(|v| v.parse::<usize>().ok()) else {
+                return Reponse::erreur(400, "paramètre i manquant");
+            };
+            let Some(s) = etat.session.as_mut() else {
+                return Reponse::erreur(400, "aucune partie en cours");
+            };
+            match s.choisir(i) {
+                Ok(()) => Reponse::json(s.etat()),
+                Err(e) => Reponse::erreur(400, e),
+            }
+        }
+        ("POST", "/api/annuler") => {
+            let Some(s) = etat.session.as_mut() else {
+                return Reponse::erreur(400, "aucune partie en cours");
+            };
+            if s.annuler() {
+                Reponse::json(s.etat())
+            } else {
+                Reponse::erreur(400, "rien à annuler")
+            }
+        }
+        ("POST", "/api/nouvelle") => {
+            let graine = match param("graine").filter(|g| !g.trim().is_empty()) {
+                None => graine_horloge(),
+                Some(g) => match g.trim().parse::<u64>() {
+                    Ok(g) => g,
+                    Err(_) => return Reponse::erreur(400, "graine invalide (un nombre entier)"),
+                },
+            };
+            let d = &etat.depart;
+            let r = Reglages {
+                deck: param("deck").unwrap_or_else(|| d.deck.clone()),
+                deck_bot: param("bot").unwrap_or_else(|| d.deck_bot.clone()),
+                niveau: param("niveau").unwrap_or_else(|| d.niveau.clone()),
+                graine,
+            };
+            match Session::nouvelle(r) {
+                Ok(s) => {
+                    let v = s.etat();
+                    etat.session = Some(s);
+                    Reponse::json(v)
+                }
+                Err(e) => Reponse::erreur(400, e),
+            }
+        }
+        _ => Reponse::erreur(404, format!("introuvable : {methode} {chemin}")),
+    }
+}
+
+/// L'en-tête `Host` désigne-t-il bien cet ordinateur ? (protection contre
+/// une page web qui tenterait de parler au serveur sous un autre nom.)
+fn hote_local(hote: &str) -> bool {
+    let h = hote.rsplit_once(':').map(|(h, _)| h).unwrap_or(hote);
+    matches!(h, "127.0.0.1" | "localhost" | "[::1]")
+}
+
+fn texte_code(code: u16) -> &'static str {
+    match code {
+        200 => "OK",
+        400 => "Bad Request",
+        403 => "Forbidden",
+        404 => "Not Found",
+        _ => "Error",
+    }
+}
+
+/// Lit une requête HTTP sur la connexion et y répond.
+fn servir(flux: TcpStream, etat: &Mutex<Etat>) -> io::Result<()> {
+    flux.set_read_timeout(Some(Duration::from_secs(10)))?;
+    let mut lecteur = BufReader::new(flux.try_clone()?);
+    let mut premiere = String::new();
+    if lecteur.read_line(&mut premiere)? == 0 {
+        return Ok(());
+    }
+    let mut mots = premiere.split_whitespace();
+    let methode = mots.next().unwrap_or("").to_string();
+    let requete = mots.next().unwrap_or("").to_string();
+    let mut longueur = 0usize;
+    let mut hote = String::new();
+    loop {
+        let mut l = String::new();
+        if lecteur.read_line(&mut l)? == 0 {
+            break;
+        }
+        let l = l.trim_end();
+        if l.is_empty() {
+            break;
+        }
+        if let Some((k, v)) = l.split_once(':') {
+            let k = k.trim().to_ascii_lowercase();
+            if k == "content-length" {
+                longueur = v.trim().parse().unwrap_or(0);
+            } else if k == "host" {
+                hote = v.trim().to_string();
+            }
+        }
+    }
+    // Le corps éventuel est ignoré (tout passe par l'URL).
+    let mut corps = vec![0u8; longueur.min(1 << 16)];
+    lecteur.read_exact(&mut corps)?;
+
+    let rep = if !hote_local(&hote) {
+        Reponse::erreur(403, "accès réservé à cet ordinateur")
+    } else {
+        let mut e = etat.lock().unwrap_or_else(|p| p.into_inner());
+        repondre(&methode, &requete, &mut e)
+    };
+    let mut flux = flux;
+    write!(
+        flux,
+        "HTTP/1.1 {} {}\r\nContent-Type: {}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n",
+        rep.code,
+        texte_code(rep.code),
+        rep.type_contenu,
+        rep.corps.len()
+    )?;
+    flux.write_all(rep.corps.as_bytes())?;
+    flux.flush()
+}
+
+/// Ouvre l'adresse dans le navigateur par défaut (sans rien faire si ça
+/// échoue : l'adresse reste affichée dans le terminal).
+pub fn ouvrir_navigateur(url: &str) {
+    use std::process::Command;
+    let r = if cfg!(target_os = "windows") {
+        // `start` est une commande interne de cmd ; "" = titre de fenêtre vide.
+        Command::new("cmd").args(["/C", "start", "", url]).spawn()
+    } else if cfg!(target_os = "macos") {
+        Command::new("open").arg(url).spawn()
+    } else {
+        Command::new("xdg-open").arg(url).spawn()
+    };
+    let _ = r;
+}
+
+/// Réserve le premier port libre à partir de `port` (20 essais).
+pub fn ecouter(port: u16) -> io::Result<TcpListener> {
+    let mut derniere = None;
+    for p in port..port.saturating_add(20) {
+        match TcpListener::bind(("127.0.0.1", p)) {
+            Ok(e) => return Ok(e),
+            Err(e) => derniere = Some(e),
+        }
+    }
+    Err(derniere.unwrap_or_else(|| io::Error::other("aucun port libre")))
+}
+
+/// Répond aux requêtes (ne rend jamais la main).
+pub fn servir_toujours(ecoute: TcpListener, etat: Etat) {
+    let etat = Arc::new(Mutex::new(etat));
+    for flux in ecoute.incoming() {
+        let Ok(flux) = flux else { continue };
+        let etat = Arc::clone(&etat);
+        // Un fil par connexion : une connexion ouverte d'avance par le
+        // navigateur ne bloque pas les autres.
+        std::thread::spawn(move || {
+            let _ = servir(flux, &etat);
+        });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decodage_des_parametres_d_url() {
+        let (c, ps) = parametres("/api/nouvelle?deck=hala&graine=42&x=a%20b+c");
+        assert_eq!(c, "/api/nouvelle");
+        assert_eq!(ps[0], ("deck".into(), "hala".into()));
+        assert_eq!(ps[1], ("graine".into(), "42".into()));
+        assert_eq!(ps[2], ("x".into(), "a b c".into()));
+        assert_eq!(decoder("%C3%A9t%C3%A9"), "été");
+        assert_eq!(decoder("100%"), "100%");
+    }
+
+    #[test]
+    fn un_port_deja_pris_est_saute() {
+        let premier = ecouter(18_500).unwrap();
+        let p1 = premier.local_addr().unwrap().port();
+        let second = ecouter(p1).unwrap();
+        assert_ne!(second.local_addr().unwrap().port(), p1);
+    }
+
+    #[test]
+    fn seuls_les_hotes_locaux_sont_acceptes() {
+        assert!(hote_local("127.0.0.1:8080"));
+        assert!(hote_local("localhost:8080"));
+        assert!(hote_local("localhost"));
+        assert!(!hote_local("exemple.com:8080"));
+        assert!(!hote_local(""));
+    }
+}
