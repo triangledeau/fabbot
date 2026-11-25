@@ -8,6 +8,16 @@ annulation illimitée.
 > d'essai fictives : des parties complètes se jouent entre bots aléatoires.
 > Les vraies cartes arrivent à l'étape 2.
 
+## Jouer contre le bot
+
+**Double-cliquez sur `Jouer.bat`** (dans le dossier `fabbot`). C'est tout :
+le jeu se met à jour, se prépare et s'ouvre dans votre navigateur. La
+fenêtre noire qui s'ouvre doit rester ouverte pendant la partie ; fermez-la
+pour arrêter le jeu. La première fois (et après une mise à jour), la
+préparation prend quelques minutes.
+
+Mode d'emploi de la page : `docs/interface.md`.
+
 ## Installer sur Windows (Surface Pro 9)
 
 1. **Installer Git** : https://git-scm.com/download/win (options par défaut).
@@ -33,7 +43,8 @@ Rust fonctionne aussi bien sur les Surface Pro 9 Intel que sur la version ARM (S
 | Lancer tous les tests | `cargo test --workspace` |
 | Lancer le simulateur (mode optimisé) | `cargo run --release -p fab-sim -- --games 100000` |
 | Simuler en vérifiant la cohérence à chaque coup | `cargo run --release -p fab-sim -- --games 100000 --check` |
-| Jouer contre le bot (Hala contre Dorinthea) | `cargo run --release -p fab-ui` (voir `docs/interface.md`) |
+| Jouer contre le bot dans le navigateur | double-cliquer sur `Jouer.bat` |
+| Jouer contre le bot dans le terminal | `cargo run --release -p fab-ui` (voir `docs/interface.md`) |
 
 La première compilation prend une ou deux minutes, les suivantes sont rapides.
 Toujours utiliser `--release` pour simuler : c'est 10 à 50 fois plus rapide.

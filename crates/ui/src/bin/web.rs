@@ -3,8 +3,10 @@
 //! Usage :
 //!     cargo run --release -p fab-ui --bin fab-web -- [--deck hala] [--bot dorinthea] [--niveau b1] [--graine N] [--port 8080]
 //!
-//! Puis ouvrir http://127.0.0.1:8080 dans le navigateur. Le serveur
-//! n'écoute que sur cet ordinateur. Ctrl+C dans le terminal pour l'arrêter.
+//! Le navigateur s'ouvre tout seul sur la page du jeu (`--sans-navigateur`
+//! pour l'éviter). Si le port 8080 est pris, le suivant libre est utilisé.
+//! Le serveur n'écoute que sur cet ordinateur. Le plus simple sous Windows :
+//! double-cliquer sur `Jouer.bat` à la racine du projet.
 
 use fab_ui::serveur::{self, graine_horloge, Etat};
 use fab_ui::textes::Textes;
@@ -45,21 +47,37 @@ fn main() {
     };
     let textes = Textes::charger();
     if textes.is_none() {
-        println!("Textes officiels des cartes absents : lancez « bash tools/fetch_cards.sh ».");
+        println!(
+            "Textes officiels des cartes absents : la page marche, mais sans le texte des cartes."
+        );
     }
     println!(
         "fab-web — vous ({}) contre le bot {} ({}), graine {}",
         reglages.deck, reglages.niveau, reglages.deck_bot, reglages.graine
     );
-    println!("Ouvrez http://127.0.0.1:{port} dans votre navigateur (Ctrl+C ici pour arrêter).");
+    let ecoute = match serveur::ecouter(port) {
+        Ok(e) => e,
+        Err(e) => {
+            eprintln!("Erreur : aucun port libre à partir de {port} : {e}");
+            std::process::exit(1);
+        }
+    };
+    let port = ecoute.local_addr().map(|a| a.port()).unwrap_or(port);
+    let url = format!("http://127.0.0.1:{port}");
+    println!();
+    println!("Le jeu est prêt : {url}");
+    println!("(le navigateur s'ouvre tout seul ; sinon, copiez cette adresse dans le navigateur)");
+    println!();
+    println!(
+        "Laissez cette fenêtre ouverte pendant que vous jouez. Fermez-la pour arrêter le jeu."
+    );
     let etat = Etat {
         session: Some(session),
         textes,
         depart: reglages,
     };
-    if let Err(e) = serveur::lancer(port, etat) {
-        eprintln!("Erreur : impossible d'écouter sur le port {port} : {e}");
-        eprintln!("(un autre programme l'utilise peut-être : essayez --port 8081)");
-        std::process::exit(1);
+    if !args.iter().any(|a| a == "--sans-navigateur") {
+        serveur::ouvrir_navigateur(&url);
     }
+    serveur::servir_toujours(ecoute, etat);
 }

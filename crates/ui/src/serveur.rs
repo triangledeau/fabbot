@@ -257,9 +257,35 @@ fn servir(flux: TcpStream, etat: &Mutex<Etat>) -> io::Result<()> {
     flux.flush()
 }
 
-/// Lance le serveur (ne rend jamais la main, sauf erreur au démarrage).
-pub fn lancer(port: u16, etat: Etat) -> io::Result<()> {
-    let ecoute = TcpListener::bind(("127.0.0.1", port))?;
+/// Ouvre l'adresse dans le navigateur par défaut (sans rien faire si ça
+/// échoue : l'adresse reste affichée dans le terminal).
+pub fn ouvrir_navigateur(url: &str) {
+    use std::process::Command;
+    let r = if cfg!(target_os = "windows") {
+        // `start` est une commande interne de cmd ; "" = titre de fenêtre vide.
+        Command::new("cmd").args(["/C", "start", "", url]).spawn()
+    } else if cfg!(target_os = "macos") {
+        Command::new("open").arg(url).spawn()
+    } else {
+        Command::new("xdg-open").arg(url).spawn()
+    };
+    let _ = r;
+}
+
+/// Réserve le premier port libre à partir de `port` (20 essais).
+pub fn ecouter(port: u16) -> io::Result<TcpListener> {
+    let mut derniere = None;
+    for p in port..port.saturating_add(20) {
+        match TcpListener::bind(("127.0.0.1", p)) {
+            Ok(e) => return Ok(e),
+            Err(e) => derniere = Some(e),
+        }
+    }
+    Err(derniere.unwrap_or_else(|| io::Error::other("aucun port libre")))
+}
+
+/// Répond aux requêtes (ne rend jamais la main).
+pub fn servir_toujours(ecoute: TcpListener, etat: Etat) {
     let etat = Arc::new(Mutex::new(etat));
     for flux in ecoute.incoming() {
         let Ok(flux) = flux else { continue };
@@ -270,7 +296,6 @@ pub fn lancer(port: u16, etat: Etat) -> io::Result<()> {
             let _ = servir(flux, &etat);
         });
     }
-    Ok(())
 }
 
 #[cfg(test)]
@@ -286,6 +311,14 @@ mod tests {
         assert_eq!(ps[2], ("x".into(), "a b c".into()));
         assert_eq!(decoder("%C3%A9t%C3%A9"), "été");
         assert_eq!(decoder("100%"), "100%");
+    }
+
+    #[test]
+    fn un_port_deja_pris_est_saute() {
+        let premier = ecouter(18_500).unwrap();
+        let p1 = premier.local_addr().unwrap().port();
+        let second = ecouter(p1).unwrap();
+        assert_ne!(second.local_addr().unwrap().port(), p1);
     }
 
     #[test]

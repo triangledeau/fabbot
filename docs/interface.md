@@ -5,25 +5,28 @@ principe : vous ne voyez que ce que votre joueur a le droit de voir.
 
 ## Dans le navigateur (recommandé)
 
-```
-cargo run --release -p fab-ui --bin fab-web
-```
+**Double-cliquez sur `Jouer.bat`** à la racine du projet. Il :
 
-Puis ouvrez **http://127.0.0.1:8080** dans votre navigateur (Edge, Chrome,
-Firefox). Laissez le terminal ouvert pendant la partie ; `Ctrl+C` dans le
-terminal arrête le serveur. Le serveur n'écoute que sur votre ordinateur
-(personne d'autre sur le réseau ne peut s'y connecter).
+1. met le jeu à jour (`git pull`) ;
+2. télécharge les textes officiels des cartes s'ils manquent ;
+3. prépare le jeu (quelques minutes la première fois et après une mise à
+   jour, quelques secondes ensuite) ;
+4. ouvre la page du jeu dans votre navigateur.
 
-Options (les mêmes que l'interface texte, plus `--port`) :
-`--deck hala`, `--bot dorinthea`, `--niveau b1` (**B1 par défaut ici**),
-`--graine 42`, `--port 8081` (si le port 8080 est déjà pris). Exemple :
+La fenêtre noire doit rester ouverte pendant la partie ; la fermer arrête
+le jeu. Le serveur n'écoute que sur votre ordinateur.
+
+Les decks, le niveau du bot (B1 par défaut) et la graine se choisissent
+dans la page, avec le bouton **Nouvelle partie**.
+
+Pour les curieux, la commande équivalente (options : `--deck`, `--bot`,
+`--niveau`, `--graine`, `--port`, `--sans-navigateur`) :
 
 ```
 cargo run --release -p fab-ui --bin fab-web -- --deck levia --bot arakni --niveau b2
 ```
 
-Le bouton **Nouvelle partie** permet aussi de changer de decks, de niveau
-et de graine sans relancer le serveur.
+Si le port 8080 est déjà pris, le jeu prend le suivant libre (8081…).
 
 ### La page
 

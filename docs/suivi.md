@@ -23,8 +23,9 @@ fusionnée). Fusionner d'abord la PR de `claude/loving-fermi-r75ch8`, puis
 celle de `claude/youthful-brown-dgcgw0`. Tant qu'elles ne sont pas
 fusionnées dans `main`, partir de `claude/youthful-brown-dgcgw0`.
 
-**Jouer dans le navigateur :** `cargo run --release -p fab-ui --bin fab-web`
-puis ouvrir http://127.0.0.1:8080 (plateau, clic sur les cartes, bouton
+**Jouer dans le navigateur :** double-cliquer sur **`Jouer.bat`** (mise à
+jour, textes des cartes, compilation et ouverture du navigateur en un
+clic ; plateau, clic sur les cartes, bouton
 « Annuler », texte officiel au survol, journal ; bot B1 par défaut,
 `--niveau b2` ou bouton « Nouvelle partie » pour changer). Mode d'emploi :
 `docs/interface.md`.
@@ -255,8 +256,7 @@ absurdes à corriger simplement.
 Essayer aussi le bot B2 (`--niveau b2`) et noter ses erreurs flagrantes.
 
 **Pour le propriétaire (étape 5) :** essayer l'interface web
-(`cargo run --release -p fab-ui --bin fab-web`, puis http://127.0.0.1:8080)
-et dire ce qui gêne : lisibilité du plateau, informations manquantes,
+(double-cliquer sur `Jouer.bat`) et dire ce qui gêne : lisibilité du plateau, informations manquantes,
 clics peu pratiques. C'est désormais le moyen le plus simple de vérifier
 les cartes.
 
@@ -290,3 +290,4 @@ les cartes imaginées par leur fréquence dans les decks du méta.
 | 2026-11-23 | Étape 4, B1 : bot heuristique `HeuristicAgent` (attaque à son tour, défense chiffrée, pitch au plus juste) qui ne lit la partie qu'à travers une `Vue` (information de son joueur, lecture d'une carte cachée = panique) ; classement Elo (`fab_ai::elo`, Bradley-Terry) ; `fab-sim --bots a b` et `--tournoi` (81 paires de decks, Elo + matrice) ; `fab-ui --niveau b1` ; `docs/bots.md`. B1 = +512 Elo contre B0 (95,0 %) | `claude/youthful-gauss-iihtxx` |
 | 2026-11-23 | Étape 4, B2 : bot `IsmctsAgent` (ISMCTS) : mondes imaginés (`determinisation`, main adverse et decks redistribués, hasard renouvelé ; test : même choix quelle que soit la vraie main adverse), parties simulées par B1 sur 4 tours puis estimées ; réglages mesurés (arbre limité à la décision présente, 300 itérations) ; `--bots b2`, `b2-N`, `b2-Nms` ; `fab-ui --niveau b2`. B2 = +283 Elo contre B1 (83,6 %), classement B0 0 / B1 +511 / B2 +785 ; puis B2 imagine la main adverse dans le card-pool de 55 (`Loadout::pool`, `GameState::card_pools`) : 83,9 % contre B1, B2 = +796 | `claude/loving-fermi-r75ch8` |
 | 2026-11-23 | Étape 5 : interface web locale `fab-web` (serveur HTTP maison sur 127.0.0.1, sans nouvelle dépendance ; page unique : plateau des deux joueurs, chaîne de combat et pile, options cliquables et cartes jouables surlignées, annulation illimitée, texte officiel au survol, journal, nouvelle partie avec decks / niveau / graine) ; l'état envoyé au navigateur ne contient ni nom ni numéro de carte cachée (testé) ; `docs/interface.md` | `claude/youthful-brown-dgcgw0` |
+| 2026-11-25 | Lancement simplifié à la demande du propriétaire : `Jouer.bat` (double-clic : `git pull`, textes officiels, compilation, lancement) ; `fab-web` ouvre lui-même le navigateur et prend le premier port libre | `claude/youthful-brown-dgcgw0` |
