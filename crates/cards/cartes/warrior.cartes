@@ -1,0 +1,184 @@
+# Cartes Warrior des decks Hala et Dorinthea, écrites dans le langage de cartes
+# (voir docs/langage-cartes.md).
+#
+# Une carte = un bloc qui commence par `card`. Les lignes `type` et `stats`
+# donnent les valeurs imprimées (vérifiées contre le fichier officiel LSS).
+# Les autres lignes sont les capacités, DANS L'ORDRE DU TEXTE de la carte :
+# l'outil `cargo run -p fab-cards --bin langage -- verifier` réécrit chaque
+# carte en anglais et la compare au texte officiel.
+# `native NOM "texte"` : morceau écrit en Rust (crates/cards/src/real/warrior.rs),
+# à relire par un humain ; le texte entre guillemets n'est pas vérifié.
+
+card "Hala"
+  type Warrior Hero - Young
+  stats life 20 intellect 4
+  activated action cost 3 tap go_again target sword_you_control
+    sharpen target
+
+card "Dorinthea"
+  type Warrior Hero - Young
+  stats life 20 intellect 4
+  native_trigger dorinthea "The first time your weapon attack hits each turn, you may attack an additional time with that weapon this turn."
+
+card "Zenith Blade"
+  type Warrior Weapon - Sword (2H)
+  stats power 3
+  keyword specialization Hala
+  activated action cost 1 once_per_turn attack
+  native_static zenith_blade "If this has been sharpened this turn, its first attack this turn gets go again."
+
+card "Decimator Great Axe"
+  type Warrior Weapon - Axe (2H)
+  stats power 4
+  activated action cost 3 once_per_turn attack
+  native_trigger decimator "The first time this is defended by a non-equipment card each turn, halve the base {d} of target defending card, rounded up, until end of turn."
+
+card "Helm of Unity"
+  type Warrior Equipment - Head
+  stats defense 1
+  trigger unity defends_with_hand_card
+    this_gets defense 1 until_end_of_turn
+  keyword temper
+
+card "Plating of Unity"
+  type Warrior Equipment - Chest
+  stats defense 1
+  trigger unity defends_with_hand_card
+    this_gets defense 1 until_end_of_turn
+  keyword temper
+
+card "Gauntlets of Unity"
+  type Warrior Equipment - Arms
+  stats defense 1
+  trigger unity defends_with_hand_card
+    this_gets defense 1 until_end_of_turn
+  keyword temper
+
+card "Pillar of Unity"
+  type Warrior Equipment - Legs
+  stats defense 1
+  trigger unity defends_with_hand_card
+    this_gets defense 1 until_end_of_turn
+  keyword temper
+
+card "Edge Laden Plate"
+  type Warrior Equipment - Chest
+  stats defense 1
+  activated instant destroy_this only_if sharpened_sword_this_turn
+    gain_resources 1
+  keyword battleworn
+
+card "Refraction Bolters"
+  type Warrior Equipment - Legs
+  stats defense 1
+  native_trigger refraction_bolters "When a weapon attack you control hits, you may destroy this. If you do, the attack gets go again."
+  keyword battleworn
+
+card "Flurry"
+  type Warrior Token - Aura
+  native_trigger flurry "When you activate a weapon attack, destroy this and you may attack with the weapon twice this turn."
+
+card "Fatal Engagement" red yellow blue
+  type Warrior Attack Reaction
+  stats cost 2 defense 3
+  play_only_if attack_action_defending
+  target attack
+  resolve
+    target gets power 5/4/3
+
+card "Felling Swing" red yellow blue
+  type Warrior Action
+  stats cost 3 defense 3
+  resolve
+    next_attack axe gets power 6/5/4
+  keyword go_again
+
+card "Hit and Run" red yellow blue
+  type Warrior Action
+  stats cost 0 defense 3
+  resolve
+    next_attack weapon gets go_again
+    if attacked_with_weapon_this_turn then next_attack any gets power 3/2/1
+  keyword go_again
+
+card "Ironsong Response" red yellow blue
+  type Warrior Attack Reaction
+  stats cost 0 defense 3
+  target weapon_attack
+  resolve
+    if reprise then target gets power 3/2/1
+
+card "Overpower" red yellow blue
+  type Warrior Attack Reaction
+  stats cost 3 defense 3
+  target weapon_attack
+  resolve
+    target gets power 4/3/2 instead_if reprise 6/5/4
+
+card "Sharpen Steel" red yellow blue
+  type Warrior Action
+  stats cost 0 defense 3
+  resolve
+    next_attack weapon gets power 3/2/1
+  keyword go_again
+
+card "Steelblade Shunt" red yellow blue
+  type Warrior Defense Reaction
+  stats cost 1 defense 6/5/4
+  resolve
+    if defends_weapon_attack then deal_damage 1 attacking_hero
+
+card "Display of Craftsmanship" red yellow blue
+  type Warrior Attack Reaction
+  stats cost 2 defense 3
+  target weapon_attack
+  resolve
+    target gets power 4/3/2
+    native display_counter "If the weapon has been sharpened this turn, put a +1{p} counter on it."
+
+card "Cut n' Carve" red yellow blue
+  type Warrior Action
+  stats cost 0 defense 3
+  target sword_you_control
+  resolve
+    sharpen target
+    if target_counters_at_least 1/2/3 then target_next_attack gets dominate
+  keyword go_again
+
+card "Edict of Steel" red yellow blue
+  type Warrior Action
+  stats cost 0 defense 3
+  target sword_you_control
+  resolve
+    sharpen target
+    if target_counters_at_least 1/2/3 then create_token Flurry
+  keyword go_again
+
+card "Sharp Incline" red yellow blue
+  type Warrior Action
+  stats cost 0 defense 3
+  target sword_you_control
+  resolve
+    sharpen target
+    if target_counters_at_least 1/2/3 then target_next_attack costs_less 1
+  keyword go_again
+
+card "Swordmaster's Path" red yellow blue
+  type Warrior Action
+  stats cost 1 defense 3
+  resolve
+    next_attack sword gets power 3/2/1
+    native swordmaster_path "The next time you would sharpen a sword this turn, instead sharpen it an additional time."
+  keyword go_again
+
+card "Toe the Line" red
+  type Warrior Instant
+  stats cost 0
+  resolve
+    native toe_the_line "The next time you would be dealt damage this turn, prevent 2 of that damage. If you prevent damage this way, create a Flurry token."
+
+card "Shove Off" blue
+  type Warrior Attack Reaction
+  stats cost 1 defense 3
+  resolve
+    native shove_off "Choose a non-equipment card defending a sword attack you control. Return it to its owner's hand."

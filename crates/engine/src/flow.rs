@@ -169,9 +169,13 @@ impl GameState {
                 return;
             };
             match op {
-                Op::Do(f) => {
+                Op::Do(_) | Op::Run(..) => {
                     let before = self.tasks.len();
-                    f(self, &mut ctx);
+                    match op {
+                        Op::Do(f) => f(self, &mut ctx),
+                        Op::Run(f, arg) => f(self, &mut ctx, arg),
+                        _ => unreachable!(),
+                    }
                     pc += 1;
                     // L'effet a besoin d'un choix (nouvelle tâche) : on reprendra après.
                     if self.tasks.len() > before || self.pending.is_some() {
@@ -208,6 +212,13 @@ impl GameState {
                     }
                 },
                 Op::If(cond, n) => pc += if cond(self, &ctx) { 1 } else { 1 + n as u16 },
+                Op::IfArg(cond, arg, n) => {
+                    pc += if cond(self, &ctx, arg) {
+                        1
+                    } else {
+                        1 + n as u16
+                    }
+                }
                 Op::Back(cond, n) => {
                     if cond(self, &ctx) {
                         pc -= n as u16;

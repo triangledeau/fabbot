@@ -9,6 +9,7 @@
 //! codés à la main, et un statut de validation (`docs/cards/STATUS.md`).
 
 pub mod decklist;
+pub mod langage;
 pub mod real;
 pub mod test_set;
 
