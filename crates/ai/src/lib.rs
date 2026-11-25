@@ -15,6 +15,7 @@ pub mod b1;
 pub mod b2;
 pub mod determinisation;
 pub mod elo;
+pub mod side;
 pub mod vue;
 
 pub use b1::HeuristicAgent;

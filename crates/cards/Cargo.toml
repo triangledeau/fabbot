@@ -13,3 +13,4 @@ serde_json.workspace = true
 
 [dev-dependencies]
 fab-ai = { path = "../ai" }
+fab-match = { path = "../fab-match" }

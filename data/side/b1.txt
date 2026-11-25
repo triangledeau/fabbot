@@ -1,0 +1,543 @@
+# Choix appris (phase de side des bots B1/B2) : voir crates/ai/src/side.rs.
+# Produit par : cargo run --release -p fab-sim -- --apprendre-side
+# 20000 parties par paire de decks (B1 contre B1, choix au hasard contre le choix « liste »).
+# Entre crochets : écart estimé de chances de gagner par exemplaire (points de %),
+# par rapport à la meilleure option de la zone ou à la moins bonne carte gardée.
+
+# ===== Ira, Crimson Haze =====
+= Ira, Crimson Haze | *
+# tête : Mask of the Swarming Claw [-3,4 %] ; Blade Beckoner Helm [+0,0 %]
+# torse : Blood Scent [+0,0 %] ; Double Cross Strap [-2,8 %]
+arène : Edge of Autumn | Blade Beckoner Helm | Blood Scent | Tearing Shuko | Pouncing Paws
+hors du deck : Arcane Polarity (red) [-1,5 %] | Arcane Polarity (red) [-1,5 %] | Bittering Thorns (red) [+0,0 %] | Flying Kick (red) [-0,3 %] | Flying Kick (red) [-0,3 %] | Razor Reflex (red) [-0,6 %] | Reinforce the Line (red) [-2,3 %] | Reinforce the Line (red) [-2,3 %]
+= Ira, Crimson Haze | Ira, Crimson Haze
+# tête : Mask of the Swarming Claw [-6,4 %] ; Blade Beckoner Helm [+0,0 %]
+# torse : Blood Scent [+0,0 %] ; Double Cross Strap [-5,4 %]
+arène : Edge of Autumn | Blade Beckoner Helm | Blood Scent | Tearing Shuko | Pouncing Paws
+hors du deck : Arcane Polarity (red) [-2,6 %] | Arcane Polarity (red) [-2,6 %] | Flying Kick (red) [-0,5 %] | Flying Kick (red) [-0,5 %] | Razor Reflex (red) [-1,3 %] | Reinforce the Line (red) [-3,5 %] | Reinforce the Line (red) [-3,5 %] | Untamed (red) [+0,0 %]
+= Ira, Crimson Haze | Hala
+# tête : Mask of the Swarming Claw [-3,4 %] ; Blade Beckoner Helm [+0,0 %]
+# torse : Blood Scent [+0,0 %] ; Double Cross Strap [-2,6 %]
+arène : Edge of Autumn | Blade Beckoner Helm | Blood Scent | Tearing Shuko | Pouncing Paws
+hors du deck : Arcane Polarity (red) [-2,4 %] | Arcane Polarity (red) [-2,4 %] | Bittering Thorns (red) [-0,1 %] | Bittering Thorns (red) [-0,1 %] | Humble (red) [+0,0 %] | Razor Reflex (red) [-1,1 %] | Reinforce the Line (red) [-2,8 %] | Reinforce the Line (red) [-2,8 %]
+= Ira, Crimson Haze | Dorinthea
+# tête : Mask of the Swarming Claw [-2,7 %] ; Blade Beckoner Helm [+0,0 %]
+# torse : Blood Scent [+0,0 %] ; Double Cross Strap [-2,3 %]
+arène : Edge of Autumn | Blade Beckoner Helm | Blood Scent | Tearing Shuko | Pouncing Paws
+hors du deck : Arcane Polarity (red) [-1,0 %] | Arcane Polarity (red) [-1,0 %] | Bittering Thorns (red) [+0,0 %] | Humble (red) [-0,1 %] | Humble (red) [-0,1 %] | Razor Reflex (red) [-0,7 %] | Reinforce the Line (red) [-1,8 %] | Reinforce the Line (red) [-1,8 %]
+= Ira, Crimson Haze | Bravo, Flattering Showman
+# tête : Mask of the Swarming Claw [-4,7 %] ; Blade Beckoner Helm [+0,0 %]
+# torse : Blood Scent [+0,0 %] ; Double Cross Strap [-2,6 %]
+arène : Edge of Autumn | Blade Beckoner Helm | Blood Scent | Tearing Shuko | Pouncing Paws
+hors du deck : Arcane Polarity (red) [-4,9 %] | Arcane Polarity (red) [-4,9 %] | Razor Reflex (red) [-1,8 %] | Reinforce the Line (red) [-6,1 %] | Reinforce the Line (red) [-6,1 %] | Untamed (red) [+0,0 %] | Legacy of Ikaru (blue) [-0,1 %] | Legacy of Ikaru (blue) [-0,1 %]
+= Ira, Crimson Haze | Iyslander
+# tête : Mask of the Swarming Claw [-0,6 %] ; Blade Beckoner Helm [+0,0 %]
+# torse : Blood Scent [+0,0 %] ; Double Cross Strap [-0,4 %]
+arène : Edge of Autumn | Blade Beckoner Helm | Blood Scent | Tearing Shuko | Pouncing Paws
+hors du deck : Arcane Polarity (red) [-0,3 %] | Arcane Polarity (red) [-0,3 %] | Bluster Buff (red) [+0,0 %] | Humble (red) [-0,1 %] | Humble (red) [-0,1 %] | Razor Reflex (red) [-0,1 %] | Reinforce the Line (red) [-0,9 %] | Reinforce the Line (red) [-0,9 %]
+= Ira, Crimson Haze | Florian
+# tête : Mask of the Swarming Claw [-8,5 %] ; Blade Beckoner Helm [+0,0 %]
+# torse : Blood Scent [+0,0 %] ; Double Cross Strap [-8,7 %]
+arène : Edge of Autumn | Blade Beckoner Helm | Blood Scent | Tearing Shuko | Pouncing Paws
+hors du deck : Arcane Polarity (red) [-1,2 %] | Arcane Polarity (red) [-1,2 %] | Flying Kick (red) [-0,9 %] | Flying Kick (red) [-0,9 %] | Humble (red) [-0,1 %] | Humble (red) [-0,1 %] | Reinforce the Line (red) [-2,5 %] | Reinforce the Line (red) [-2,5 %]
+= Ira, Crimson Haze | Levia
+# tête : Mask of the Swarming Claw [-0,9 %] ; Blade Beckoner Helm [+0,0 %]
+# torse : Blood Scent [+0,0 %] ; Double Cross Strap [-1,1 %]
+arène : Edge of Autumn | Blade Beckoner Helm | Blood Scent | Tearing Shuko | Pouncing Paws
+hors du deck : Arcane Polarity (red) [-0,5 %] | Arcane Polarity (red) [-0,5 %] | Bittering Thorns (red) [-0,2 %] | Bittering Thorns (red) [-0,2 %] | Razor Reflex (red) [-0,2 %] | Reinforce the Line (red) [-0,9 %] | Reinforce the Line (red) [-0,9 %] | Sirens of Safe Harbor (red) [+0,0 %]
+= Ira, Crimson Haze | Dromai
+# tête : Mask of the Swarming Claw [-2,8 %] ; Blade Beckoner Helm [+0,0 %]
+# torse : Blood Scent [+0,0 %] ; Double Cross Strap [-2,0 %]
+arène : Edge of Autumn | Blade Beckoner Helm | Blood Scent | Tearing Shuko | Pouncing Paws
+hors du deck : Arcane Polarity (red) [-0,0 %] | Arcane Polarity (red) [-0,0 %] | Bittering Thorns (red) [-0,1 %] | Bittering Thorns (red) [-0,1 %] | Pouncing Qi (red) [-0,2 %] | Pouncing Qi (red) [-0,2 %] | Reinforce the Line (red) [-0,2 %] | Reinforce the Line (red) [-0,2 %]
+= Ira, Crimson Haze | Arakni, Web of Deceit
+# tête : Mask of the Swarming Claw [-0,4 %] ; Blade Beckoner Helm [+0,0 %]
+# torse : Blood Scent [+0,0 %] ; Double Cross Strap [-0,5 %]
+arène : Edge of Autumn | Blade Beckoner Helm | Blood Scent | Tearing Shuko | Pouncing Paws
+hors du deck : Arcane Polarity (red) [-0,3 %] | Arcane Polarity (red) [-0,3 %] | Bittering Thorns (red) [-0,0 %] | Bittering Thorns (red) [-0,0 %] | Reinforce the Line (red) [-0,5 %] | Reinforce the Line (red) [-0,5 %] | Untamed (red) [-0,1 %] | Untamed (red) [-0,1 %]
+
+# ===== Hala =====
+= Hala | *
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-0,3 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-0,4 %]
+# jambes : Pillar of Unity [+0,0 %] ; Nullrune Boots [-0,7 %]
+arène : Zenith Blade | Helm of Unity | Edge Laden Plate | Gauntlets of Unity | Pillar of Unity
+hors du deck : Arcane Polarity (red) [-0,1 %] | Arcane Polarity (red) [-0,1 %] | Swordmaster's Path (red) [-0,4 %] | Swordmaster's Path (red) [-0,4 %] | Toe the Line (red) [-1,6 %] | Toe the Line (red) [-1,6 %] | Swordmaster's Path (blue) [+0,0 %]
+= Hala | Ira, Crimson Haze
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-3,5 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-1,9 %]
+# jambes : Pillar of Unity [+0,0 %] ; Nullrune Boots [-2,7 %]
+arène : Zenith Blade | Helm of Unity | Edge Laden Plate | Gauntlets of Unity | Pillar of Unity
+hors du deck : Arcane Polarity (red) [-1,5 %] | Arcane Polarity (red) [-1,5 %] | Swordmaster's Path (red) [-0,4 %] | Swordmaster's Path (red) [-0,4 %] | Toe the Line (red) [-2,4 %] | Toe the Line (red) [-2,4 %] | Swordmaster's Path (blue) [+0,0 %]
+= Hala | Hala
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-4,7 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-3,7 %]
+# jambes : Pillar of Unity [+0,0 %] ; Nullrune Boots [-4,8 %]
+arène : Zenith Blade | Helm of Unity | Edge Laden Plate | Gauntlets of Unity | Pillar of Unity
+hors du deck : Sharp Incline (red) [-0,9 %] | Sharp Incline (red) [-0,9 %] | Swordmaster's Path (red) [-0,2 %] | Swordmaster's Path (red) [-0,2 %] | Toe the Line (red) [-3,1 %] | Toe the Line (red) [-3,1 %] | Sharp Incline (blue) [+0,0 %]
+= Hala | Dorinthea
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-1,3 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-2,8 %]
+# jambes : Pillar of Unity [+0,0 %] ; Nullrune Boots [-3,5 %]
+arène : Zenith Blade | Helm of Unity | Edge Laden Plate | Gauntlets of Unity | Pillar of Unity
+hors du deck : Toe the Line (red) [-1,2 %] | Toe the Line (red) [-1,2 %] | Edict of Steel (yellow) [+0,0 %] | Cut n' Carve (blue) [-0,9 %] | Cut n' Carve (blue) [-0,9 %] | Sharp Incline (blue) [-0,1 %] | Sharp Incline (blue) [-0,1 %]
+= Hala | Bravo, Flattering Showman
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-0,5 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-0,9 %]
+# jambes : Pillar of Unity [+0,0 %] ; Nullrune Boots [-0,8 %]
+arène : Zenith Blade | Helm of Unity | Edge Laden Plate | Gauntlets of Unity | Pillar of Unity
+hors du deck : Arcane Polarity (red) [+0,0 %] | Toe the Line (red) [-0,4 %] | Toe the Line (red) [-0,4 %] | Edict of Steel (blue) [-0,0 %] | Edict of Steel (blue) [-0,0 %] | Sharp Incline (blue) [-0,0 %] | Sharp Incline (blue) [-0,0 %]
+= Hala | Iyslander
+# tête : Helm of Unity [-8,1 %] ; Nullrune Hood [+0,0 %]
+# bras : Gauntlets of Unity [-6,2 %] ; Nullrune Gloves [+0,0 %]
+# jambes : Pillar of Unity [-7,3 %] ; Nullrune Boots [+0,0 %]
+arène : Zenith Blade | Nullrune Hood | Edge Laden Plate | Nullrune Gloves | Nullrune Boots
+hors du deck : Sharp Incline (red) [+0,0 %] | Toe the Line (red) [-2,5 %] | Toe the Line (red) [-2,5 %] | Cut n' Carve (blue) [-0,3 %] | Cut n' Carve (blue) [-0,3 %] | Swordmaster's Path (blue) [-1,4 %] | Swordmaster's Path (blue) [-1,4 %]
+= Hala | Florian
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-0,2 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-0,2 %]
+# jambes : Pillar of Unity [+0,0 %] ; Nullrune Boots [-0,8 %]
+arène : Zenith Blade | Helm of Unity | Edge Laden Plate | Gauntlets of Unity | Pillar of Unity
+hors du deck : Arcane Polarity (red) [-1,8 %] | Arcane Polarity (red) [-1,8 %] | Humble (red) [-1,3 %] | Humble (red) [-1,3 %] | Toe the Line (red) [-1,4 %] | Toe the Line (red) [-1,4 %] | Swordmaster's Path (blue) [+0,0 %]
+= Hala | Levia
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-0,2 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-0,4 %]
+# jambes : Pillar of Unity [+0,0 %] ; Nullrune Boots [-0,3 %]
+arène : Zenith Blade | Helm of Unity | Edge Laden Plate | Gauntlets of Unity | Pillar of Unity
+hors du deck : Swordmaster's Path (red) [-0,1 %] | Swordmaster's Path (red) [-0,1 %] | Toe the Line (red) [-0,4 %] | Toe the Line (red) [-0,4 %] | Sharp Incline (blue) [-0,1 %] | Sharp Incline (blue) [-0,1 %] | Swordmaster's Path (blue) [+0,0 %]
+= Hala | Dromai
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-0,1 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-0,0 %]
+# jambes : Pillar of Unity [+0,0 %] ; Nullrune Boots [-0,3 %]
+arène : Zenith Blade | Helm of Unity | Edge Laden Plate | Gauntlets of Unity | Pillar of Unity
+hors du deck : Swordmaster's Path (red) [-0,2 %] | Swordmaster's Path (red) [-0,2 %] | Toe the Line (red) [-0,4 %] | Toe the Line (red) [-0,4 %] | Brutal Assault (blue) [+0,0 %] | Swordmaster's Path (blue) [-0,2 %] | Swordmaster's Path (blue) [-0,2 %]
+= Hala | Arakni, Web of Deceit
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-0,5 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-0,6 %]
+# jambes : Pillar of Unity [+0,0 %] ; Nullrune Boots [-0,5 %]
+arène : Zenith Blade | Helm of Unity | Edge Laden Plate | Gauntlets of Unity | Pillar of Unity
+hors du deck : Swordmaster's Path (red) [-0,3 %] | Swordmaster's Path (red) [-0,3 %] | Toe the Line (red) [-0,5 %] | Toe the Line (red) [-0,5 %] | Cut n' Carve (blue) [+0,0 %] | Sharp Incline (blue) [-0,0 %] | Sharp Incline (blue) [-0,0 %]
+
+# ===== Dorinthea =====
+= Dorinthea | *
+# tête : Helm of Unity [-0,9 %] ; Nullrune Hood [+0,0 %]
+# torse : Plating of Unity [-1,0 %] ; Nullrune Robe [+0,0 %]
+# bras : Gauntlets of Unity [-0,9 %] ; Nullrune Gloves [+0,0 %]
+# jambes : Refraction Bolters [-0,2 %] ; Blade Beckoner Boots [+0,0 %]
+arène : Decimator Great Axe | Nullrune Hood | Nullrune Robe | Nullrune Gloves | Blade Beckoner Boots
+hors du deck : Hit and Run (blue) [-0,2 %] | Hit and Run (blue) [-0,2 %] | Sharpen Steel (blue) [-0,1 %] | Sharpen Steel (blue) [-0,1 %] | Sift (blue) [-0,5 %] | Sift (blue) [-0,5 %]
+= Dorinthea | Ira, Crimson Haze
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-2,3 %]
+# torse : Plating of Unity [+0,0 %] ; Nullrune Robe [-2,2 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-2,0 %]
+# jambes : Refraction Bolters [+0,0 %] ; Blade Beckoner Boots [-0,6 %]
+arène : Decimator Great Axe | Helm of Unity | Plating of Unity | Gauntlets of Unity | Refraction Bolters
+hors du deck : Arcane Polarity (red) [-0,4 %] | Arcane Polarity (red) [-0,4 %] | Hit and Run (blue) [-0,4 %] | Hit and Run (blue) [-0,4 %] | Sift (blue) [-0,9 %] | Sift (blue) [-0,9 %]
+= Dorinthea | Hala
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-2,3 %]
+# torse : Plating of Unity [+0,0 %] ; Nullrune Robe [-3,5 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-2,0 %]
+# jambes : Refraction Bolters [-0,6 %] ; Blade Beckoner Boots [+0,0 %]
+arène : Decimator Great Axe | Helm of Unity | Plating of Unity | Gauntlets of Unity | Blade Beckoner Boots
+hors du deck : Felling Swing (red) [-0,2 %] | Felling Swing (red) [-0,2 %] | Hit and Run (blue) [-0,2 %] | Hit and Run (blue) [-0,2 %] | Sharpen Steel (blue) [-0,5 %] | Sharpen Steel (blue) [-0,5 %]
+= Dorinthea | Dorinthea
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-2,5 %]
+# torse : Plating of Unity [+0,0 %] ; Nullrune Robe [-2,5 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-3,1 %]
+# jambes : Refraction Bolters [-1,1 %] ; Blade Beckoner Boots [+0,0 %]
+arène : Decimator Great Axe | Helm of Unity | Plating of Unity | Gauntlets of Unity | Blade Beckoner Boots
+hors du deck : Sharpen Steel (red) [-0,5 %] | Sharpen Steel (red) [-0,5 %] | Hit and Run (blue) [-0,1 %] | Hit and Run (blue) [-0,1 %] | Sharpen Steel (blue) [-0,4 %] | Sharpen Steel (blue) [-0,4 %]
+= Dorinthea | Bravo, Flattering Showman
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-1,1 %]
+# torse : Plating of Unity [+0,0 %] ; Nullrune Robe [-1,9 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-1,1 %]
+# jambes : Refraction Bolters [-0,6 %] ; Blade Beckoner Boots [+0,0 %]
+arène : Decimator Great Axe | Helm of Unity | Plating of Unity | Gauntlets of Unity | Blade Beckoner Boots
+hors du deck : Felling Swing (red) [-0,2 %] | Felling Swing (red) [-0,2 %] | Sirens of Safe Harbor (red) [-0,0 %] | Sirens of Safe Harbor (red) [-0,0 %] | Sift (blue) [-0,5 %] | Sift (blue) [-0,5 %]
+= Dorinthea | Iyslander
+# tête : Helm of Unity [-11,2 %] ; Nullrune Hood [+0,0 %]
+# torse : Plating of Unity [-10,9 %] ; Nullrune Robe [+0,0 %]
+# bras : Gauntlets of Unity [-10,6 %] ; Nullrune Gloves [+0,0 %]
+# jambes : Refraction Bolters [-0,9 %] ; Blade Beckoner Boots [+0,0 %]
+arène : Decimator Great Axe | Nullrune Hood | Nullrune Robe | Nullrune Gloves | Blade Beckoner Boots
+hors du deck : Felling Swing (red) [-0,0 %] | Felling Swing (red) [-0,0 %] | Felling Swing (yellow) [-0,4 %] | Felling Swing (yellow) [-0,4 %] | Sift (blue) [-0,3 %] | Sift (blue) [-0,3 %]
+= Dorinthea | Florian
+# tête : Helm of Unity [-6,5 %] ; Nullrune Hood [+0,0 %]
+# torse : Plating of Unity [-6,7 %] ; Nullrune Robe [+0,0 %]
+# bras : Gauntlets of Unity [-7,1 %] ; Nullrune Gloves [+0,0 %]
+# jambes : Refraction Bolters [-0,7 %] ; Blade Beckoner Boots [+0,0 %]
+arène : Decimator Great Axe | Nullrune Hood | Nullrune Robe | Nullrune Gloves | Blade Beckoner Boots
+hors du deck : Felling Swing (red) [-1,5 %] | Felling Swing (red) [-1,5 %] | Fyendal's Fighting Spirit (red) [-0,3 %] | Fyendal's Fighting Spirit (red) [-0,3 %] | Look Tuff (red) [-1,0 %] | Look Tuff (red) [-1,0 %]
+= Dorinthea | Levia
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-0,0 %]
+# torse : Plating of Unity [+0,0 %] ; Nullrune Robe [-0,1 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-0,0 %]
+# jambes : Refraction Bolters [-0,1 %] ; Blade Beckoner Boots [+0,0 %]
+arène : Decimator Great Axe | Helm of Unity | Plating of Unity | Gauntlets of Unity | Blade Beckoner Boots
+hors du deck : Felling Swing (red) [-0,0 %] | Felling Swing (red) [-0,0 %] | Sharpen Steel (blue) [-0,1 %] | Sharpen Steel (blue) [-0,1 %] | Sift (blue) [-0,1 %] | Sift (blue) [-0,1 %]
+= Dorinthea | Dromai
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-0,2 %]
+# torse : Plating of Unity [-0,1 %] ; Nullrune Robe [+0,0 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-0,1 %]
+# jambes : Refraction Bolters [-0,1 %] ; Blade Beckoner Boots [+0,0 %]
+arène : Decimator Great Axe | Helm of Unity | Nullrune Robe | Gauntlets of Unity | Blade Beckoner Boots
+hors du deck : Sirens of Safe Harbor (red) [-0,2 %] | Sirens of Safe Harbor (red) [-0,2 %] | Steelblade Shunt (red) [-0,1 %] | Steelblade Shunt (red) [-0,1 %] | Sift (blue) [-0,2 %] | Sift (blue) [-0,2 %]
+= Dorinthea | Arakni, Web of Deceit
+# tête : Helm of Unity [+0,0 %] ; Nullrune Hood [-0,5 %]
+# torse : Plating of Unity [+0,0 %] ; Nullrune Robe [-0,8 %]
+# bras : Gauntlets of Unity [+0,0 %] ; Nullrune Gloves [-0,8 %]
+# jambes : Refraction Bolters [-0,1 %] ; Blade Beckoner Boots [+0,0 %]
+arène : Decimator Great Axe | Helm of Unity | Plating of Unity | Gauntlets of Unity | Blade Beckoner Boots
+hors du deck : Hit and Run (blue) [-0,2 %] | Hit and Run (blue) [-0,2 %] | Sharpen Steel (blue) [-0,1 %] | Sharpen Steel (blue) [-0,1 %] | Sift (blue) [-0,1 %] | Sift (blue) [-0,1 %]
+
+# ===== Bravo, Flattering Showman =====
+= Bravo, Flattering Showman | *
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-1,5 %]
+# bras : Gauntlet of Boulderhold [+0,0 %] ; Nullrune Gloves [-1,7 %]
+# jambes : Civic Steps [+0,0 %] ; Unflinching Foothold [-1,3 %] ; Nullrune Boots [-2,9 %]
+arène : Miller's Grindstone | Steelbraid Buckler | Blade Beckoner Helm | Richter Scale | Gauntlet of Boulderhold | Civic Steps
+hors du deck : Arcane Polarity (red) [-1,1 %] | Arcane Polarity (red) [-1,1 %] | Sit! (red) [-2,8 %] | Staunch Response (red) [-3,1 %] | Staunch Response (red) [-3,1 %]
+= Bravo, Flattering Showman | Ira, Crimson Haze
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-4,6 %]
+# bras : Gauntlet of Boulderhold [+0,0 %] ; Nullrune Gloves [-4,9 %]
+# jambes : Civic Steps [+0,0 %] ; Unflinching Foothold [-5,9 %] ; Nullrune Boots [-9,8 %]
+arène : Miller's Grindstone | Steelbraid Buckler | Blade Beckoner Helm | Richter Scale | Gauntlet of Boulderhold | Civic Steps
+hors du deck : Arcane Polarity (red) [-0,6 %] | Arcane Polarity (red) [-0,6 %] | Sit! (red) [-2,8 %] | Staunch Response (red) [-6,3 %] | Staunch Response (red) [-6,3 %]
+= Bravo, Flattering Showman | Hala
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-1,6 %]
+# bras : Gauntlet of Boulderhold [+0,0 %] ; Nullrune Gloves [-1,9 %]
+# jambes : Civic Steps [+0,0 %] ; Unflinching Foothold [-0,5 %] ; Nullrune Boots [-2,5 %]
+arène : Miller's Grindstone | Steelbraid Buckler | Blade Beckoner Helm | Richter Scale | Gauntlet of Boulderhold | Civic Steps
+hors du deck : Arcane Polarity (red) [-0,0 %] | Arcane Polarity (red) [-0,0 %] | Sit! (red) [-1,1 %] | Staunch Response (red) [-0,4 %] | Staunch Response (red) [-0,4 %]
+= Bravo, Flattering Showman | Dorinthea
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-3,2 %]
+# bras : Gauntlet of Boulderhold [+0,0 %] ; Nullrune Gloves [-2,8 %]
+# jambes : Civic Steps [+0,0 %] ; Unflinching Foothold [-2,8 %] ; Nullrune Boots [-4,6 %]
+arène : Miller's Grindstone | Steelbraid Buckler | Blade Beckoner Helm | Richter Scale | Gauntlet of Boulderhold | Civic Steps
+hors du deck : Arcane Polarity (red) [-0,3 %] | Arcane Polarity (red) [-0,3 %] | Crush Confidence (red) [-0,3 %] | Crush Confidence (red) [-0,3 %] | Sit! (red) [-2,4 %]
+= Bravo, Flattering Showman | Bravo, Flattering Showman
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-4,4 %]
+# bras : Gauntlet of Boulderhold [+0,0 %] ; Nullrune Gloves [-3,1 %]
+# jambes : Civic Steps [-2,0 %] ; Unflinching Foothold [+0,0 %] ; Nullrune Boots [-5,5 %]
+arène : Miller's Grindstone | Steelbraid Buckler | Blade Beckoner Helm | Richter Scale | Gauntlet of Boulderhold | Unflinching Foothold
+hors du deck : Arcane Polarity (red) [-3,7 %] | Arcane Polarity (red) [-3,7 %] | Sit! (red) [-6,4 %] | Staunch Response (red) [-5,4 %] | Staunch Response (red) [-5,4 %]
+= Bravo, Flattering Showman | Iyslander
+# tête : Blade Beckoner Helm [-1,6 %] ; Nullrune Hood [+0,0 %]
+# bras : Gauntlet of Boulderhold [-0,4 %] ; Nullrune Gloves [+0,0 %]
+# jambes : Civic Steps [+0,0 %] ; Unflinching Foothold [-2,8 %] ; Nullrune Boots [-1,8 %]
+arène : Miller's Grindstone | Steelbraid Buckler | Nullrune Hood | Richter Scale | Nullrune Gloves | Civic Steps
+hors du deck : Sit! (red) [-2,1 %] | Staunch Response (red) [-1,5 %] | Staunch Response (red) [-1,5 %] | Thunk (blue) [-0,4 %] | Thunk (blue) [-0,4 %]
+= Bravo, Flattering Showman | Florian
+# tête : Blade Beckoner Helm [-0,7 %] ; Nullrune Hood [+0,0 %]
+# bras : Gauntlet of Boulderhold [+0,0 %] ; Nullrune Gloves [-0,7 %]
+# jambes : Civic Steps [-1,1 %] ; Unflinching Foothold [-0,1 %] ; Nullrune Boots [+0,0 %]
+arène : Miller's Grindstone | Steelbraid Buckler | Nullrune Hood | Richter Scale | Gauntlet of Boulderhold | Nullrune Boots
+hors du deck : Crush Confidence (red) [-0,0 %] | Crush Confidence (red) [-0,0 %] | Sit! (red) [-2,8 %] | Staunch Response (red) [-2,6 %] | Staunch Response (red) [-2,6 %]
+= Bravo, Flattering Showman | Levia
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-0,3 %]
+# bras : Gauntlet of Boulderhold [+0,0 %] ; Nullrune Gloves [-0,3 %]
+# jambes : Civic Steps [+0,0 %] ; Unflinching Foothold [-0,0 %] ; Nullrune Boots [-0,7 %]
+arène : Miller's Grindstone | Steelbraid Buckler | Blade Beckoner Helm | Richter Scale | Gauntlet of Boulderhold | Civic Steps
+hors du deck : Arcane Polarity (red) [-0,0 %] | Arcane Polarity (red) [-0,0 %] | Sit! (red) [-0,7 %] | Staunch Response (red) [-0,7 %] | Staunch Response (red) [-0,7 %]
+= Bravo, Flattering Showman | Dromai
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-0,6 %]
+# bras : Gauntlet of Boulderhold [+0,0 %] ; Nullrune Gloves [-1,3 %]
+# jambes : Civic Steps [+0,0 %] ; Unflinching Foothold [-1,5 %] ; Nullrune Boots [-1,6 %]
+arène : Miller's Grindstone | Steelbraid Buckler | Blade Beckoner Helm | Richter Scale | Gauntlet of Boulderhold | Civic Steps
+hors du deck : Arcane Polarity (red) [-1,0 %] | Arcane Polarity (red) [-1,0 %] | Sit! (red) [-2,0 %] | Staunch Response (red) [-5,2 %] | Staunch Response (red) [-5,2 %]
+= Bravo, Flattering Showman | Arakni, Web of Deceit
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-0,9 %]
+# bras : Gauntlet of Boulderhold [+0,0 %] ; Nullrune Gloves [-0,7 %]
+# jambes : Civic Steps [+0,0 %] ; Unflinching Foothold [-0,5 %] ; Nullrune Boots [-1,7 %]
+arène : Miller's Grindstone | Steelbraid Buckler | Blade Beckoner Helm | Richter Scale | Gauntlet of Boulderhold | Civic Steps
+hors du deck : Arcane Polarity (red) [-0,2 %] | Arcane Polarity (red) [-0,2 %] | Sit! (red) [-1,3 %] | Staunch Response (red) [-1,0 %] | Staunch Response (red) [-1,0 %]
+
+# ===== Iyslander =====
+= Iyslander | *
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-1,5 %]
+# torse : Spellfire Cloak [-1,4 %] ; Blade Beckoner Plating [+0,0 %]
+# bras : Blade Beckoner Gauntlets [+0,0 %] ; Nullrune Gloves [-1,4 %]
+# jambes : Aetherstorm Wellingtons [-0,4 %] ; Blade Beckoner Boots [+0,0 %] ; Unflinching Foothold [-0,2 %]
+arène : Crucible of Aetherweave | Blade Beckoner Helm | Blade Beckoner Plating | Blade Beckoner Gauntlets | Blade Beckoner Boots
+hors du deck : Arcane Polarity (red) [-0,6 %] | Arcane Polarity (red) [-0,6 %] | Unmovable (red) [-1,8 %] | Ice Eternal (blue) [+0,0 %] | Timesnap Potion (blue) [-3,6 %]
+= Iyslander | Ira, Crimson Haze
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-1,6 %]
+# torse : Spellfire Cloak [-1,2 %] ; Blade Beckoner Plating [+0,0 %]
+# bras : Blade Beckoner Gauntlets [+0,0 %] ; Nullrune Gloves [-1,7 %]
+# jambes : Aetherstorm Wellingtons [-1,9 %] ; Blade Beckoner Boots [+0,0 %] ; Unflinching Foothold [-0,2 %]
+arène : Crucible of Aetherweave | Blade Beckoner Helm | Blade Beckoner Plating | Blade Beckoner Gauntlets | Blade Beckoner Boots
+hors du deck : Arcane Polarity (red) [-0,5 %] | Arcane Polarity (red) [-0,5 %] | Unmovable (red) [-2,1 %] | Ice Eternal (blue) [+0,0 %] | Timesnap Potion (blue) [-1,0 %]
+= Iyslander | Hala
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-2,2 %]
+# torse : Spellfire Cloak [-1,8 %] ; Blade Beckoner Plating [+0,0 %]
+# bras : Blade Beckoner Gauntlets [+0,0 %] ; Nullrune Gloves [-2,1 %]
+# jambes : Aetherstorm Wellingtons [-0,9 %] ; Blade Beckoner Boots [-0,2 %] ; Unflinching Foothold [+0,0 %]
+arène : Crucible of Aetherweave | Blade Beckoner Helm | Blade Beckoner Plating | Blade Beckoner Gauntlets | Unflinching Foothold
+hors du deck : Arcane Polarity (red) [-1,3 %] | Arcane Polarity (red) [-1,3 %] | Unmovable (red) [-3,5 %] | Timesnap Potion (blue) [-6,3 %] | Winter's Bite (blue) [+0,0 %]
+= Iyslander | Dorinthea
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-0,8 %]
+# torse : Spellfire Cloak [-1,3 %] ; Blade Beckoner Plating [+0,0 %]
+# bras : Blade Beckoner Gauntlets [+0,0 %] ; Nullrune Gloves [-0,8 %]
+# jambes : Aetherstorm Wellingtons [-2,3 %] ; Blade Beckoner Boots [+0,0 %] ; Unflinching Foothold [-0,8 %]
+arène : Crucible of Aetherweave | Blade Beckoner Helm | Blade Beckoner Plating | Blade Beckoner Gauntlets | Blade Beckoner Boots
+hors du deck : Arcane Polarity (red) [+0,0 %] | Chest Puff (red) [-1,0 %] | Chest Puff (red) [-1,0 %] | Unmovable (red) [-0,8 %] | Timesnap Potion (blue) [-5,5 %]
+= Iyslander | Bravo, Flattering Showman
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-1,7 %]
+# torse : Spellfire Cloak [-1,7 %] ; Blade Beckoner Plating [+0,0 %]
+# bras : Blade Beckoner Gauntlets [+0,0 %] ; Nullrune Gloves [-2,0 %]
+# jambes : Aetherstorm Wellingtons [-1,8 %] ; Blade Beckoner Boots [+0,0 %] ; Unflinching Foothold [-0,1 %]
+arène : Crucible of Aetherweave | Blade Beckoner Helm | Blade Beckoner Plating | Blade Beckoner Gauntlets | Blade Beckoner Boots
+hors du deck : Arcane Polarity (red) [-0,2 %] | Arcane Polarity (red) [-0,2 %] | Unmovable (red) [-2,3 %] | Ice Eternal (blue) [+0,0 %] | Timesnap Potion (blue) [-3,8 %]
+= Iyslander | Iyslander
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-0,6 %]
+# torse : Spellfire Cloak [+0,0 %] ; Blade Beckoner Plating [-1,4 %]
+# bras : Blade Beckoner Gauntlets [-0,4 %] ; Nullrune Gloves [+0,0 %]
+# jambes : Aetherstorm Wellingtons [+0,0 %] ; Blade Beckoner Boots [-9,7 %] ; Unflinching Foothold [-10,5 %]
+arène : Crucible of Aetherweave | Blade Beckoner Helm | Spellfire Cloak | Nullrune Gloves | Aetherstorm Wellingtons
+hors du deck : Arcane Polarity (red) [-1,3 %] | Arcane Polarity (red) [-1,3 %] | Unmovable (red) [-2,4 %] | Ice Eternal (blue) [+0,0 %] | Timesnap Potion (blue) [-4,0 %]
+= Iyslander | Florian
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-1,8 %]
+# torse : Spellfire Cloak [-1,6 %] ; Blade Beckoner Plating [+0,0 %]
+# bras : Blade Beckoner Gauntlets [+0,0 %] ; Nullrune Gloves [-1,3 %]
+# jambes : Aetherstorm Wellingtons [-2,7 %] ; Blade Beckoner Boots [+0,0 %] ; Unflinching Foothold [-0,6 %]
+arène : Crucible of Aetherweave | Blade Beckoner Helm | Blade Beckoner Plating | Blade Beckoner Gauntlets | Blade Beckoner Boots
+hors du deck : Arcane Polarity (red) [-0,6 %] | Arcane Polarity (red) [-0,6 %] | Unmovable (red) [-1,3 %] | Pyroglyphic Protection (blue) [-0,1 %] | Timesnap Potion (blue) [-2,5 %]
+= Iyslander | Levia
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-1,4 %]
+# torse : Spellfire Cloak [-1,5 %] ; Blade Beckoner Plating [+0,0 %]
+# bras : Blade Beckoner Gauntlets [+0,0 %] ; Nullrune Gloves [-1,5 %]
+# jambes : Aetherstorm Wellingtons [-1,5 %] ; Blade Beckoner Boots [+0,0 %] ; Unflinching Foothold [-0,8 %]
+arène : Crucible of Aetherweave | Blade Beckoner Helm | Blade Beckoner Plating | Blade Beckoner Gauntlets | Blade Beckoner Boots
+hors du deck : Arcane Polarity (red) [-1,3 %] | Arcane Polarity (red) [-1,3 %] | Unmovable (red) [-0,3 %] | Pyroglyphic Protection (blue) [-0,0 %] | Timesnap Potion (blue) [-1,8 %]
+= Iyslander | Dromai
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-0,4 %]
+# torse : Spellfire Cloak [-0,2 %] ; Blade Beckoner Plating [+0,0 %]
+# bras : Blade Beckoner Gauntlets [+0,0 %] ; Nullrune Gloves [-0,1 %]
+# jambes : Aetherstorm Wellingtons [-0,1 %] ; Blade Beckoner Boots [+0,0 %] ; Unflinching Foothold [-0,2 %]
+arène : Crucible of Aetherweave | Blade Beckoner Helm | Blade Beckoner Plating | Blade Beckoner Gauntlets | Blade Beckoner Boots
+hors du deck : Arcane Polarity (red) [-0,2 %] | Arcane Polarity (red) [-0,2 %] | Unmovable (red) [-0,5 %] | Ice Eternal (blue) [+0,0 %] | Timesnap Potion (blue) [-1,2 %]
+= Iyslander | Arakni, Web of Deceit
+# tête : Blade Beckoner Helm [+0,0 %] ; Nullrune Hood [-3,9 %]
+# torse : Spellfire Cloak [-3,0 %] ; Blade Beckoner Plating [+0,0 %]
+# bras : Blade Beckoner Gauntlets [+0,0 %] ; Nullrune Gloves [-3,9 %]
+# jambes : Aetherstorm Wellingtons [-4,2 %] ; Blade Beckoner Boots [-0,9 %] ; Unflinching Foothold [+0,0 %]
+arène : Crucible of Aetherweave | Blade Beckoner Helm | Blade Beckoner Plating | Blade Beckoner Gauntlets | Unflinching Foothold
+hors du deck : Arcane Polarity (red) [-0,1 %] | Arcane Polarity (red) [-0,1 %] | Unmovable (red) [-1,9 %] | Timesnap Potion (blue) [-4,3 %] | Winter's Bite (blue) [+0,0 %]
+
+# ===== Florian =====
+= Florian | *
+# armes : Nebula Blade [+0,0 %] ; Annals of Sutcliffe [-12,8 %] ; Scepter of Pain + Arcane Lantern [-3,5 %] ; Scepter of Pain + Bloodied Oval [-3,8 %]
+# tête : Crown of Dichotomy [-4,2 %] ; Helm of Lignum Vitae [+0,0 %] ; Plume of Evergrowth [-4,8 %]
+# bras : Nullrune Gloves [+0,0 %] ; Unyielding Grip [-0,0 %]
+arène : Nebula Blade | Helm of Lignum Vitae | Blossom of Spring | Nullrune Gloves | Well Grounded
+hors du deck : Arcane Polarity (red) [-0,1 %] | Arcane Polarity (red) [-0,1 %] | Autumn's Touch (blue) [+0,0 %]
+= Florian | Ira, Crimson Haze
+# armes : Nebula Blade [+0,0 %] ; Annals of Sutcliffe [-17,1 %] ; Scepter of Pain + Arcane Lantern [-11,2 %] ; Scepter of Pain + Bloodied Oval [-9,7 %]
+# tête : Crown of Dichotomy [-7,3 %] ; Helm of Lignum Vitae [+0,0 %] ; Plume of Evergrowth [-7,8 %]
+# bras : Nullrune Gloves [-0,3 %] ; Unyielding Grip [+0,0 %]
+arène : Nebula Blade | Helm of Lignum Vitae | Blossom of Spring | Unyielding Grip | Well Grounded
+hors du deck : Arcane Polarity (red) [-0,0 %] | Arcane Polarity (red) [-0,0 %] | Autumn's Touch (blue) [+0,0 %]
+= Florian | Hala
+# armes : Nebula Blade [-2,0 %] ; Annals of Sutcliffe [-23,3 %] ; Scepter of Pain + Arcane Lantern [+0,0 %] ; Scepter of Pain + Bloodied Oval [-0,1 %]
+# tête : Crown of Dichotomy [-5,2 %] ; Helm of Lignum Vitae [+0,0 %] ; Plume of Evergrowth [-5,6 %]
+# bras : Nullrune Gloves [-0,3 %] ; Unyielding Grip [+0,0 %]
+arène : Scepter of Pain | Arcane Lantern | Helm of Lignum Vitae | Blossom of Spring | Unyielding Grip | Well Grounded
+hors du deck : Amplify the Arknight (red) [-0,7 %] | Amplify the Arknight (red) [-0,7 %] | Arcane Polarity (red) [+0,0 %]
+= Florian | Dorinthea
+# armes : Nebula Blade [-2,4 %] ; Annals of Sutcliffe [-16,8 %] ; Scepter of Pain + Arcane Lantern [-0,3 %] ; Scepter of Pain + Bloodied Oval [+0,0 %]
+# tête : Crown of Dichotomy [-4,4 %] ; Helm of Lignum Vitae [+0,0 %] ; Plume of Evergrowth [-3,9 %]
+# bras : Nullrune Gloves [-0,5 %] ; Unyielding Grip [+0,0 %]
+arène : Scepter of Pain | Bloodied Oval | Helm of Lignum Vitae | Blossom of Spring | Unyielding Grip | Well Grounded
+hors du deck : Amplify the Arknight (red) [-1,3 %] | Amplify the Arknight (red) [-1,3 %] | Autumn's Touch (blue) [+0,0 %]
+= Florian | Bravo, Flattering Showman
+# armes : Nebula Blade [-3,9 %] ; Annals of Sutcliffe [-17,9 %] ; Scepter of Pain + Arcane Lantern [+0,0 %] ; Scepter of Pain + Bloodied Oval [-0,1 %]
+# tête : Crown of Dichotomy [-7,2 %] ; Helm of Lignum Vitae [+0,0 %] ; Plume of Evergrowth [-7,1 %]
+# bras : Nullrune Gloves [-0,6 %] ; Unyielding Grip [+0,0 %]
+arène : Scepter of Pain | Arcane Lantern | Helm of Lignum Vitae | Blossom of Spring | Unyielding Grip | Well Grounded
+hors du deck : Amplify the Arknight (red) [-0,0 %] | Amplify the Arknight (red) [-0,0 %] | Arcane Polarity (red) [+0,0 %]
+= Florian | Iyslander
+# armes : Nebula Blade [+0,0 %] ; Annals of Sutcliffe [-12,0 %] ; Scepter of Pain + Arcane Lantern [-2,8 %] ; Scepter of Pain + Bloodied Oval [-7,6 %]
+# tête : Crown of Dichotomy [+0,0 %] ; Helm of Lignum Vitae [-1,5 %] ; Plume of Evergrowth [-4,4 %]
+# bras : Nullrune Gloves [+0,0 %] ; Unyielding Grip [-4,0 %]
+arène : Nebula Blade | Crown of Dichotomy | Blossom of Spring | Nullrune Gloves | Well Grounded
+hors du deck : Amplify the Arknight (blue) [+0,0 %] | Autumn's Touch (blue) [-1,3 %] | Autumn's Touch (blue) [-1,3 %]
+= Florian | Florian
+# armes : Nebula Blade [+0,0 %] ; Annals of Sutcliffe [-19,1 %] ; Scepter of Pain + Arcane Lantern [-17,2 %] ; Scepter of Pain + Bloodied Oval [-14,6 %]
+# tête : Crown of Dichotomy [-8,8 %] ; Helm of Lignum Vitae [+0,0 %] ; Plume of Evergrowth [-8,2 %]
+# bras : Nullrune Gloves [-3,3 %] ; Unyielding Grip [+0,0 %]
+arène : Nebula Blade | Helm of Lignum Vitae | Blossom of Spring | Unyielding Grip | Well Grounded
+hors du deck : Amplify the Arknight (red) [-0,2 %] | Amplify the Arknight (red) [-0,2 %] | Amplify the Arknight (blue) [+0,0 %]
+= Florian | Levia
+# armes : Nebula Blade [+0,0 %] ; Annals of Sutcliffe [-3,0 %] ; Scepter of Pain + Arcane Lantern [-1,3 %] ; Scepter of Pain + Bloodied Oval [-1,2 %]
+# tête : Crown of Dichotomy [-1,1 %] ; Helm of Lignum Vitae [+0,0 %] ; Plume of Evergrowth [-1,1 %]
+# bras : Nullrune Gloves [+0,0 %] ; Unyielding Grip [-0,1 %]
+arène : Nebula Blade | Helm of Lignum Vitae | Blossom of Spring | Nullrune Gloves | Well Grounded
+hors du deck : Arcane Polarity (red) [+0,0 %] | Fruits of the Forest (yellow) [-0,2 %] | Fruits of the Forest (yellow) [-0,2 %]
+= Florian | Dromai
+# armes : Nebula Blade [+0,0 %] ; Annals of Sutcliffe [-4,5 %] ; Scepter of Pain + Arcane Lantern [-2,8 %] ; Scepter of Pain + Bloodied Oval [-2,4 %]
+# tête : Crown of Dichotomy [-2,0 %] ; Helm of Lignum Vitae [+0,0 %] ; Plume of Evergrowth [-2,2 %]
+# bras : Nullrune Gloves [-0,1 %] ; Unyielding Grip [+0,0 %]
+arène : Nebula Blade | Helm of Lignum Vitae | Blossom of Spring | Unyielding Grip | Well Grounded
+hors du deck : Fruits of the Forest (yellow) [+0,0 %] | Reduce to Runechant (blue) [-0,0 %] | Reduce to Runechant (blue) [-0,0 %]
+= Florian | Arakni, Web of Deceit
+# armes : Nebula Blade [+0,0 %] ; Annals of Sutcliffe [-11,9 %] ; Scepter of Pain + Arcane Lantern [-6,2 %] ; Scepter of Pain + Bloodied Oval [-6,7 %]
+# tête : Crown of Dichotomy [-2,6 %] ; Helm of Lignum Vitae [+0,0 %] ; Plume of Evergrowth [-3,3 %]
+# bras : Nullrune Gloves [+0,0 %] ; Unyielding Grip [-0,0 %]
+arène : Nebula Blade | Helm of Lignum Vitae | Blossom of Spring | Nullrune Gloves | Well Grounded
+hors du deck : Arcane Polarity (red) [-0,5 %] | Arcane Polarity (red) [-0,5 %] | Autumn's Touch (yellow) [+0,0 %]
+
+# ===== Levia =====
+= Levia | *
+# tête : Buzzard Helm [+0,0 %] ; Nullrune Hood [-1,5 %]
+# bras : Skera Strapping [+0,0 %] ; Embraforged Gauntlet [-0,3 %] ; Hex Gauntlet [-0,1 %]
+arène : Hell Hammer | Buzzard Helm | Predatory Plating | Skera Strapping | Hooves of the Shadowbeast
+hors du deck : Countdown to Extinction (red) [-0,4 %] | Countdown to Extinction (red) [-0,4 %] | Consuming Strength (yellow) [-0,1 %] | Engulfing Shadows (yellow) [-0,2 %] | Engulfing Shadows (yellow) [-0,2 %] | Goremass Summoning (blue) [-0,6 %] | Goremass Summoning (blue) [-0,6 %]
+= Levia | Ira, Crimson Haze
+# tête : Buzzard Helm [+0,0 %] ; Nullrune Hood [-1,2 %]
+# bras : Skera Strapping [-0,8 %] ; Embraforged Gauntlet [+0,0 %] ; Hex Gauntlet [-0,3 %]
+arène : Hell Hammer | Buzzard Helm | Predatory Plating | Embraforged Gauntlet | Hooves of the Shadowbeast
+hors du deck : Boneyard Marauder (red) [+0,0 %] | Countdown to Extinction (red) [-0,6 %] | Countdown to Extinction (red) [-0,6 %] | Engulfing Shadows (yellow) [-0,0 %] | Engulfing Shadows (yellow) [-0,0 %] | Goremass Summoning (blue) [-0,8 %] | Goremass Summoning (blue) [-0,8 %]
+= Levia | Hala
+# tête : Buzzard Helm [+0,0 %] ; Nullrune Hood [-0,3 %]
+# bras : Skera Strapping [+0,0 %] ; Embraforged Gauntlet [-0,1 %] ; Hex Gauntlet [-0,0 %]
+arène : Hell Hammer | Buzzard Helm | Predatory Plating | Skera Strapping | Hooves of the Shadowbeast
+hors du deck : Countdown to Extinction (red) [-0,0 %] | Countdown to Extinction (red) [-0,0 %] | Consuming Strength (yellow) [-0,1 %] | Cleave the Heavens (blue) [+0,0 %] | Goremass Summoning (blue) [-0,2 %] | Goremass Summoning (blue) [-0,2 %] | Soul Harvest (blue) [-0,0 %]
+= Levia | Dorinthea
+# tête : Buzzard Helm [+0,0 %] ; Nullrune Hood [-0,3 %]
+# bras : Skera Strapping [+0,0 %] ; Embraforged Gauntlet [-0,1 %] ; Hex Gauntlet [-0,2 %]
+arène : Hell Hammer | Buzzard Helm | Predatory Plating | Skera Strapping | Hooves of the Shadowbeast
+hors du deck : Countdown to Extinction (red) [-0,0 %] | Countdown to Extinction (red) [-0,0 %] | Consuming Strength (yellow) [-0,1 %] | Engulfing Shadows (yellow) [-0,2 %] | Engulfing Shadows (yellow) [-0,2 %] | Goremass Summoning (blue) [-0,2 %] | Goremass Summoning (blue) [-0,2 %]
+= Levia | Bravo, Flattering Showman
+# tête : Buzzard Helm [+0,0 %] ; Nullrune Hood [-0,3 %]
+# bras : Skera Strapping [-0,2 %] ; Embraforged Gauntlet [+0,0 %] ; Hex Gauntlet [-0,5 %]
+arène : Hell Hammer | Buzzard Helm | Predatory Plating | Embraforged Gauntlet | Hooves of the Shadowbeast
+hors du deck : Cleave the Heavens (red) [+0,0 %] | Countdown to Extinction (red) [-0,2 %] | Countdown to Extinction (red) [-0,2 %] | Engulfing Shadows (yellow) [-0,1 %] | Engulfing Shadows (yellow) [-0,1 %] | Goremass Summoning (blue) [-0,2 %] | Goremass Summoning (blue) [-0,2 %]
+= Levia | Iyslander
+# tête : Buzzard Helm [+0,0 %] ; Nullrune Hood [-1,7 %]
+# bras : Skera Strapping [-0,0 %] ; Embraforged Gauntlet [-0,4 %] ; Hex Gauntlet [+0,0 %]
+arène : Hell Hammer | Buzzard Helm | Predatory Plating | Hex Gauntlet | Hooves of the Shadowbeast
+hors du deck : Boneyard Marauder (red) [+0,0 %] | Countdown to Extinction (red) [-0,2 %] | Countdown to Extinction (red) [-0,2 %] | Agile Windup (yellow) [-0,2 %] | Agile Windup (yellow) [-0,2 %] | Goremass Summoning (blue) [-0,7 %] | Goremass Summoning (blue) [-0,7 %]
+= Levia | Florian
+# tête : Buzzard Helm [+0,0 %] ; Nullrune Hood [-4,1 %]
+# bras : Skera Strapping [-0,9 %] ; Embraforged Gauntlet [+0,0 %] ; Hex Gauntlet [-0,1 %]
+arène : Hell Hammer | Buzzard Helm | Predatory Plating | Embraforged Gauntlet | Hooves of the Shadowbeast
+hors du deck : Countdown to Extinction (red) [+0,0 %] | Consuming Strength (yellow) [-0,3 %] | Dread Screamer (yellow) [-0,5 %] | Engulfing Shadows (yellow) [-0,3 %] | Engulfing Shadows (yellow) [-0,3 %] | Goremass Summoning (blue) [-0,6 %] | Goremass Summoning (blue) [-0,6 %]
+= Levia | Levia
+# tête : Buzzard Helm [+0,0 %] ; Nullrune Hood [-2,9 %]
+# bras : Skera Strapping [+0,0 %] ; Embraforged Gauntlet [-5,0 %] ; Hex Gauntlet [-0,8 %]
+arène : Hell Hammer | Buzzard Helm | Predatory Plating | Skera Strapping | Hooves of the Shadowbeast
+hors du deck : Cleave the Heavens (red) [+0,0 %] | Countdown to Extinction (red) [-0,6 %] | Countdown to Extinction (red) [-0,6 %] | Engulfing Shadows (yellow) [-0,9 %] | Engulfing Shadows (yellow) [-0,9 %] | Goremass Summoning (blue) [-0,3 %] | Goremass Summoning (blue) [-0,3 %]
+= Levia | Dromai
+# tête : Buzzard Helm [+0,0 %] ; Nullrune Hood [-0,5 %]
+# bras : Skera Strapping [+0,0 %] ; Embraforged Gauntlet [-0,1 %] ; Hex Gauntlet [-0,0 %]
+arène : Hell Hammer | Buzzard Helm | Predatory Plating | Skera Strapping | Hooves of the Shadowbeast
+hors du deck : Countdown to Extinction (red) [-0,2 %] | Countdown to Extinction (red) [-0,2 %] | Agile Windup (yellow) [+0,0 %] | Cleave the Heavens (blue) [-0,1 %] | Cleave the Heavens (blue) [-0,1 %] | Goremass Summoning (blue) [-0,1 %] | Goremass Summoning (blue) [-0,1 %]
+= Levia | Arakni, Web of Deceit
+# tête : Buzzard Helm [+0,0 %] ; Nullrune Hood [-1,6 %]
+# bras : Skera Strapping [-0,8 %] ; Embraforged Gauntlet [+0,0 %] ; Hex Gauntlet [-0,6 %]
+arène : Hell Hammer | Buzzard Helm | Predatory Plating | Embraforged Gauntlet | Hooves of the Shadowbeast
+hors du deck : Countdown to Extinction (red) [-0,5 %] | Countdown to Extinction (red) [-0,5 %] | Agile Windup (yellow) [-0,1 %] | Agile Windup (yellow) [-0,1 %] | Dread Screamer (yellow) [-0,6 %] | Goremass Summoning (blue) [-0,8 %] | Goremass Summoning (blue) [-0,8 %]
+
+# ===== Dromai =====
+= Dromai | *
+# torse : Smoldering Scales [+0,0 %] ; Deep Blue [-2,0 %]
+# jambes : Seeker's Leggings [+0,0 %] ; Time Skippers [-0,4 %]
+arène : Storm of Sandikai | Silken Shroud | Smoldering Scales | Wave of Reality | Seeker's Leggings
+hors du deck : Dustup (red) [-0,1 %] | Dustup (red) [-0,1 %] | Sand Cover (red) [-1,3 %] | Sand Cover (red) [-1,3 %] | Snatch (red) [-1,0 %] | Passing Mirage (blue) [-0,8 %] | Passing Mirage (blue) [-0,8 %] | Timesnap Potion (blue) [-2,0 %]
+= Dromai | Ira, Crimson Haze
+# torse : Smoldering Scales [+0,0 %] ; Deep Blue [-2,8 %]
+# jambes : Seeker's Leggings [+0,0 %] ; Time Skippers [-0,5 %]
+arène : Storm of Sandikai | Silken Shroud | Smoldering Scales | Wave of Reality | Seeker's Leggings
+hors du deck : Sand Cover (red) [-3,9 %] | Sand Cover (red) [-3,9 %] | Scar for a Scar (red) [-0,9 %] | Scar for a Scar (red) [-0,9 %] | Snatch (red) [-2,0 %] | Passing Mirage (blue) [-2,1 %] | Passing Mirage (blue) [-2,1 %] | Timesnap Potion (blue) [-3,8 %]
+= Dromai | Hala
+# torse : Smoldering Scales [+0,0 %] ; Deep Blue [-2,1 %]
+# jambes : Seeker's Leggings [+0,0 %] ; Time Skippers [-0,2 %]
+arène : Storm of Sandikai | Silken Shroud | Smoldering Scales | Wave of Reality | Seeker's Leggings
+hors du deck : Sand Cover (red) [-1,3 %] | Sand Cover (red) [-1,3 %] | Scar for a Scar (red) [-0,0 %] | Scar for a Scar (red) [-0,0 %] | Snatch (red) [-0,7 %] | Passing Mirage (blue) [-0,8 %] | Passing Mirage (blue) [-0,8 %] | Timesnap Potion (blue) [-2,0 %]
+= Dromai | Dorinthea
+# torse : Smoldering Scales [+0,0 %] ; Deep Blue [-1,6 %]
+# jambes : Seeker's Leggings [+0,0 %] ; Time Skippers [-0,2 %]
+arène : Storm of Sandikai | Silken Shroud | Smoldering Scales | Wave of Reality | Seeker's Leggings
+hors du deck : Invoke Azvolai (red) [-0,1 %] | Invoke Azvolai (red) [-0,1 %] | Sand Cover (red) [-1,0 %] | Sand Cover (red) [-1,0 %] | Snatch (red) [-0,6 %] | Passing Mirage (blue) [-0,6 %] | Passing Mirage (blue) [-0,6 %] | Timesnap Potion (blue) [-0,5 %]
+= Dromai | Bravo, Flattering Showman
+# torse : Smoldering Scales [+0,0 %] ; Deep Blue [-3,9 %]
+# jambes : Seeker's Leggings [-0,1 %] ; Time Skippers [+0,0 %]
+arène : Storm of Sandikai | Silken Shroud | Smoldering Scales | Wave of Reality | Time Skippers
+hors du deck : Dustup (red) [-1,3 %] | Dustup (red) [-1,3 %] | Oasis Respite (red) [-1,1 %] | Oasis Respite (red) [-1,1 %] | Sand Cover (red) [-1,9 %] | Sand Cover (red) [-1,9 %] | Snatch (red) [-2,1 %] | Timesnap Potion (blue) [-5,6 %]
+= Dromai | Iyslander
+# torse : Smoldering Scales [+0,0 %] ; Deep Blue [-1,0 %]
+# jambes : Seeker's Leggings [+0,0 %] ; Time Skippers [-0,1 %]
+arène : Storm of Sandikai | Silken Shroud | Smoldering Scales | Wave of Reality | Seeker's Leggings
+hors du deck : Invoke Azvolai (red) [-0,3 %] | Invoke Azvolai (red) [-0,3 %] | Sand Cover (red) [-0,7 %] | Sand Cover (red) [-0,7 %] | Snatch (red) [-1,0 %] | Passing Mirage (blue) [-0,4 %] | Passing Mirage (blue) [-0,4 %] | Timesnap Potion (blue) [-1,2 %]
+= Dromai | Florian
+# torse : Smoldering Scales [+0,0 %] ; Deep Blue [-2,7 %]
+# jambes : Seeker's Leggings [+0,0 %] ; Time Skippers [-0,6 %]
+arène : Storm of Sandikai | Silken Shroud | Smoldering Scales | Wave of Reality | Seeker's Leggings
+hors du deck : Dustup (red) [-0,2 %] | Dustup (red) [-0,2 %] | Sand Cover (red) [-0,6 %] | Sand Cover (red) [-0,6 %] | Snatch (red) [-1,2 %] | Passing Mirage (blue) [-0,1 %] | Passing Mirage (blue) [-0,1 %] | Timesnap Potion (blue) [-1,9 %]
+= Dromai | Levia
+# torse : Smoldering Scales [+0,0 %] ; Deep Blue [-1,5 %]
+# jambes : Seeker's Leggings [+0,0 %] ; Time Skippers [-0,0 %]
+arène : Storm of Sandikai | Silken Shroud | Smoldering Scales | Wave of Reality | Seeker's Leggings
+hors du deck : Sand Cover (red) [-0,9 %] | Sand Cover (red) [-0,9 %] | Scar for a Scar (red) [-0,0 %] | Scar for a Scar (red) [-0,0 %] | Snatch (red) [-0,0 %] | Passing Mirage (blue) [-0,8 %] | Passing Mirage (blue) [-0,8 %] | Timesnap Potion (blue) [-1,2 %]
+= Dromai | Dromai
+# torse : Smoldering Scales [+0,0 %] ; Deep Blue [-1,4 %]
+# jambes : Seeker's Leggings [+0,0 %] ; Time Skippers [-0,4 %]
+arène : Storm of Sandikai | Silken Shroud | Smoldering Scales | Wave of Reality | Seeker's Leggings
+hors du deck : Dustup (red) [-0,2 %] | Dustup (red) [-0,2 %] | Scar for a Scar (red) [-0,2 %] | Scar for a Scar (red) [-0,2 %] | Snatch (red) [-1,5 %] | Passing Mirage (blue) [-2,1 %] | Passing Mirage (blue) [-2,1 %] | Timesnap Potion (blue) [-1,6 %]
+= Dromai | Arakni, Web of Deceit
+# torse : Smoldering Scales [+0,0 %] ; Deep Blue [-0,6 %]
+# jambes : Seeker's Leggings [+0,0 %] ; Time Skippers [-0,5 %]
+arène : Storm of Sandikai | Silken Shroud | Smoldering Scales | Wave of Reality | Seeker's Leggings
+hors du deck : Invoke Nekria (red) [-0,0 %] | Invoke Nekria (red) [-0,0 %] | Sand Cover (red) [-0,7 %] | Sand Cover (red) [-0,7 %] | Snatch (red) [-0,3 %] | Passing Mirage (blue) [-0,7 %] | Passing Mirage (blue) [-0,7 %] | Timesnap Potion (blue) [-1,1 %]
+
+# ===== Arakni, Web of Deceit =====
+= Arakni, Web of Deceit | *
+# tête : Prey Spotters [+0,0 %] ; Topsy Turvy [-0,9 %]
+# torse : Blossom of Spring [-0,5 %] ; Nullrune Robe [+0,0 %]
+arène : Mark of the Huntsman | Mark of the Huntsman | Prey Spotters | Nullrune Robe | Danger Digits | Stalker's Steps
+hors du deck : Arcane Polarity (red) [-1,1 %] | Arcane Polarity (red) [-1,1 %] | Hurl (red) [-0,1 %] | Lair of the Spider (red) [-0,3 %] | Lair of the Spider (red) [-0,3 %] | Oasis Respite (red) [-2,3 %] | Oasis Respite (red) [-2,3 %]
+= Arakni, Web of Deceit | Ira, Crimson Haze
+# tête : Prey Spotters [+0,0 %] ; Topsy Turvy [-0,8 %]
+# torse : Blossom of Spring [-0,0 %] ; Nullrune Robe [+0,0 %]
+arène : Mark of the Huntsman | Mark of the Huntsman | Prey Spotters | Nullrune Robe | Danger Digits | Stalker's Steps
+hors du deck : Arcane Polarity (red) [-0,6 %] | Arcane Polarity (red) [-0,6 %] | Double Trouble (red) [-0,2 %] | Double Trouble (red) [-0,2 %] | Oasis Respite (red) [-1,2 %] | Oasis Respite (red) [-1,2 %] | Public Bounty (red) [-0,1 %]
+= Arakni, Web of Deceit | Hala
+# tête : Prey Spotters [+0,0 %] ; Topsy Turvy [-0,1 %]
+# torse : Blossom of Spring [+0,0 %] ; Nullrune Robe [-0,2 %]
+arène : Mark of the Huntsman | Mark of the Huntsman | Prey Spotters | Blossom of Spring | Danger Digits | Stalker's Steps
+hors du deck : Arcane Polarity (red) [-0,5 %] | Arcane Polarity (red) [-0,5 %] | Hurl (red) [-0,6 %] | Lair of the Spider (red) [-0,3 %] | Lair of the Spider (red) [-0,3 %] | Oasis Respite (red) [-1,0 %] | Oasis Respite (red) [-1,0 %]
+= Arakni, Web of Deceit | Dorinthea
+# tête : Prey Spotters [+0,0 %] ; Topsy Turvy [-1,2 %]
+# torse : Blossom of Spring [-0,2 %] ; Nullrune Robe [+0,0 %]
+arène : Mark of the Huntsman | Mark of the Huntsman | Prey Spotters | Nullrune Robe | Danger Digits | Stalker's Steps
+hors du deck : Arcane Polarity (red) [-1,6 %] | Arcane Polarity (red) [-1,6 %] | Hurl (red) [-0,8 %] | Lair of the Spider (red) [-0,6 %] | Lair of the Spider (red) [-0,6 %] | Oasis Respite (red) [-2,9 %] | Oasis Respite (red) [-2,9 %]
+= Arakni, Web of Deceit | Bravo, Flattering Showman
+# tête : Prey Spotters [+0,0 %] ; Topsy Turvy [-0,5 %]
+# torse : Blossom of Spring [+0,0 %] ; Nullrune Robe [-0,0 %]
+arène : Mark of the Huntsman | Mark of the Huntsman | Prey Spotters | Blossom of Spring | Danger Digits | Stalker's Steps
+hors du deck : Arcane Polarity (red) [-0,6 %] | Arcane Polarity (red) [-0,6 %] | Lair of the Spider (red) [-0,1 %] | Lair of the Spider (red) [-0,1 %] | Oasis Respite (red) [-1,0 %] | Oasis Respite (red) [-1,0 %] | Relentless Pursuit (blue) [-0,0 %]
+= Arakni, Web of Deceit | Iyslander
+# tête : Prey Spotters [-2,0 %] ; Topsy Turvy [+0,0 %]
+# torse : Blossom of Spring [-4,6 %] ; Nullrune Robe [+0,0 %]
+arène : Mark of the Huntsman | Mark of the Huntsman | Topsy Turvy | Nullrune Robe | Danger Digits | Stalker's Steps
+hors du deck : Arcane Polarity (red) [-0,8 %] | Arcane Polarity (red) [-0,8 %] | Concoct Disorder (red) [+0,0 %] | Lair of the Spider (red) [-0,1 %] | Lair of the Spider (red) [-0,1 %] | Oasis Respite (red) [-4,2 %] | Oasis Respite (red) [-4,2 %]
+= Arakni, Web of Deceit | Florian
+# tête : Prey Spotters [+0,0 %] ; Topsy Turvy [-1,1 %]
+# torse : Blossom of Spring [-0,4 %] ; Nullrune Robe [+0,0 %]
+arène : Mark of the Huntsman | Mark of the Huntsman | Prey Spotters | Nullrune Robe | Danger Digits | Stalker's Steps
+hors du deck : Arcane Polarity (red) [-1,7 %] | Arcane Polarity (red) [-1,7 %] | Double Trouble (red) [-0,1 %] | Double Trouble (red) [-0,1 %] | Hurl (red) [-0,7 %] | Oasis Respite (red) [-1,8 %] | Oasis Respite (red) [-1,8 %]
+= Arakni, Web of Deceit | Levia
+# tête : Prey Spotters [+0,0 %] ; Topsy Turvy [-1,0 %]
+# torse : Blossom of Spring [+0,0 %] ; Nullrune Robe [-0,6 %]
+arène : Mark of the Huntsman | Mark of the Huntsman | Prey Spotters | Blossom of Spring | Danger Digits | Stalker's Steps
+hors du deck : Arcane Polarity (red) [-0,9 %] | Arcane Polarity (red) [-0,9 %] | Concoct Disorder (red) [-0,0 %] | Concoct Disorder (red) [-0,0 %] | Hurl (red) [-0,2 %] | Oasis Respite (red) [-1,2 %] | Oasis Respite (red) [-1,2 %]
+= Arakni, Web of Deceit | Dromai
+# tête : Prey Spotters [+0,0 %] ; Topsy Turvy [-0,4 %]
+# torse : Blossom of Spring [-0,0 %] ; Nullrune Robe [+0,0 %]
+arène : Mark of the Huntsman | Mark of the Huntsman | Prey Spotters | Nullrune Robe | Danger Digits | Stalker's Steps
+hors du deck : Concoct Disorder (red) [-0,1 %] | Concoct Disorder (red) [-0,1 %] | Lair of the Spider (red) [-0,0 %] | Lair of the Spider (red) [-0,0 %] | Oasis Respite (red) [-0,5 %] | Oasis Respite (red) [-0,5 %] | Night's Embrace (blue) [-0,0 %]
+= Arakni, Web of Deceit | Arakni, Web of Deceit
+# tête : Prey Spotters [+0,0 %] ; Topsy Turvy [-4,7 %]
+# torse : Blossom of Spring [-0,4 %] ; Nullrune Robe [+0,0 %]
+arène : Mark of the Huntsman | Mark of the Huntsman | Prey Spotters | Nullrune Robe | Danger Digits | Stalker's Steps
+hors du deck : Arcane Polarity (red) [-3,5 %] | Arcane Polarity (red) [-3,5 %] | Hurl (red) [-0,6 %] | Lair of the Spider (red) [-0,1 %] | Lair of the Spider (red) [-0,1 %] | Oasis Respite (red) [-7,3 %] | Oasis Respite (red) [-7,3 %]
