@@ -240,13 +240,15 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 .psym .rim2 { fill: none; stroke: #6b5426; stroke-width: .8; }
 .psym .dot { fill: #05070a; stroke: #6b5426; stroke-width: 1.2; }
 .psym .dot.need { stroke: #f3dc9c; stroke-width: 1.6; }
-.psym .dot.on { fill: #e0574a; stroke: #f3dc9c; filter: drop-shadow(0 0 2.5px var(--red)); }
+.psym .dot.on { fill: #e0574a; stroke: #f3dc9c; }
 .res small { font: 600 .56rem/1.25 var(--f-display); letter-spacing: .1em; text-transform: uppercase; color: #e2c070; white-space: nowrap; text-align: center; }
 .aps { display: flex; gap: 4px; }
 .apsym { width: calc(var(--S) * .44); height: calc(var(--S) * .44); filter: drop-shadow(0 2px 6px #000); }
 .apsym .g { fill: #15130c; stroke: rgb(255 216 74 / .35); stroke-width: 2; stroke-linejoin: round; }
 .apsym .f { fill: none; stroke: rgb(255 216 74 / .18); stroke-width: 1.2; }
-.apsym.on .g { fill: #e9b93a; stroke: #fff3c2; filter: drop-shadow(0 0 5px rgb(255 216 74 / .8)); }
+/* La lueur est sur le SVG entier (un filtre sur le losange lui-même est coupé en carré). */
+.apsym.on { filter: drop-shadow(0 0 5px rgb(255 216 74 / .7)) drop-shadow(0 2px 6px #000); }
+.apsym.on .g { fill: #e9b93a; stroke: #fff3c2; }
 .apsym.on .f { stroke: rgb(110 70 0 / .45); }
 .etat .lab, .pilebox .lab, .handlab { display: block; font: 600 .6rem/1 var(--f-display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .etat .lab { margin-bottom: 8px; }

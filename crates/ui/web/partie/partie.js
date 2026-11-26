@@ -661,8 +661,11 @@ function ressources(j, estVous) {
   const g = el("div", "gems");
   let h = "";
   for (let k = 0; k < nsym; k++) {
-    h += '<svg class="psym" viewBox="0 0 40 40" aria-hidden="true"><circle class="rim" cx="20" cy="20" r="18.4"/><circle class="rim2" cx="20" cy="20" r="15.6"/>';
-    RDOTS.forEach(([x, y], n) => { const i = k * 3 + n; h += `<circle class="dot${i < j.ressources ? " on" : i < besoin ? " need" : ""}" cx="${x}" cy="${y}" r="4.6"/>`; });
+    h += '<svg class="psym" viewBox="0 0 40 40" aria-hidden="true"><defs><radialGradient id="halo-res"><stop offset=".45" stop-color="#ff6a50" stop-opacity=".75"/><stop offset="1" stop-color="#ff6a50" stop-opacity="0"/></radialGradient></defs><circle class="rim" cx="20" cy="20" r="18.4"/><circle class="rim2" cx="20" cy="20" r="15.6"/>';
+    // Lueur d'une ressource disponible : un halo dégradé dessiné sous le point
+    // (un filtre CSS sur un élément SVG serait coupé en carré).
+    RDOTS.forEach(([x, y], n) => { if (k * 3 + n < j.ressources) h += `<circle class="halo" cx="${x}" cy="${y}" r="8.5" fill="url(#halo-res)"/>`; });
+RDOTS.forEach(([x, y], n) => { const i = k * 3 + n; h += `<circle class="dot${i < j.ressources ? " on" : i < besoin ? " need" : ""}" cx="${x}" cy="${y}" r="4.6"/>`; });
     h += "</svg>";
   }
   g.innerHTML = h;
