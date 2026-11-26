@@ -1364,3 +1364,45 @@ fn flash_of_brilliance_sans_carte_lightning_en_main_ne_pose_pas_de_question() {
     helm_defend(&mut t, &[f]);
     passer_jusqua_que(&mut t, |t| !t.g.combat.open);
 }
+
+// ---------------------------------------------------------------- Beckoning Haunt
+
+const BECKONING: &str = "Beckoning Haunt";
+const RAMPART_BECKONING: (&str, Option<Color>) = ("Essai Rempart", B);
+
+/// Partie où P0 (héros) a le Beckoning Haunt équipé et P1 a `main1` en main.
+fn partie_beckoning_contre(main1: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie([HEROS, HEROS], RIEN, RIEN, main1, RIEN, &[BECKONING], &[])
+}
+
+#[test]
+fn beckoning_haunt_defense_2_sans_couleur_arms_runeblade_guardwell() {
+    let t = partie_beckoning_contre(&[]);
+    let b = t.equipement(P0, BECKONING);
+    assert_eq!(t.g.defense(b), 2);
+    assert_eq!(t.g.def(b).color, None);
+    assert_eq!(t.g.obj(b).zone, Zone::Arms);
+    assert!(t.g.def(b).supertypes.has(Supertypes::RUNEBLADE));
+    assert!(t.g.keywords(b).has(Keywords::GUARDWELL));
+}
+
+#[test]
+fn beckoning_haunt_guardwell_retire_des_compteurs_egaux_a_sa_defense_quand_il_defend() {
+    let mut t = partie_beckoning_contre(&[("Essai Frappe", R), RAMPART_BECKONING]);
+    let b = t.equipement(P0, BECKONING);
+    helm_attaque_par_p1(&mut t);
+    helm_defend(&mut t, &[b]);
+    passer_jusqua_que(&mut t, |t| !t.g.combat.open);
+    assert_eq!(t.g.defense(b), 0, "-2 compteurs : défense 0");
+    assert_eq!(t.g.obj(b).zone, Zone::Arms, "guardwell ne détruit pas");
+}
+
+#[test]
+fn beckoning_haunt_guardwell_ne_retire_rien_s_il_ne_defend_pas() {
+    let mut t = partie_beckoning_contre(&[("Essai Frappe", R), RAMPART_BECKONING]);
+    let b = t.equipement(P0, BECKONING);
+    helm_attaque_par_p1(&mut t);
+    helm_defend(&mut t, &[]);
+    passer_jusqua_que(&mut t, |t| !t.g.combat.open);
+    assert_eq!(t.g.defense(b), 2, "il n'a pas défendu : rien retiré");
+}

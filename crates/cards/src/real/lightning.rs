@@ -32,6 +32,7 @@ pub const NAMES: &[&str] = &[
     "Helm of Might and Magic",
     "Sigil of Voltaris",
     "Flash of Brilliance",
+    "Beckoning Haunt",
     // NOMS
 ];
 
@@ -619,6 +620,18 @@ pub fn add(db: &mut CardDb) {
             }),
         ],
     }];
+    db.add(d);
+
+    // Beckoning Haunt — Runeblade Equipment - Arms, déf. 2, sans couleur.
+    // « **Action** -- {x}{x}{r}, destroy this: Return target aura with cost X
+    //   from your graveyard to your hand.
+    //   **Guardwell** »
+    // TODO(règles) : capacité activée non codée. `ActivatedDef.cost` est un u8
+    // fixe, et le choix de X n'existe que pour les cartes jouées (play.rs,
+    // `Task::PlayX`) : le moteur ne sait pas payer un X sur une capacité
+    // activée, ni filtrer « aura de coût X » avec ce X. Guardwell est codé.
+    let mut d = equipment("Beckoning Haunt", Supertypes::RUNEBLADE, Subtypes::ARMS, 2);
+    d.keywords = Keywords::GUARDWELL;
     db.add(d);
 
     // CARTES
