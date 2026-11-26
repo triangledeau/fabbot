@@ -105,13 +105,22 @@ dans n'importe quel lot.
 
 ## Les lots
 
-Huit lots pour la première phase, environ 14 sessions. Chaque lot se
+Huit lots pour la première phase, environ 14 sessions.
+
+**Lot 0, ce qui a été fait (2026-11-26)** : `crates/ui/web/` = `index.html`
+(coquille), `commun/` (charte `arsenal.css`, `navigation.js`, logo),
+`accueil/`, `partie/` (l'ancien écran, rhabillé). Fichiers intégrés au
+programme par `crates/ui/src/fichiers.rs`. Adresses : `#accueil`,
+`#partie`, `#nouveau-match` ; un nouveau volet ajoute sa ligne dans
+`ADRESSES` (`commun/navigation.js`) et sa règle `.vue` dans
+`commun/arsenal.css`. Pas de fond d'ArtStation (dépôt public) : les volets
+de l'accueil ont un dégradé en attendant les images (lot 1). Chaque lot se
 termine par une pull request fusionnée et peut être pris par n'importe quel
 agent.
 
 | Lot | Contenu | Zone touchée | Dépend de | Effort (sessions) | Avancement |
 |---|---|---|---|---|---|
-| 0. Socle | Page en plusieurs fichiers, accueil Arsenal (logo, 3 volets, fond), charte, navigation par #. L'écran de partie actuel est gardé et rhabillé. | `crates/ui/web/`, `serveur.rs` | rien | 1 | en cours |
+| 0. Socle | Page en plusieurs fichiers, accueil Arsenal (logo, 3 volets, fond), charte, navigation par #. L'écran de partie actuel est gardé et rhabillé. | `crates/ui/web/`, `serveur.rs` | rien | 1 | ✅ fait (2026-11-26) |
 | 1. Images | Script qui associe chaque carte codée à son image (VF bord noir d'abord), nom français, champ `image` dans l'API, cadre dessiné en secours | `tools/`, `data/cards/`, `crates/ui/src/vue.rs` | rien | 1 | à faire |
 | 2. Plateau animé | Reprise de `finition.js` : vols de cartes, glisser-déposer avec chaîne de laiton, impacts, PV qui défilent, bandeau des étapes, pause « Continuer ». Côté serveur : identifiants suivis et événements envoyés à la page | `crates/ui/web/partie/`, `crates/ui/src/web.rs` | 0, 1 | 3 | à faire |
 | 3. Sauvegarde | Partie sauvegardée (graine + choix), reprise depuis l'accueil, export / import du journal .json | `crates/ui/src/`, `web/accueil/` | 0 | 1 | à faire |

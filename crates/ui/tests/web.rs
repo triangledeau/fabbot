@@ -163,7 +163,7 @@ fn etat_serveur() -> Etat {
 }
 
 fn json(r: &fab_ui::serveur::Reponse) -> Value {
-    serde_json::from_str(&r.corps).unwrap()
+    serde_json::from_str(r.texte()).unwrap()
 }
 
 #[test]
@@ -171,7 +171,7 @@ fn routes_du_serveur() {
     let mut e = etat_serveur();
     let r = repondre("GET", "/", &mut e);
     assert_eq!(r.code, 200);
-    assert!(r.corps.contains("<title>fabbot</title>"));
+    assert!(r.texte().contains("<title>Arsenal"));
 
     let r = repondre("GET", "/api/etat", &mut e);
     assert_eq!(json(&r)["aucune_partie"], true);
@@ -185,7 +185,7 @@ fn routes_du_serveur() {
         "/api/nouvelle?deck=florian&bot=iyslander&niveau=b1&graine=5",
         &mut e,
     );
-    assert_eq!(r.code, 200, "{}", r.corps);
+    assert_eq!(r.code, 200, "{}", r.texte());
     let v = json(&r);
     assert_eq!(v["reglages"]["deck"], "florian");
     assert_eq!(v["reglages"]["niveau"], "b1");
@@ -234,7 +234,7 @@ fn preparer_avec_la_proposition(e: &mut Etat, v: Value) -> Value {
     let mut v = v;
     if v["preparation"]["etape"] == "premier" {
         let r = repondre("POST", "/api/premier?qui=vous", e);
-        assert_eq!(r.code, 200, "{}", r.corps);
+        assert_eq!(r.code, 200, "{}", r.texte());
         v = json(&r);
     }
     assert_eq!(v["preparation"]["etape"], "arene");
@@ -250,7 +250,7 @@ fn preparer_avec_la_proposition(e: &mut Etat, v: Value) -> Value {
         &format!("/api/arene?cartes={}", cartes.join(",")),
         e,
     );
-    assert_eq!(r.code, 200, "{}", r.corps);
+    assert_eq!(r.code, 200, "{}", r.texte());
     let v = json(&r);
     assert_eq!(v["preparation"]["etape"], "deck");
     let n: Vec<String> = v["preparation"]["deck"]
@@ -260,13 +260,13 @@ fn preparer_avec_la_proposition(e: &mut Etat, v: Value) -> Value {
         .map(|c| c["propose"].to_string())
         .collect();
     let r = repondre("POST", &format!("/api/deck?n={}", n.join(",")), e);
-    assert_eq!(r.code, 200, "{}", r.corps);
+    assert_eq!(r.code, 200, "{}", r.texte());
     json(&r)
 }
 
 fn nouveau_match(e: &mut Etat, requete: &str) -> Value {
     let r = repondre("POST", requete, e);
-    assert_eq!(r.code, 200, "{}", r.corps);
+    assert_eq!(r.code, 200, "{}", r.texte());
     json(&r)
 }
 
@@ -308,7 +308,7 @@ fn l_arene_du_bot_n_est_montree_qu_apres_le_choix_de_l_humain() {
     assert_eq!(r.code, 400);
     // Aucune carte d'arène : légal (« up to », CR 4.1.4a).
     let r = repondre("POST", "/api/arene?cartes=", &mut e);
-    assert_eq!(r.code, 200, "{}", r.corps);
+    assert_eq!(r.code, 200, "{}", r.texte());
     let v = json(&r);
     let bot = v["preparation"]["arene_bot"].as_array().unwrap();
     assert!(!bot.is_empty());
@@ -389,4 +389,100 @@ fn annuler_apres_la_fin_d_une_manche_decompte_le_resultat() {
     let v = json(&repondre("POST", "/api/annuler", &mut e));
     assert_eq!(v["fini"], false);
     assert_eq!(v["match"]["jouees"], 0);
+}
+
+// ---------- Arsenal, lot 0 : page en plusieurs fichiers ----------
+
+/// Les fichiers du dossier `web/`, chemins relatifs avec des `/`.
+fn fichiers_du_dossier(dossier: &std::path::Path, base: &std::path::Path, out: &mut Vec<String>) {
+    for e in std::fs::read_dir(dossier).unwrap() {
+        let p = e.unwrap().path();
+        if p.is_dir() {
+            fichiers_du_dossier(&p, base, out);
+        } else {
+            let rel = p
+                .strip_prefix(base)
+                .unwrap()
+                .to_string_lossy()
+                .replace('\\', "/");
+            out.push(rel);
+        }
+    }
+}
+
+#[test]
+fn tous_les_fichiers_de_web_sont_servis_avec_le_bon_type() {
+    let base = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("web");
+    let mut tous = Vec::new();
+    fichiers_du_dossier(&base, &base, &mut tous);
+    let mut e = etat_serveur();
+    for f in &tous {
+        let r = repondre("GET", &format!("/{f}"), &mut e);
+        assert_eq!(
+            r.code, 200,
+            "{f} n'est pas servi : l'ajouter dans crates/ui/src/fichiers.rs"
+        );
+        assert_eq!(
+            Some(r.type_contenu),
+            fab_ui::fichiers::type_pour(f),
+            "type de {f}"
+        );
+        assert_eq!(
+            r.corps,
+            std::fs::read(base.join(f)).unwrap(),
+            "contenu de {f}"
+        );
+    }
+    assert_eq!(
+        tous.len(),
+        fab_ui::fichiers::FICHIERS.len(),
+        "fichier déclaré mais absent de web/"
+    );
+}
+
+#[test]
+fn la_page_ne_reference_que_des_fichiers_servis() {
+    let mut e = etat_serveur();
+    let page = repondre("GET", "/", &mut e);
+    assert_eq!(page.type_contenu, "text/html; charset=utf-8");
+    let html = page.texte().to_string();
+    let mut vus = 0;
+    for attr in ["src=\"", "href=\""] {
+        for morceau in html.split(attr).skip(1) {
+            let lien = morceau.split('"').next().unwrap();
+            if lien.starts_with("http") || lien.starts_with('#') {
+                continue;
+            }
+            vus += 1;
+            assert_eq!(
+                repondre("GET", &format!("/{lien}"), &mut e).code,
+                200,
+                "lien cassé : {lien}"
+            );
+        }
+    }
+    assert!(
+        vus >= 6,
+        "la page charge ses feuilles de style et ses scripts"
+    );
+    // Les volets de la navigation par # existent.
+    for id in ["v-accueil", "v-partie"] {
+        assert!(html.contains(&format!("id=\"{id}\"")), "volet {id} absent");
+    }
+}
+
+#[test]
+fn un_fichier_inconnu_ou_un_chemin_qui_remonte_donne_404() {
+    let mut e = etat_serveur();
+    for c in [
+        "/inconnu.js",
+        "/../Cargo.toml",
+        "/commun/../../Cargo.toml",
+        "/api/inconnue",
+    ] {
+        assert_eq!(repondre("GET", c, &mut e).code, 404, "{c}");
+    }
+    assert_eq!(repondre("POST", "/commun/arsenal.css", &mut e).code, 404);
+    // Une adresse avec paramètres sert quand même le fichier.
+    assert_eq!(repondre("GET", "/partie/partie.js?v=2", &mut e).code, 200);
 }

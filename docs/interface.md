@@ -52,6 +52,33 @@ En fin de manche, le bouton **Manche suivante** lance la préparation de la
 suivante ; le score du match est affiché en haut. Annuler un coup après la
 fin d'une manche la fait reprendre (le résultat n'est plus compté).
 
+### L'accueil Arsenal
+
+La page s'ouvre sur l'**accueil Arsenal** (logo, trois volets) :
+
+- **Jouer** : ouvre la fenêtre « Nouveau match » (decks, niveau du bot,
+  manches, graine), puis l'écran de partie ;
+- **Apprendre** (didacticiel, puzzles) et **Entraîner** (tournoi des bots)
+  sont marqués « Bientôt » : ils arrivent avec les lots suivants du plan
+  `docs/rapatriement-arsenal.md` ;
+- le bandeau **Match en cours** (au-dessus des volets) donne le score et
+  propose **Reprendre** ou **Nouveau match**.
+
+Dans la partie, le bouton **Accueil** (en haut à gauche) revient à
+l'accueil sans arrêter le match. Chaque écran a sa propre adresse
+(`#accueil`, `#partie`, `#nouveau-match`) : le bouton Précédent du
+navigateur marche, et on peut mettre un écran en favori.
+
+Les polices d'Arsenal (Cinzel, Sofia Sans, IBM Plex Mono) sont chargées
+depuis Internet ; sans connexion, la page prend des polices de secours et
+marche pareil.
+
+Pour les développeurs : la page est découpée en un dossier par volet dans
+`crates/ui/web/` (`commun/` = charte et navigation, `accueil/`,
+`partie/`), et chaque fichier est intégré au programme par
+`crates/ui/src/fichiers.rs` (un fichier ajouté = une ligne là, un test le
+vérifie).
+
 ### La page
 
 - **En haut** : le bot (héros, PV, points d'action, ressources, taille du

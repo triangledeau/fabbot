@@ -6,7 +6,8 @@
 //!
 //! | Requête | Réponse |
 //! |---|---|
-//! | `GET /` | la page de jeu |
+//! | `GET /` | la page Arsenal (accueil et partie, navigation par `#`) |
+//! | `GET /commun/arsenal.css`… | les autres fichiers de la page ([`crate::fichiers`]) |
 //! | `GET /api/etat` | l'état vu par l'humain (JSON) |
 //! | `GET /api/decks` | decks et niveaux de bot proposés |
 //! | `GET /api/carte?id=12` | fiche et texte officiel de la carte `[12]` |
@@ -20,6 +21,7 @@
 //! | `GET /api/carte-pool?id=7` | texte d'une carte du card-pool (écran de préparation) |
 
 use crate::decks_jouables;
+use crate::fichiers;
 use crate::match_web::{Etape, MatchWeb};
 use crate::textes::Textes;
 use crate::web::Reglages;
@@ -30,23 +32,25 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-/// La page de jeu (HTML, CSS et JavaScript dans un seul fichier).
-pub const PAGE: &str = include_str!("../web/index.html");
-
 /// Une réponse : code HTTP, type de contenu, corps.
 #[derive(Debug)]
 pub struct Reponse {
     pub code: u16,
     pub type_contenu: &'static str,
-    pub corps: String,
+    pub corps: Vec<u8>,
 }
 
 impl Reponse {
+    /// Le corps lu comme du texte (JSON, HTML…).
+    pub fn texte(&self) -> &str {
+        std::str::from_utf8(&self.corps).unwrap_or("")
+    }
+
     fn json(v: Value) -> Reponse {
         Reponse {
             code: 200,
             type_contenu: "application/json; charset=utf-8",
-            corps: v.to_string(),
+            corps: v.to_string().into_bytes(),
         }
     }
 
@@ -54,7 +58,7 @@ impl Reponse {
         Reponse {
             code,
             type_contenu: "application/json; charset=utf-8",
-            corps: json!({ "erreur": message.into() }).to_string(),
+            corps: json!({ "erreur": message.into() }).to_string().into_bytes(),
         }
     }
 }
@@ -119,11 +123,6 @@ pub fn repondre(methode: &str, requete: &str, etat: &mut Etat) -> Reponse {
     let (chemin, ps) = parametres(requete);
     let param = |k: &str| ps.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone());
     match (methode, chemin) {
-        ("GET", "/") | ("GET", "/index.html") => Reponse {
-            code: 200,
-            type_contenu: "text/html; charset=utf-8",
-            corps: PAGE.to_string(),
-        },
         ("GET", "/api/decks") => Reponse::json(json!({
             "decks": decks_jouables(),
             "niveaux": BOTS,
@@ -243,6 +242,14 @@ pub fn repondre(methode: &str, requete: &str, etat: &mut Etat) -> Reponse {
                 Err(e) => Reponse::erreur(400, e),
             }
         }
+        ("GET", c) if !c.starts_with("/api/") && fichiers::trouver(c).is_some() => {
+            let f = fichiers::trouver(c).expect("vérifié juste avant");
+            Reponse {
+                code: 200,
+                type_contenu: f.type_contenu,
+                corps: f.octets.to_vec(),
+            }
+        }
         _ => Reponse::erreur(404, format!("introuvable : {methode} {chemin}")),
     }
 }
@@ -314,7 +321,7 @@ fn servir(flux: TcpStream, etat: &Mutex<Etat>) -> io::Result<()> {
         rep.type_contenu,
         rep.corps.len()
     )?;
-    flux.write_all(rep.corps.as_bytes())?;
+    flux.write_all(&rep.corps)?;
     flux.flush()
 }
 
