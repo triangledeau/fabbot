@@ -274,3 +274,38 @@ fn la_collection_donne_l_emplacement_des_equipements_et_les_heros() {
         .filter(|x| x["couleur"] != "")
         .all(|x| x["emplacement"].is_null()));
 }
+
+#[test]
+fn les_neuf_decks_du_projet_respectent_les_classes_de_leur_heros() {
+    for d in decks::tous() {
+        let l = decks::liste(&d.nom).unwrap();
+        let v = fab_ui::api_decks::verifier(&l);
+        assert!(
+            !v["problemes"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|p| p.as_str().unwrap().contains("classe")),
+            "{} : {v}",
+            d.nom
+        );
+    }
+}
+
+#[test]
+fn une_carte_d_une_autre_classe_est_signalee_mais_une_hybride_a_moitie_suffit() {
+    let col = fab_ui::api_decks::collection();
+    if col.source != "fabcube" {
+        // Sans la base communautaire (CI), les types des cartes sont inconnus.
+        return;
+    }
+    // Hala est Light Warrior (Young) : une carte Ninja n'est pas pour elle.
+    assert_eq!(col.hors_classe("Hala", "Bleed Out"), Some(true));
+    // Hybride Guardian / Warrior : le côté Warrior suffit.
+    assert_eq!(col.hors_classe("Hala", "Agile Windup"), Some(false));
+    // Iyslander (Elemental Wizard) a « Essence of Ice » : Ice Bolt est pour elle.
+    assert_eq!(col.hors_classe("Iyslander", "Ice Bolt"), Some(false));
+    assert_eq!(col.hors_classe("Iyslander", "Bleed Out"), Some(true));
+    // Generic : pour tout le monde.
+    assert_eq!(col.hors_classe("Hala", "Adrenaline Rush"), Some(false));
+}

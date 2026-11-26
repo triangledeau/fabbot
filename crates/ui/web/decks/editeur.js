@@ -48,14 +48,21 @@ const Editeur = (() => {
     ["eq", "Équipement", (c) => estArene(c) && !a(c, "Weapon")],
     ["w", "Arme", (c) => a(c, "Weapon")],
   ];
-  // Filtre « pour ce héros » : la carte n'a que des classes / talents du héros
-  // (ou aucun). Aide au tri seulement : TODO(règles) vérification de
-  // construction côté serveur (voir docs/suivi.md, questions ouvertes).
+  // Filtre « pour ce héros » : même règle que la vérification du serveur
+  // (Collection::hors_classe dans api_decks.rs) : la carte n'a que des
+  // classes / talents du héros ; pour une carte hybride (« Brute / Warrior »),
+  // un seul côté suffit ; « Essence of X » du héros ajoute le talent X.
   function pourLeHeros(c) {
     const h = heros();
-    if (!h || !(h.classes || []).length) return true;
+    if (!h || !(h.classes || []).length || !c.type_texte) return true;
     const sup = new Set([...(h.classes || []), ...(h.talents || []), "Generic"]);
-    return [...(c.classes || []), ...(c.talents || [])].every((s) => sup.has(s));
+    for (const l of String(h.texte || "").split("\n")) {
+      const m = l.trim().match(/^Essence of (.*)/);
+      if (m) m[1].split(/[^A-Za-z]+/).forEach((t) => sup.add(t));
+    }
+    const connus = new Set([...(c.classes || []), ...(c.talents || [])]);
+    const cotes = c.type_texte.split(" - ")[0].split(" / ").map((s) => s.split(/\s+/).filter((m) => connus.has(m)));
+    return cotes.some((cote) => cote.every((s) => sup.has(s)));
   }
 
   function filtre(c) {
