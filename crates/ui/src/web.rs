@@ -26,6 +26,21 @@ pub struct Ligne {
     pub texte: String,
 }
 
+/// Chiffres de la manche pour l'humain, montrés à la fin de la partie
+/// (fenêtre « Victoire ! » de l'Arsenal JS). Comptés depuis les événements
+/// du moteur : rien n'est recalculé ici.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Stats {
+    /// Dégâts infligés au héros adverse.
+    pub infliges: u32,
+    /// Dégâts subis par votre héros.
+    pub subis: u32,
+    /// Cartes de votre main qui ont défendu.
+    pub blocs_main: u32,
+    /// Autres cartes qui ont défendu (équipement, arsenal…).
+    pub blocs_autres: u32,
+}
+
 /// Ce qu'on mémorise avant chaque choix de l'humain, pour l'annuler.
 #[derive(Clone)]
 struct Instantane {
@@ -33,6 +48,7 @@ struct Instantane {
     journal: usize,
     tour: u32,
     coups: usize,
+    stats: Stats,
 }
 
 /// Les réglages d'une partie.
@@ -69,6 +85,7 @@ pub struct Session {
     /// (humain et bot) : rejoués tels quels, ils redonnent exactement la
     /// même partie (sauvegarde, lot 3 ; voir `crate::sauvegarde`).
     coups: Vec<u32>,
+    stats: Stats,
 }
 
 impl Session {
@@ -106,6 +123,7 @@ impl Session {
             film_no: 0,
             touchees: Vec::new(),
             coups: Vec::new(),
+            stats: Stats::default(),
         };
         s.avancer()?;
         Ok(s)
@@ -135,6 +153,7 @@ impl Session {
             film_no: 0,
             touchees: Vec::new(),
             coups: Vec::new(),
+            stats: Stats::default(),
         };
         for (n, &i) in coups.iter().enumerate() {
             s.lire_evenements();
@@ -157,6 +176,7 @@ impl Session {
                     journal: s.journal.len(),
                     tour: s.tour,
                     coups: s.coups.len(),
+                    stats: s.stats,
                 });
             }
             s.g.apply(i as usize)
@@ -193,6 +213,7 @@ impl Session {
             .unwrap_or_default();
         let mut anim = Vec::new();
         for e in &evenements {
+            self.compter(e);
             if let Some(a) = self.animation(e) {
                 anim.push(a);
             }
@@ -210,6 +231,42 @@ impl Session {
             });
         }
         anim
+    }
+
+    /// Chiffres de fin de partie (voir `Stats`).
+    fn compter(&mut self, e: &Event) {
+        let h = self.humain;
+        match *e {
+            Event::Damage {
+                by,
+                target,
+                target_obj: None,
+                amount,
+                ..
+            } => {
+                if target == h {
+                    self.stats.subis += amount as u32;
+                } else if by == h {
+                    self.stats.infliges += amount as u32;
+                }
+            }
+            Event::Defend {
+                defender,
+                from_hand,
+                ..
+            } if defender == h => {
+                if from_hand {
+                    self.stats.blocs_main += 1;
+                } else {
+                    self.stats.blocs_autres += 1;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pub fn stats(&self) -> Stats {
+        self.stats
     }
 
     /// `vous` ou `bot`.
@@ -308,6 +365,7 @@ impl Session {
             "bot": joueur(g, h, h.opponent()),
             "combat": combat(g, h),
             "pile": pile,
+            "couches": couches(g, h),
         })
     }
 
@@ -363,6 +421,7 @@ impl Session {
             journal: self.journal.len(),
             tour: self.tour,
             coups: self.coups.len(),
+            stats: self.stats,
         });
         self.film.clear();
         self.film_no += 1;
@@ -370,6 +429,63 @@ impl Session {
             .apply(i)
             .map_err(|e| format!("choix refusé par le moteur : {e:?}"))?;
         self.coups.push(i as u32);
+        self.avancer()
+    }
+
+    /// Plusieurs choix de l'humain d'un coup, annulés ensemble : pour
+    /// chaque carte de `cartes`, l'option de la décision en cours qui porte
+    /// sur cette carte (défendre, pitcher, remettre sous le deck…), puis
+    /// « passer » si `passer`. La page s'en sert quand on prépare une
+    /// défense carte par carte avant de la valider (comme dans l'Arsenal
+    /// JS). On s'arrête dès que la décision n'est plus à l'humain.
+    pub fn choisir_cartes(&mut self, cartes: &[u32], passer: bool) -> Result<(), String> {
+        let genre = match self.g.pending_decision() {
+            Some(d) if d.player == self.humain => d.kind,
+            Some(_) => return Err("ce n'est pas à vous de choisir".into()),
+            None => return Err("la partie est terminée".into()),
+        };
+        self.historique.record(&Instantane {
+            g: self.g.clone(),
+            journal: self.journal.len(),
+            tour: self.tour,
+            coups: self.coups.len(),
+            stats: self.stats,
+        });
+        self.film.clear();
+        self.film_no += 1;
+        let h = self.humain;
+        let mut etapes: Vec<Option<u32>> = cartes.iter().map(|&c| Some(c)).collect();
+        if passer {
+            etapes.push(None);
+        }
+        for quoi in etapes {
+            // Même genre de décision qu'au départ : sinon (la dernière carte
+            // est partie toute seule, la défense est finie…), on s'arrête.
+            let Some(d) = self
+                .g
+                .pending_decision()
+                .filter(|d| d.player == h && d.kind == genre)
+            else {
+                break;
+            };
+            let i = d.options.iter().position(|&c| match quoi {
+                Some(id) => carte_de_l_option(&self.g, h, c).map(|o| o.0) == Some(id),
+                None => matches!(c, Choice::Pass),
+            });
+            let Some(i) = i else {
+                // Annule ce qui a déjà été appliqué : tout ou rien.
+                self.annuler();
+                return Err(match quoi {
+                    Some(id) => format!("la carte {id} ne fait pas partie des choix"),
+                    None => "« passer » ne fait pas partie des choix".into(),
+                });
+            };
+            self.g
+                .apply(i)
+                .map_err(|e| format!("choix refusé par le moteur : {e:?}"))?;
+            self.coups.push(i as u32);
+            self.tourner();
+        }
         self.avancer()
     }
 
@@ -382,6 +498,7 @@ impl Session {
                 self.journal.truncate(avant.journal);
                 self.tour = avant.tour;
                 self.coups.truncate(avant.coups);
+                self.stats = avant.stats;
                 self.film.clear();
                 self.film_no += 1;
                 self.touchees.clear();
@@ -435,10 +552,19 @@ impl Session {
                         })
                     })
                     .collect();
+                // Pitch : ce qu'il reste à payer (la page l'affiche sur les
+                // symboles de ressources, comme l'Arsenal JS).
+                let a_payer = match (d.kind, g.tasks.last()) {
+                    (DecisionKind::Pitch, Some(fab_engine::state::Task::Pay { resources, .. })) => {
+                        Some(*resources)
+                    }
+                    _ => None,
+                };
                 json!({
                     "titre": vue::titre_decision(g, d),
                     "genre": genre(d.kind),
                     "options": options,
+                    "a_payer": a_payer,
                 })
             }
             _ => Value::Null,
@@ -464,6 +590,15 @@ impl Session {
             "combat": combat(g, h),
             "pile": pile,
             "decision": decision,
+            "couches": couches(g, h),
+            "priorite": g.priority.map(|p| self.qui(p)),
+            "phase_action": g.action_phase,
+            "stats": {
+                "infliges": self.stats.infliges,
+                "subis": self.stats.subis,
+                "blocs_main": self.stats.blocs_main,
+                "blocs_autres": self.stats.blocs_autres,
+            },
             "annulables": self.historique.len(),
             "fini": g.is_over(),
             "resultat": if g.is_over() { Some(vue::resultat(g, h)) } else { None },
@@ -494,8 +629,127 @@ fn genre(k: DecisionKind) -> &'static str {
         DecisionKind::Defend => "defense",
         DecisionKind::Pitch => "pitch",
         DecisionKind::Arsenal => "arsenal",
+        DecisionKind::PitchOrder => "ordre_pitch",
+        DecisionKind::Target | DecisionKind::AttackTarget => "cible",
+        DecisionKind::Mode => "mode",
+        DecisionKind::Effect => "effet",
         _ => "autre",
     }
+}
+
+/// La pile, du dessus (résolue en premier) vers le dessous, pour la page :
+/// la carte (si l'humain la voit), le genre de la couche, son contrôleur
+/// et la ligne de texte de `vue::couche`.
+fn couches(g: &GameState, viewer: PlayerId) -> Vec<Value> {
+    use fab_engine::state::LayerKind;
+    g.stack
+        .iter()
+        .rev()
+        .map(|l| {
+            let genre = match l.kind {
+                LayerKind::Card => "carte",
+                LayerKind::Activated(a) => {
+                    if g.db
+                        .get(l.card)
+                        .activated
+                        .get(a as usize)
+                        .is_some_and(|x| x.attack)
+                    {
+                        "attaque"
+                    } else {
+                        "capacité"
+                    }
+                }
+                _ => "déclencheur",
+            };
+            let id = l.object.id;
+            let carte = (id.0 as usize) < g.objects.len() && vue::visible(g, viewer, id);
+            json!({
+                "carte": if carte { self::carte(g, viewer, id) } else { Value::Null },
+                "genre": genre,
+                "par_vous": l.controller == viewer,
+                "texte": vue::couche(g, viewer, l),
+            })
+        })
+        .collect()
+}
+
+/// Effets en cours qui touchent un joueur, en mots courts (pastilles
+/// « Effets en cours » de l'Arsenal JS). Seulement l'affichage d'effets que
+/// le moteur garde déjà : aucune règle ici.
+fn effets(g: &GameState, p: PlayerId) -> Vec<String> {
+    use fab_engine::Keywords;
+    let ps = g.player(p);
+    let mut v = Vec::new();
+    if ps.marked {
+        v.push("Marqué".to_string());
+    }
+    if g.lost_abilities(ps.hero) {
+        v.push("Capacités du héros perdues".into());
+    }
+    for e in g.next_attack_effects.iter().filter(|e| e.player == p) {
+        let mut t = Vec::new();
+        if e.delta.power != 0 {
+            t.push(format!("{:+}{{p}}", e.delta.power));
+        }
+        if e.delta.defense != 0 {
+            t.push(format!("{:+}{{d}}", e.delta.defense));
+        }
+        if e.delta.grants.has(Keywords::GO_AGAIN) {
+            t.push("go again".into());
+        }
+        if e.delta.grants.has(Keywords::DOMINATE) {
+            t.push("dominate".into());
+        }
+        let quoi = if e.weapon.is_some() {
+            "Prochaine attaque de l'arme"
+        } else if e.cards_only {
+            "Prochaine carte d'attaque"
+        } else {
+            "Prochaine attaque"
+        };
+        if t.is_empty() {
+            v.push(quoi.into());
+        } else {
+            v.push(format!("{quoi} : {}", t.join(", ")));
+        }
+    }
+    for r in g
+        .cost_reductions
+        .iter()
+        .filter(|r| r.player == p && r.turn == g.turn)
+    {
+        v.push(format!("Prochaine carte : coût −{}", r.amount));
+    }
+    if g.instant_permissions
+        .iter()
+        .any(|r| r.player == p && r.turn == g.turn)
+    {
+        v.push("Prochaine carte jouable comme un instant".into());
+    }
+    if g.no_power_gain.iter().any(|&(q, _)| q == p) {
+        v.push("Attaques : pas de gain de {p}".into());
+    }
+    for x in g.preventions.iter().filter(|x| x.player == p) {
+        match x.remaining {
+            Some(n) => v.push(format!("Prévention {n}")),
+            None => v.push("Prévention des prochains dégâts".into()),
+        }
+    }
+    for x in g.play_permissions.iter().filter(|x| x.player == p) {
+        if g.is_current(x.card) && vue::visible(g, p, x.card.id) {
+            let quand = if x.turn == g.turn {
+                "ce tour"
+            } else {
+                "plus tard"
+            };
+            v.push(format!(
+                "Jouable depuis le banni ({quand}) : {}",
+                vue::nom(g, x.card.id)
+            ));
+        }
+    }
+    v
 }
 
 /// La carte concernée par une option, si l'humain peut la voir : cliquer
@@ -636,6 +890,7 @@ fn joueur(g: &GameState, viewer: PlayerId, p: PlayerId) -> Value {
         "permanents": cartes(g, viewer, &permanents),
         "cimetiere": cartes(g, viewer, &ps.graveyard),
         "bannies": cartes(g, viewer, &ps.banished),
+        "effets": effets(g, p),
     })
 }
 
@@ -656,7 +911,10 @@ fn combat(g: &GameState, viewer: PlayerId) -> Value {
                 None => vue::heros(g, l.target),
             };
             let total: i16 = l.defenders.iter().map(|&d| g.defense(d).max(0)).sum();
+            let mots = g.keywords(a);
             json!({
+                "go_again": actif && mots.has(fab_engine::Keywords::GO_AGAIN),
+                "dominate": actif && mots.has(fab_engine::Keywords::DOMINATE),
                 "attaque": carte(g, viewer, a),
                 "par_vous": l.attacker == viewer,
                 "cible": cible,
@@ -669,6 +927,9 @@ fn combat(g: &GameState, viewer: PlayerId) -> Value {
         .collect();
     json!({
         "etape": g.combat.step.map(vue::etape).unwrap_or("—"),
+        // Rang de l'étape dans la barre « Layer · Attaque · Défense ·
+        // Réactions · Dégâts · Résolution » (0 à 5).
+        "etape_rang": g.combat.step.map(|s| s as u8),
         "maillons": maillons,
     })
 }

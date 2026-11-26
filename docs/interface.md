@@ -242,31 +242,61 @@ sans appeler le bot, donc à l'identique. Format `arsenal-fabbot`, version 1
 
 ### La page
 
-- **En haut** : le bot (héros, PV, points d'action, ressources, taille du
-  deck, nombre de cartes en main, équipement, arsenal, permanents, pitch).
-- **Au milieu** : la chaîne de combat (attaque, cible, puissance,
-  défenseurs) et la pile.
-- **En bas** : vous, avec votre main.
-- **À droite** : la question posée et ses options, la fiche de la carte
-  survolée (avec le **texte officiel**), et le journal de la partie.
-- « Cimetière · Bannies » : cliquez pour déplier le détail.
+L'écran de partie reprend celui de l'Arsenal JS (26/11/2026, liste des
+écarts : `docs/rapatriement-interface.md`). Il occupe tout l'écran :
 
-Sur une carte : coût en haut à droite, ⚔ puissance, ◆ pitch, ⛨ défense,
-la bande de couleur indique sa couleur de pitch. Une carte penchée est
-engagée ; un bord pointillé = carte face cachée (que vous seul voyez).
+- **Le tapis**, à gauche : le bot en haut (zones tournées à 180°), vous en
+  bas, l'illustration de chaque héros en fond de sa moitié. À côté de chaque
+  tapis : les **ressources** (symboles de pitch, 3 par symbole), les **points
+  d'action** (losanges) et les **effets en cours** (marqué, bonus de la
+  prochaine attaque, réductions de coût, préventions, cartes jouables depuis
+  le banni…). Main du bot en haut à droite (dos de cartes), votre main en bas
+  à droite, en carré.
+- **Au milieu** : « Tour N », les étapes du combat (Layer · Attaque ·
+  Défense · Réactions · Dégâts · Résolution, l'étape en cours soulignée),
+  qui a la priorité, puis la **chaîne de combat** : chaque maillon avec sa
+  carte, « Attaque / Défense » en gros pour le maillon en cours, les
+  bloqueurs à côté, « Touche » ou « Bloquée ». À droite, la **pile** (la carte
+  de devant se résout en premier).
+- **Le ruban**, au-dessus de vos zones : une phrase qui dit la situation
+  (« Le bot · Growl 3 — défense 3, vous subissez 0 ») et les boutons du
+  choix.
+- **À droite** : Accueil, **Options** (animations, pause avant les dégâts,
+  nouveau match, importer une partie, signaler un bug, abandonner), le score
+  du match, le conseil du bot et la barre d'évaluation, la carte survolée en
+  grand avec son texte, le journal, puis « Annuler mon dernier choix » et
+  « Exporter la partie ».
+
+Sur une carte : l'image officielle (ou un cadre dessiné : coût en haut à
+droite, ⚔ puissance, ◆ pitch, ⛨ défense). Une carte penchée est engagée ; un
+bord pointillé = carte face cachée (que vous seul voyez).
 
 ### Jouer
 
-- Les cartes **surlignées en jaune** ont une option : cliquez pour la
-  choisir (s'il y en a plusieurs, un petit menu s'ouvre). Vous pouvez aussi
-  cliquer une option dans la liste de droite.
-- Clavier : `1` à `9` = option, `P` = passer, `A` ou `Ctrl+Z` = annuler.
-- **↶ Annuler** revient avant votre dernier choix (et avant les réponses du
-  bot qui ont suivi), autant de fois que voulu. Le nombre entre parenthèses
-  dit combien de choix on peut annuler. Après une annulation, le bot peut
-  répondre autrement (B0 et B2 ont une part de hasard).
-- Avec B2, chaque décision du bot prend une fraction de seconde : « Le bot
-  réfléchit… » s'affiche en bas à droite.
+- **Votre tour** : cliquez une carte surlignée de votre main (ou de votre
+  arsenal) pour la **sélectionner** : ses façons de la jouer apparaissent en
+  boutons dans le ruban. L'arme, le héros, l'équipement : un clic active la
+  capacité. Vous pouvez aussi **tirer** une carte vers la chaîne, le pitch ou
+  l'arsenal. Le ruban propose « Fin de ma phase d'action », « Passer (fermer
+  la chaîne) » ou « Passer », et pendant le tour du bot « Passer jusqu'à la
+  fin du tour ».
+- **Défendre** : touchez les cartes qui bloquent (main, équipement,
+  arsenal) ; elles se posent sur la chaîne, le total de défense et « vous
+  subissez N » se mettent à jour. Un nouveau clic reprend une carte.
+  « Valider la défense » (ou « Ne pas bloquer ») envoie tout d'un coup ; une
+  seule annulation revient avant la défense.
+- **Payer** : touchez les cartes à pitcher (« Payez N, reste M »).
+- **Arsenal** en fin de tour : touchez la carte, ou « Ne rien mettre en
+  arsenal ». **Ordre du pitch** : touchez les cartes dans l'ordre (numéro
+  affiché), puis « Valider cet ordre » ; ou « Garder l'ordre de pitch ».
+- Clavier : `1` à `9` = boutons du ruban dans l'ordre, `P` = passer (ou
+  valider la défense), `A` ou `Ctrl+Z` = annuler, `C` = conseil, `Échap` =
+  désélectionner.
+- **Annuler mon dernier choix** revient avant votre dernier choix (et avant
+  les réponses du bot qui ont suivi), autant de fois que voulu.
+- **Fin de partie** : une fenêtre donne le vainqueur, les PV, les dégâts
+  infligés et subis, vos défenses ; puis Manche suivante, Rejouer, Changer de
+  deck, Voir le journal, Annuler, Exporter.
 
 ## Dans le terminal (interface texte)
 

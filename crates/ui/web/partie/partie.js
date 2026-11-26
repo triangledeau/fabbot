@@ -87,6 +87,12 @@ function carte(c, petite) {
     e.classList.add("jouable");
     e.title = opts.map(o => o.texte).join("\n");
   }
+  if (sel === c.id) e.classList.add("sel");
+  const n = brouillon.indexOf(c.id);
+  if (n >= 0) {
+    e.classList.add("on");
+    if (genreDecision() === "ordre_pitch") e.appendChild(el("span", "rang", String(n + 1)));
+  }
   e.addEventListener("mouseenter", () => montrer(c.id, c));
   e.addEventListener("click", (ev) => cliquer(c.id, ev));
   return e;
@@ -108,9 +114,63 @@ function imageDeCarte(e, c) {
   if (p.length) { const b = el("div", "pastilles"); b.append(...p); e.appendChild(b); e.title += "\n" + p.map(x => x.textContent).join(" · "); }
 }
 
+// ---------- choix en cours dans le ruban (Arsenal JS : barHTML) ----------
+// sel : carte de la main (ou de l'arsenal) sélectionnée pendant la priorité ;
+// ses façons de la jouer s'affichent en boutons dans le ruban.
+// brouillon : cartes touchées pour une défense ou un ordre, pas encore
+// envoyées au moteur (un nouveau clic les reprend ; « Valider » les envoie
+// d'un coup, annulées ensemble).
+let sel = null;
+let brouillon = [];
+let cleDecision = null;
+let passerTour = null; // « Passer jusqu'à la fin du tour » : numéro du tour
+
+const genreDecision = () => (etat && etat.decision ? etat.decision.genre : null);
+const dansMain = (id) => !!(etat && etat.vous && (etat.vous.main || []).some(c => c.id === id));
+const dansArsenal = (id) => !!(etat && etat.vous && etat.vous.arsenal && etat.vous.arsenal.id === id);
+function carteParId(id) {
+  if (!etat) return null;
+  for (const j of [etat.vous, etat.bot]) {
+    if (!j) continue;
+    for (const l of [j.main || [], j.pitch, j.equipement, j.permanents, j.cimetiere, j.bannies, j.arsenal ? [j.arsenal] : []]) {
+      const c = (l || []).find(x => x && x.id === id);
+      if (c) return c;
+    }
+  }
+  for (const l of (etat.combat ? etat.combat.maillons : [])) {
+    if (l.attaque && l.attaque.id === id) return l.attaque;
+    const d = l.defenseurs.find(x => x.id === id); if (d) return d;
+  }
+  return null;
+}
+function basculer(id) {
+  const k = brouillon.indexOf(id);
+  if (k >= 0) brouillon.splice(k, 1);
+  else {
+    // Dominate : une seule carte de la main ; la nouvelle remplace l'autre.
+    const l = etat.combat && etat.combat.maillons[etat.combat.maillons.length - 1];
+    if (genreDecision() === "defense" && l && l.dominate && dansMain(id)) brouillon = brouillon.filter(x => !dansMain(x));
+    brouillon.push(id);
+  }
+  afficher();
+}
+const envoyerBrouillon = (passer) => action("POST", `/api/choix-cartes?cartes=${brouillon.join(",")}&passer=${passer ? 1 : 0}`);
+// Carte lâchée sur une zone (tirer une carte, finition.js).
+function deposerOption(o) {
+  if (o.action === "defendre" && genreDecision() === "defense") { if (!brouillon.includes(o.carte)) basculer(o.carte); return; }
+  choisir(o.i);
+}
+
 function cliquer(id, ev) {
   montrer(id);
+  const g = genreDecision();
   const opts = optionsDeCarte(id);
+  if ((g === "defense" || g === "ordre_pitch") && (opts.length || brouillon.includes(id))) { basculer(id); return; }
+  if (g === "priorite" && (dansMain(id) || dansArsenal(id))) {
+    sel = sel === id ? null : id;
+    afficher();
+    return;
+  }
   if (opts.length === 1) { choisir(opts[0].i); return; }
   if (opts.length > 1) ouvrirMenu(opts, ev);
 }
@@ -139,7 +199,7 @@ let detailDemande = null;
 // puis la fiche et le texte officiel donnés par le serveur.
 function remplirDetail(v, c) {
   const d = $("detail");
-  d.replaceChildren(el("h2", null, "Carte"));
+  d.replaceChildren();
   if (c && c.image) {
     const g = el("div", "grande");
     g.appendChild(Images.img(c.image, "normal", g, "grande"));
@@ -413,10 +473,61 @@ function voirZone(titre, liste) {
   if (!d.open) d.showModal();
 }
 
+// Ressources : symboles de pitch (trois emplacements dans un cercle), un
+// symbole par tranche de 3 (Arsenal JS, resHTML). Pendant un paiement :
+// contour doré = ce qu'il reste à trouver.
+const RDOTS = [[20, 12.6], [13.4, 24.2], [26.6, 24.2]];
+function ressources(j, estVous) {
+  const d = etat.decision;
+  const besoin = estVous && d && d.genre === "pitch" && d.a_payer != null ? d.a_payer : 0;
+  const tot = Math.max(j.ressources, besoin), nsym = Math.max(1, Math.ceil(tot / 3));
+  const r = el("div", "res" + (nsym > 2 ? " many" : "") + (besoin ? " paie" : ""));
+  r.dataset.a = "res-" + (estVous ? "vous" : "bot");
+  r.title = "Ressources : " + j.ressources;
+  r.setAttribute("aria-label", r.title);
+  if (besoin) r.appendChild(el("small", null, `Paie ${besoin} · reste ${Math.max(0, besoin - j.ressources)}`));
+  const g = el("div", "gems");
+  let h = "";
+  for (let k = 0; k < nsym; k++) {
+    h += '<svg class="psym" viewBox="0 0 40 40" aria-hidden="true"><circle class="rim" cx="20" cy="20" r="18.4"/><circle class="rim2" cx="20" cy="20" r="15.6"/>';
+    RDOTS.forEach(([x, y], n) => { const i = k * 3 + n; h += `<circle class="dot${i < j.ressources ? " on" : i < besoin ? " need" : ""}" cx="${x}" cy="${y}" r="4.6"/>`; });
+    h += "</svg>";
+  }
+  g.innerHTML = h;
+  r.appendChild(g);
+  return r;
+}
+// Points d'action : losanges dorés.
+function pointsAction(n) {
+  const s = el("span", "aps");
+  s.title = "Points d'action : " + n;
+  s.setAttribute("aria-label", s.title);
+  let h = "";
+  for (let i = 0; i < Math.max(1, n); i++) h += `<svg class="apsym${i < n ? " on" : ""}" viewBox="0 0 40 40" aria-hidden="true"><path class="g" d="M20 2 L37 20 L20 38 L3 20 Z"/><path class="f" d="M20 2 L28 20 L20 38 L12 20 Z M3 20 H37"/></svg>`;
+  s.innerHTML = h;
+  return s;
+}
+// Bloc « état » : ressources et points d'action, effets en cours dessous.
+function blocEtat(j, estVous) {
+  const b = el("div", "etat " + (estVous ? "m" : "o"));
+  const g = el("div", "gauges");
+  g.append(ressources(j, estVous), el("span", "sep"), pointsAction(j.points_action));
+  b.appendChild(g);
+  const fx = el("div", "effects");
+  fx.appendChild(el("span", "lab", "Effets en cours"));
+  const eff = j.effets || [];
+  if (!eff.length) fx.appendChild(el("span", "none", "aucun"));
+  else {
+    const p = el("div", "pills");
+    for (const t of eff) p.appendChild(el("span", "pill " + (/perdu|Marqué|pas de gain/.test(t) ? "warn" : "buff"), t.replace(/\{p\}/g, "⚔").replace(/\{d\}/g, "⛨")));
+    fx.appendChild(p);
+  }
+  b.appendChild(fx);
+  return b;
+}
+
 function joueur(j, estVous, actif) {
   const qui = estVous ? "vous" : "bot";
-  const b = el("div", "aire " + (estVous ? "m" : "o"));
-  b.dataset.o = qui;
   const z = zoneTapis;
 
   // Armes et équipement à leur emplacement (seconde arme ou off-hand à droite du héros).
@@ -439,7 +550,7 @@ function joueur(j, estVous, actif) {
   vie.title = "Points de vie";
   vie.dataset.a = "vie-" + qui;
   const heros = [hc, vie];
-  if (j.marque) heros.push(el("span", "marque", "marqué"));
+  const prio = etat.priorite === qui && !etat.fini;
 
   const ars = j.arsenal ? [carte(j.arsenal, true)] : null;
   const pitch = j.pitch.length ? (() => {
@@ -463,7 +574,7 @@ function joueur(j, estVous, actif) {
     colonne("bras", z("Bras", "sm", k(eq.bras))),
     colonne("large", z("Arme", "big", k(armes[0]))),
     colonne("large",
-      z("Héros", "big", heros, { ancre: "heros-" + qui, classe: "heros" }),
+      z("Héros", "big", heros, { ancre: "heros-" + qui, classe: "heros" + (prio ? " prio" : "") }),
       z("Arsenal", "big", ars, { ancre: "arsenal-" + qui, depot: estVous ? "arsenal" : null })),
     colonne("large",
       z(libSeconde, "big", seconde ? [carte(seconde, true)] : null),
@@ -476,105 +587,262 @@ function joueur(j, estVous, actif) {
       z("Deck", "sm", j.deck ? [dos()] : null, { ancre: "deck-" + qui, n: j.deck }),
       z("Banni", "sm", haut(j.bannies), { bouton: true, n: j.bannies.length, titre: "Voir les cartes bannies", clic: () => voirZone((estVous ? "Vos cartes bannies" : "Cartes bannies du bot"), j.bannies) })),
   );
-  b.appendChild(tapis);
+  const morceaux = [tapis, blocEtat(j, estVous)];
 
-  // À côté du tapis : ressources, points d'action, main du bot.
-  const et = el("div", "etat-joueur");
-  const c = (lib, v, a) => { const s = el("span", "compteur"); s.append(el("b", null, String(v)), " " + lib); if (a) s.dataset.a = a + "-" + qui; return s; };
-  et.appendChild(el("span", "qui", (estVous ? "Vous — " : "Bot — ") + j.heros));
-  et.appendChild(c("ressource" + (j.ressources > 1 ? "s" : ""), j.ressources, "res"));
-  et.appendChild(c("point" + (j.points_action > 1 ? "s" : "") + " d'action", j.points_action));
   if (!estVous) {
-    const m = el("div", "main-bot");
+    // Main du bot : dos en éventail.
+    const m = el("div", "ohand");
     m.dataset.a = "main-bot";
-    m.appendChild(el("span", "lib", `Main (${j.main_nombre})`));
+    m.appendChild(el("span", "handlab", `Main du bot (${j.main_nombre})`));
     const f = el("div", "eventail dos-main");
     for (let i = 0; i < j.main_nombre; i++) f.appendChild(dos());
     m.appendChild(f);
-    et.appendChild(m);
-  }
-  b.appendChild(et);
-  if (estVous) {
-    const m = el("div", "main-vous");
+    morceaux.push(m);
+  } else {
+    // Votre main en carré sous la pile : 2 colonnes jusqu'à 4 cartes, 3 au-delà ;
+    // les cartes rapetissent s'il faut plus de 2 rangées (Arsenal JS).
+    // Les bloqueurs posés sur la chaîne quittent la main tant qu'on ne les reprend pas.
+    const main = genreDecision() === "defense" ? j.main.filter(c => !brouillon.includes(c.id)) : j.main;
+    const n = main.length, cols = n > 4 ? 3 : 2, rangs = Math.max(2, Math.ceil(n / cols));
+    const m = el("div", "hand");
     m.dataset.a = "main-vous";
-    m.appendChild(el("span", "lib", `Votre main (${j.main.length})`));
-    const cs = el("div", "cartes");
-    if (!j.main.length) cs.appendChild(el("span", "vide", "Main vide"));
-    for (const x of j.main) cs.appendChild(carte(x, false));
-    m.appendChild(cs);
-    b.appendChild(m);
+    m.style.setProperty("--cols", cols);
+    m.style.setProperty("--rows", rangs);
+    m.setAttribute("aria-label", "Votre main");
+    m.appendChild(el("span", "handlab", `Votre main (${n})`));
+    if (!n) m.appendChild(el("div", "vide", "Main vide"));
+    for (const x of main) { const h = el("div", "hc"); h.appendChild(carte(x, false)); m.appendChild(h); }
+    morceaux.push(m);
   }
 
   const conteneur = $(estVous ? "j-vous" : "j-bot");
   conteneur.classList.toggle("actif", actif);
-  conteneur.replaceChildren(b);
+  conteneur.replaceChildren(...morceaux);
+  // Illustration du héros en fond de sa moitié du tapis.
+  const art = $(estVous ? "art-vous" : "art-bot");
+  if (art) art.style.backgroundImage = Images.fond(j.heros_image);
 }
 
+const ETAPES = ["Layer", "Attaque", "Défense", "Réactions", "Dégâts", "Résolution"];
+
+// La chaîne de combat (Arsenal JS, midHTML) : un maillon par attaque, le
+// maillon en cours avec « Attaque / Défense » en gros et les bloqueurs à côté.
 function milieu() {
   const m = $("milieu");
   m.replaceChildren();
   m.dataset.depot = "chaine";
   const cb = etat.combat;
-  if (cb) {
-    m.appendChild(el("div", "titre", "Chaîne de combat — étape : " + cb.etape));
-    cb.maillons.forEach((l, i) => {
-      const r = el("div", "maillon");
-      const res = el("div", "resume");
-      res.appendChild(el("b", null, "Maillon " + (i + 1)));
-      res.appendChild(el("div", null, (l.par_vous ? "Vous attaquez " : "Le bot attaque ") + l.cible));
-      res.appendChild(el("div", null, l.puissance !== null ? l.puissance + " puissance" : "terminée"));
-      if (l.defenseurs.length) res.appendChild(el("div", null, "défense totale " + l.defense_totale));
-      if (l.touche) res.appendChild(el("div", null, "a touché"));
-      r.appendChild(res);
-      r.dataset.o = l.par_vous ? "vous" : "bot";
-      r.appendChild(carte(l.attaque, true));
-      for (const d of l.defenseurs) r.appendChild(carte(d, true));
-      m.appendChild(r);
-    });
-  }
-  if (etat.pile.length) {
-    m.appendChild(el("div", "titre", "Pile (du dessus vers le dessous)"));
-    const ul = el("ul", "pile");
-    for (const p of etat.pile) ul.appendChild(el("li", null, p));
-    m.appendChild(ul);
-  }
-  if (!cb && !etat.pile.length) m.appendChild(el("span", "vide", "Pas de chaîne de combat ni de pile."));
-}
+  const tete = el("div", "mhead");
+  const tm = el("span", "turnmark", "Tour"); tm.appendChild(el("b", null, String(etat.tour))); tete.appendChild(tm);
+  const attaqueSurPile = (etat.couches || []).some(c => c.genre === "attaque" || (c.genre === "carte" && c.carte && /attaque/i.test(c.texte) && !cb));
+  const rang = etat.fini ? -1 : cb && cb.etape_rang != null ? cb.etape_rang : attaqueSurPile ? 0 : -1;
+  if (rang >= 0) {
+    const st = el("div", "steps");
+    st.setAttribute("aria-label", ETAPES[rang]);
+    ETAPES.forEach((t, k) => st.appendChild(el("span", k === rang ? "on" : k < rang ? "done" : null, t)));
+    tete.appendChild(st);
+  } else tete.appendChild(el("span", "step", etat.fini ? "Partie terminée" : etat.votre_tour ? "Votre tour" : "Tour du bot"));
+  tete.appendChild(el("span", "step prio", etat.priorite && !etat.fini ? "priorité : " + (etat.priorite === "vous" ? "vous" : "bot") : ""));
+  m.appendChild(tete);
 
-function panneau() {
-  $("resultat").textContent = etat.resultat || "";
-  const d = etat.decision;
-  const o = $("options");
-  o.replaceChildren();
-  if (!d) {
-    $("question").textContent = etat.fini ? "" : "En attente…";
+  if (!cb || !cb.maillons.length) {
+    m.appendChild(el("div", "chainempty", cb ? "Chaîne de combat" : "Chaîne fermée"));
     return;
   }
-  $("question").textContent = d.titre;
-  d.options.forEach((x, n) => {
-    const b = el("button", x.passer ? "passer" : null);
-    b.appendChild(el("span", "no", String(n + 1)));
-    b.appendChild(document.createTextNode(" " + x.texte));
-    b.addEventListener("click", () => choisir(x.i));
-    if (x.carte !== null) b.addEventListener("mouseenter", () => montrer(x.carte));
-    o.appendChild(b);
+  const liens = el("div", "links");
+  liens.id = "liens";
+  const defense = genreDecision() === "defense";
+  cb.maillons.forEach((l, i) => {
+    const cur = i === cb.maillons.length - 1;
+    if (i) liens.appendChild(el("span", "arrow"));
+    const lk = el("div", "lk " + (cur ? "cur" : "old") + (l.par_vous ? " mine" : ""));
+    lk.dataset.o = l.par_vous ? "vous" : "bot";
+    const lkc = el("div", "lkc");
+    lkc.appendChild(carte(l.attaque, true));
+    // Bloqueurs en cours de choix posés sur le maillon (un clic les reprend).
+    const tente = cur && defense ? brouillon.map(carteParId).filter(Boolean) : [];
+    const d = l.defense_totale + tente.reduce((s, c) => s + Math.max(0, c.defense || 0), 0);
+    if (cur && l.puissance !== null) {
+      const cl = el("div", "clash");
+      cl.append(el("small", null, "Attaque"), el("b", "cp", String(l.puissance)), el("span", "sep"), el("b", "cdf", String(d)), el("small", null, "Défense"));
+      lkc.appendChild(cl);
+    }
+    if (l.defenseurs.length || tente.length) {
+      const ds = el("div", "defs");
+      for (const x of l.defenseurs) ds.appendChild(carte(x, true));
+      for (const x of tente) { const c = carte(x, true); c.classList.add("tente"); c.title = "Bloqueur posé : touchez-le pour le reprendre."; ds.appendChild(c); }
+      lkc.appendChild(ds);
+    }
+    lk.appendChild(lkc);
+    const info = el("div", "info");
+    info.appendChild(el("span", "muted", `Maillon ${i + 1} · ${l.par_vous ? etat.vous.heros : etat.bot.heros}` + (l.cible && !/^(vous|le bot)$/i.test(l.cible) && l.cible !== etat.vous.heros && l.cible !== etat.bot.heros ? " → " + l.cible : "")));
+    const mots = [l.dominate ? "Dominate" : "", l.go_again ? "Go again" : ""].filter(Boolean).join(" · ");
+    if (mots) info.appendChild(el("span", "muted", mots));
+    if (l.touche) info.appendChild(el("span", "res-hit", "Touche"));
+    else if (!cur || l.puissance === null) info.appendChild(el("span", "res-blk", "Bloquée"));
+    lk.appendChild(info);
+    liens.appendChild(lk);
   });
+  m.appendChild(liens);
+  liens.scrollLeft = liens.scrollWidth;
 }
 
+// La pile (Arsenal JS) : la plus ancienne couche en haut, la plus récente
+// devant ; celle de devant se résout en premier.
+function pileCouches() {
+  const p = $("pile");
+  p.replaceChildren();
+  const cs = (etat.couches || []).slice().reverse();
+  p.classList.toggle("live", cs.length > 0);
+  p.appendChild(el("span", "lab", "Pile"));
+  const ls = el("div", "layers");
+  for (const c of cs) {
+    const ly = el("div", "layer");
+    ly.title = c.texte;
+    if (c.carte) ly.appendChild(carte(c.carte, true));
+    else ly.appendChild(el("div", "fantome", c.texte));
+    const t = el("span", "tag", c.genre);
+    t.appendChild(el("small", null, c.par_vous ? "vous" : "bot"));
+    ly.appendChild(t);
+    ls.appendChild(ly);
+  }
+  p.appendChild(ls);
+  p.appendChild(el("em", null, "la carte de devant se résout en premier"));
+}
+
+// ---------- le ruban d'invite (Arsenal JS, barHTML) ----------
+let boutonsRuban = [];
+function bouton(texte, fn, o = {}) {
+  const b = el("button", (o.principal ? "principal" : "") + (o.discret ? " discret" : ""));
+  b.textContent = texte;
+  if (o.i !== undefined) b.dataset.i = o.i;
+  if (o.carte !== undefined && o.carte !== null) b.addEventListener("mouseenter", () => montrer(o.carte));
+  b.disabled = !!o.inactif;
+  b.addEventListener("click", fn);
+  boutonsRuban.push(b);
+  return b;
+}
+const html = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function maillonActif() { const cb = etat.combat; return cb && cb.maillons.length ? cb.maillons[cb.maillons.length - 1] : null; }
+
+function phrasePriorite() {
+  const v = etat.vous, l = maillonActif(), cb = etat.combat;
+  const pw = l && l.puissance !== null ? `<b>${l.puissance}</b> contre <b>${l.defense_totale}</b>` : "";
+  const haut = (etat.couches || [])[0];
+  if (haut) return `Sur la pile : <b>${html(haut.texte)}</b>. Vous pouvez répondre ou passer pour la laisser se résoudre.`;
+  if (!cb && etat.votre_tour && etat.phase_action) return `Votre tour : <b>${v.ressources}</b> ressource${v.ressources > 1 ? "s" : ""}, <b>${v.points_action}</b> point${v.points_action > 1 ? "s" : ""} d'action. Choisissez une carte, votre arme, une capacité, ou terminez votre phase d'action.`;
+  const r = cb ? cb.etape_rang : null;
+  if (r === 5) return etat.votre_tour ? `Maillon résolu. Attaquez à nouveau (<b>${v.points_action}</b> action${v.points_action > 1 ? "s" : ""}) ou passez : la chaîne se fermera.` : "Fin du maillon du bot. Vous pouvez jouer un instant ou passer.";
+  if (r === 3 && l) return l.par_vous ? `Réactions sur votre attaque : ${pw}. Jouez une réaction d'attaque ou passez.` : `Le bot attaque : ${pw}. Jouez une réaction de défense ou passez.`;
+  if (cb && r !== null && l) return `${ETAPES[r]}${pw ? " (" + pw + ")" : ""}. Vous pouvez jouer un instant ou passer.`;
+  return html(etat.decision.titre);
+}
+
+function ruban() {
+  const q = $("question"), o = $("options");
+  o.replaceChildren();
+  boutonsRuban = [];
+  const d = etat.decision;
+  if (etat.fini) { q.innerHTML = html(etat.resultat || "Partie terminée."); return; }
+  if (!d) { q.innerHTML = '<span class="thinking">Le bot joue…</span>'; return; }
+  const sp = () => o.appendChild(el("span", "sp"));
+  const passe = d.options.find(x => x.passer);
+  const autres = (filtre) => d.options.filter(x => !x.passer && filtre(x));
+  const cartesDe = (x) => x.carte !== null && x.carte !== undefined;
+
+  if (d.genre === "priorite") {
+    q.innerHTML = phrasePriorite();
+    if (sel !== null) for (const x of optionsDeCarte(sel)) o.appendChild(bouton(x.texte, () => choisir(x.i), { principal: true, i: x.i, carte: x.carte }));
+    // Capacités (arme, héros, équipement, permanents) et options sans carte.
+    for (const x of autres(x => !cartesDe(x) || (!dansMain(x.carte) && !dansArsenal(x.carte)))) o.appendChild(bouton(x.texte, () => choisir(x.i), { i: x.i, carte: x.carte }));
+    // Sans carte sélectionnée : les réactions de la main en boutons (comme l'Arsenal JS).
+    if (sel === null) for (const x of autres(x => cartesDe(x) && dansMain(x.carte) && /réaction/.test((carteParId(x.carte) || {}).genre || ""))) o.appendChild(bouton(x.texte, () => choisir(x.i), { i: x.i, carte: x.carte }));
+    sp();
+    if (passe) {
+      const propre = etat.votre_tour && !(etat.couches || []).length;
+      const r = etat.combat ? etat.combat.etape_rang : null;
+      const lib = propre && !etat.combat && etat.phase_action ? "Fin de ma phase d'action" : propre && r === 5 ? "Passer (fermer la chaîne)" : "Passer";
+      o.appendChild(bouton(lib, () => choisir(passe.i), { discret: !propre, i: passe.i }));
+      if (!etat.votre_tour) o.appendChild(bouton("Passer jusqu'à la fin du tour", () => { passerTour = etat.tour; choisir(passe.i); }, { discret: true }));
+    }
+    return;
+  }
+  if (d.genre === "defense") {
+    const l = maillonActif();
+    const tente = brouillon.map(carteParId).filter(Boolean);
+    const dd = (l ? l.defense_totale : 0) + tente.reduce((s, c) => s + Math.max(0, c.defense || 0), 0);
+    const p = l && l.puissance !== null ? l.puissance : 0;
+    const notes = [];
+    if (l && l.dominate) notes.push("Dominate : une carte de la main au plus.");
+    if (d.options.some(x => x.carte !== null && dansArsenal(x.carte))) notes.push("Votre arsenal peut bloquer.");
+    q.innerHTML = l
+      ? `${l.par_vous ? "Vous" : "Le bot"} · ${html(l.attaque.nom_fr || l.attaque.nom || "attaque")} <b>${p}</b> — défense <b>${dd}</b>, vous subissez <b>${Math.max(0, p - dd)}</b>.${notes.length ? ` <span class="muted">${notes.join(" ")}</span>` : ""}`
+      : html(d.titre);
+    q.title = "Touchez les cartes qui défendent (main, équipement), puis validez. Le total ne compte pas les préventions éventuelles.";
+    const legal = d.options.filter(x => !x.passer && cartesDe(x)).map(x => x.carte);
+    brouillon = brouillon.filter(id => legal.includes(id));
+    for (const x of autres(x => !cartesDe(x))) o.appendChild(bouton(x.texte, () => choisir(x.i), { i: x.i }));
+    o.appendChild(bouton(brouillon.length ? "Valider la défense" : "Ne pas bloquer", () => envoyerBrouillon(true), { principal: true }));
+    if (brouillon.length) o.appendChild(bouton("Tout reprendre", () => { brouillon = []; afficher(); }, { discret: true }));
+    return;
+  }
+  if (d.genre === "pitch") {
+    const reste = d.a_payer != null ? Math.max(0, d.a_payer - etat.vous.ressources) : null;
+    q.innerHTML = d.a_payer != null ? `Payez <b>${d.a_payer}</b>${reste !== d.a_payer ? ` (reste <b>${reste}</b>)` : ""} : touchez les cartes à pitcher.` : html(d.titre);
+    for (const x of autres(x => !cartesDe(x) || !dansMain(x.carte))) o.appendChild(bouton(x.texte, () => choisir(x.i), { i: x.i, carte: x.carte }));
+    if (passe) o.appendChild(bouton(passe.texte, () => choisir(passe.i), { discret: true, i: passe.i }));
+    return;
+  }
+  if (d.genre === "arsenal") {
+    q.innerHTML = "Fin de tour : touchez une carte de votre main pour la mettre face cachée en arsenal.";
+    for (const x of autres(x => !cartesDe(x) || !dansMain(x.carte))) o.appendChild(bouton(x.texte, () => choisir(x.i), { i: x.i, carte: x.carte }));
+    if (passe) o.appendChild(bouton("Ne rien mettre en arsenal", () => choisir(passe.i), { discret: true, i: passe.i }));
+    return;
+  }
+  if (d.genre === "ordre_pitch") {
+    const ids = d.options.filter(cartesDe).map(x => x.carte);
+    brouillon = brouillon.filter(id => ids.includes(id));
+    q.innerHTML = "Vos cartes pitchées retournent sous votre deck. Touchez-les dans l'ordre où vous voulez les repiocher (la n° 1 sera piochée en premier).";
+    const ordre = el("div", "order");
+    for (const id of ids) { const c = carteParId(id); if (c) ordre.appendChild(carte(c, true)); }
+    o.appendChild(ordre);
+    sp();
+    // Le moteur demande la prochaine carte à mettre sous le deck : la
+    // première envoyée est la plus haute des cartes remises sous le deck,
+    // donc la première repiochée.
+    o.appendChild(bouton("Valider cet ordre", () => envoyerBrouillon(false), { principal: true, inactif: brouillon.length < ids.length - 1 }));
+    o.appendChild(bouton("Garder l'ordre de pitch", () => { brouillon = ids.slice(); envoyerBrouillon(false); }, { discret: true }));
+    if (brouillon.length) o.appendChild(bouton("Recommencer", () => { brouillon = []; afficher(); }, { discret: true }));
+    return;
+  }
+  // Cibles, modes, choix des capacités… : un bouton par option, le premier en évidence.
+  q.innerHTML = html(d.titre);
+  const horsPlateau = d.options.filter(x => cartesDe(x) && !document.querySelector(`#plateau [data-k="${x.carte}"]`));
+  if (horsPlateau.length) {
+    const ordre = el("div", "order");
+    for (const x of horsPlateau) { const c = carteParId(x.carte); if (c) { const e = carte(c, true); e.classList.add("jouable"); ordre.appendChild(e); } }
+    if (ordre.children.length) o.appendChild(ordre);
+  }
+  d.options.forEach((x, n) => o.appendChild(bouton(x.texte, () => choisir(x.i), { principal: n === 0 && !x.passer, discret: x.passer, i: x.i, carte: x.carte })));
+}
+
+// Journal (Arsenal JS) : une ligne de titre par tour, collé en bas tant
+// qu'on ne remonte pas.
 function journal() {
   const j = $("journal");
   const enBas = j.scrollHeight - j.scrollTop - j.clientHeight < 30;
   j.replaceChildren();
   for (const l of etat.journal) {
-    j.appendChild(el("div", l.debut ? "debut" : null, l.debut ? `Tour ${l.tour} — ${l.texte}` : "· " + l.texte));
+    if (l.debut) j.appendChild(el("p", "turn", l.texte.replace(/═/g, "").trim()));
+    else j.appendChild(el("p", /dégât|touche|perd/i.test(l.texte) ? "dmg" : null, l.texte));
   }
   if (enBas) j.scrollTop = j.scrollHeight;
 }
 
 function afficher() {
-  document.querySelectorAll("button").forEach(b => b.disabled = false);
+  document.querySelectorAll("#v-partie button").forEach(b => b.disabled = false);
   if (!etat || etat.aucune_partie) {
-    $("info").textContent = "Aucun match : cliquez « Nouveau match » (ou « Importer » une sauvegarde).";
+    $("info").textContent = "Aucun match : « Nouveau match » ou « Importer une partie » (menu Options).";
     $("b-annuler").disabled = true;
     $("b-exporter").disabled = true;
     document.dispatchEvent(new CustomEvent("arsenal:etat"));
@@ -584,33 +852,48 @@ function afficher() {
   $("score").textContent = m ? `Match : vous ${m.vous} – ${m.bot} bot (${m.manches} manche${m.manches > 1 ? "s" : ""} à gagner)` : "";
   const prep = etat.phase === "preparation";
   $("preparation").style.display = prep ? "flex" : "none";
-  $("plateau").style.display = prep ? "none" : "flex";
+  $("plateau").style.display = prep ? "none" : "grid";
   if (prep) {
     const r = etat.reglages;
     $("info").textContent = `Préparation de la manche ${m.jouees + 1} · vous : ${r.deck} · bot ${r.niveau} : ${r.deck_bot}`;
     $("b-annuler").disabled = true;
     $("resultat").textContent = "";
     $("suite").replaceChildren();
-    $("question").textContent = "Choisissez votre équipement et votre deck (à gauche).";
+    $("question").textContent = "";
     $("options").replaceChildren();
     preparation();
     document.dispatchEvent(new CustomEvent("arsenal:etat"));
     return;
   }
+  // Nouvelle décision : la sélection et le brouillon repartent de zéro.
+  const d = etat.decision;
+  const cle = d ? `${etat.film_no}|${d.genre}|${d.options.length}` : null;
+  if (cle !== cleDecision) { cleDecision = cle; sel = null; brouillon = []; }
+  if (sel !== null && !optionsDeCarte(sel).length) sel = null;
   const r = etat.reglages;
-  $("info").textContent = `Manche ${m ? m.jouees + (etat.fini ? 0 : 1) : 1} · tour ${etat.tour} (${etat.votre_tour ? "votre tour" : "tour du bot"}) · vous : ${r.deck} · bot ${r.nom_bot} : ${r.deck_bot} · graine ${r.graine}`;
+  $("info").textContent = `Manche ${m ? m.jouees + (etat.fini ? 0 : 1) : 1} · vous : ${r.deck} · bot ${r.nom_bot} : ${r.deck_bot} · graine ${r.graine}`;
   $("b-annuler").disabled = etat.annulables === 0;
-  $("b-annuler").textContent = "↶ Annuler" + (etat.annulables ? ` (${etat.annulables})` : "");
+  $("b-exporter").disabled = false;
   FX.avant();
   joueur(etat.bot, false, !etat.votre_tour);
   milieu();
+  pileCouches();
   joueur(etat.vous, true, etat.votre_tour);
-  panneau();
+  ruban();
+  $("resultat").textContent = etat.resultat || "";
   suite();
   journal();
+  finDePartie();
   FX.apres(etat);
   // Lot 9 (partie/extras.js) : conseil du bot, barre d'évaluation.
   document.dispatchEvent(new CustomEvent("arsenal:etat"));
+  // « Passer jusqu'à la fin du tour » : on passe tant que c'est le même tour
+  // et qu'on n'a que la priorité à rendre.
+  if (passerTour !== null) {
+    const p = d && d.genre === "priorite" && etat.tour === passerTour && !etat.votre_tour ? d.options.find(x => x.passer) : null;
+    if (p) setTimeout(() => { if (!occupe) choisir(p.i); }, 120);
+    else if (!d || etat.tour !== passerTour || etat.votre_tour) passerTour = null;
+  }
 }
 
 function suite() {
@@ -625,6 +908,26 @@ function suite() {
     b.addEventListener("click", () => action("POST", "/api/manche-suivante"));
     s.appendChild(b);
   }
+}
+
+// Fin de partie (Arsenal JS, showEnd) : fenêtre une fois par manche finie.
+let finVue = null;
+function finDePartie() {
+  if (!etat.fini) { finVue = null; return; }
+  const cle = `${etat.reglages.graine}|${etat.match ? etat.match.jouees : 0}`;
+  if (finVue === cle) return;
+  finVue = cle;
+  const d = $("d-fin");
+  const v = etat.vous, b = etat.bot, st = etat.stats || {};
+  const gagne = v.vie > 0 && b.vie <= 0, perdu = v.vie <= 0 && b.vie > 0;
+  $("d-fin-titre").textContent = gagne ? "Victoire !" : perdu ? "Victoire du bot" : (etat.resultat || "Partie terminée");
+  $("d-fin-pv").textContent = `${etat.tour} tours. ${v.heros} finit à ${Math.max(0, v.vie)} PV, ${b.heros} à ${Math.max(0, b.vie)} PV.`;
+  $("d-fin-stats").innerHTML = `Vous avez infligé <b class="num">${st.infliges || 0}</b> dégâts et subi <b class="num">${st.subis || 0}</b>. Vous avez défendu avec <b class="num">${st.blocs_main || 0}</b> carte${(st.blocs_main || 0) > 1 ? "s" : ""} de votre main et <b class="num">${st.blocs_autres || 0}</b> autre${(st.blocs_autres || 0) > 1 ? "s" : ""} (équipement, arsenal).`;
+  const m = etat.match;
+  $("d-fin-match").textContent = m ? (m.gagnant ? (m.gagnant === "vous" ? `Vous gagnez le match ${m.vous}–${m.bot} !` : `Le bot gagne le match ${m.bot}–${m.vous}.`) : `Match : vous ${m.vous} – ${m.bot} bot.`) : "";
+  $("d-fin-suivante").hidden = !etat.manche_suivante;
+  $("d-fin-annuler").hidden = !etat.annulables;
+  if (!d.open) d.showModal();
 }
 
 // ---------- nouvelle partie ----------
@@ -715,13 +1018,43 @@ document.addEventListener("keydown", (e) => {
   if ((e.key === "z" && (e.ctrlKey || e.metaKey)) || e.key === "a" || e.key === "A") { e.preventDefault(); annuler(); return; }
   const d = etat && etat.decision;
   if (!d) return;
+  if ($("d-fin").open) return;
   if (e.key >= "1" && e.key <= "9") {
-    const n = Number(e.key) - 1;
-    if (n < d.options.length) choisir(d.options[n].i);
+    // Les boutons du ruban, dans l'ordre affiché.
+    const b = boutonsRuban.filter(x => !x.disabled)[Number(e.key) - 1];
+    if (b) b.click();
   } else if (e.key === "p" || e.key === "P") {
+    if (d.genre === "defense") { envoyerBrouillon(true); return; }
     const p = d.options.find(o => o.passer);
     if (p) choisir(p.i);
-  } else if (e.key === "Escape") fermerMenu();
+  } else if (e.key === "Escape") { fermerMenu(); if (sel !== null || brouillon.length) { sel = null; brouillon = []; afficher(); } }
+});
+
+// ---------- colonne de droite : Options, abandon, fin de partie ----------
+$("b-options").addEventListener("click", (e) => {
+  const g = $("gopts"), ouvert = g.hidden;
+  g.hidden = !ouvert;
+  $("b-options").setAttribute("aria-expanded", String(ouvert));
+  e.stopPropagation();
+});
+document.addEventListener("click", (e) => {
+  const g = $("gopts");
+  if (!g.hidden && !g.contains(e.target) && e.target !== $("b-options")) { g.hidden = true; $("b-options").setAttribute("aria-expanded", "false"); }
+});
+$("b-abandon").addEventListener("click", async () => {
+  $("gopts").hidden = true;
+  if (!confirm("Abandonner le match en cours ? Il sera oublié (sauvegarde comprise).")) return;
+  try { etat = await api("POST", "/api/abandon"); } catch (e) { $("erreur").textContent = e.message; return; }
+  afficher();
+  Arsenal.aller("decks");
+});
+$("d-fin").addEventListener("close", () => {
+  const v = $("d-fin").returnValue;
+  if (v === "suivante") action("POST", "/api/manche-suivante");
+  else if (v === "annuler") annuler();
+  else if (v === "exporter") $("b-exporter").click();
+  else if (v === "nouveau") ouvrirNouveau();
+  else if (v === "decks") Arsenal.aller("decks");
 });
 
 (async () => {
@@ -730,3 +1063,15 @@ document.addEventListener("keydown", (e) => {
   Film.vu(etat);
   afficher();
 })();
+
+// Survol d'une carte de la main : elle s'incline vers le curseur (Arsenal JS).
+document.addEventListener("pointermove", (e) => {
+  const h = e.target && e.target.closest ? e.target.closest("#j-vous .hand .hc") : null;
+  for (const x of document.querySelectorAll("#j-vous .hand .carte.incline")) if (!h || !h.contains(x)) { x.classList.remove("incline"); x.style.removeProperty("--rx"); x.style.removeProperty("--ry"); }
+  if (!h || !FX.on()) return;
+  const c = h.firstElementChild; if (!c || c.classList.contains("tiree")) return;
+  const r = h.getBoundingClientRect(), u = (e.clientX - r.left) / r.width - 0.5, v = (e.clientY - r.top) / r.height - 0.5;
+  c.classList.add("incline");
+  c.style.setProperty("--rx", (v * -12).toFixed(1) + "deg");
+  c.style.setProperty("--ry", (u * 14).toFixed(1) + "deg");
+});

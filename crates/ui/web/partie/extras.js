@@ -25,9 +25,11 @@
     t.textContent = "Le bot réfléchit…";
     try {
       const c = await api("GET", "/api/conseil?niveau=" + niveau());
-      const n = etat.decision.options.findIndex((o) => o.i === c.i);
-      document.querySelectorAll("#options button.conseil").forEach((b) => b.classList.remove("conseil"));
-      if (n >= 0 && $("options").children[n]) $("options").children[n].classList.add("conseil");
+      // Le bouton du ruban de cette option, ou la carte du plateau qui la porte.
+      document.querySelectorAll("#v-partie .conseil").forEach((b) => b.classList.remove("conseil"));
+      const o = etat.decision.options.find((x) => x.i === c.i);
+      const b = document.querySelector(`#options button[data-i="${c.i}"]`) || (o && o.carte !== null ? document.querySelector(`#plateau [data-k="${o.carte}"]`) : null);
+      if (b) b.classList.add("conseil");
       t.textContent = `${c.niveau.toUpperCase()} conseille : ${c.texte}`;
     } catch (e) { t.textContent = e.message; }
   }
