@@ -56,3 +56,8 @@ html[data-vue="accueil"] #v-accueil, html[data-vue="partie"] #v-partie, html[dat
 .sym-h { color: var(--dmg); }
 .sym-i, .sym-c { width: auto; padding: 0 .25em; border: 1px solid var(--line); border-radius: 4px; font: 700 .72em/1.2 var(--f-num); color: var(--ink); }
 .sym-t { color: var(--ink); font-weight: 700; }
+
+/* Vrai dos de carte : s'il est posé dans data/outils/dos-de-carte.webp (hors
+   du dépôt public), cartes.js ajoute la classe vrai-dos et tous les dos
+   (deck, main du bot, cartes cachées) prennent l'image. Sinon, dos dessiné. */
+.vrai-dos .dos, .vrai-dos .carte.cachee, .vrai-dos .ap-c.cachee { background: url("/outils/dos-de-carte") center / cover no-repeat !important; color: transparent !important; }

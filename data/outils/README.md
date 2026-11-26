@@ -9,3 +9,7 @@ qu'ils embarquent une base de cartes (éditions, liens d'images).
   deck choisi déjà chargé. Sans lui, Imprimer garde l'outil simple de
   fabbot. Copier le fichier tel quel (celui à côté de l'Arsenal JS) ; le
   serveur pose lui-même le mode intégré.
+
+- `dos-de-carte.webp` (ou `.png`, `.jpg`) : le vrai dos des cartes Flesh and
+  Blood. S'il est ici, Arsenal l'affiche partout où une carte est de dos
+  (deck, main du bot, cartes cachées) ; sinon, un dos dessiné.

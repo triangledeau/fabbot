@@ -9,6 +9,7 @@
 //! | `GET /` | la page Arsenal (accueil et partie, navigation par `#`) |
 //! | `GET /commun/arsenal.css`… | les autres fichiers de la page ([`crate::fichiers`]) |
 //! | `GET /api/outils` | outils locaux présents (`proxies` : Proxies de Rathe, [`crate::fichiers::chemin_proxies`]) |
+//! | `GET /outils/dos-de-carte` | le vrai dos de carte, s'il est dans `data/outils/` ([`crate::fichiers::dos_de_carte`]) |
 //! | `GET /outils/proxies-de-rathe.html` | l'outil d'impression complet, s'il est dans `data/outils/` |
 //! | `GET /api/etat` | l'état vu par l'humain (JSON) |
 //! | `GET /api/decks` | decks et niveaux de bot proposés |
@@ -382,9 +383,18 @@ pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mu
                 Err(e) => Reponse::erreur(400, e),
             }
         }
-        ("GET", "/api/outils") => {
-            Reponse::json(json!({ "proxies": fichiers::chemin_proxies().is_file() }))
-        }
+        ("GET", "/api/outils") => Reponse::json(json!({
+            "proxies": fichiers::chemin_proxies().is_file(),
+            "dos": fichiers::dos_de_carte().is_some(),
+        })),
+        ("GET", "/outils/dos-de-carte") => match fichiers::dos_de_carte() {
+            Some((corps, type_contenu)) => Reponse {
+                code: 200,
+                type_contenu,
+                corps,
+            },
+            None => Reponse::erreur(404, "image absente : data/outils/dos-de-carte.webp"),
+        },
         ("GET", "/outils/proxies-de-rathe.html") => match fichiers::outil_proxies() {
             Some(corps) => Reponse {
                 code: 200,
