@@ -29,7 +29,10 @@ fn json(r: &fab_ui::serveur::Reponse) -> Value {
 /// Un deck du projet réécrit comme l'export texte de FaBrary.
 fn export_fabrary(nom: &str) -> String {
     let l = decks::liste(nom).unwrap();
-    let mut t = format!("Name: {nom} maison\nHero: {}\nFormat: Silver Age\n\nArena cards\n", l.hero);
+    let mut t = format!(
+        "Name: {nom} maison\nHero: {}\nFormat: Silver Age\n\nArena cards\n",
+        l.hero
+    );
     for e in &l.arena {
         t.push_str(&format!("{}x {}\n", e.count, e.name));
     }
@@ -68,7 +71,10 @@ fn un_deck_fabrary_importe_est_enregistre_jouable_et_se_joue() {
     let v = json(&r);
     assert_eq!(v["jouable"], true, "{v}");
     assert_eq!(v["heros"], "Hala");
-    assert_eq!(v["arene"].as_u64().unwrap() + v["deck"].as_u64().unwrap(), 55);
+    assert_eq!(
+        v["arene"].as_u64().unwrap() + v["deck"].as_u64().unwrap(),
+        55
+    );
     // Le fichier écrit est la même liste que le deck du projet.
     let ecrit = Decklist::parse(
         &std::fs::read_to_string(decks::dossier_maison().join(format!("{nom}.txt"))).unwrap(),
@@ -79,7 +85,11 @@ fn un_deck_fabrary_importe_est_enregistre_jouable_et_se_joue() {
     assert_eq!(ecrit.deck, projet.deck);
     // Proposé dans la page, et jouable contre le bot.
     let d = json(&repondre("GET", "/api/decks", &mut e));
-    assert!(d["decks_maison"].as_array().unwrap().iter().any(|x| x == nom));
+    assert!(d["decks_maison"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|x| x == nom));
     let r = repondre(
         "POST",
         &format!("/api/nouvelle?deck={nom}&bot=dorinthea&niveau=b0&graine=3&manches=1"),
@@ -88,11 +98,19 @@ fn un_deck_fabrary_importe_est_enregistre_jouable_et_se_joue() {
     assert_eq!(r.code, 200, "{}", r.texte());
     assert_eq!(json(&r)["reglages"]["deck"], nom);
     // Relu par la route du deck.
-    let v = json(&repondre("GET", &format!("/api/deck-maison?nom={nom}"), &mut e));
+    let v = json(&repondre(
+        "GET",
+        &format!("/api/deck-maison?nom={nom}"),
+        &mut e,
+    ));
     assert_eq!(v["jouable"], true);
     assert!(v["texte"].as_str().unwrap().contains("Hero: Hala"));
     let l = json(&repondre("GET", "/api/decks-maison", &mut e));
-    assert!(l["decks"].as_array().unwrap().iter().any(|d| d["nom"] == nom));
+    assert!(l["decks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|d| d["nom"] == nom));
 }
 
 #[test]
@@ -101,10 +119,8 @@ fn un_deck_avec_une_carte_non_codee_est_garde_mais_pas_jouable() {
     let _n = Nettoyer(nom);
     let mut e = etat_serveur();
     // Une vraie carte Silver Age que le bot ne sait pas encore jouer.
-    let texte = export_fabrary("hala").replace(
-        "Deck cards\n",
-        "Deck cards\n2x Command and Conquer (red)\n",
-    );
+    let texte = export_fabrary("hala")
+        .replace("Deck cards\n", "Deck cards\n2x Command and Conquer (red)\n");
     let v = json(&importer(&mut e, nom, &texte));
     assert_eq!(v["jouable"], false, "{v}");
     let nc: Vec<&str> = v["non_codees"]
@@ -115,18 +131,25 @@ fn un_deck_avec_une_carte_non_codee_est_garde_mais_pas_jouable() {
         .collect();
     assert_eq!(nc, ["Command and Conquer (rouge)"]);
     let d = json(&repondre("GET", "/api/decks", &mut e));
-    assert!(!d["decks_maison"].as_array().unwrap().iter().any(|x| x == nom));
+    assert!(!d["decks_maison"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|x| x == nom));
     assert!(decks::dossier_maison().join(format!("{nom}.txt")).exists());
 }
 
 #[test]
 fn verifier_signale_le_format_sans_rien_enregistrer() {
     let mut e = etat_serveur();
-    let texte = export_fabrary("hala").replace(
-        "2x Edict of Steel (red)",
-        "3x Edict of Steel (red)",
+    let texte =
+        export_fabrary("hala").replace("2x Edict of Steel (red)", "3x Edict of Steel (red)");
+    let r = repondre_avec_corps(
+        "POST",
+        "/api/deck-maison/verifier",
+        texte.as_bytes(),
+        &mut e,
     );
-    let r = repondre_avec_corps("POST", "/api/deck-maison/verifier", texte.as_bytes(), &mut e);
     let v = json(&r);
     assert_eq!(v["jouable"], false);
     assert!(

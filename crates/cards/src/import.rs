@@ -58,7 +58,9 @@ fn quantite(ligne: &str) -> Option<(u8, &str)> {
         Some(r) => r,
         None => {
             let t = apres.trim_start();
-            t.strip_prefix("x ").or_else(|| t.strip_prefix("X ")).unwrap_or(t)
+            t.strip_prefix("x ")
+                .or_else(|| t.strip_prefix("X "))
+                .unwrap_or(t)
         }
     }
     .trim();
@@ -76,8 +78,18 @@ fn avec_couleur(nom: &str) -> (String, Option<Color>) {
 }
 
 const ENTETES_IGNORES: [&str; 12] = [
-    "name", "format", "arena", "deck", "equipment", "weapon", "weapons", "cards", "sideboard",
-    "inventory", "made with", "see the full",
+    "name",
+    "format",
+    "arena",
+    "deck",
+    "equipment",
+    "weapon",
+    "weapons",
+    "cards",
+    "sideboard",
+    "inventory",
+    "made with",
+    "see the full",
 ];
 
 /// Lit une liste libre (export FaBrary ou format de `data/decks/`).
@@ -86,8 +98,7 @@ pub fn lire(
     texte: &str,
     classer: impl Fn(&str) -> Classement,
 ) -> Result<(Decklist, Vec<String>), String> {
-    if texte.lines().any(|l| l.trim() == "Arena:") && texte.lines().any(|l| l.trim() == "Deck:")
-    {
+    if texte.lines().any(|l| l.trim() == "Arena:") && texte.lines().any(|l| l.trim() == "Deck:") {
         return Decklist::parse(texte)
             .map(|d| (d, Vec::new()))
             .map_err(|e| e.to_string());
@@ -166,12 +177,10 @@ pub fn lire(
                     name: nom,
                     slot,
                 }),
-                Classement::Deck => {
-                    return Err(format!(
-                        "ligne {} : « {nom} » est une carte de deck, sa couleur manque (ex. « (red) »)",
-                        i + 1
-                    ))
-                }
+                Classement::Deck => return Err(format!(
+                    "ligne {} : « {nom} » est une carte de deck, sa couleur manque (ex. « (red) »)",
+                    i + 1
+                )),
                 Classement::Inconnue => {
                     return Err(format!("ligne {} : carte inconnue « {nom} »", i + 1))
                 }
@@ -254,7 +263,11 @@ mod tests {
     fn un_heros_inconnu_ou_absent_est_refuse() {
         assert!(lire("Hero: Personne\n2x Edict of Steel (red)\n", classer).is_err());
         // Le héros adulte n'est pas remplacé par le jeune du même nom.
-        assert!(lire("Hero: Hala, Bladesaint of the Vow\n2x Edict of Steel (red)\n", classer).is_err());
+        assert!(lire(
+            "Hero: Hala, Bladesaint of the Vow\n2x Edict of Steel (red)\n",
+            classer
+        )
+        .is_err());
         assert!(lire("2x Edict of Steel (red)\n", classer).is_err());
     }
 

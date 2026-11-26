@@ -161,7 +161,11 @@ fn depuis_fabcube(v: &Value, db: &CardDb) -> (Vec<CarteCollection>, HashSet<Cle>
 
 /// Les cartes codées absentes de `deja` (toutes si `deja` est vide) : sans
 /// la base communautaire, ou pour les cartes trop récentes pour elle.
-fn cartes_codees(db: &CardDb, deja: &[CarteCollection], exclues: &HashSet<Cle>) -> Vec<CarteCollection> {
+fn cartes_codees(
+    db: &CardDb,
+    deja: &[CarteCollection],
+    exclues: &HashSet<Cle>,
+) -> Vec<CarteCollection> {
     let mut vus: HashSet<Cle> = deja.iter().map(|c| (c.nom.clone(), c.couleur)).collect();
     vus.extend(exclues.iter().cloned());
     let mut out = Vec::new();
@@ -483,7 +487,10 @@ pub fn repondre(
         ("GET", "/api/collection") => (200, collection().json()),
         ("GET", "/api/decks-maison") => {
             let v: Vec<Value> = decks::maison().iter().map(resume).collect();
-            (200, json!({ "decks": v, "dossier": decks::dossier_maison() }))
+            (
+                200,
+                json!({ "decks": v, "dossier": decks::dossier_maison() }),
+            )
         }
         ("GET", "/api/deck-maison") => {
             let nom = param("nom").unwrap_or_default();
