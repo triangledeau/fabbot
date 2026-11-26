@@ -948,7 +948,7 @@ addEventListener("resize", () => { if (etat) ajusterPile(); });
 let boutonsRuban = [];
 function bouton(texte, fn, o = {}) {
   const b = el("button", (o.principal ? "principal" : "") + (o.discret ? " discret" : ""));
-  b.textContent = texte;
+  b.innerHTML = Symboles.html(texte);
   if (o.i !== undefined) b.dataset.i = o.i;
   if (o.carte !== undefined && o.carte !== null) b.addEventListener("mouseenter", () => montrer(o.carte));
   b.disabled = !!o.inactif;
@@ -956,7 +956,8 @@ function bouton(texte, fn, o = {}) {
   boutonsRuban.push(b);
   return b;
 }
-const html = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// Texte échappé, avec les symboles des cartes ({r}, {p}…) en icônes.
+const html = (s) => Symboles.html(s);
 function maillonActif() { const cb = etat.combat; return cb && cb.maillons.length ? cb.maillons[cb.maillons.length - 1] : null; }
 
 function phrasePriorite() {

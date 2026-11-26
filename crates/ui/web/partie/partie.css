@@ -344,7 +344,7 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 .ruban .btns > button { flex: 1 1 auto; }
 .ruban .btns:empty { display: none; }
 .ruban .btns .sp { flex-basis: 100%; height: 0; }
-#v-partie .ruban button { font-weight: 700; min-height: 32px; padding: 5px 10px; line-height: 1.2; white-space: normal; }
+#v-partie .ruban button { font-weight: 700; min-height: 32px; padding: 5px 10px; line-height: 1.2; white-space: normal; border-radius: 10px; }
 #v-partie button.discret { background: transparent; }
 .ruban .order { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .ruban .order .carte, .ruban .order .carte.img { width: 54px; height: 76px; min-height: 0; }
