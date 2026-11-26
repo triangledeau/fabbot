@@ -39,12 +39,17 @@ Comme en tournoi (CR 4.1.3 à 4.1.6), avant chaque manche :
 2. **Votre équipement** : cliquez une carte par zone (cliquer à nouveau la
    retire ; une zone peut rester vide). Pour les armes, deux mains au plus
    et un seul off-hand. Le bot choisit le sien **sans voir** le vôtre.
-3. **Votre deck** : l'équipement du bot est maintenant montré ; réglez le
-   nombre d'exemplaires de chaque carte avec − et +. Le compteur doit
-   indiquer **40 / 40** pour valider.
+3. **Votre deck** : l'équipement du bot est maintenant montré. Chaque
+   carte est une **pile** de ses exemplaires : clic = un exemplaire de plus
+   dans le deck, clic droit = un de moins (les exemplaires hors du deck
+   sont grisés). Le compteur doit indiquer **40 / 40** pour valider.
 
-Ce qui est proposé par défaut : votre choix de la manche précédente (à la
-première manche, l'équipement et les 40 premières cartes de la liste).
+Point de départ (boutons « Départ ») : **Dernier réglage** (votre dernier
+choix contre ce deck du bot, gardé par le navigateur ; c'est le départ par
+défaut), **Plan conseillé** (le choix de la table apprise des bots pour
+votre card-pool contre ce héros) ou **Proposition** (votre choix de la
+manche précédente ; à la première manche, l'équipement et les 40 premières
+cartes de la liste).
 Survolez une carte pour son texte officiel. Le bot choisit avec sa table
 apprise (`docs/bots.md`, « La phase de side »).
 

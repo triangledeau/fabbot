@@ -765,3 +765,46 @@ fn chaque_arme_et_equipement_dit_son_emplacement_sur_le_tapis() {
         assert!(c["emplacement"].is_null());
     }
 }
+
+// ---------- Arsenal, lot 4c : plan conseillé avant la manche ----------
+
+#[test]
+fn le_plan_conseille_est_un_choix_valide_que_le_serveur_accepte() {
+    let mut e = etat_serveur();
+    let mut v = nouveau_match(
+        &mut e,
+        "/api/nouvelle?deck=hala&bot=dorinthea&niveau=b0&graine=6&manches=1",
+    );
+    if v["preparation"]["etape"] == "premier" {
+        v = json(&repondre("POST", "/api/premier?qui=vous", &mut e));
+    }
+    let c = v["preparation"]["conseil"].clone();
+    let arene: Vec<String> = c["arene"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| x.to_string())
+        .collect();
+    assert!(!arene.is_empty());
+    let r = repondre(
+        "POST",
+        &format!("/api/arene?cartes={}", arene.join(",")),
+        &mut e,
+    );
+    assert_eq!(r.code, 200, "{}", r.texte());
+    let v = json(&r);
+    let p = &v["preparation"];
+    let deck = p["conseil"]["deck"].as_array().unwrap();
+    let cartes = p["deck"].as_array().unwrap();
+    assert_eq!(deck.len(), cartes.len());
+    let total: u64 = deck.iter().map(|n| n.as_u64().unwrap()).sum();
+    assert_eq!(total, p["taille_deck"].as_u64().unwrap());
+    for (n, c) in deck.iter().zip(cartes) {
+        assert!(n.as_u64().unwrap() <= c["max"].as_u64().unwrap());
+    }
+    let n: Vec<String> = deck.iter().map(|x| x.to_string()).collect();
+    let r = repondre("POST", &format!("/api/deck?n={}", n.join(",")), &mut e);
+    assert_eq!(r.code, 200, "{}", r.texte());
+    // Pendant la partie, plus de conseil (ni de préparation).
+    assert!(json(&r)["preparation"].is_null());
+}

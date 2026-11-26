@@ -169,7 +169,15 @@ un deck archivé. Serveur : `GET /api/deck`, routes `archiver`,
 `restaurer`, `supprimer` ; la collection donne classes, talents, mots-clés,
 texte et emplacement. **Pas repris** : catégories Side et Envies (en Silver
 Age le side est le reste des 55, choisi avant chaque manche : lot 4c),
-glisser-déposer, menu clic droit, aperçu agrandi. Chaque lot se
+glisser-déposer, menu clic droit, aperçu agrandi.
+
+**Lot 4c, ce qui a été fait (2026-11-26)** : écran de préparation : deck en
+piles (clic +1, clic droit −1, clavier), départ au choix (dernier réglage
+gardé par le navigateur pour chaque matchup, plan conseillé = table apprise
+`fab_ai::side` pour le card-pool de l'humain contre le héros adverse,
+champ `conseil` du JSON ; proposition du serveur). **Pas repris** : taille
+des cartes ajustée à la fenêtre, réglages de rythme / réflexion du bot,
+« ce que joue le bot ». Chaque lot se
 termine par une pull request fusionnée et peut être pris par n'importe quel
 agent.
 
@@ -181,7 +189,7 @@ agent.
 | 3. Sauvegarde | Partie sauvegardée (graine + choix), reprise depuis l'accueil, export / import du journal .json | `crates/ui/src/`, `web/accueil/` | 0 | 1 | ✅ fait (2026-11-26) |
 | 4a. Decks en données | Pool Silver Age avec drapeau « jouable par le bot » (carte codée dans fab-cards), légalité, decks maison dans `data/decks/maison/`, chargement à l'exécution, import d'une liste FaBrary | `crates/cards/` (lecture des decks), `api_decks.rs` | 0 | 1 | ✅ fait (2026-11-26) |
 | 4b. Éditeur de deck | Reprise d'`editeur.js` : collection filtrable, catégories, stats, Ctrl+Z, dupliquer / archiver / supprimer | `web/decks/` | 4a, 1 | 1,5 | ✅ fait (2026-11-26) |
-| 4c. Ajustement avant partie | Fenêtre en piles de l'Arsenal JS à la place de l'écran de side actuel, dernier réglage, plan conseillé par la table apprise | `web/partie/`, `match_web.rs` | 4a, 1 | 0,5 | à faire |
+| 4c. Ajustement avant partie | Fenêtre en piles de l'Arsenal JS à la place de l'écran de side actuel, dernier réglage, plan conseillé par la table apprise | `web/partie/`, `match_web.rs` | 4a, 1 | 0,5 | ✅ fait (2026-11-26) |
 | 5. Impression | Proxies de Rathe, séparateurs et boîtes de deck servis par fab-web, alimentés par la liste d'un deck | `web/impression/` | 0 (4a pour les decks maison) | 1 | à faire |
 | 8. Entraîner | Tournoi dans la page (matrice, classement, stats, historique, export), banc SPRT, lancement de `--apprendre-side` / `--apprendre-b3` sur un deck modifié avec progression | `web/entrainer/`, `api_tournoi.rs`, `crates/sim/` | 0 (4a pour les decks maison) | 2 | à faire |
 | 9. Extras ANTIGRAV | Signalement de bugs dans la page (enregistrés dans un fichier), conseil du bot et barre d'évaluation, Bot contre Bot | `web/partie/`, `api_bugs.rs` | 0 (2 pour le conseil) | 1 | à faire |

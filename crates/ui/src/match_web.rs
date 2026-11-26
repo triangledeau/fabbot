@@ -432,13 +432,36 @@ impl MatchWeb {
         let db = &self.db;
         let pool = &self.pools[HUMAIN.index()];
         let (prop_arene, prop_deck) = &self.proposition;
-        // Proposition d'arène : les positions des cartes proposées.
-        let mut pris = vec![false; pool.arena.len()];
-        for c in prop_arene {
-            if let Some(i) = (0..pool.arena.len()).find(|&i| !pris[i] && pool.arena[i] == *c) {
-                pris[i] = true;
+        // Positions dans l'arène du card-pool des cartes d'un choix.
+        let positions = |choix: &[CardId]| {
+            let mut pris = vec![false; pool.arena.len()];
+            for c in choix {
+                if let Some(i) = (0..pool.arena.len()).find(|&i| !pris[i] && pool.arena[i] == *c) {
+                    pris[i] = true;
+                }
             }
-        }
+            pris
+        };
+        let pris = positions(prop_arene);
+        // Plan conseillé (lot 4c) : le choix de la table apprise des bots
+        // pour ce card-pool contre ce héros (fab_ai::side), donné à titre
+        // indicatif ; il ne voit que le card-pool de l'humain et le héros
+        // adverse.
+        let conseil = (self.etape != Etape::Partie).then(|| {
+            let l = crate::choix_du_bot(db, pool, self.pools[BOT.index()].hero);
+            let arene: Vec<usize> = positions(&l.arena)
+                .iter()
+                .enumerate()
+                .filter(|(_, &p)| p)
+                .map(|(i, _)| i)
+                .collect();
+            let deck: Vec<usize> = self
+                .cartes_distinctes()
+                .iter()
+                .map(|(c, _)| l.deck.iter().filter(|&&k| k == *c).count())
+                .collect();
+            json!({ "arene": arene, "deck": deck })
+        });
         let arene: Vec<Value> = pool
             .arena
             .iter()
@@ -485,6 +508,7 @@ impl MatchWeb {
             "arene": arene,
             "deck": deck,
             "arene_bot": arene_bot,
+            "conseil": conseil,
         })
     }
 
