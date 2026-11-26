@@ -17,10 +17,9 @@ met à jour à la fin de chaque tâche.
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ✅ bots (choix appris, +96 Elo) et page web (écran avant chaque manche) ; à essayer par le propriétaire |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
 
-**Branche la plus récente :** `claude/brave-wozniak-d52twv` (étape 6,
-partie de `main` après la fusion de `claude/youthful-brown-dgcgw0`). Tant
-que sa PR n'est pas fusionnée dans `main`, partir de
-`claude/brave-wozniak-d52twv`.
+**Branche de départ :** `main` (depuis le 2026-11-26, Claude crée et
+fusionne lui-même la pull request à la fin de chaque tâche ; l'étape 6 est
+fusionnée).
 
 **Jouer dans le navigateur :** double-cliquer sur **`Jouer.bat`** (mise à
 jour, textes des cartes, compilation et ouverture du navigateur en un

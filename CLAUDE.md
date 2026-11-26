@@ -26,15 +26,18 @@ humain) répond par l'index d'une option. Tout choix de joueur passe par là.
 - **Au début** : lire `docs/suivi.md` (état d'avancement, questions ouvertes,
   prochaine tâche) et partir de la branche indiquée.
 - **À la fin de chaque tâche** : mettre à jour `docs/suivi.md` (statut, journal,
-  questions ouvertes, prochaine tâche), committer et pousser.
+  questions ouvertes, prochaine tâche), committer et pousser, puis **créer la
+  pull request et la fusionner dans `main`** quand fmt, clippy et tous les
+  tests sont au vert (accord du propriétaire du 2026-11-26). Si la fusion
+  échoue (conflit), le signaler au propriétaire au lieu de forcer.
 - **Rappeler au propriétaire de changer de conversation** quand une tâche est
   finie ou que la conversation devient longue (cela réduit la consommation),
   et lui fournir à chaque fois **le message à coller** dans la nouvelle
   conversation, au format :
   > Projet fabbot. Lis `CLAUDE.md` puis `docs/suivi.md`. Pars de la branche
-  > `<branche>`. Tâche : <prochaine tâche>.
-- Le propriétaire débute avec Git : quand une pull request est utile,
-  lui expliquer pas à pas comment la faire sur github.com.
+  > `main`. Tâche : <prochaine tâche>.
+- Le propriétaire débute avec Git : Claude gère lui-même les pull requests
+  (création et fusion) et dit simplement en fin de tâche ce qui a été fusionné.
 
 ## Règles de travail
 - **Sources de vérité** : Comprehensive Rules officiel + textes officiels des
@@ -94,5 +97,6 @@ humain) répond par l'index d'une option. Tout choix de joueur passe par là.
 Avant chaque commit : fmt, clippy sans avertissement, tous les tests au vert.
 
 ## Git
-- Ne pas travailler directement sur `main` : une branche par tâche, puis PR.
+- Ne pas travailler directement sur `main` : une branche par tâche, puis PR
+  créée et fusionnée par Claude (voir « Début et fin de conversation »).
 - Messages de commit en français.
