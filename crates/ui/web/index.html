@@ -12,10 +12,12 @@
 <link rel="stylesheet" href="commun/arsenal.css">
 <link rel="stylesheet" href="accueil/accueil.css">
 <link rel="stylesheet" href="partie/partie.css">
+<link rel="stylesheet" href="partie/finition.css">
 </head>
 <body>
 <section class="vue" id="v-accueil" aria-label="Accueil"></section>
 <section class="vue" id="v-partie" aria-label="Partie">
+  <div id="fx" aria-hidden="true"></div>
   <header>
     <a class="btn small home-btn" href="#accueil" title="Retour à l'accueil (le match continue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Accueil</a>
     <h1><img class="logo" src="commun/logo_arsenal.webp" alt="Arsenal" width="1200" height="531"></h1>
@@ -39,7 +41,11 @@
         <div id="question"></div>
         <div id="options"></div>
         <div id="erreur"></div>
-        <p class="aide">Cliquez une carte surlignée pour la jouer, ou une option. Touches : 1 à 9 = option, P = passer, A ou Ctrl+Z = annuler. Survolez une carte pour son texte officiel.</p>
+        <div class="reglages-fx">
+          <label title="Cartes qui volent, impacts, PV qui défilent, bandeaux"><input type="checkbox" id="o-anim"> Animations</label>
+          <label title="Le film des coups s'arrête avant les dégâts : cliquez « Continuer » (ou Espace)"><input type="checkbox" id="o-pause"> Pause avant les dégâts</label>
+        </div>
+        <p class="aide">Cliquez une carte surlignée pour la jouer, ou tirez-la : sur la chaîne pour la jouer ou défendre, sur votre pitch ou votre arsenal. Ou cliquez une option. Touches : 1 à 9 = option, P = passer, A ou Ctrl+Z = annuler. Survolez une carte pour son texte officiel.</p>
       </div>
       <div class="panneau" id="detail"><h2>Carte</h2><div class="vide">Survolez une carte.</div></div>
       <div class="panneau"><h2>Journal</h2><div id="journal"></div></div>
@@ -66,6 +72,7 @@
 <script src="commun/navigation.js"></script>
 <script src="commun/cartes.js"></script>
 <script src="accueil/accueil.js"></script>
+<script src="partie/finition.js"></script>
 <script src="partie/partie.js"></script>
 <script>Arsenal.montrer();</script>
 </body>

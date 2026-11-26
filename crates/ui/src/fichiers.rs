@@ -43,6 +43,9 @@ pub static FICHIERS: &[Fichier] = &[
     // partie : l'écran de jeu (lot 0, d'après l'ancienne page unique)
     fichier!("partie/partie.css", CSS),
     fichier!("partie/partie.js", JS),
+    // partie : plateau animé (lot 2, d'après finition.js de l'Arsenal JS)
+    fichier!("partie/finition.css", CSS),
+    fichier!("partie/finition.js", JS),
 ];
 
 /// Le fichier demandé par `chemin` (`/` = `index.html`).
