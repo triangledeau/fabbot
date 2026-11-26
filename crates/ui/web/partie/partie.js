@@ -804,6 +804,7 @@ function joueur(j, estVous, actif) {
   }
 
   const conteneur = $(estVous ? "j-vous" : "j-bot");
+  conteneur.dataset.o = qui; // à qui sont les cartes (départ des animations)
   conteneur.classList.toggle("actif", actif);
   conteneur.replaceChildren(...morceaux);
   // Illustration du héros en fond de sa moitié du tapis.
@@ -857,6 +858,7 @@ function milieu() {
     }
     if (l.defenseurs.length || tente.length) {
       const ds = el("div", "defs");
+      ds.dataset.o = l.par_vous ? "bot" : "vous"; // les bloqueurs sont à l'autre joueur
       for (const x of l.defenseurs) ds.appendChild(carte(x, true));
       for (const x of tente) { const c = carte(x, true); c.classList.add("tente"); c.title = "Bloqueur posé : touchez-le pour le reprendre."; ds.appendChild(c); }
       lkc.appendChild(ds);
@@ -875,6 +877,7 @@ function milieu() {
   liens.scrollLeft = liens.scrollWidth;
 }
 
+
 // La pile (Arsenal JS) : la plus ancienne couche en haut, la plus récente
 // devant ; celle de devant se résout en premier.
 function pileCouches() {
@@ -886,6 +889,7 @@ function pileCouches() {
   const ls = el("div", "layers");
   for (const c of cs) {
     const ly = el("div", "layer");
+    ly.dataset.o = c.par_vous ? "vous" : "bot";
     ly.title = c.texte;
     if (c.carte) ly.appendChild(carte(c.carte, true));
     else ly.appendChild(el("div", "fantome", c.texte));
@@ -896,7 +900,39 @@ function pileCouches() {
   }
   p.appendChild(ls);
   p.appendChild(el("em", null, "la carte de devant se résout en premier"));
+  ajusterPile();
 }
+
+// La pile ne défile jamais : on calcule la taille des cartes et leur
+// chevauchement pour que toutes les couches tiennent dans la hauteur offerte
+// (plus grandes quand il y a la place, plus serrées puis plus petites sinon).
+function ajusterPile() {
+  const p = $("pile"), ls = p.querySelector(".layers"), em = p.querySelector("em");
+  const ly = ls ? [...ls.children] : [];
+  p.style.removeProperty("--sh"); p.style.removeProperty("--ov");
+  // Sous la main du bot quand la pile s'étend sur la colonne de droite.
+  const oh = document.querySelector(".ohand");
+  p.style.marginTop = oh && getComputedStyle(p).gridRowStart === "1" ? Math.ceil(oh.getBoundingClientRect().height + 12) + "px" : "";
+  if (em) em.hidden = false;
+  if (!ly.length || !p.clientHeight) return;
+  const cs = getComputedStyle(p);
+  const haut = (x) => (x ? x.getBoundingClientRect().height : 0);
+  const tag = ly[0].querySelector(".tag");
+  const t = Math.max(0, haut(tag) - 10);
+  const gap = parseFloat(cs.rowGap) || 0;
+  const interieur = p.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - haut(p.querySelector(".lab")) - gap;
+  const maxi = Math.min(196, Math.max(84, innerHeight * .165)), n = ly.length;
+  // hauteur totale = L + (n-1)(L - ov·sh), avec L = sh + t
+  const taille = (dispo, ov) => (dispo - t * n) / (1 + (n - 1) * (1 - ov));
+  let dispo = interieur - gap - haut(em), ov = .55;
+  let sh = taille(dispo, ov);
+  if (sh < maxi * .8 && em) { em.hidden = true; dispo = interieur; sh = taille(dispo, ov); }
+  if (sh < maxi * .8 && n > 1) { ov = .8; sh = taille(dispo, ov); }
+  sh = Math.max(40, Math.min(maxi, Math.floor(sh)));
+  p.style.setProperty("--sh", sh + "px");
+  p.style.setProperty("--ov", String(-ov));
+}
+addEventListener("resize", () => { if (etat) ajusterPile(); });
 
 // ---------- le ruban d'invite (Arsenal JS, barHTML) ----------
 let boutonsRuban = [];
@@ -926,6 +962,18 @@ function phrasePriorite() {
   return html(etat.decision.titre);
 }
 
+// La carte qui pose la question : en petit au début du ruban, et montrée
+// dans le panneau de droite à chaque nouvelle question.
+let sourceVue = null;
+function sourceRuban(q, d) {
+  if (!d.source) return;
+  const e = carte(d.source, true);
+  e.classList.add("src-ruban");
+  e.title = "La question vient de cette carte";
+  q.prepend(e);
+  const cle = d.titre + "|" + d.source.carte_id;
+  if (cle !== sourceVue) { sourceVue = cle; montrerPool(d.source.carte_id, d.source); }
+}
 function ruban() {
   const q = $("question"), o = $("options");
   o.replaceChildren();
@@ -977,6 +1025,7 @@ function ruban() {
   if (d.genre === "pitch") {
     const reste = d.a_payer != null ? Math.max(0, d.a_payer - etat.vous.ressources) : null;
     q.innerHTML = d.a_payer != null ? `Payez <b>${d.a_payer}</b>${reste !== d.a_payer ? ` (reste <b>${reste}</b>)` : ""} : touchez les cartes à pitcher.` : html(d.titre);
+    sourceRuban(q, d);
     for (const x of autres(x => !cartesDe(x) || !dansMain(x.carte))) o.appendChild(bouton(x.texte, () => choisir(x.i), { i: x.i, carte: x.carte }));
     if (passe) o.appendChild(bouton(passe.texte, () => choisir(passe.i), { discret: true, i: passe.i }));
     return;
@@ -1005,6 +1054,7 @@ function ruban() {
   }
   // Cibles, modes, choix des capacités… : un bouton par option, le premier en évidence.
   q.innerHTML = html(d.titre);
+  sourceRuban(q, d);
   const horsPlateau = d.options.filter(x => cartesDe(x) && !document.querySelector(`#plateau [data-k="${x.carte}"]`));
   if (horsPlateau.length) {
     const ordre = el("div", "order");

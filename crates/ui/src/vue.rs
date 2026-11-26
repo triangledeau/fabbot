@@ -140,7 +140,13 @@ fn prevention(g: &GameState, viewer: PlayerId, r: PreventRef) -> String {
 /// La carte à l'origine de la décision en cours (carte qu'on joue, capacité
 /// qui pose une question, déclenchement dont on choisit la cible).
 pub fn source_decision(g: &GameState) -> Option<String> {
-    let card = match g.tasks.last()? {
+    source_carte(g).map(|c| g.db.get(c).name.clone())
+}
+
+/// La carte qui pose la question en cours (même liste que
+/// [`source_decision`]), pour la montrer à côté de la question.
+pub fn source_carte(g: &GameState) -> Option<fab_engine::CardId> {
+    Some(match g.tasks.last()? {
         Task::Script { ctx, .. } => ctx.card,
         Task::PlaySide(c) => g.obj(*c).card,
         Task::TriggerTargets { layer, .. } => layer.card,
@@ -152,8 +158,7 @@ pub fn source_decision(g: &GameState) -> Option<String> {
         | Task::PlayEffectCost
         | Task::PlayAttackTarget => g.stack.last()?.card,
         _ => return None,
-    };
-    Some(g.db.get(card).name.clone())
+    })
 }
 
 /// Libellé de la cible demandée (« Target attack… »), si on la connaît.

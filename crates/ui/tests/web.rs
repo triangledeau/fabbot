@@ -809,3 +809,28 @@ fn le_plan_conseille_est_un_choix_valide_que_le_serveur_accepte() {
     // Pendant la partie, plus de conseil (ni de préparation).
     assert!(json(&r)["preparation"].is_null());
 }
+
+#[test]
+fn la_carte_qui_pose_une_question_est_envoyee_avec_la_decision() {
+    // Une question posée par l'effet d'une carte (« bannir… ? », cibles,
+    // modes) porte la carte source, montrée dans le ruban et en grand.
+    let mut vues = 0;
+    for graine in 1..=6 {
+        let mut s = Session::nouvelle(reglages("florian", "hala", graine)).unwrap();
+        let mut n = 0u64;
+        while !s.g.is_over() && n < 600 {
+            let v = s.etat();
+            let src = &v["decision"]["source"];
+            if !src.is_null() {
+                let nom = vue::source_decision(&s.g).expect("source attendue");
+                assert_eq!(src["nom"], nom.as_str());
+                assert!(src["carte_id"].as_u64().is_some());
+                vues += 1;
+            }
+            let k = s.g.pending_decision().unwrap().options.len() as u64;
+            s.choisir(((n * 7 + graine) % k) as usize).unwrap();
+            n += 1;
+        }
+    }
+    assert!(vues > 0, "aucune question de carte rencontrée");
+}

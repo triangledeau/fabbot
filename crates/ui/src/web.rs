@@ -575,6 +575,8 @@ impl Session {
                     "genre": genre(d.kind),
                     "options": options,
                     "a_payer": a_payer,
+                    // La carte qui pose la question (montrée à côté).
+                    "source": vue::source_carte(g).map(|c| crate::match_web::carte_pool(&g.db, c)),
                 })
             }
             _ => Value::Null,
