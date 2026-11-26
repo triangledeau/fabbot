@@ -1020,3 +1020,133 @@ fn star_fall_carte_lightning_du_tour_precedent_ne_compte_pas() {
     assert_eq!(t.g.turn_player, P0, "retour au tour de P0");
     assert_eq!(t.g.power(w), 1, "Sizzle date du tour précédent");
 }
+
+// ---------------------------------------------------------------------------
+// Helm of Might and Magic (Runeblade Equipment - Head, déf. 1, sans couleur)
+// ---------------------------------------------------------------------------
+
+const HELM: &str = "Helm of Might and Magic";
+const RAMPART_HELM: (&str, Option<Color>) = ("Essai Rempart", B);
+
+/// Paie le coût en cours en pitchant des Essai Rempart.
+fn payer_rempart(t: &mut Partie) {
+    while !t.g.is_over() && t.g.pending_decision().is_some() && t.kind() == DecisionKind::Pitch {
+        let opts = t.options();
+        let c = opts
+            .iter()
+            .copied()
+            .find(|c| matches!(c, Choice::Pitch(o) if t.g.def(*o).name == "Essai Rempart"))
+            .unwrap_or(opts[0]);
+        t.choisir(c);
+    }
+}
+
+/// Joue la carte de `p` en payant avec des Essai Rempart.
+fn jouer_payant(t: &mut Partie, p: PlayerId, nom: &str, couleur: Option<Color>) -> ObjectId {
+    let c = t.en_main(p, nom, couleur);
+    passer_jusqua_que(t, |t| t.joueur() == p && t.peut(Choice::Play(c)));
+    t.choisir(Choice::Play(c));
+    payer_rempart(t);
+    c
+}
+
+/// Partie où P0 (héros) a le Helm équipé et P1 a `main1` en main.
+fn partie_helm_contre(main1: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie([HEROS, HEROS], RIEN, RIEN, main1, RIEN, &[HELM], &[])
+}
+
+/// P1 attaque P0 avec Essai Frappe ; renvoie l'attaque active.
+fn helm_attaque_par_p1(t: &mut Partie) -> ObjectId {
+    t.finir_le_tour();
+    assert_eq!(t.g.turn_player, P1);
+    let a = jouer_payant(t, P1, "Essai Frappe", R);
+    passer_jusqua_que(t, |t| t.g.active_attack() == Some(a));
+    a
+}
+
+fn helm_defend(t: &mut Partie, cartes: &[ObjectId]) {
+    passer_jusqua_que(t, |t| t.kind() == DecisionKind::Defend && t.joueur() == P0);
+    for &x in cartes {
+        t.choisir(Choice::Defend(x));
+    }
+    if t.kind() == DecisionKind::Defend {
+        t.choisir(Choice::Pass);
+    }
+}
+
+#[test]
+fn helm_of_might_and_magic_defense_1_et_sans_couleur() {
+    let t = partie_helm_contre(&[]);
+    let h = t.equipement(P0, HELM);
+    assert_eq!(t.g.defense(h), 1);
+    assert_eq!(t.g.def(h).color, None);
+}
+
+#[test]
+fn helm_of_might_and_magic_blade_break_detruit_le_heaume_qui_a_defendu() {
+    let mut t = partie_helm_contre(&[("Essai Frappe", R), RAMPART_HELM]);
+    let h = t.equipement(P0, HELM);
+    assert!(t.g.keywords(h).has(Keywords::BLADE_BREAK));
+    helm_attaque_par_p1(&mut t);
+    helm_defend(&mut t, &[h]);
+    passer_jusqua_que(&mut t, |t| !t.g.combat.open);
+    assert_eq!(t.g.obj(h).zone, Zone::Graveyard, "heaume détruit");
+}
+
+#[test]
+fn helm_of_might_and_magic_blade_break_ignore_le_heaume_qui_n_a_pas_defendu() {
+    let mut t = partie_helm_contre(&[("Essai Frappe", R), RAMPART_HELM]);
+    let h = t.equipement(P0, HELM);
+    helm_attaque_par_p1(&mut t);
+    helm_defend(&mut t, &[]);
+    passer_jusqua_que(&mut t, |t| !t.g.combat.open);
+    assert_ne!(
+        t.g.obj(h).zone,
+        Zone::Graveyard,
+        "heaume non défenseur gardé"
+    );
+}
+
+#[test]
+fn helm_of_might_and_magic_spellvoid_1_previent_1_degat_arcane_en_se_detruisant() {
+    let mut t = partie_helm_contre(&[]);
+    let h = t.equipement(P0, HELM);
+    assert_eq!(t.g.prevention_values(h).2, 1);
+    t.g.deal_damage(None, P1, P0, 3, true);
+    passer_jusqua_que(&mut t, |t| t.kind() == DecisionKind::Prevention);
+    assert_eq!(t.joueur(), P0);
+    let choix = Choice::Prevent(fab_engine::PreventRef::Spellvoid(h));
+    assert!(t.peut(choix));
+    t.choisir(choix);
+    passer_jusqua_que(&mut t, |t| t.g.stack.is_empty() && t.g.tasks.is_empty());
+    assert_eq!(t.vie(P0), 18, "3 - 1 prévenu");
+    assert_eq!(
+        t.g.obj(h).zone,
+        Zone::Graveyard,
+        "heaume détruit pour prévenir"
+    );
+}
+
+#[test]
+fn helm_of_might_and_magic_spellvoid_ne_s_applique_pas_aux_degats_non_arcane() {
+    let mut t = partie_helm_contre(&[]);
+    let h = t.equipement(P0, HELM);
+    t.g.deal_damage(None, P1, P0, 3, false);
+    passer_jusqua_que(&mut t, |t| t.g.stack.is_empty() && t.g.tasks.is_empty());
+    assert_eq!(t.vie(P0), 17, "aucune prévention");
+    assert_ne!(t.g.obj(h).zone, Zone::Graveyard, "heaume intact");
+}
+
+#[test]
+fn helm_of_might_and_magic_spellvoid_ne_previent_qu_une_seule_fois() {
+    let mut t = partie_helm_contre(&[]);
+    let h = t.equipement(P0, HELM);
+    t.g.deal_damage(None, P1, P0, 3, true);
+    passer_jusqua_que(&mut t, |t| t.kind() == DecisionKind::Prevention);
+    t.choisir(Choice::Prevent(fab_engine::PreventRef::Spellvoid(h)));
+    passer_jusqua_que(&mut t, |t| t.g.stack.is_empty() && t.g.tasks.is_empty());
+    assert_eq!(t.vie(P0), 18);
+    t.g.deal_damage(None, P1, P0, 3, true);
+    passer_jusqua_que(&mut t, |t| t.g.stack.is_empty() && t.g.tasks.is_empty());
+    assert_eq!(t.vie(P0), 15, "le heaume détruit ne prévient plus");
+}

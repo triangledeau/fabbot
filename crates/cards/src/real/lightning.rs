@@ -27,6 +27,7 @@ pub const NAMES: &[&str] = &[
     "Path of Same Ends",
     "Twinkle Toes",
     "Star Fall",
+    "Helm of Might and Magic",
     // NOMS
 ];
 
@@ -502,6 +503,21 @@ pub fn add(db: &mut CardDb) {
         }],
         ..Default::default()
     });
+
+    // Helm of Might and Magic — Runeblade Equipment - Head, déf. 1 (sans couleur).
+    // « Blade Break
+    // Spellvoid 1 »
+    // Spellvoid 1 : « If you would be dealt arcane damage, you may destroy this
+    // to prevent 1 of that damage. » (CR 8.3.15)
+    let mut d = equipment(
+        "Helm of Might and Magic",
+        Supertypes::RUNEBLADE,
+        Subtypes::HEAD,
+        1,
+    );
+    d.keywords = Keywords::BLADE_BREAK;
+    d.spellvoid = 1;
+    db.add(d);
 
     // CARTES
 }
