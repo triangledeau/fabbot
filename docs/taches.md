@@ -11,6 +11,7 @@ retire en finissant.
 |---|---|---|---|---|
 | 2026-11-26 | Claude | `claude/project-thread-0p5cpk` | Didacticiel « Apprendre » des règles (phase 2 du rapatriement) | `crates/ui/web/apprendre/` (nouveau), `crates/ui/src/api_apprendre.rs` (nouveau), quelques lignes dans `serveur.rs`, `index.html`, `accueil.js` |
 | 2026-11-26 | Claude | `claude/vigilant-fermat-iq5cjs` | B2/B3 : estimation qui comprend le blood debt et les cartes bannies (Levia), mesurée contre B2 | `crates/ai/src/b2.rs`, `b3.rs` (recherche seulement), `docs/bots.md` |
+| 2026-11-26 | Claude | `claude/project-thread-j807fx` | Correctifs de l'analyse Iyslander/Hala/Ira : B1 (Zenith Blade, combos d'Ira, Frost Spike), table de side et poids de B3 refaits, tournoi B3 | `crates/ai/src/b1.rs`, `vue.rs`, `data/side/b1.txt`, `data/b3/` (un seul agent à la fois), `docs/bots.md` (section B1 et chiffres B3) |
 
 ## Découpage conseillé des prochaines tâches
 
