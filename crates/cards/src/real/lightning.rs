@@ -15,6 +15,7 @@ pub const NAMES: &[&str] = &[
     "Cloud Cover",
     "Sizzle",
     "Electrostatic Discharge",
+    "Stinging Sprite",
     // NOMS
 ];
 
@@ -103,6 +104,37 @@ pub fn add(db: &mut CardDb) {
                 true,
             );
         })];
+        db.add(d);
+    }
+
+    // Stinging Sprite (bleu, rouge, jaune) — Lightning Runeblade Action - Attack,
+    // coût 0, déf. 2.
+    // « When this attacks or defends, deal 1 arcane damage to target hero. »
+    // (puissance : bleu 1 ; rouge 3 ; jaune 2)
+    for (c, p) in [(Color::Blue, 1), (Color::Red, 3), (Color::Yellow, 2)] {
+        let mut d = deck_card(
+            "Stinging Sprite",
+            c,
+            LIGHTNING_RB,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(2),
+        );
+        d.arcane_damage = true;
+        d.triggers = vec![TriggerDef {
+            when: |g, me, e| {
+                super::generic::when_this_attacks(g, me, e)
+                    || super::generic::when_this_defends(g, me, e)
+            },
+            anywhere: false,
+            targets: vec![super::wizard::TARGET_HERO],
+            script: vec![Op::Do(|g, c| {
+                if let Some(t) = c.target(0) {
+                    g.deal_damage_to(c.source_id(), c.controller, t, 1, true);
+                }
+            })],
+        }];
         db.add(d);
     }
 

@@ -232,3 +232,96 @@ fn electrostatic_discharge_instant_ne_consomme_pas_de_point_d_action() {
         "instant : aucun point d'action dépensé"
     );
 }
+
+// ---------------------------------------------------------------------------
+// Stinging Sprite : « When this attacks or defends, deal 1 arcane damage to
+// target hero. » (puissance : bleu 1, rouge 3, jaune 2)
+// ---------------------------------------------------------------------------
+
+fn sprite_partie(main0: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie([HEROS, HEROS], main0, RIEN, RIEN, RIEN, &[], &[])
+}
+
+/// Passe jusqu'à ce que le joueur doive choisir une cible, puis choisit `p`.
+fn cibler_heros(t: &mut Partie, p: PlayerId) {
+    passer_jusqua_que(t, |t| t.kind() == DecisionKind::Target);
+    t.choisir(Choice::Target(Target::Player(p)));
+}
+
+/// Vrai si un dégât arcanique de 1 a été infligé au héros `p`.
+fn arcanique_1_a(t: &Partie, p: PlayerId) -> bool {
+    t.g.turn_events().iter().any(|e| {
+        matches!(
+            e,
+            fab_engine::Event::Damage {
+                target,
+                amount: 1,
+                arcane: true,
+                ..
+            } if *target == p
+        )
+    })
+}
+
+#[test]
+fn stinging_sprite_quand_il_attaque_inflige_1_degat_arcanique_a_la_cible() {
+    let mut t = sprite_partie(&[("Stinging Sprite", B)]);
+    jouer(&mut t, P0, "Stinging Sprite", B);
+    cibler_heros(&mut t, P1);
+    resoudre(&mut t);
+    assert!(arcanique_1_a(&t, P1), "1 dégât arcanique à P1");
+}
+
+#[test]
+fn stinging_sprite_quand_il_defend_inflige_1_degat_arcanique_a_la_cible() {
+    let mut t = partie_vraie(
+        [HEROS, HEROS],
+        &[("Sweeping Blow", R)],
+        RIEN,
+        &[("Stinging Sprite", B)],
+        RIEN,
+        &[],
+        &[],
+    );
+    jouer(&mut t, P0, "Sweeping Blow", R);
+    for _ in 0..300 {
+        if t.kind() == DecisionKind::Defend {
+            break;
+        }
+        match t.kind() {
+            DecisionKind::Pitch => {
+                let o = t.options()[0];
+                t.choisir(o)
+            }
+            DecisionKind::Priority | DecisionKind::Arsenal => t.choisir(Choice::Pass),
+            k => panic!("décision {k:?} inattendue ; options {:?}", t.options()),
+        }
+    }
+    let sprite = t.en_main(P1, "Stinging Sprite", B);
+    t.choisir(Choice::Defend(sprite));
+    cibler_heros(&mut t, P0);
+    resoudre(&mut t);
+    assert!(
+        arcanique_1_a(&t, P0),
+        "1 dégât arcanique à P0 (cible choisie)"
+    );
+}
+
+#[test]
+fn stinging_sprite_la_cible_est_un_heros_quelconque_y_compris_le_sien() {
+    let mut t = sprite_partie(&[("Stinging Sprite", R)]);
+    jouer(&mut t, P0, "Stinging Sprite", R);
+    cibler_heros(&mut t, P0);
+    resoudre(&mut t);
+    assert_eq!(t.vie(P0), 19, "1 dégât arcanique sur son propre héros");
+    assert!(arcanique_1_a(&t, P0));
+}
+
+#[test]
+fn stinging_sprite_puissance_bleu_1_rouge_3_jaune_2() {
+    for (c, attendu) in [(B, 1), (R, 3), (Y, 2)] {
+        let mut t = sprite_partie(&[("Stinging Sprite", c)]);
+        let a = jouer(&mut t, P0, "Stinging Sprite", c);
+        assert_eq!(t.g.power(a), attendu, "puissance selon la couleur");
+    }
+}
