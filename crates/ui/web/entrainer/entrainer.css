@@ -61,3 +61,8 @@
 .en-puce span { border: 1px solid var(--line2); border-radius: 999px; padding: 4px 12px; color: var(--muted); background: transparent; }
 .en-puce input:checked + span { border-color: var(--brass); color: var(--ink); background: var(--brass-soft); }
 .en-puce input:focus-visible + span { outline: 2px solid var(--glow); outline-offset: 2px; }
+.en-hub { margin: 18px auto 0; }
+.en-hub[hidden], #en-v-tournoi[hidden], #en-v-appr[hidden] { display: none; }
+.en-hub .ht .txt p { margin: 0; color: var(--muted); font-size: .9rem; text-align: center; }
+.en-puce .en-ava { display: inline-block; width: 22px; height: 22px; margin: -3px 7px -3px -7px; vertical-align: middle; border-radius: 50%; background-color: #0b0e14; background-image: var(--art); background-size: 175% auto; background-position: 50% 21%; border: 1px solid var(--line); }
+#en-retour[hidden] { display: none; }

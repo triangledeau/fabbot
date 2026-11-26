@@ -109,10 +109,10 @@ contre Bot, signalement de bug, Importer une partie.
 
 | # | Arsenal JS | fabbot aujourd'hui | État |
 |---|---|---|---|
-| H1 | Trois volets avec **l'illustration d'un héros** (Dorinthea pour Jouer, Kano pour Apprendre, Bravo VS Iyslander pour Entraîner) | volets avec un pictogramme | ❌ |
+| H1 | Trois volets avec **l'illustration d'un héros** (Dorinthea pour Jouer, Kano pour Apprendre, Bravo VS Iyslander pour Entraîner) | ✅ portraits des héros des decks du bot (Dorinthea ; Apprendre : Ira, Kano n'étant pas un deck du bot ; Entraîner : Bravo contre Iyslander) | ✅ |
 | H2 | « Partie en cours : X contre Y, tour N » + Reprendre / L'oublier | ✅ (match en cours, Reprendre / Nouveau match) | ✅ |
-| H3 | Bas du volet Jouer : « Decks 14 (0 à toi) », « Réflexion rapide · normale · sans limite » | « 9 jouables », bots | 🟡 |
-| H4 | Volet Entraîner : « Dernier tournoi » + barre d'avancement | « Moteur fab-sim » | 🟡 |
+| H3 | Bas du volet Jouer : « Decks 14 (0 à toi) », « Réflexion rapide · normale · sans limite » | ✅ « Decks 9 (0 à toi) » ; la ligne Réflexion devient « Bots B0 · B1 · B2 · B3 » (fabbot règle le niveau, pas un temps de réflexion) | ✅ |
+| H4 | Volet Entraîner : « Dernier tournoi » + barre d'avancement | ✅ « Dernier tournoi » (ou tournoi en cours) + barre | ✅ |
 | H5 | Pied : version du moteur, nombre de cartes de l'éditeur | ✅ (texte proche) | ✅ |
 | H6 | Fond d'accueil ArtStation | ⛔ exclu | ⛔ |
 
@@ -126,8 +126,8 @@ contre Bot, signalement de bug, Importer une partie.
 
 | # | Arsenal JS | fabbot aujourd'hui | État |
 |---|---|---|---|
-| T1 | Page Entraîner = trois volets illustrés (Tournoi des bots, Atelier, Entraîner le bot sur un deck « bientôt ») | une page avec tous les réglages | 🟡 |
-| T2 | Tournoi : decks en pastilles avec l'avatar du héros, parties par matchup, Lancer / Pause / Remettre à zéro, « En direct » (parties qui défilent), matrice, classement, historique par version du moteur, Exporter (.md) | ✅ lot 8 (sans pastilles avatars ni « En direct ») | 🟡 |
+| T1 | Page Entraîner = trois volets illustrés (Tournoi des bots, Atelier, Entraîner le bot sur un deck « bientôt ») | ✅ trois volets illustrés : Tournoi des bots (#tournoi), Faire apprendre les bots (#apprentissage-bots, l'équivalent fabbot de l'atelier), Entraîner le bot sur un deck (bientôt) | ✅ |
+| T2 | Tournoi : decks en pastilles avec l'avatar du héros, parties par matchup, Lancer / Pause / Remettre à zéro, « En direct » (parties qui défilent), matrice, classement, historique par version du moteur, Exporter (.md) | 🟡 lot 8 + portraits des héros dans les pastilles ; pas de « En direct » (parties qui défilent) | 🟡 |
 
 ## Ordre de travail proposé
 
