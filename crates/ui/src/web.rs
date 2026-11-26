@@ -586,7 +586,22 @@ pub fn carte(g: &GameState, viewer: PlayerId, id: ObjectId) -> Value {
         // Une carte en main est privée, pas « face cachée » au sens du plateau.
         "face_cachee": o.face_down && o.zone != Zone::Hand,
         "details": details,
+        // Emplacement sur le tapis (armes et équipement), sinon null.
+        "emplacement": emplacement(o.zone),
     })
+}
+
+/// Emplacement d'une arme ou d'un équipement sur le tapis (zones
+/// d'équipement et d'armes), pour placer la carte comme sur un playmat.
+fn emplacement(z: Zone) -> Option<&'static str> {
+    match z {
+        Zone::Weapon => Some("arme"),
+        Zone::Head => Some("tete"),
+        Zone::Chest => Some("torse"),
+        Zone::Arms => Some("bras"),
+        Zone::Legs => Some("jambes"),
+        _ => None,
+    }
 }
 
 fn cartes(g: &GameState, viewer: PlayerId, ids: &[ObjectId]) -> Vec<Value> {

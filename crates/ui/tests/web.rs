@@ -733,3 +733,35 @@ fn la_sauvegarde_automatique_ecrit_un_fichier_relu_a_l_identique() {
     assert_eq!(affiche(&m.etat()), affiche(&v));
     std::fs::remove_dir_all(&dossier).ok();
 }
+
+// ---------- Arsenal : tapis de jeu ----------
+
+#[test]
+fn chaque_arme_et_equipement_dit_son_emplacement_sur_le_tapis() {
+    let s = Session::nouvelle(reglages("hala", "dorinthea", 5)).unwrap();
+    let v = s.etat();
+    for qui in ["vous", "bot"] {
+        let eq = v[qui]["equipement"].as_array().unwrap();
+        assert!(!eq.is_empty(), "{qui} : pas d'équipement");
+        let mut vus = Vec::new();
+        for c in eq {
+            let e = c["emplacement"].as_str().unwrap();
+            assert!(
+                ["arme", "tete", "torse", "bras", "jambes"].contains(&e),
+                "{e}"
+            );
+            if e != "arme" {
+                assert!(!vus.contains(&e), "{qui} : deux cartes en {e}");
+                vus.push(e);
+            }
+        }
+        assert!(
+            eq.iter().any(|c| c["emplacement"] == "arme"),
+            "{qui} : pas d'arme"
+        );
+    }
+    // Hors armes et équipement, pas d'emplacement.
+    for c in v["vous"]["main"].as_array().unwrap() {
+        assert!(c["emplacement"].is_null());
+    }
+}
