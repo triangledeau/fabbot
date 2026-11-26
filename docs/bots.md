@@ -7,7 +7,7 @@
 | **B0** | `RandomAgent` (`crates/ai/src/lib.rs`) | au hasard parmi les options légales ; sert de référence (Elo 0) et de testeur de règles |
 | **B1** | `HeuristicAgent` (`crates/ai/src/b1.rs`) | règles fixes, sans recherche (détail ci-dessous) |
 | **B2** | `IsmctsAgent` (`crates/ai/src/b2.rs`) | recherche ISMCTS : mondes imaginés + parties simulées par B1 (détail ci-dessous) |
-| B3 | à venir (étape 7) | évaluation apprise |
+| **B3** | `IsmctsAgent` avec `ReglagesB2::b3()` (`crates/ai/src/b3.rs`) | la recherche de B2, avec une évaluation apprise par auto-jeu (détail ci-dessous) |
 
 ### Un bot ne voit que l'information de son joueur
 
@@ -130,6 +130,67 @@ utilisent un nombre d'itérations.
 | idem, exploration 0,4 / 1,2 | 81 % / 78 % | +250 / +218 |
 | 30 itérations, 4 tours, profondeur 1 | 67 % | +122 |
 | **300 itérations, 4 tours, profondeur 1** | **84 %** | **+283** |
+
+### B3 : l'évaluation apprise (étape 7)
+
+B3 cherche exactement comme B2 (300 itérations, 4 tours simulés,
+profondeur 1). Seule change l'**estimation** des parties simulées arrêtées
+après 4 tours : à la place de la formule fixe (vie + 1,5 par carte…), une
+évaluation dont les poids sont **appris** sur des parties jouées par les
+bots eux-mêmes.
+
+**L'évaluation** : chaque joueur reçoit une note = somme de ses
+caractéristiques × leur poids ; les chances de gagner du joueur 0 sont
+σ(note₀ − note₁). Caractéristiques : vie, vie sous 10 et sous 5, cartes en
+main, arsenal, deck, équipements et leur défense, cartes à blood debt face
+visible dans la zone de bannissement, cimetière, bannissement, « c'est son
+tour » ; le héros (force du deck) et, propres à chaque héros, sa vie et ses
+cartes (main + arsenal) ; chaque permanent contrôlé, **carte par carte**
+(Runechant, Frostbite, Ash, dragons, Might…). Les poids sont lus par nom de
+carte dans `data/b3/evaluation.txt` (fichier lisible) : un nouveau deck a
+des poids nuls tant qu'on n'a pas refait l'apprentissage.
+
+Pendant la recherche, le terme « force du héros » est retiré : il est le
+même pour tous les coups d'une décision, et dans un matchup déséquilibré il
+écrasait toutes les estimations près de 0 (Levia : −3,3).
+
+**L'apprentissage** (`--apprendre-b3`) : une position au début de chaque
+tour de chaque partie, avec le résultat final ; régression logistique
+(Newton, pénalité ridge λ = 10). Une partie sur 10 est gardée pour mesurer
+la qualité des prédictions (perte logarithmique, 0,693 = toujours 50 %).
+
+```bash
+cargo run --release -p fab-sim -- --apprendre-b3 --games 500
+cargo run --release -p fab-sim -- --apprendre-b3 --games 56 --bots b3-100 b3-100
+cargo run --release -p fab-sim -- --tournoi --bots b3 b2 --games 8 --check
+```
+
+Variantes : `b3-800t1` (mêmes réglages que `b2-…`), `b3:fichier` (autre
+fichier de poids).
+
+#### Mesures (2026-11-26, contre B2, 81 paires)
+
+| Poids | Appris sur | Perte (test) | Parties | Score | Elo (intervalle à 95 %) |
+|---|---|---|---|---|---|
+| formule fixe de B2 | — | 0,595 | | | |
+| 1re génération | 40 500 parties B1 contre B1 (900 000 positions, 10 s) | 0,346 | 324 | 51,2 % | +9 (−29 à +47) |
+| idem, sans la force du héros dans la recherche | | | 324 | 52,8 % | +19 (−18 à +58) |
+| idem, 1 tour simulé, 800 itérations (même temps que B2) | | | 324 | 46,6 % | −24 (−62 à +14) |
+| **2e génération (retenue)** | 4 536 parties B3-100 contre B3-100 (88 000 positions, 35 min) | 0,391 | 648 | **53,7 %** | **+26 (−1 à +53)** |
+
+0 erreur. Les poids de 1re génération prédisent bien la fin d'une partie
+**jouée par B1** (perte 0,35 contre 0,60 pour la formule fixe), mais
+n'aident presque pas la recherche. Ceux de 2e génération, appris sur des
+parties de B3, donnent une valeur bien plus grande aux cartes (une carte en
+main ≈ 3 PV, contre ≈ 0,4 PV en 1re génération) ; c'est le premier
+réglage qui dépasse B2, de peu. Gardés dans le dépôt :
+`data/b3/evaluation.txt` (2e génération, utilisée par `b3`) et
+`data/b3/generation1_b1.txt` (1re génération, `b3:data/b3/generation1_b1.txt`).
+Coût : le même que B2 (≈ 2,5 s par partie sur un cœur).
+
+Pistes : une 3e génération (parties de B3 2e génération), plus de parties
+d'apprentissage, des caractéristiques sur le contenu de la main (cartes
+bloquantes, attaques), une mesure sur plus de parties.
 
 ## La phase de side (étape 6)
 

@@ -15,10 +15,10 @@ met à jour à la fin de chaque tâche.
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ✅ B0 = 0, B1 = +511, B2 = +785 |
 | 5 | Interface web locale + annulation | ✅ (`fab-web`, à essayer par le propriétaire) |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ✅ bots (choix appris, +96 Elo) et page web (écran avant chaque manche) ; à essayer par le propriétaire |
-| 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
+| 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ✅ B3 = B2 + 26 Elo (−1 à +53) ; procédure : `docs/nouveau-deck.md` |
 
 **Branche de départ :** `main` (depuis le 2026-11-26, Claude crée et
-fusionne lui-même la pull request à la fin de chaque tâche ; l'étape 6 est
+fusionne lui-même la pull request à la fin de chaque tâche ; l'étape 7 est
 fusionnée).
 
 **Jouer dans le navigateur :** double-cliquer sur **`Jouer.bat`** (mise à
@@ -39,7 +39,17 @@ pour le bot qui cherche (une fraction de seconde par décision ; `b2-1000` ou
 **Bots et Elo :** `docs/bots.md` (règles de B1, tournoi, résultats).
 Tournoi : `cargo run --release -p fab-sim -- --tournoi --bots b1 b0 --games 1000 --check`.
 
-**Chiffres actuels :** 782 tests au vert. **B2 contre B1 : 83,9 % sur les
+**Étape 7 :** **B3** = la recherche de B2 avec une estimation **apprise**
+par auto-jeu (poids lisibles dans `data/b3/evaluation.txt`, appris sur
+des parties de B3 contre B3) : **B3 contre B2 : 53,7 % sur 648 parties
+(+26 Elo, intervalle −1 à +53), 0 erreur** ; `--niveau b3` dans
+`fab-ui`, menu « niveau » de la page web. Gain modeste : détail et pistes
+dans `docs/bots.md`. **Ajouter un deck** : `docs/nouveau-deck.md` (liste
+dans `data/decks/en_cours/`, `verifier-deck`, cartes, puis le fichier passe
+dans `data/decks/` et il est pris en compte partout ; tables des bots à
+refaire).
+
+**Chiffres actuels :** 794 tests au vert. **B2 contre B1 : 83,9 % sur les
 81 paires des 9 decks (1 620 parties, 0 erreur) → +287 Elo** ; B2 contre
 B0 : 98,8 %. Classement commun : **B0 = 0, B1 = +511, B2 = +796**. B2
 imagine la main adverse dans le **card-pool de 55** (pas les 40 choisies).
@@ -283,9 +293,15 @@ les cartes.
 (`Jouer.bat`) et essayer l'écran de choix avant chaque manche ; dire ce
 qui gêne. Relire `data/side/b1.txt`.
 
-**Pour Claude :** **étape 7**, bot B3 (évaluation apprise par auto-jeu) et
-procédure « nouveau deck » (ajouter un 10e deck : liste, cartes, tests,
-`--apprendre-side`). Pistes pour la phase de side : apprendre avec B2
+**Pour le propriétaire (étape 7) :** essayer B3 (`--niveau b3`, ou le
+menu de la page web) ; relire `docs/nouveau-deck.md` et dire si un 10e deck
+est voulu (donner sa liste).
+
+**Pour Claude :** l'étape 7 est finie ; il n'y a plus d'étape prévue.
+Prochaine tâche proposée : **améliorer B3** (3e génération d'auto-jeu,
+caractéristiques sur le contenu de la main, mesure sur plus de parties), ou
+**un 10e deck** si le propriétaire en donne la liste (suivre
+`docs/nouveau-deck.md`). Pistes pour la phase de side : apprendre avec B2
 plutôt que B1, tenir compte du premier joueur et de l'arène adverse
 (variables croisées), refaire l'apprentissage contre l'adversaire qui
 utilise lui-même la table. Pistes d'amélioration de B2, à mesurer plus tard : une estimation qui compte le
@@ -315,4 +331,5 @@ les cartes imaginées par leur fréquence dans les decks du méta.
 | 2026-11-23 | Étape 4, B2 : bot `IsmctsAgent` (ISMCTS) : mondes imaginés (`determinisation`, main adverse et decks redistribués, hasard renouvelé ; test : même choix quelle que soit la vraie main adverse), parties simulées par B1 sur 4 tours puis estimées ; réglages mesurés (arbre limité à la décision présente, 300 itérations) ; `--bots b2`, `b2-N`, `b2-Nms` ; `fab-ui --niveau b2`. B2 = +283 Elo contre B1 (83,6 %), classement B0 0 / B1 +511 / B2 +785 ; puis B2 imagine la main adverse dans le card-pool de 55 (`Loadout::pool`, `GameState::card_pools`) : 83,9 % contre B1, B2 = +796 | `claude/loving-fermi-r75ch8` |
 | 2026-11-23 | Étape 5 : interface web locale `fab-web` (serveur HTTP maison sur 127.0.0.1, sans nouvelle dépendance ; page unique : plateau des deux joueurs, chaîne de combat et pile, options cliquables et cartes jouables surlignées, annulation illimitée, texte officiel au survol, journal, nouvelle partie avec decks / niveau / graine) ; l'état envoyé au navigateur ne contient ni nom ni numéro de carte cachée (testé) ; `docs/interface.md` | `claude/youthful-brown-dgcgw0` |
 | 2026-11-25 | Étape 6 : `CardPool` et vérification d'un choix (CR 4.1.4a, 4.1.6a, 8.2.2b, 8.2.10b, TRP 7.4) ; `fab_match::preparer_manche` (ordre CR 4.1.3 à 4.1.6, trait `Side`) ; choix appris des bots par simulation et régression (`fab_ai::side`, `data/side/b1.txt`, `fab-sim --apprendre-side`, `--side`) : B1 appris contre B1 liste 63,5 % (+96 Elo) ; page web : matchs en plusieurs manches, écran de choix (qui commence, équipement, 40 cartes) avant chaque manche, score ; bot du terminal avec le choix appris ; 22 nouveaux tests (782 au total) | `claude/brave-wozniak-d52twv` |
+| 2026-11-26 | Étape 7 : bot B3 (`fab_ai::b3` : évaluation par caractéristiques, régression logistique, poids par nom de carte dans `data/b3/evaluation.txt`, `fab-sim --apprendre-b3`, `b3`, `b3-…`, `b3:fichier`) ; 1re génération (B1 contre B1) : +9 / +19 Elo contre B2, 2e génération (B3 contre B3) : +26 Elo (648 parties) ; liste unique des decks `fab_cards::decks` (dossier `data/decks/`, decks en cours dans `en_cours/`), outil `verifier-deck`, `check_cards.py <fichier>`, `docs/nouveau-deck.md` ; 12 nouveaux tests (794) | `claude/wizardly-hawking-xf43w4` |
 | 2026-11-25 | Lancement simplifié à la demande du propriétaire : `Jouer.bat` (double-clic : `git pull`, textes officiels, compilation, lancement) ; `fab-web` ouvre lui-même le navigateur et prend le premier port libre | `claude/youthful-brown-dgcgw0` |

@@ -1,12 +1,13 @@
 //! fab-ui — jouer contre le bot dans le terminal.
 //!
 //! Usage :
-//!     cargo run --release -p fab-ui -- [--deck ira|hala|dorinthea|bravo|iyslander|florian|levia|dromai|arakni] [--bot …] [--niveau b0|b1|b2] [--graine N]
+//!     cargo run --release -p fab-ui -- [--deck ira|hala|dorinthea|bravo|iyslander|florian|levia|dromai|arakni] [--bot …] [--niveau b0|b1|b2|b3] [--graine N]
 //!
 //! Par défaut : vous jouez Hala, le bot joue Dorinthea, graine tirée de l'heure.
 //! Le bot est B0 (choix au hasard parmi les options légales) ; `--niveau b1`
 //! donne le bot heuristique, `--niveau b2` le bot qui cherche (ISMCTS ;
-//! variantes : `b2-500ms`, `b2-1000`…, voir `docs/bots.md`).
+//! variantes : `b2-500ms`, `b2-1000`…) ; `--niveau b3` la même recherche avec
+//! l'évaluation apprise (voir `docs/bots.md`).
 
 use fab_ai::{creer_agent, BOTS};
 use fab_engine::PlayerId;

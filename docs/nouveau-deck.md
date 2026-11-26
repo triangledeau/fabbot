@@ -143,9 +143,11 @@ cargo run --release -p fab-sim -- --tournoi --bots b3 b2 --games 10 --check
 
 Les deux apprentissages refont **toutes** les paires (le nouveau deck change
 aussi les choix des autres decks contre lui). Durées (conteneur de Claude,
-4 cœurs) : ≈ 4 min pour le side avec 10 decks, ≈ 15 s pour B3 ; les
-tournois de B3 sont plus longs (≈ 1 min par partie et par cœur… voir
-`docs/bots.md`).
+4 cœurs) : ≈ 4 min pour le side, ≈ 15 s pour les poids de B3 appris sur
+B1 contre B1. La 2e génération des poids de B3 (auto-jeu, plus forte,
+voir `docs/bots.md`) se refait ensuite avec des parties de B3 :
+`--apprendre-b3 --games 56 --bots b3-100 b3-100` (≈ 35 min avec 9 decks).
+Un tournoi B3 contre B2 de 8 parties par paire prend ≈ 15 min.
 
 ## 6. Le propriétaire vérifie
 

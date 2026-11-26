@@ -1,0 +1,81 @@
+# Évaluation apprise de B3 (voir crates/ai/src/b3.rs) : une ligne « caractéristique = poids ».
+# Chances de gagner du joueur 0 = σ(note₀ − note₁), note = Σ poids × valeur.
+# Produit par : cargo run --release -p fab-sim -- --apprendre-b3 --games 500 --bots b1 b1
+# 818656 positions (début de chaque tour) de 40500 parties (b1 contre b1, side appris), λ = 10.
+# Perte logarithmique sur des parties de test : 0.3459 (formule fixe de B2 : 0.5953).
+
+# --- Caractéristiques génériques ---
+vie = +0.1179
+vie sous 10 = -0.0622
+vie sous 5 = -0.0655
+cartes en main = +0.0451
+arsenal occupé = -0.0716
+cartes dans le deck = -0.1590
+équipements = -0.3344
+défense des équipements = +0.1315
+blood debt dans le bannissement = -0.0857
+cartes au cimetière = -0.3341
+cartes bannies = -0.3772
+c'est son tour = +0.4165
+
+# --- Héros : force du deck, vie et cartes (main + arsenal) propres au héros ---
+héros Arakni, Web of Deceit = +0.2829
+vie × héros Arakni, Web of Deceit = -0.0702
+main × héros Arakni, Web of Deceit = -0.0059
+héros Bravo, Flattering Showman = +0.9129
+vie × héros Bravo, Flattering Showman = +0.0440
+main × héros Bravo, Flattering Showman = -0.0836
+héros Dorinthea = +0.6785
+vie × héros Dorinthea = +0.0185
+main × héros Dorinthea = -0.0053
+héros Dromai = +0.2483
+vie × héros Dromai = +0.1729
+main × héros Dromai = -0.0456
+héros Florian = +0.5738
+vie × héros Florian = +0.0249
+main × héros Florian = -0.0301
+héros Hala = +0.2948
+vie × héros Hala = -0.0242
+main × héros Hala = +0.0063
+héros Ira, Crimson Haze = +0.5518
+vie × héros Ira, Crimson Haze = +0.0590
+main × héros Ira, Crimson Haze = +0.0551
+héros Iyslander = -0.2495
+vie × héros Iyslander = -0.0631
+main × héros Iyslander = +0.0083
+héros Levia = -3.2935
+vie × héros Levia = -0.0440
+main × héros Levia = +0.0744
+
+# --- Permanents contrôlés (par exemplaire) ---
+permanent Aether Ashwing = +0.1702
+permanent Agility = +0.2189
+permanent Ash = +0.0329
+permanent Azvolai = +0.4026
+permanent Blessing of Qi (red) = -0.1703
+permanent Bloodrot Pox = -0.6393
+permanent Cromai = +0.5029
+permanent Embodiment of Earth = +0.2322
+permanent Essence of Ancestry: Body (red) = -0.1480
+permanent Flurry = -0.0184
+permanent Frostbite = -0.0984
+permanent Gate to i'Arathael = +0.2309
+permanent Harvest Season (red) = +0.3356
+permanent Kyloria = +0.6370
+permanent Might = +0.3081
+permanent Miragai = +0.4690
+permanent Nekria = -0.1687
+permanent Ouvia = -0.2164
+permanent Passing Mirage (blue) = -0.4017
+permanent Ponder = -0.1068
+permanent Pyroglyphic Protection (blue) = -0.4310
+permanent Quicken = -0.0013
+permanent Runeblood Incantation (red) = +0.0838
+permanent Runechant = +0.2226
+permanent Seismic Surge = +0.1236
+permanent Sigil of Silphidae (blue) = -0.2870
+permanent Spectral Shield = -0.1472
+permanent The Suspense is Killing Me (blue) = -0.3942
+permanent Themai = +0.1331
+permanent Vigor = +0.1263
+permanent Yendurai = +0.1944

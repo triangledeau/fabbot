@@ -99,7 +99,7 @@ Par défaut, vous jouez **Hala** et le bot joue **Dorinthea**. Options :
 | `--deck dromai` | vous jouez Dromai (le bot prend alors Hala) |
 | `--deck arakni` | vous jouez Arakni, Web of Deceit (le bot prend alors Hala) |
 | `--bot hala` | deck du bot : `ira`, `hala`, `dorinthea`, `bravo`, `iyslander`, `florian`, `levia`, `dromai` ou `arakni` (on peut faire un miroir : `--deck hala --bot hala`) |
-| `--niveau b1` | niveau du bot : `b0` (au hasard, par défaut), `b1` (heuristique) ou `b2` (recherche ISMCTS ; variantes `b2-500ms`, `b2-1000`…), voir `docs/bots.md` |
+| `--niveau b1` | niveau du bot : `b0` (au hasard, par défaut), `b1` (heuristique) `b2` (recherche ISMCTS ; variantes `b2-500ms`, `b2-1000`…) ou `b3` (recherche avec évaluation apprise), voir `docs/bots.md` |
 | `--graine 42` | rejouer exactement la même partie (mêmes mélanges) |
 
 Exemple : `cargo run --release -p fab-ui -- --deck dorinthea --graine 42`
