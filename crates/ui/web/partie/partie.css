@@ -146,7 +146,12 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 .arena.actif .z.heros { animation: herosactif 2.4s ease-in-out infinite; }
 @keyframes herosactif { 50% { box-shadow: 0 0 30px 4px color-mix(in srgb, var(--c) 65%, transparent); } }
 .z.heros.touche { animation: herostouche .5s both; }
-.z .pv { position: absolute; left: 50%; translate: -50% 0; bottom: 8%; z-index: 3; font: 700 calc(var(--H) * .2)/1 var(--f-num); color: #fff; background: rgb(8 10 15 / .85); border: 2px solid var(--danger); border-radius: 999px; padding: 2px 10px; text-shadow: 0 1px 2px #000; }
+/* PV : un médaillon sombre cerclé d'or, posé sur le coin bas-droit de la
+   carte du héros (là où la carte imprime ses PV de départ), sans cacher le texte. */
+.z .pv { position: absolute; right: calc(var(--H) * -.09); bottom: calc(var(--H) * -.07); z-index: 3; width: calc(var(--H) * .3); aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%;
+  font: 700 calc(var(--H) * .14)/1 var(--f-display); color: #f4e8c8; letter-spacing: .02em; text-shadow: 0 1px 2px #000, 0 0 10px rgb(255 216 74 / .25);
+  background: radial-gradient(circle at 38% 30%, #2b2f38, #0c0f15 68%); border: 2px solid var(--brass);
+  box-shadow: 0 0 0 3px rgb(8 10 15 / .85), 0 0 0 4px rgb(255 216 74 / .35), 0 6px 14px rgb(0 0 0 / .7), inset 0 0 10px rgb(255 216 74 / .18); pointer-events: none; }
 .z .marque { position: absolute; top: 4px; left: 4px; z-index: 3; }
 /* Une carte posée dans une zone en prend la taille */
 .z .carte, .z .carte.petite, .z .carte.img, .z .carte.img.petite, .z .carte.cachee { width: calc(var(--zh) * .716 - 4px); height: calc(var(--zh) - 4px); min-height: 0; padding: 4px; font-size: 10px; overflow: hidden; }
