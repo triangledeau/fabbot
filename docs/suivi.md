@@ -53,7 +53,7 @@ dans `data/decks/en_cours/`, `verifier-deck`, cartes, puis le fichier passe
 dans `data/decks/` et il est pris en compte partout ; tables des bots à
 refaire).
 
-**Chiffres actuels :** 794 tests au vert. **B2 contre B1 : 83,9 % sur les
+**Chiffres actuels :** 797 tests au vert. **B2 contre B1 : 83,9 % sur les
 81 paires des 9 decks (1 620 parties, 0 erreur) → +287 Elo** ; B2 contre
 B0 : 98,8 %. Classement commun : **B0 = 0, B1 = +511, B2 = +796**. B2
 imagine la main adverse dans le **card-pool de 55** (pas les 40 choisies).
