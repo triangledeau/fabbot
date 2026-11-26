@@ -1165,7 +1165,7 @@ impl GameState {
 }
 
 /// Zone d'équipement correspondant au sous-type d'une carte (CR 3.2-3.16).
-pub(crate) fn equipment_zone(def: &CardDef) -> Zone {
+pub fn equipment_zone(def: &CardDef) -> Zone {
     if def.types.has(Types::WEAPON) || def.subtypes.any(Subtypes::OFF_HAND | Subtypes::QUIVER) {
         Zone::Weapon
     } else if def.subtypes.has(Subtypes::HEAD) {

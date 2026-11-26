@@ -8,3 +8,4 @@ publish.workspace = true
 
 [dependencies]
 fab-engine.workspace = true
+fab-match.workspace = true

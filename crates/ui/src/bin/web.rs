@@ -1,16 +1,17 @@
 //! fab-web — jouer contre le bot dans le navigateur.
 //!
 //! Usage :
-//!     cargo run --release -p fab-ui --bin fab-web -- [--deck hala] [--bot dorinthea] [--niveau b1] [--graine N] [--port 8080]
+//!     cargo run --release -p fab-ui --bin fab-web -- [--deck hala] [--bot dorinthea] [--niveau b1] [--graine N] [--manches 2] [--port 8080]
 //!
 //! Le navigateur s'ouvre tout seul sur la page du jeu (`--sans-navigateur`
 //! pour l'éviter). Si le port 8080 est pris, le suivant libre est utilisé.
 //! Le serveur n'écoute que sur cet ordinateur. Le plus simple sous Windows :
 //! double-cliquer sur `Jouer.bat` à la racine du projet.
 
+use fab_ui::match_web::MatchWeb;
 use fab_ui::serveur::{self, graine_horloge, Etat};
 use fab_ui::textes::Textes;
-use fab_ui::web::{Reglages, Session};
+use fab_ui::web::Reglages;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -33,12 +34,15 @@ fn main() {
         graine: valeur("--graine")
             .and_then(|g| g.parse().ok())
             .unwrap_or_else(graine_horloge),
+        manches: valeur("--manches")
+            .and_then(|g| g.parse().ok())
+            .unwrap_or(2),
     };
     let port: u16 = valeur("--port")
         .and_then(|p| p.parse().ok())
         .unwrap_or(8080);
 
-    let session = match Session::nouvelle(reglages.clone()) {
+    let partie = match MatchWeb::nouveau(reglages.clone()) {
         Ok(s) => s,
         Err(e) => {
             eprintln!("Erreur : {e}");
@@ -72,7 +76,7 @@ fn main() {
         "Laissez cette fenêtre ouverte pendant que vous jouez. Fermez-la pour arrêter le jeu."
     );
     let etat = Etat {
-        session: Some(session),
+        partie: Some(partie),
         textes,
         depart: reglages,
     };
