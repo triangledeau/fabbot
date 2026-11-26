@@ -13,6 +13,7 @@ const Arsenal = (() => {
     "editeur": "decks",
     "impression": "impression",
     "entrainer": "entrainer",
+    "apprendre": "apprendre",
   };
   const TITRES = { accueil: "Arsenal — FaB Silver Age", partie: "Arsenal — Partie", decks: "Arsenal — Mes decks", impression: "Arsenal — Imprimer", entrainer: "Arsenal — Entraîner" };
   const adresse = () => {

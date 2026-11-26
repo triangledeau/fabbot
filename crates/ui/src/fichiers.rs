@@ -57,6 +57,10 @@ pub static FICHIERS: &[Fichier] = &[
     // extras de la partie : conseil, évaluation, Bot contre Bot, bug (lot 9)
     fichier!("partie/extras.css", CSS),
     fichier!("partie/extras.js", JS),
+    // apprendre : didacticiel des règles (phase 2)
+    fichier!("apprendre/apprendre.css", CSS),
+    fichier!("apprendre/apprendre.js", JS),
+    fichier!("apprendre/lecons.js", JS),
     // entraîner : tournoi, SPRT, apprentissage (lot 8)
     fichier!("entrainer/entrainer.css", CSS),
     fichier!("entrainer/entrainer.js", JS),

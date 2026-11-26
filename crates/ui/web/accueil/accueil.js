@@ -19,11 +19,11 @@
         <div class="foot"><div class="row"><span class="muted">Decks</span><span id="a-decks">…</span></div>
           <div class="row"><span class="muted">Bots</span><span id="a-bots">…</span></div></div>
       </a>
-      <div class="ht" style="--c:#4f8fe0" aria-disabled="true">
-        <div class="pic"><div class="art"></div><span class="sym" aria-hidden="true">✦</span><span class="badge">BIENTÔT</span></div>
-        <div class="txt"><h2>Apprendre</h2><ul><li>Didacticiel : les règles pas à pas</li><li>Puzzles de value</li></ul></div>
-        <div class="foot"><div class="row"><span class="muted">Prévu</span><span>à repenser (phases 2 et 3)</span></div></div>
-      </div>
+      <a class="ht" style="--c:#4f8fe0" href="#apprendre">
+        <div class="pic"><div class="art"></div><span class="sym" aria-hidden="true">✦</span></div>
+        <div class="txt"><h2>Apprendre</h2><ul><li>Didacticiel : les règles pas à pas</li><li>Puzzles de value (à venir)</li></ul></div>
+        <div class="foot"><div class="row"><span class="muted">Pour</span><span>débuter de zéro</span></div></div>
+      </a>
       <a class="ht" style="--c:#ffd84a" href="#entrainer">
         <div class="pic"><div class="art"></div><span class="sym" aria-hidden="true">♜</span></div>
         <div class="txt"><h2>Entraîner</h2><ul><li>Tournoi des bots, matrice des decks</li><li>Banc SPRT</li><li>Apprentissage (side, B3)</li></ul></div>

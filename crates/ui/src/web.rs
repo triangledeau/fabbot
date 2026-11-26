@@ -81,10 +81,7 @@ impl Session {
 
     /// Session sur une partie déjà créée (manche d'un match, après la
     /// phase de side). L'humain est le joueur 0.
-    pub fn avec_partie(mut g: GameState, r: Reglages) -> Result<Session, String> {
-        if g.record.is_none() {
-            g.record = Some(Vec::new());
-        }
+    pub fn avec_partie(g: GameState, r: Reglages) -> Result<Session, String> {
         let bot = creer_agent(&r.niveau, r.graine ^ 0x5A5A).ok_or_else(|| {
             format!(
                 "niveau de bot inconnu « {} » (connus : {}, b2-N)",
@@ -92,6 +89,19 @@ impl Session {
                 BOTS.join(", ")
             )
         })?;
+        Session::avec_agent(g, r, bot)
+    }
+
+    /// Session avec un adversaire donné (le didacticiel y met un bot qui
+    /// suit un script, `crate::api_apprendre`).
+    pub fn avec_agent(
+        mut g: GameState,
+        r: Reglages,
+        bot: Box<dyn Agent + Send>,
+    ) -> Result<Session, String> {
+        if g.record.is_none() {
+            g.record = Some(Vec::new());
+        }
         let nom_bot = bot.name().to_string();
         let mut s = Session {
             g,

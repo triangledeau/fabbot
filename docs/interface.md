@@ -84,6 +84,13 @@ Pour les développeurs : la page est découpée en un dossier par volet dans
 `crates/ui/src/fichiers.rs` (un fichier ajouté = une ligne là, un test le
 vérifie).
 
+### Apprendre (didacticiel des règles)
+
+Le volet **Apprendre** de l'accueil (`#apprendre`) explique les règles pas à
+pas, pour débuter de zéro : leçons courtes, scènes jouées sur le vrai moteur,
+questions éclair, et un tableau de couverture des règles officielles. Voir
+`docs/didacticiel.md`.
+
 ### Images des cartes
 
 Les cartes s'affichent avec leur **image officielle**, en **version
