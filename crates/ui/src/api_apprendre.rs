@@ -95,6 +95,36 @@ pub static SCENES: &[Scene] = &[
         eleve_commence: true,
         script: &[],
     },
+    // Chapitre 4, « Les points d'action » : un seul point d'action, une seule attaque.
+    Scene {
+        id: "un-point",
+        joueurs: [
+            Cote {
+                heros: "Dorinthea",
+                main: &[
+                    ("Brutal Assault", R),
+                    ("Brutal Assault", R),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                ],
+                suite: &[],
+                arene: &[],
+            },
+            Cote {
+                heros: "Bravo, Flattering Showman",
+                main: &[
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                ],
+                suite: &[],
+                arene: &[],
+            },
+        ],
+        eleve_commence: true,
+        script: &[],
+    },
 ];
 
 /// Le bot des scènes : il suit le script, puis passe.
@@ -375,5 +405,33 @@ mod tests {
             }
         }
         assert!(n > 0);
+    }
+
+    /// Scène « un-point » : après la première attaque, l'élève n'a plus de
+    /// point d'action et ne peut plus jouer la seconde (CR 8.1.1c, 4.3.2).
+    #[test]
+    fn scene_un_point_une_seule_attaque() {
+        let sc = SCENES.iter().find(|s| s.id == "un-point").unwrap();
+        let mut s = lancer(sc).unwrap();
+        let joue = |s: &mut Session, mot: &str| {
+            let v = s.etat();
+            let o = v["decision"]["options"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|o| o["texte"].as_str().unwrap().contains(mot))
+                .map(|o| o["i"].as_u64().unwrap() as usize);
+            o.map(|i| s.choisir(i).unwrap()).is_some()
+        };
+        assert!(joue(&mut s, "Jouer Brutal Assault (rouge)"));
+        assert!(joue(&mut s, "Pitcher Brutal Assault (bleu)"));
+        let v = s.etat();
+        assert_eq!(v["bot"]["vie"].as_i64().unwrap(), 20 - 6);
+        let plus_d_action = v["decision"]["options"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|o| o["action"] == "jouer");
+        assert!(!plus_d_action, "plus aucune carte ne se joue : {v}");
     }
 }

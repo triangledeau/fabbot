@@ -164,7 +164,11 @@
     return `<div class="ap-plateau">
       ${heros(e.bot, "Adversaire")}
       <div class="ap-zone"><div class="ap-etiq">Chaîne de combat <span class="muted">(étape : ${esc(e.combat?.etape || "—")})</span></div><div class="ap-rang">${chaine || `<span class="muted petit">vide</span>`}</div></div>
-      <div class="ap-zone"><div class="ap-etiq">Ton pitch</div><div class="ap-rang">${(e.vous.pitch || []).map(c).join("") || `<span class="muted petit">vide</span>`}</div></div>
+      <div class="ap-zones">
+        <div class="ap-zone"><div class="ap-etiq">Ton pitch</div><div class="ap-rang">${(e.vous.pitch || []).map(c).join("") || `<span class="muted petit">vide</span>`}</div></div>
+        <div class="ap-zone"><div class="ap-etiq">Ton arsenal</div><div class="ap-rang">${e.vous.arsenal ? c(e.vous.arsenal) : `<span class="muted petit">vide</span>`}</div></div>
+        <div class="ap-zone"><div class="ap-etiq">Ton cimetière</div><div class="ap-rang">${(e.vous.cimetiere || []).map(c).join("") || `<span class="muted petit">vide</span>`}</div></div>
+      </div>
       ${heros(e.vous, "Toi")}
       <div class="ap-zone"><div class="ap-etiq">Ta main</div><div class="ap-rang">${(e.vous.main || []).map(c).join("") || `<span class="muted petit">vide</span>`}</div></div>
     </div>`;

@@ -10,7 +10,6 @@
 - Fait : volet `#apprendre` (sommaire, leçons, questions, tableau de
   couverture du CR), scènes sur le moteur (`api_apprendre.rs`, bot scripté,
   `Session::avec_agent`), chapitre 1 (3 leçons, 1 scène, 3
-  questions), chapitre 2 (4 leçons : nombres, couleur et pitch, ligne de type, texte), tuile Apprendre de l'accueil active.
-- Mesuré : couverture 18 sections du CR sur 87 (1.1, 2.1 à 2.5, 2.7 à 2.12, 2.14, 2.15, 4.1, 4.4,
-  4.5, 7.5 — voir le tableau dans la page).
-- Pas fait : chapitres 3 à 13, mémos, rappel éclair d'une leçon précédente.
+  questions), chapitre 2 (4 leçons : nombres, couleur et pitch, ligne de type, texte), chapitre 3 (zones, arène et équipement, arsenal, où vont les cartes ; scène de l'arsenal), chapitre 4 (phases, points d'action, premier tour ; scène « un seul point d'action »), tuile Apprendre de l'accueil active.
+- Mesuré : couverture 40 sections du CR sur 87 (tableau en bas du sommaire de la page).
+- Pas fait : chapitres 5 à 13, mémos, rappel éclair d'une leçon précédente.

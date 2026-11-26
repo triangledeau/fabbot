@@ -107,8 +107,96 @@ const LECONS = [
       },
     ],
   },
-  { no: 3, titre: "Le tapis et les zones", lecons: [] },
-  { no: 4, titre: "Le déroulement d'un tour", lecons: [] },
+  {
+    no: 3, titre: "Le tapis et les zones",
+    lecons: [
+      {
+        id: "3-1", titre: "Les zones de jeu",
+        etapes: [
+          { texte: "Pendant la partie, chaque carte se trouve dans une <b>zone</b>. Chaque joueur a les siennes : héros, deux zones d'arme, tête, torse, bras, jambes, deck, main, arsenal, pitch, cimetière et zone des cartes bannies.", cr: ["3.0.1", "3.0.2"] },
+          { texte: "Trois zones sont communes aux deux joueurs : la <b>chaîne de combat</b> (les attaques en cours), la <b>pile</b> (les cartes en train d'être jouées) et la zone des <b>permanents</b>.", cr: ["3.0.2", "3.6.1", "3.13.1", "3.15.1"] },
+          { texte: "Certaines zones sont <b>publiques</b> : tout le monde voit les cartes. C'est le cas du cimetière, de la zone de pitch et des cartes bannies.", cr: ["3.0.3", "3.0.4", "3.8.1", "3.14.1", "3.4.1"] },
+          { texte: "D'autres sont <b>privées</b> : la main, le deck et l'arsenal. Tu peux regarder ta main et ton arsenal, mais pas ton propre deck.", cr: ["3.9.1", "3.7.1", "3.3.1", "3.0.3a", "3.7.4"] },
+          { quiz: "Peux-tu regarder les cartes de ton propre deck pendant la partie ?", choix: ["Non, sauf si une règle ou un effet le permet", "Oui, à tout moment", "Oui, mais seulement pendant ton tour"], bonne: 0,
+            pourquoi: "Le deck est la seule de tes zones privées que tu ne peux pas regarder librement.", cr: ["3.0.3a", "3.7.4"] },
+          { quiz: "Ton adversaire voit-il les cartes de ton cimetière ?", choix: ["Oui, c'est une zone publique", "Non, c'est une zone privée"], bonne: 0,
+            pourquoi: "Le cimetière est public, comme la zone de pitch et les cartes bannies.", cr: ["3.8.1"] },
+        ],
+      },
+      {
+        id: "3-2", titre: "L'arène et l'équipement",
+        etapes: [
+          { texte: "L'<b>arène</b> regroupe le héros, les armes, l'équipement (tête, torse, bras, jambes), la chaîne de combat et les permanents. La main, le deck, l'arsenal, le pitch, le cimetière, les cartes bannies et la pile n'en font pas partie.", cr: ["3.1.1", "3.1.1a"] },
+          { texte: "Chaque zone d'équipement (tête, torse, bras, jambes) contient au plus une carte. Il y a deux zones d'arme : une arme à deux mains (2H) les occupe toutes les deux.", cr: ["3.2.2", "3.16.2", "3.16.2a"] },
+          { texte: "Armes et équipements sont choisis avant la partie et commencent déjà en place. Ils ne vont jamais dans le deck.", cr: ["3.2.3", "3.16.3", "4.1.4a", "4.1.6a"] },
+          { quiz: "Combien de cartes d'équipement peux-tu avoir sur la tête ?", choix: ["Une au plus", "Deux", "Autant que tu veux"], bonne: 0,
+            pourquoi: "Chaque zone d'équipement ne contient qu'une carte au plus.", cr: ["4.1.4a"] },
+        ],
+      },
+      {
+        id: "3-3", titre: "L'arsenal",
+        etapes: [
+          { texte: "L'<b>arsenal</b> est une zone privée qui garde <b>une seule carte</b> de ton deck, face cachée, pour plus tard.", cr: ["3.3.1", "3.3.2"] },
+          { texte: "À la fin de ton tour, si ton arsenal est vide, tu peux y mettre une carte de ta main. Tu pourras la jouer depuis l'arsenal comme depuis ta main.", cr: ["4.4.3b", "3.3.4", "5.1.1a"] },
+          { scene: "attaquer",
+            consigne: "Joue Raging Onslaught en payant avec une carte bleue, comme au chapitre 1. Puis, quand le jeu te le propose en fin de tour, <b>mets une carte en arsenal</b>.",
+            reussi: (e) => !!e.vous.arsenal,
+            bravo: "Ta carte est en arsenal : elle ne compte plus dans ta main, et tu pourras la jouer à un prochain tour. Ton adversaire ne la voit pas." },
+          { quiz: "Ton arsenal contient déjà une carte. Peux-tu en ajouter une autre à la fin de ton tour ?", choix: ["Non, il faut qu'il soit vide", "Oui, jusqu'à deux"], bonne: 0,
+            pourquoi: "L'arsenal ne contient qu'une carte, et on n'y met une carte en fin de tour que s'il est vide.", cr: ["3.3.2", "4.4.3b"] },
+        ],
+      },
+      {
+        id: "3-4", titre: "Où vont les cartes jouées",
+        etapes: [
+          { texte: "Une carte que tu pitches pour payer va dans ta <b>zone de pitch</b>. À la fin du tour, chaque joueur remet ses cartes pitchées <b>sous son deck</b>, dans l'ordre de son choix, sans le montrer.", cr: ["1.14.3", "4.4.3c"] },
+          { texte: "Une carte d'action sans attaque va au <b>cimetière</b> une fois résolue. Une attaque reste sur la chaîne de combat jusqu'à la fin du combat, puis va au cimetière, avec les cartes de main qui l'ont défendue. Un équipement qui a défendu retourne, lui, à sa place.", cr: ["5.3.7", "3.0.12", "7.7.5", "7.7.6"] },
+          { quiz: "Que deviennent tes cartes pitchées à la fin du tour ?", choix: ["Elles vont sous ton deck", "Elles vont au cimetière", "Elles retournent dans ta main"], bonne: 0,
+            pourquoi: "Les cartes de la zone de pitch vont sous le deck, dans l'ordre choisi par leur propriétaire.", cr: ["4.4.3c"] },
+        ],
+      },
+    ],
+  },
+  {
+    no: 4, titre: "Le déroulement d'un tour",
+    lecons: [
+      {
+        id: "4-1", titre: "Les trois phases",
+        etapes: [
+          { texte: "Les joueurs jouent chacun leur tour. Un tour a trois phases, dans l'ordre : <b>début</b>, <b>action</b>, <b>fin</b>.", cr: ["4.0.3a", "4.0.3b"] },
+          { texte: "<b>Début</b> : les effets « au début du tour » se déclenchent. Personne ne joue de carte pendant cette phase.", cr: ["4.2.1", "4.2.2"] },
+          { texte: "<b>Action</b> : le joueur du tour reçoit 1 point d'action et peut jouer. Elle se termine quand plus rien n'est en cours et que les deux joueurs passent l'un après l'autre.", cr: ["4.3.2", "4.3.3", "4.3.4"] },
+          { texte: "<b>Fin</b> : arsenal (si vide), cartes pitchées sous le deck, perte des points d'action et des ressources restants, puis le joueur du tour repioche jusqu'à son intellect. Le tour passe à l'adversaire.", cr: ["4.4.3b", "4.4.3c", "4.4.3e", "4.4.3f", "4.4.4"] },
+          { quiz: "À la fin de ton tour, il te reste 2 ressources non utilisées. Que deviennent-elles ?", choix: ["Elles sont perdues", "Tu les gardes pour le tour suivant", "Elles deviennent des PV"], bonne: 0,
+            pourquoi: "Tous les joueurs perdent leurs points d'action et leurs ressources en fin de tour.", cr: ["4.4.3e"] },
+        ],
+      },
+      {
+        id: "4-2", titre: "Les points d'action",
+        etapes: [
+          { texte: "Jouer une carte d'<b>action</b> (comme une attaque) coûte, en plus de son coût, <b>1 point d'action</b>. Au début de ta phase d'action, tu n'en as qu'un.", cr: ["8.1.1c", "4.3.2"] },
+          { scene: "un-point",
+            consigne: "Essaie de jouer tes <b>deux</b> Brutal Assault rouges. Paie chacune avec une carte bleue.",
+            reussi: (e) => e.bot.vie < e.debut.bot.vie && !(e.decision?.options || []).some((o) => o.action === "jouer"),
+            bravo: "La première attaque a touché, mais tu n'as plus de point d'action : la seconde ne peut plus se jouer ce tour-ci." },
+          { texte: "Certaines cartes ont <b>go again</b> (« rejouer ») : une fois résolues, elles te rendent 1 point d'action. Pour une attaque, il revient au début de l'étape de résolution du combat. C'est ainsi qu'on enchaîne plusieurs actions dans un tour.", cr: ["5.3.5", "8.3.5a", "8.3.5b"] },
+          { texte: "Une action se joue seulement quand la pile est vide, et pas pendant un combat, sauf à son étape de résolution.", cr: ["8.1.1a", "8.1.1b"] },
+          { quiz: "Tu as 1 point d'action et deux attaques sans go again. Combien peux-tu en jouer ce tour-ci ?", choix: ["Une", "Deux", "Aucune"], bonne: 0,
+            pourquoi: "La première coûte ton seul point d'action et ne le rend pas : la seconde ne peut plus se jouer.", cr: ["8.1.1c"] },
+        ],
+      },
+      {
+        id: "4-3", titre: "Le premier tour",
+        etapes: [
+          { texte: "Avant la partie, un joueur choisit qui joue le premier tour. Pour la première partie d'un match, ce joueur est tiré au sort. Ensuite, c'est celui qui a perdu la partie précédente (en cas de nulle, le même que la fois d'avant).", cr: ["4.1.3"] },
+          { texte: "Chaque joueur commence avec une main égale à l'intellect de son héros.", cr: ["4.1.10"] },
+          { texte: "À la fin du tout premier tour, <b>tous</b> les joueurs repiochent jusqu'à leur intellect, pas seulement le joueur du tour.", cr: ["4.4.3f"] },
+          { quiz: "Ton adversaire commence et tu défends avec 2 cartes pendant son premier tour. À la fin de ce tour, repioches-tu ?", choix: ["Oui, jusqu'à ton intellect", "Non, seul le joueur du tour repioche"], bonne: 0,
+            pourquoi: "Au premier tour de la partie, tous les joueurs repiochent jusqu'à leur intellect.", cr: ["4.4.3f"] },
+        ],
+      },
+    ],
+  },
   { no: 5, titre: "Payer : coût et pitch", lecons: [] },
   { no: 6, titre: "Attaquer : la chaîne de combat", lecons: [] },
   { no: 7, titre: "Défendre", lecons: [] },
