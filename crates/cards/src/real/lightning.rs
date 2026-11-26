@@ -14,6 +14,7 @@ use fab_engine::{
 pub const NAMES: &[&str] = &[
     "Cloud Cover",
     "Sizzle",
+    "Electrostatic Discharge",
     // NOMS
 ];
 
@@ -73,6 +74,33 @@ pub fn add(db: &mut CardDb) {
                 }),
                 power(n),
                 false,
+            );
+        })];
+        db.add(d);
+    }
+
+    // Electrostatic Discharge (bleu, rouge, jaune) — Lightning Instant, coût 0.
+    // « The next attack action card you play this turn with cost 1 or less
+    //   gets +1{p} (rouge : +3 ; jaune : +2). »
+    for c in COLORS {
+        let mut d = deck_card(
+            "Electrostatic Discharge",
+            c,
+            LIGHTNING,
+            Types::INSTANT,
+            Some(0),
+            None,
+            None,
+        );
+        d.resolve = vec![Op::Do(|g, c| {
+            let n = by_color(g, c, [3, 2, 1]);
+            g.next_attack(
+                c.controller,
+                Some(|g, a| {
+                    super::generic::is_attack_action_card(g, a) && g.def(a).cost.unwrap_or(0) <= 1
+                }),
+                power(n),
+                true,
             );
         })];
         db.add(d);

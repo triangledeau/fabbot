@@ -158,3 +158,77 @@ fn jusqua_active(t: &mut Partie, a: ObjectId) {
     }
     panic!("trop de décisions");
 }
+
+fn discharge_partie(main0: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie([HEROS, HEROS], main0, RIEN, RIEN, RIEN, &[], &[])
+}
+
+/// Electrostatic Discharge : « The next attack action card you play this turn
+/// with cost 1 or less gets +1{p} » (bleu), +3 (rouge), +2 (jaune).
+#[test]
+fn electrostatic_discharge_rouge_prochaine_attaque_de_cout_1_ou_moins_plus_3() {
+    let mut t = discharge_partie(&[("Electrostatic Discharge", R), ("Sweeping Blow", R)]);
+    jouer(&mut t, P0, "Electrostatic Discharge", R);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Sweeping Blow", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(t.g.power(a), 3 + 3, "Sweeping Blow (coût 1) : 3 + 3");
+}
+
+#[test]
+fn electrostatic_discharge_jaune_prochaine_attaque_de_cout_1_ou_moins_plus_2() {
+    let mut t = discharge_partie(&[("Electrostatic Discharge", Y), ("Sweeping Blow", R)]);
+    jouer(&mut t, P0, "Electrostatic Discharge", Y);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Sweeping Blow", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(t.g.power(a), 3 + 2, "jaune : +2");
+}
+
+#[test]
+fn electrostatic_discharge_bleu_prochaine_attaque_de_cout_1_ou_moins_plus_1() {
+    let mut t = discharge_partie(&[("Electrostatic Discharge", B), ("Sweeping Blow", R)]);
+    jouer(&mut t, P0, "Electrostatic Discharge", B);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Sweeping Blow", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(t.g.power(a), 3 + 1, "bleu : +1");
+}
+
+#[test]
+fn electrostatic_discharge_ne_s_applique_pas_a_une_attaque_de_cout_3() {
+    let mut t = discharge_partie(&[("Electrostatic Discharge", R), ("Colors of Aria", R)]);
+    jouer(&mut t, P0, "Electrostatic Discharge", R);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Colors of Aria", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(t.g.power(a), 7, "Colors of Aria coûte 3 : pas de bonus");
+}
+
+#[test]
+fn electrostatic_discharge_ne_vaut_que_pour_la_prochaine_attaque() {
+    let mut t = discharge_partie(&[("Electrostatic Discharge", R), ("Sweeping Blow", R)]);
+    jouer(&mut t, P0, "Electrostatic Discharge", R);
+    resoudre(&mut t);
+    assert_eq!(t.g.next_attack_effects.len(), 1, "un effet en attente");
+    let a = jouer(&mut t, P0, "Sweeping Blow", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(t.g.power(a), 6);
+    assert!(
+        t.g.next_attack_effects.is_empty(),
+        "consommé par la première attaque"
+    );
+}
+
+#[test]
+fn electrostatic_discharge_instant_ne_consomme_pas_de_point_d_action() {
+    let mut t = discharge_partie(&[("Electrostatic Discharge", R)]);
+    let avant = t.g.player(P0).action_points;
+    jouer(&mut t, P0, "Electrostatic Discharge", R);
+    resoudre(&mut t);
+    assert_eq!(
+        t.g.player(P0).action_points,
+        avant,
+        "instant : aucun point d'action dépensé"
+    );
+}
