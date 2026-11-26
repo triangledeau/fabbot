@@ -8,6 +8,11 @@ annulation illimitée.
 > d'essai fictives : des parties complètes se jouent entre bots aléatoires.
 > Les vraies cartes arrivent à l'étape 2.
 
+## Pour les agents (Claude, Antigravity…)
+
+Consignes communes : `AGENTS.md`. État du projet : `docs/suivi.md`. Qui
+travaille sur quoi : `docs/taches.md`.
+
 ## Jouer contre le bot
 
 **Double-cliquez sur `Jouer.bat`** (dans le dossier `fabbot`). C'est tout :

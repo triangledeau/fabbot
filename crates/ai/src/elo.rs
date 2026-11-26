@@ -149,10 +149,10 @@ mod tests {
         t.points[1][2] = (1.0 - p200) * n;
         t.points[2][0] = p400 * n;
         t.points[0][2] = (1.0 - p400) * n;
-        for i in 0..3 {
-            for j in 0..3 {
+        for (i, ligne) in t.parties.iter_mut().enumerate() {
+            for (j, case) in ligne.iter_mut().enumerate() {
                 if i != j {
-                    t.parties[i][j] = n;
+                    *case = n;
                 }
             }
         }
