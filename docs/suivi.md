@@ -17,7 +17,7 @@ même temps : règles dans `AGENTS.md`, qui fait quoi dans `docs/taches.md`.
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ✅ B0 = 0, B1 = +511, B2 = +785 |
 | 5 | Interface web locale + annulation | ✅ (`fab-web`, à essayer par le propriétaire) |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ✅ bots (choix appris, +96 Elo) et page web (écran avant chaque manche) ; à essayer par le propriétaire |
-| 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ✅ B3 = B2 + 26 Elo (−1 à +53) ; procédure : `docs/nouveau-deck.md` |
+| 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ✅ B3 (3e génération) = B2 + 53 Elo (+34 à +73) ; procédure : `docs/nouveau-deck.md` |
 
 **Branche de départ :** `main` (depuis le 2026-11-26, Claude crée et
 fusionne lui-même la pull request à la fin de chaque tâche ; l'étape 7 est
@@ -43,8 +43,10 @@ Tournoi : `cargo run --release -p fab-sim -- --tournoi --bots b1 b0 --games 1000
 
 **Étape 7 :** **B3** = la recherche de B2 avec une estimation **apprise**
 par auto-jeu (poids lisibles dans `data/b3/evaluation.txt`, appris sur
-des parties de B3 contre B3) : **B3 contre B2 : 53,7 % sur 648 parties
-(+26 Elo, intervalle −1 à +53), 0 erreur** ; `--niveau b3` dans
+des parties de B3 contre B3 ; **3e génération** depuis le 2026-11-26,
+avec le contenu de la main) : **B3 contre B2 : 57,6 % sur 1 296 parties
+(+53 Elo, intervalle +34 à +73), 0 erreur** ; contre la 2e génération :
+52,0 % sur 2 592 parties (+14 Elo, +1 à +28) ; `--niveau b3` dans
 `fab-ui`, menu « niveau » de la page web. Gain modeste : détail et pistes
 dans `docs/bots.md`. **Ajouter un deck** : `docs/nouveau-deck.md` (liste
 dans `data/decks/en_cours/`, `verifier-deck`, cartes, puis le fichier passe
@@ -300,9 +302,9 @@ menu de la page web) ; relire `docs/nouveau-deck.md` et dire si un 10e deck
 est voulu (donner sa liste).
 
 **Pour Claude :** l'étape 7 est finie ; il n'y a plus d'étape prévue.
-Prochaine tâche proposée : **améliorer B3** (3e génération d'auto-jeu,
-caractéristiques sur le contenu de la main, mesure sur plus de parties), ou
-**un 10e deck** si le propriétaire en donne la liste (suivre
+Prochaine tâche proposée (B3 3e génération faite le 2026-11-26 : les
+gains diminuent, pistes dans `docs/bots.md`) : **améliorer B2/B3 avec
+Levia** (B3 ne gagne que 12 % avec Levia contre B2 : blood debt), ou **un 10e deck** si le propriétaire en donne la liste (suivre
 `docs/nouveau-deck.md`). Pistes pour la phase de side : apprendre avec B2
 plutôt que B1, tenir compte du premier joueur et de l'arène adverse
 (variables croisées), refaire l'apprentissage contre l'adversaire qui
