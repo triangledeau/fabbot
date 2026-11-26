@@ -20,6 +20,7 @@ pub const NAMES: &[&str] = &[
     "Lightning Surge",
     "Second Strike",
     "Rush of Power",
+    "Visionary of Orbits",
     // NOMS
 ];
 
@@ -261,6 +262,53 @@ pub fn add(db: &mut CardDb) {
         ];
         db.add(d);
     }
+
+    // Visionary of Orbits (rouge) — Lightning Action - Attack, coût 3,
+    // 7{p} 2{d}.
+    // « When this hits, you may put an instant card from your graveyard on
+    //   the bottom of your deck. »
+    let mut d = deck_card(
+        "Visionary of Orbits",
+        Color::Red,
+        LIGHTNING,
+        Types::ACTION,
+        Some(3),
+        Some(7),
+        Some(2),
+    );
+    d.triggers = vec![TriggerDef {
+        when: super::generic::this_hits,
+        anywhere: false,
+        targets: vec![],
+        script: vec![
+            Op::Ask(|g, c| {
+                let mut options: Vec<Choice> = g
+                    .player(c.controller)
+                    .graveyard
+                    .iter()
+                    .filter(|&&x| g.def(x).types.any(Types::INSTANT))
+                    .map(|&x| Choice::Object(x))
+                    .collect();
+                if options.is_empty() {
+                    return None;
+                }
+                options.push(Choice::Pass);
+                Some(Ask {
+                    player: c.controller,
+                    label: "Carte instant du cimetière sous le deck (Pass : aucune)",
+                    options,
+                })
+            }),
+            Op::Do(|g, c| {
+                if let Some(Choice::Object(x)) = c.answer.take() {
+                    if g.obj(x).zone == Zone::Graveyard && g.obj(x).owner == c.controller {
+                        g.put_on_bottom(x);
+                    }
+                }
+            }),
+        ],
+    }];
+    db.add(d);
 
     // CARTES
 }

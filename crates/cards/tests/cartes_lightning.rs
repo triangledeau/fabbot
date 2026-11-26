@@ -506,3 +506,107 @@ fn rush_of_power_degat_arcanique_suit_la_couleur_de_puissance_jaune() {
         "2 de dégâts d'attaque puis 1 arcanique"
     );
 }
+
+// ---------------------------------------------------------------------------
+// Visionary of Orbits (rouge) : « When this hits, you may put an instant card
+// from your graveyard on the bottom of your deck. » (coût 3, 7{p} 2{d})
+// ---------------------------------------------------------------------------
+
+/// Met au cimetière une carte de `p` (deck ou main, selon la pioche de départ).
+fn au_cimetiere_depuis_deck(t: &mut Partie, p: PlayerId, nom: &str, c: Option<Color>) -> ObjectId {
+    let joueur = t.g.player(p);
+    let id = *joueur
+        .deck
+        .iter()
+        .chain(joueur.hand.iter())
+        .find(|&&x| t.g.def(x).name == nom && t.g.def(x).color == c)
+        .unwrap_or_else(|| panic!("{nom} absente du deck et de la main de {p:?}"));
+    t.g.put_in_graveyard(id);
+    t.g.refresh_priority();
+    id
+}
+
+/// Joue « Visionary of Orbits » et paie son coût (pitch) jusqu'à la décision suivante.
+fn jouer_visionary(t: &mut Partie) -> ObjectId {
+    let a = jouer(t, P0, "Visionary of Orbits", R);
+    while t.kind() == DecisionKind::Pitch {
+        let opts = t.options();
+        t.choisir(opts[0]);
+    }
+    a
+}
+
+/// Partie : P0 a « Visionary of Orbits » en main et `suite0` dans son deck.
+fn visionary_partie(suite0: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie(
+        [HEROS, HEROS],
+        &[("Visionary of Orbits", R)],
+        suite0,
+        RIEN,
+        RIEN,
+        &[],
+        &[],
+    )
+}
+
+#[test]
+fn visionary_of_orbits_puissance_7_defense_2_cout_3() {
+    let mut t = visionary_partie(&[]);
+    let a = jouer(&mut t, P0, "Visionary of Orbits", R);
+    assert_eq!(t.g.power(a), 7, "puissance 7");
+    assert_eq!(t.g.def(a).defense, Some(2), "défense 2");
+    assert_eq!(t.g.def(a).cost, Some(3), "coût 3");
+}
+
+#[test]
+fn visionary_of_orbits_quand_il_touche_met_une_carte_instant_du_cimetiere_sous_le_deck() {
+    let mut t = visionary_partie(&[("Cloud Cover", R)]);
+    let instant = au_cimetiere_depuis_deck(&mut t, P0, "Cloud Cover", R);
+    jouer_visionary(&mut t);
+    passer_jusqua_que(&mut t, |t| t.kind() == DecisionKind::Effect);
+    assert!(
+        t.peut(Choice::Object(instant)),
+        "la carte instant du cimetière est proposée"
+    );
+    t.choisir(Choice::Object(instant));
+    resoudre(&mut t);
+    let deck = &t.g.player(P0).deck;
+    assert_eq!(deck[0], instant, "la carte instant est sous le deck");
+    assert_eq!(t.g.obj(instant).zone, Zone::Deck);
+}
+
+#[test]
+fn visionary_of_orbits_may_passer_ne_met_rien_sous_le_deck() {
+    let mut t = visionary_partie(&[("Cloud Cover", R)]);
+    let instant = au_cimetiere_depuis_deck(&mut t, P0, "Cloud Cover", R);
+    jouer_visionary(&mut t);
+    passer_jusqua_que(&mut t, |t| t.kind() == DecisionKind::Effect);
+    t.choisir(Choice::Pass);
+    resoudre(&mut t);
+    assert_eq!(
+        t.g.obj(instant).zone,
+        Zone::Graveyard,
+        "la carte reste au cimetière"
+    );
+}
+
+#[test]
+fn visionary_of_orbits_ne_propose_que_les_cartes_instant_de_son_cimetiere() {
+    let mut t = visionary_partie(&[("Sizzle", R), ("Cloud Cover", R)]);
+    let action = au_cimetiere_depuis_deck(&mut t, P0, "Sizzle", R);
+    let instant = au_cimetiere_depuis_deck(&mut t, P0, "Cloud Cover", R);
+    jouer_visionary(&mut t);
+    passer_jusqua_que(&mut t, |t| t.kind() == DecisionKind::Effect);
+    assert!(t.peut(Choice::Object(instant)), "instant proposé");
+    assert!(!t.peut(Choice::Object(action)), "action non proposée");
+}
+
+#[test]
+fn visionary_of_orbits_sans_instant_au_cimetiere_ne_pose_pas_de_question() {
+    let mut t = visionary_partie(&[("Sizzle", R)]);
+    au_cimetiere_depuis_deck(&mut t, P0, "Sizzle", R);
+    jouer_visionary(&mut t);
+    passer_jusqua_que(&mut t, |t| t.vie(P1) < 20);
+    resoudre(&mut t);
+    assert_eq!(t.vie(P1), 20 - 7, "touche : 7 de dégâts, sans question");
+}
