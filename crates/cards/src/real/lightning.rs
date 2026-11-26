@@ -33,6 +33,7 @@ pub const NAMES: &[&str] = &[
     "Sigil of Voltaris",
     "Flash of Brilliance",
     "Beckoning Haunt",
+    "Quick Succession",
     // NOMS
 ];
 
@@ -633,6 +634,54 @@ pub fn add(db: &mut CardDb) {
     let mut d = equipment("Beckoning Haunt", Supertypes::RUNEBLADE, Subtypes::ARMS, 2);
     d.keywords = Keywords::GUARDWELL;
     db.add(d);
+
+    // Quick Succession (bleu, rouge, jaune) — Lightning Runeblade Action, coût 0, déf. 2.
+    // « The next Runeblade or Lightning attack action card you play this turn gets **go again**.
+    //   Your next attack this turn gets +1{p} while it has go again. (bleu)
+    //   Your next 3 attacks this turn get +1{p} while they have go again. (rouge)
+    //   Your next 2 attacks this turn get +1{p} while they have go again. (jaune)
+    //   **Go again** »
+    // TODO(règles) : rouge et jaune, « les 3 / 2 prochaines attaques » non codées.
+    // `apply_next_attack_effects` (effects.rs) consomme TOUS les effets « prochaine
+    // attaque » qui correspondent à la même attaque (après un retrait, la boucle
+    // ne passe pas à l'effet suivant) : empiler 3 effets ne donne pas 3 attaques.
+    // Il faut un compteur d'attaques dans `NextAttackEffect` (moteur, hors périmètre).
+    // TODO(règles) : bleu, « your next attack … while it has go again » : on suppose que
+    // la prochaine attaque SANS encore une fois ne consomme pas l'effet (il attend
+    // une attaque avec encore une fois). À confirmer dans le CR / errata.
+    for c in COLORS {
+        let mut d = deck_card(
+            "Quick Succession",
+            c,
+            LIGHTNING_RB,
+            Types::ACTION,
+            Some(0),
+            None,
+            Some(2),
+        );
+        d.keywords = Keywords::GO_AGAIN;
+        d.resolve = vec![Op::Do(|g, c| {
+            g.next_attack(
+                c.controller,
+                Some(|g, a| {
+                    super::generic::is_attack_action_card(g, a)
+                        && (g.supertypes(a).has(Supertypes::LIGHTNING)
+                            || g.supertypes(a).has(Supertypes::RUNEBLADE))
+                }),
+                grant(Keywords::GO_AGAIN),
+                true,
+            );
+            if g.db.get(c.card).color == Some(Color::Blue) {
+                g.next_attack(
+                    c.controller,
+                    Some(|g, a| g.keywords(a).has(Keywords::GO_AGAIN)),
+                    power(1),
+                    false,
+                );
+            }
+        })];
+        db.add(d);
+    }
 
     // CARTES
 }

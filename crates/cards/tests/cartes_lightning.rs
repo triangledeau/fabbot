@@ -1406,3 +1406,72 @@ fn beckoning_haunt_guardwell_ne_retire_rien_s_il_ne_defend_pas() {
     passer_jusqua_que(&mut t, |t| !t.g.combat.open);
     assert_eq!(t.g.defense(b), 2, "il n'a pas défendu : rien retiré");
 }
+
+// ---- Quick Succession (bleu, rouge, jaune) ----
+
+fn quick_succession_partie(main0: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie([HEROS, HEROS], main0, RIEN, RIEN, RIEN, &[], &[])
+}
+
+#[test]
+fn quick_succession_go_again_rend_un_point_d_action() {
+    let mut t = quick_succession_partie(&[("Quick Succession", B)]);
+    jouer(&mut t, P0, "Quick Succession", B);
+    resoudre(&mut t);
+    assert_eq!(t.g.player(P0).action_points, 1, "go again");
+}
+
+#[test]
+fn quick_succession_donne_go_again_a_la_prochaine_attaque_runeblade() {
+    let mut t = quick_succession_partie(&[("Quick Succession", B), ("Colors of Aria", R)]);
+    jouer(&mut t, P0, "Quick Succession", B);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Colors of Aria", R);
+    jusqua_active(&mut t, a);
+    assert!(t.g.keywords(a).has(Keywords::GO_AGAIN));
+}
+
+#[test]
+fn quick_succession_donne_go_again_sans_puissance_rouge() {
+    let mut t = quick_succession_partie(&[("Quick Succession", R), ("Colors of Aria", R)]);
+    jouer(&mut t, P0, "Quick Succession", R);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Colors of Aria", R);
+    jusqua_active(&mut t, a);
+    assert!(t.g.keywords(a).has(Keywords::GO_AGAIN));
+    assert_eq!(
+        t.g.power(a),
+        7,
+        "rouge : pas de +1 dans le code (voir TODO)"
+    );
+}
+
+#[test]
+fn quick_succession_ne_donne_pas_go_again_a_une_attaque_sans_runeblade_ni_lightning() {
+    let mut t = quick_succession_partie(&[("Quick Succession", B), ("Essai Frappe", R)]);
+    jouer(&mut t, P0, "Quick Succession", B);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Essai Frappe", R);
+    jusqua_active(&mut t, a);
+    assert!(!t.g.keywords(a).has(Keywords::GO_AGAIN));
+}
+
+#[test]
+fn quick_succession_bleu_plus_1_a_la_prochaine_attaque_avec_go_again() {
+    let mut t = quick_succession_partie(&[("Quick Succession", B), ("Colors of Aria", R)]);
+    jouer(&mut t, P0, "Quick Succession", B);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Colors of Aria", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(t.g.power(a), 7 + 1, "bleu : +1 car l'attaque a go again");
+}
+
+#[test]
+fn quick_succession_bleu_pas_de_plus_1_sans_go_again() {
+    let mut t = quick_succession_partie(&[("Quick Succession", B), ("Essai Frappe", R)]);
+    jouer(&mut t, P0, "Quick Succession", B);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Essai Frappe", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(t.g.power(a), 4, "pas de go again : pas de +1");
+}
