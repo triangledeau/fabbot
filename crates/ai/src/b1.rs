@@ -32,6 +32,9 @@ pub struct Reglages {
     pub cout_par_carte_deja_posee: f32,
     /// Vie en dessous de laquelle le bot défend plus volontiers.
     pub vie_basse: i32,
+    /// Nombre d'attaques d'un allié adverse qu'on compte éviter en le
+    /// détruisant (0 : toujours viser le héros).
+    pub tours_d_allie: f32,
 }
 
 impl Default for Reglages {
@@ -41,6 +44,7 @@ impl Default for Reglages {
             cout_par_puissance: 0.25,
             cout_par_carte_deja_posee: 0.75,
             vie_basse: 10,
+            tours_d_allie: 2.0,
         }
     }
 }
@@ -70,9 +74,7 @@ impl Agent for HeuristicAgent {
             DecisionKind::Defend => defendre(&v, d, &self.reglages),
             DecisionKind::Arsenal => arsenal(&v, d),
             DecisionKind::FirstPlayer => d.index_of(Choice::Player(d.player)),
-            DecisionKind::AttackTarget => {
-                d.index_of(Choice::Target(Target::Player(d.player.opponent())))
-            }
+            DecisionKind::AttackTarget => cible_d_attaque(&v, d, &self.reglages),
             DecisionKind::Target => cible(&v, d),
             DecisionKind::ChooseX => meilleur(d, |c| match c {
                 Choice::Number(n) => n as f32,
@@ -304,6 +306,34 @@ fn defendre(v: &Vue, d: &Decision, r: &Reglages) -> Option<usize> {
 fn arsenal(v: &Vue, d: &Decision) -> Option<usize> {
     meilleur(d, |c| match c {
         Choice::Arsenal(id) => valeur_gardee(v, id),
+        _ => -1.0,
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Cible d'une attaque : le héros adverse, ou un allié qu'elle peut détruire.
+// ---------------------------------------------------------------------------
+
+/// Vise un allié adverse (un dragon…) quand l'attaque peut le détruire et
+/// que ses futures attaques valent plus que les dégâts faits au héros ;
+/// sinon le héros. Jamais un allié si l'attaque peut tuer le héros.
+fn cible_d_attaque(v: &Vue, d: &Decision, r: &Reglages) -> Option<usize> {
+    let heros = d.index_of(Choice::Target(Target::Player(v.adversaire())));
+    let Some(attaque) = v.ma_carte_sur_la_pile() else {
+        return heros;
+    };
+    let p = v.puissance(attaque).max(0) as f32;
+    if p as i32 >= v.vie(v.adversaire()) {
+        return heros;
+    }
+    meilleur(d, |c| match c {
+        Choice::Target(Target::Player(q)) if q == v.adversaire() => p,
+        Choice::Target(Target::Object(o)) if v.carte(o.id).subtypes.has(Subtypes::ALLY) => {
+            match v.vie_objet(o.id) {
+                Some(vie) if p as i32 >= vie => r.tours_d_allie * v.puissance(o.id).max(0) as f32,
+                _ => -1.0,
+            }
+        }
         _ => -1.0,
     })
 }
