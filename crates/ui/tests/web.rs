@@ -172,6 +172,7 @@ fn etat_serveur() -> Etat {
         partie: None,
         textes: None,
         depart: reglages("hala", "dorinthea", 1),
+        sauvegarde: None,
     }
 }
 
@@ -607,4 +608,128 @@ fn les_options_disent_ce_qu_elles_font_pour_le_glisser_deposer() {
             assert_eq!(a, "autre");
         }
     }
+}
+
+// ---------- Arsenal, lot 3 : sauvegarde et reprise ----------
+
+/// L'état affiché, sans ce qui dépend de la façon d'y arriver (film).
+fn affiche(v: &Value) -> Value {
+    sans_film(v.clone())
+}
+
+/// Sauvegarde le match du serveur puis le recharge dans un autre serveur.
+fn sauver_et_recharger(e: &mut Etat) -> (Value, Etat) {
+    let r = repondre("GET", "/api/sauvegarde", e);
+    assert_eq!(r.code, 200, "{}", r.texte());
+    let sauvegarde = json(&r);
+    assert_eq!(sauvegarde["format"], "arsenal-fabbot");
+    let mut autre = etat_serveur();
+    let r = fab_ui::serveur::repondre_avec_corps(
+        "POST",
+        "/api/charger",
+        sauvegarde.to_string().as_bytes(),
+        &mut autre,
+    );
+    assert_eq!(r.code, 200, "{}", r.texte());
+    (json(&r), autre)
+}
+
+#[test]
+fn une_partie_rechargee_reprend_exactement_au_meme_point() {
+    let mut e = etat_serveur();
+    let v = nouveau_match(
+        &mut e,
+        "/api/nouvelle?deck=ira&bot=bravo&niveau=b0&graine=31&manches=2",
+    );
+    // Pendant la préparation déjà.
+    let (r, _) = sauver_et_recharger(&mut e);
+    assert_eq!(affiche(&r), affiche(&v));
+    let mut v = preparer_avec_la_proposition(&mut e, v);
+    for n in 0..80 {
+        if v["fini"] == true {
+            break;
+        }
+        let k = v["decision"]["options"].as_array().unwrap().len();
+        v = json(&repondre(
+            "POST",
+            &format!("/api/choix?i={}", (n * 7) % k),
+            &mut e,
+        ));
+    }
+    let (r, mut autre) = sauver_et_recharger(&mut e);
+    assert_eq!(affiche(&r), affiche(&v), "même position après rechargement");
+    assert_eq!(r["annulables"], v["annulables"], "on peut toujours annuler");
+    // Et la suite se joue pareil : annuler, puis le même choix.
+    let a = json(&repondre("POST", "/api/annuler", &mut e));
+    let b = json(&repondre("POST", "/api/annuler", &mut autre));
+    assert_eq!(affiche(&a), affiche(&b));
+}
+
+#[test]
+fn un_match_recharge_apres_une_manche_finie_garde_le_score() {
+    let mut e = etat_serveur();
+    let v = nouveau_match(
+        &mut e,
+        "/api/nouvelle?deck=hala&bot=dorinthea&niveau=b0&graine=8&manches=2",
+    );
+    let mut v = preparer_avec_la_proposition(&mut e, v);
+    while v["fini"] != true {
+        v = json(&repondre("POST", "/api/choix?i=0", &mut e));
+    }
+    let (r, _) = sauver_et_recharger(&mut e);
+    assert_eq!(affiche(&r), affiche(&v), "manche finie");
+    let v = json(&repondre("POST", "/api/manche-suivante", &mut e));
+    preparer_avec_la_proposition(&mut e, v);
+    let v = json(&repondre("POST", "/api/choix?i=0", &mut e));
+    let (r, _) = sauver_et_recharger(&mut e);
+    assert_eq!(affiche(&r), affiche(&v), "deuxième manche");
+    assert_eq!(r["match"]["jouees"], 1);
+}
+
+#[test]
+fn une_sauvegarde_abimee_est_refusee_sans_toucher_au_match() {
+    let mut e = etat_serveur();
+    let v = nouveau_match(
+        &mut e,
+        "/api/nouvelle?deck=hala&bot=dorinthea&niveau=b0&graine=4&manches=1",
+    );
+    let v = preparer_avec_la_proposition(&mut e, v);
+    let mut s = json(&repondre("GET", "/api/sauvegarde", &mut e));
+    let charger = |e: &mut Etat, corps: &str| {
+        fab_ui::serveur::repondre_avec_corps("POST", "/api/charger", corps.as_bytes(), e)
+    };
+    assert_eq!(charger(&mut e, "pas du json").code, 400);
+    assert_eq!(charger(&mut e, "{\"format\":\"autre\"}").code, 400);
+    // Un coup impossible (option 999) : refusé avec un message clair.
+    let etapes = s["etapes"].as_array_mut().unwrap();
+    let partie = etapes
+        .iter_mut()
+        .find(|x| x.get("partie").is_some())
+        .unwrap();
+    partie["partie"] = serde_json::json!([999]);
+    let r = charger(&mut e, &s.to_string());
+    assert_eq!(r.code, 400);
+    assert!(r.texte().contains("incompatible"), "{}", r.texte());
+    // Le match en cours n'a pas bougé.
+    let apres = json(&repondre("GET", "/api/etat", &mut e));
+    assert_eq!(affiche(&apres), affiche(&v));
+}
+
+#[test]
+fn la_sauvegarde_automatique_ecrit_un_fichier_relu_a_l_identique() {
+    let dossier = std::env::temp_dir().join(format!("fabbot-sauvegarde-{}", std::process::id()));
+    let f = dossier.join("en-cours.json");
+    let mut e = etat_serveur();
+    let v = nouveau_match(
+        &mut e,
+        "/api/nouvelle?deck=levia&bot=arakni&niveau=b0&graine=12&manches=2",
+    );
+    let mut v = preparer_avec_la_proposition(&mut e, v);
+    for _ in 0..10 {
+        v = json(&repondre("POST", "/api/choix?i=0", &mut e));
+    }
+    fab_ui::sauvegarde::ecrire(&f, e.partie.as_ref().unwrap()).unwrap();
+    let m = fab_ui::sauvegarde::lire(&f).unwrap();
+    assert_eq!(affiche(&m.etat()), affiche(&v));
+    std::fs::remove_dir_all(&dossier).ok();
 }

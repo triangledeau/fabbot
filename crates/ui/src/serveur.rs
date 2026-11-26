@@ -19,10 +19,16 @@
 //! | `POST /api/deck?n=2,2,1,…` | exemplaires de chaque carte de deck (CR 4.1.6) |
 //! | `POST /api/manche-suivante` | préparer la manche suivante |
 //! | `GET /api/carte-pool?id=7` | texte d'une carte du card-pool (écran de préparation) |
+//! | `GET /api/sauvegarde` | la sauvegarde du match en cours (JSON, [`crate::sauvegarde`]) |
+//! | `POST /api/charger` (corps : une sauvegarde) | reprend le match d'une sauvegarde |
+//!
+//! Après chaque requête `POST` réussie, le match est écrit dans le fichier
+//! de sauvegarde ([`Etat::sauvegarde`]), s'il y en a un.
 
 use crate::decks_jouables;
 use crate::fichiers;
 use crate::match_web::{Etape, MatchWeb};
+use crate::sauvegarde;
 use crate::textes::Textes;
 use crate::web::Reglages;
 use fab_ai::BOTS;
@@ -69,6 +75,9 @@ pub struct Etat {
     pub textes: Option<Textes>,
     /// Réglages de la partie lancée au démarrage.
     pub depart: Reglages,
+    /// Fichier où le match est écrit après chaque coup (`None` : pas de
+    /// sauvegarde automatique, par exemple dans les tests).
+    pub sauvegarde: Option<std::path::PathBuf>,
 }
 
 /// Décode `%C3%A9` et `+` dans un paramètre d'URL.
@@ -118,8 +127,13 @@ pub fn graine_horloge() -> u64 {
         .unwrap_or(1)
 }
 
-/// Traite une requête (sans réseau : testable directement).
+/// Traite une requête sans corps (sans réseau : testable directement).
 pub fn repondre(methode: &str, requete: &str, etat: &mut Etat) -> Reponse {
+    repondre_avec_corps(methode, requete, &[], etat)
+}
+
+/// Traite une requête ; `corps` ne sert qu'à `POST /api/charger`.
+pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mut Etat) -> Reponse {
     let (chemin, ps) = parametres(requete);
     let param = |k: &str| ps.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone());
     match (methode, chemin) {
@@ -207,6 +221,24 @@ pub fn repondre(methode: &str, requete: &str, etat: &mut Etat) -> Reponse {
             };
             match r {
                 Ok(()) => Reponse::json(m.etat()),
+                Err(e) => Reponse::erreur(400, e),
+            }
+        }
+        ("GET", "/api/sauvegarde") => match &etat.partie {
+            Some(m) => Reponse::json(sauvegarde::exporter(m)),
+            None => Reponse::erreur(400, "aucun match en cours"),
+        },
+        ("POST", "/api/charger") => {
+            let v: Value = match serde_json::from_slice(corps) {
+                Ok(v) => v,
+                Err(e) => return Reponse::erreur(400, format!("fichier illisible : {e}")),
+            };
+            match sauvegarde::importer(&v) {
+                Ok(m) => {
+                    let v = m.etat();
+                    etat.partie = Some(m);
+                    Reponse::json(v)
+                }
                 Err(e) => Reponse::erreur(400, e),
             }
         }
@@ -302,15 +334,23 @@ fn servir(flux: TcpStream, etat: &Mutex<Etat>) -> io::Result<()> {
             }
         }
     }
-    // Le corps éventuel est ignoré (tout passe par l'URL).
-    let mut corps = vec![0u8; longueur.min(1 << 16)];
+    // Le corps ne sert qu'au chargement d'une sauvegarde (4 Mo au plus).
+    let mut corps = vec![0u8; longueur.min(4 << 20)];
     lecteur.read_exact(&mut corps)?;
 
     let rep = if !hote_local(&hote) {
         Reponse::erreur(403, "accès réservé à cet ordinateur")
     } else {
         let mut e = etat.lock().unwrap_or_else(|p| p.into_inner());
-        repondre(&methode, &requete, &mut e)
+        let rep = repondre_avec_corps(&methode, &requete, &corps, &mut e);
+        if methode == "POST" && rep.code == 200 {
+            if let (Some(f), Some(m)) = (&e.sauvegarde, &e.partie) {
+                if let Err(err) = sauvegarde::ecrire(f, m) {
+                    eprintln!("Sauvegarde impossible ({}) : {err}", f.display());
+                }
+            }
+        }
+        rep
     };
     let mut flux = flux;
     write!(

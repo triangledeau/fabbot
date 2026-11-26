@@ -32,6 +32,7 @@ struct Instantane {
     g: GameState,
     journal: usize,
     tour: u32,
+    coups: usize,
 }
 
 /// Les réglages d'une partie.
@@ -64,6 +65,10 @@ pub struct Session {
     film_no: u64,
     /// Attaques qui ont touché depuis leur déclaration (pour « Bloqué »).
     touchees: Vec<ObjectId>,
+    /// Tous les choix appliqués au moteur depuis le début de la manche
+    /// (humain et bot) : rejoués tels quels, ils redonnent exactement la
+    /// même partie (sauvegarde, lot 3 ; voir `crate::sauvegarde`).
+    coups: Vec<u32>,
 }
 
 impl Session {
@@ -100,9 +105,72 @@ impl Session {
             film: Vec::new(),
             film_no: 0,
             touchees: Vec::new(),
+            coups: Vec::new(),
         };
         s.avancer()?;
         Ok(s)
+    }
+
+    /// Session dont les premiers choix sont rejoués (sauvegarde) : chaque
+    /// choix de `coups` est appliqué tel quel au moteur, sans demander au
+    /// bot ; les choix de l'humain peuvent ensuite être annulés comme
+    /// d'habitude. Le bot reprend la main après le dernier coup.
+    pub fn rejouer(mut g: GameState, r: Reglages, coups: &[u32]) -> Result<Session, String> {
+        if g.record.is_none() {
+            g.record = Some(Vec::new());
+        }
+        let bot = creer_agent(&r.niveau, r.graine ^ 0x5A5A)
+            .ok_or_else(|| format!("niveau de bot inconnu « {} »", r.niveau))?;
+        let nom_bot = bot.name().to_string();
+        let mut s = Session {
+            g,
+            humain: PlayerId::P0,
+            reglages: r,
+            bot,
+            nom_bot,
+            historique: History::new(),
+            journal: Vec::new(),
+            tour: 0,
+            film: Vec::new(),
+            film_no: 0,
+            touchees: Vec::new(),
+            coups: Vec::new(),
+        };
+        for (n, &i) in coups.iter().enumerate() {
+            s.lire_evenements();
+            let Some(d) = s.g.pending_decision() else {
+                return Err(format!(
+                    "sauvegarde incompatible : la partie est finie au coup {} sur {}",
+                    n + 1,
+                    coups.len()
+                ));
+            };
+            if i as usize >= d.options.len() {
+                return Err(format!(
+                    "sauvegarde incompatible au coup {} (le moteur ou les decks ont changé ?)",
+                    n + 1
+                ));
+            }
+            if d.player == s.humain {
+                s.historique.record(&Instantane {
+                    g: s.g.clone(),
+                    journal: s.journal.len(),
+                    tour: s.tour,
+                    coups: s.coups.len(),
+                });
+            }
+            s.g.apply(i as usize)
+                .map_err(|e| format!("sauvegarde incompatible au coup {} : {e:?}", n + 1))?;
+            s.coups.push(i);
+        }
+        s.avancer()?;
+        s.film.clear();
+        Ok(s)
+    }
+
+    /// Les choix appliqués au moteur depuis le début de la manche.
+    pub fn coups(&self) -> &[u32] {
+        &self.coups
     }
 
     pub fn journal(&self) -> &[Ligne] {
@@ -271,6 +339,7 @@ impl Session {
             self.g
                 .apply(i)
                 .map_err(|e| format!("choix du bot refusé : {e:?}"))?;
+            self.coups.push(i as u32);
         }
     }
 
@@ -293,12 +362,14 @@ impl Session {
             g: self.g.clone(),
             journal: self.journal.len(),
             tour: self.tour,
+            coups: self.coups.len(),
         });
         self.film.clear();
         self.film_no += 1;
         self.g
             .apply(i)
             .map_err(|e| format!("choix refusé par le moteur : {e:?}"))?;
+        self.coups.push(i as u32);
         self.avancer()
     }
 
@@ -310,6 +381,7 @@ impl Session {
                 self.g = avant.g;
                 self.journal.truncate(avant.journal);
                 self.tour = avant.tour;
+                self.coups.truncate(avant.coups);
                 self.film.clear();
                 self.film_no += 1;
                 self.touchees.clear();

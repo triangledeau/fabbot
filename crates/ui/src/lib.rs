@@ -12,6 +12,7 @@ pub mod fichiers;
 pub mod images;
 pub mod jeu;
 pub mod match_web;
+pub mod sauvegarde;
 pub mod serveur;
 pub mod textes;
 pub mod vue;

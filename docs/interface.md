@@ -122,6 +122,27 @@ chaque pas du moteur + événements `tour`, `joue`, `attaque`, `defense`,
 option a une `action` (`jouer`, `pitch`, `defendre`, `arsenal`, `activer`,
 `autre`). Page : `crates/ui/web/partie/finition.js`.
 
+### Sauvegarde et reprise
+
+Le match en cours est **sauvegardé tout seul** après chacun de vos choix,
+dans `sauvegardes/en-cours.json` (dossier de fabbot). Si vous fermez la
+fenêtre, le prochain lancement de `fab-web` **reprend le match au même
+point** (manches gagnées, équipement choisi, coups joués). Pour repartir de
+zéro : `fab-web --nouvelle-partie`, ou « Nouveau match » dans la page. Un
+match terminé n'est pas repris.
+
+Dans l'en-tête de la partie : **Exporter** télécharge la sauvegarde (un
+fichier `.json`) ; **Importer** reprend un match depuis un tel fichier. Un
+fichier abîmé ou fait pour d'autres cartes est refusé, et le match en
+cours ne change pas.
+
+Pour les développeurs : la sauvegarde ne contient que les réglages et les
+choix (premier joueur, équipement, deck, puis tous les coups de chaque
+manche, ceux du bot compris) ; la reprise rejoue ces coups dans le moteur
+sans appeler le bot, donc à l'identique. Format `arsenal-fabbot`, version 1
+(`crates/ui/src/sauvegarde.rs`). Routes : `GET /api/sauvegarde`,
+`POST /api/charger` (corps : la sauvegarde).
+
 ### La page
 
 - **En haut** : le bot (héros, PV, points d'action, ressources, taille du

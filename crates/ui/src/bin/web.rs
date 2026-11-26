@@ -5,10 +5,13 @@
 //!
 //! Le navigateur s'ouvre tout seul sur la page du jeu (`--sans-navigateur`
 //! pour l'éviter). Si le port 8080 est pris, le suivant libre est utilisé.
-//! Le serveur n'écoute que sur cet ordinateur. Le plus simple sous Windows :
+//! La partie en cours est sauvegardée à chaque coup dans
+//! `sauvegardes/en-cours.json` et reprise au lancement suivant
+//! (`--nouvelle-partie` pour l'ignorer). Le serveur n'écoute que sur cet ordinateur. Le plus simple sous Windows :
 //! double-cliquer sur `Jouer.bat` à la racine du projet.
 
 use fab_ui::match_web::MatchWeb;
+use fab_ui::sauvegarde;
 use fab_ui::serveur::{self, graine_horloge, Etat};
 use fab_ui::textes::Textes;
 use fab_ui::web::Reglages;
@@ -42,7 +45,32 @@ fn main() {
         .and_then(|p| p.parse().ok())
         .unwrap_or(8080);
 
-    let partie = match MatchWeb::nouveau(reglages.clone()) {
+    // Lot 3 : la partie en cours est écrite à chaque coup dans
+    // sauvegardes/en-cours.json ; au lancement, on la reprend (sauf
+    // `--nouvelle-partie`, ou si le match était fini).
+    let fichier = sauvegarde::fichier_par_defaut();
+    let reprise = if args.iter().any(|a| a == "--nouvelle-partie") || !fichier.exists() {
+        None
+    } else {
+        match sauvegarde::lire(&fichier) {
+            Ok(m) if !m.termine() => Some(m),
+            Ok(_) => None,
+            Err(e) => {
+                println!("Partie sauvegardée illisible ({e}) : nouveau match.");
+                None
+            }
+        }
+    };
+    if reprise.is_some() {
+        println!(
+            "Partie sauvegardée retrouvée ({}) : elle reprend là où vous l'aviez laissée.",
+            fichier.display()
+        );
+    }
+    let partie = match reprise
+        .map(Ok)
+        .unwrap_or_else(|| MatchWeb::nouveau(reglages.clone()))
+    {
         Ok(s) => s,
         Err(e) => {
             eprintln!("Erreur : {e}");
@@ -57,7 +85,10 @@ fn main() {
     }
     println!(
         "fab-web — vous ({}) contre le bot {} ({}), graine {}",
-        reglages.deck, reglages.niveau, reglages.deck_bot, reglages.graine
+        partie.reglages.deck,
+        partie.reglages.niveau,
+        partie.reglages.deck_bot,
+        partie.reglages.graine
     );
     let ecoute = match serveur::ecouter(port) {
         Ok(e) => e,
@@ -79,6 +110,7 @@ fn main() {
         partie: Some(partie),
         textes,
         depart: reglages,
+        sauvegarde: Some(fichier),
     };
     if !args.iter().any(|a| a == "--sans-navigateur") {
         serveur::ouvrir_navigateur(&url);
