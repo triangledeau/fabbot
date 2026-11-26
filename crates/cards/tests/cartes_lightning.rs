@@ -423,3 +423,86 @@ fn second_strike_degats_infliges_par_l_adversaire_ne_comptent_pas() {
     assert_eq!(t.g.power(a), 1, "seuls les dégâts de P0 comptent");
     assert!(!t.g.keywords(a).has(Keywords::GO_AGAIN));
 }
+
+// ---------------------------------------------------------------------------
+// Rush of Power : « Quickstrike - If this has go again, it gets +1{p}.
+// When this hits a hero, deal 1 arcane damage to them. » (défense 3 ;
+// puissance : bleu 1, rouge 3, jaune 2)
+// ---------------------------------------------------------------------------
+
+/// Joue « Rush of Power » (avec `go_again` accordé par un effet) et l'attaque.
+fn rush_attaque(t: &mut Partie, c: Option<Color>, go_again: bool) -> ObjectId {
+    let carte = t.en_main(P0, "Rush of Power", c);
+    if go_again {
+        let r = t.g.obj(carte).obj_ref(carte);
+        t.g.modify(
+            r,
+            fab_engine::Delta {
+                grants: Keywords::GO_AGAIN,
+                ..Default::default()
+            },
+            fab_engine::Until::EndOfTurn,
+        );
+    }
+    let a = jouer(t, P0, "Rush of Power", c);
+    passer_jusqua_que(t, |t| {
+        t.g.pending_triggers.is_empty() && t.g.stack.is_empty() && t.g.active_attack() == Some(a)
+    });
+    a
+}
+
+fn rush_partie() -> Partie {
+    partie_cloud(&[("Rush of Power", R)])
+}
+
+#[test]
+fn rush_of_power_puissance_bleu_1_rouge_3_jaune_2_defense_3() {
+    for (c, puissance) in [(B, 1), (R, 3), (Y, 2)] {
+        let mut t = partie_cloud(&[("Rush of Power", c)]);
+        let a = jouer(&mut t, P0, "Rush of Power", c);
+        assert_eq!(t.g.power(a), puissance, "puissance selon la couleur");
+        assert_eq!(t.g.def(a).defense, Some(3), "défense 3");
+    }
+}
+
+#[test]
+fn rush_of_power_quickstrike_avec_go_again_gagne_1_p() {
+    let mut t = rush_partie();
+    let a = rush_attaque(&mut t, R, true);
+    assert_eq!(t.g.power(a), 4, "3 + 1 (quickstrike, go again)");
+}
+
+#[test]
+fn rush_of_power_quickstrike_sans_go_again_ne_gagne_rien() {
+    let mut t = rush_partie();
+    let a = rush_attaque(&mut t, R, false);
+    assert_eq!(t.g.power(a), 3, "pas de go again, pas de +1 de puissance");
+}
+
+#[test]
+fn rush_of_power_quand_il_touche_un_heros_inflige_1_degat_arcanique() {
+    let mut t = rush_partie();
+    rush_attaque(&mut t, R, false);
+    passer_jusqua_que(&mut t, |t| t.vie(P1) < 20);
+    resoudre(&mut t);
+    assert!(arcanique_1_a(&t, P1), "1 dégât arcanique au héros touché");
+    assert_eq!(
+        t.vie(P1),
+        20 - 3 - 1,
+        "3 de dégâts d'attaque puis 1 arcanique"
+    );
+}
+
+#[test]
+fn rush_of_power_degat_arcanique_suit_la_couleur_de_puissance_jaune() {
+    let mut t = partie_cloud(&[("Rush of Power", Y)]);
+    rush_attaque(&mut t, Y, false);
+    passer_jusqua_que(&mut t, |t| t.vie(P1) < 20);
+    resoudre(&mut t);
+    assert!(arcanique_1_a(&t, P1));
+    assert_eq!(
+        t.vie(P1),
+        20 - 2 - 1,
+        "2 de dégâts d'attaque puis 1 arcanique"
+    );
+}

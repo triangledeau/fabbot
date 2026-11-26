@@ -19,6 +19,7 @@ pub const NAMES: &[&str] = &[
     "Stinging Sprite",
     "Lightning Surge",
     "Second Strike",
+    "Rush of Power",
     // NOMS
 ];
 
@@ -200,6 +201,64 @@ pub fn add(db: &mut CardDb) {
                 }
             })],
         }];
+        db.add(d);
+    }
+
+    // Rush of Power (bleu, rouge, jaune) — Lightning Runeblade Action - Attack,
+    // coût 0, déf. 3. Puissance : bleu 1 ; rouge 3 ; jaune 2.
+    // « **Quickstrike** - If this has go again, it gets +1{p}.
+    //   When this hits a hero, deal 1 arcane damage to them. »
+    // TODO(règles) : Quickstrike n'est pas un mot-clé du moteur. Le +1{p} est
+    // calculé au moment où l'attaque est déclarée (comme Second Strike), car
+    // « go again » peut être accordé avant l'attaque ; à confirmer dans le CR.
+    for (c, p) in [(Color::Blue, 1), (Color::Red, 3), (Color::Yellow, 2)] {
+        let mut d = deck_card(
+            "Rush of Power",
+            c,
+            LIGHTNING_RB,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(3),
+        );
+        d.arcane_damage = true;
+        d.triggers = vec![
+            TriggerDef {
+                when: when_this_attacks,
+                anywhere: false,
+                targets: vec![],
+                script: vec![Op::Do(|g, c| {
+                    if let Some(s) = c.source {
+                        if g.keywords(s.id).has(Keywords::GO_AGAIN) {
+                            g.modify(
+                                s,
+                                Delta {
+                                    power: 1,
+                                    ..Default::default()
+                                },
+                                Until::EndOfTurn,
+                            );
+                        }
+                    }
+                })],
+            },
+            TriggerDef {
+                when: |g, me, e| super::assassin::this_hits_a_hero(g, me, e),
+                anywhere: false,
+                targets: vec![],
+                script: vec![Op::Do(|g, c| {
+                    if let Some(Event::Hit { target, .. }) = c.event {
+                        g.deal_damage_to(
+                            c.source_id(),
+                            c.controller,
+                            Target::Player(target),
+                            1,
+                            true,
+                        );
+                    }
+                })],
+            },
+        ];
         db.add(d);
     }
 
