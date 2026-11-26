@@ -103,13 +103,12 @@ Mark of the Huntsman).
 
 ## Questions ouvertes pour le propriétaire
 
-**Decks maison, classes et talents (réglé le 2026-11-26) :** pour une
-carte hybride, une seule des deux classes suffit (réponse du
-propriétaire). Hypothèses à confirmer : une carte ordinaire demande
-**toutes** ses classes et tous ses talents au héros (une carte
-« Draconic Ninja » n'est pas pour un héros seulement Ninja), et
-« Essence of X » sur le héros ajoute le talent X (Iyslander peut avoir
-des cartes Ice). Code : `Collection::hors_classe` (`crates/ui/src/api_decks.rs`).
+**Decks maison, classes et talents (réglé le 2026-11-26) :** règles
+confirmées par le propriétaire : une carte demande au héros toutes ses
+classes et tous ses talents (une carte « Draconic Ninja » n'est pas pour un
+héros seulement Ninja) ; pour une carte hybride, un seul des deux côtés
+suffit ; « Essence of X » sur le héros ajoute le talent X. Code :
+`Collection::hors_classe` (`crates/ui/src/api_decks.rs`).
 
 **Étape 6, à regarder :** le fichier `data/side/b1.txt` (choix appris des
 bots, paire par paire, avec l'écart estimé de chaque carte laissée hors du

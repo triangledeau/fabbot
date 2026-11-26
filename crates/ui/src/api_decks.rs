@@ -312,7 +312,7 @@ impl Collection {
     /// La carte `nom` est d'une classe ou d'un talent que le héros n'a pas.
     /// Le héros doit avoir toutes les classes et tous les talents de la
     /// carte ; pour une carte hybride, ceux d'un seul des deux côtés
-    /// suffisent (réponse du propriétaire du 2026-11-26). « Essence of X »
+    /// suffisent (règles confirmées par le propriétaire le 2026-11-26). « Essence of X »
     /// sur le héros ajoute le talent X.
     /// `None` : on ne sait pas (types inconnus du héros ou de la carte).
     pub fn hors_classe(&self, heros: &str, nom: &str) -> Option<bool> {
