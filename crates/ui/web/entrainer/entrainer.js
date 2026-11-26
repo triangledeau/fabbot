@@ -13,14 +13,21 @@
   const elo = (e) => (e == null ? "–" : e >= 800 ? "≥ +800" : e <= -800 ? "≤ −800" : (e >= 0 ? "+" : "") + Math.round(e));
   const duree = (s) => { s = Math.round(s); return s < 60 ? s + " s" : s < 3600 ? Math.floor(s / 60) + " min " + (s % 60) + " s" : Math.floor(s / 3600) + " h " + Math.floor((s % 3600) / 60) + " min"; };
   const date = (t) => new Date(t * 1000).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
-  const opts = (liste, choisi) => liste.map((b) => `<option value="${esc(b)}"${b === choisi ? " selected" : ""}>${esc(b.toUpperCase ? b.toUpperCase() : b)}</option>`).join("");
-  const SIDES = [["appris", "appris (table b1)"], ["liste", "liste"], ["general", "général"], ["hasard", "hasard"]];
+  // Niveaux des bots en mots de joueur (docs/bots.md, « Les bots »).
+  const NIVEAUX = { b0: "B0 · joue au hasard", b1: "B1 · règles fixes", b2: "B2 · cherche le meilleur coup", b3: "B3 · cherche, avec évaluation apprise" };
+  const opts = (liste, choisi) => liste.map((b) => `<option value="${esc(b)}"${b === choisi ? " selected" : ""}>${esc(NIVEAUX[b] || b.toUpperCase())}</option>`).join("");
+  const SIDES = [["appris", "plan appris (conseillé)"], ["liste", "liste telle quelle"], ["general", "plan général"], ["hasard", "au hasard"]];
+  // Parties jouées en même temps : par défaut, tous les cœurs de l'ordinateur sauf un.
+  const FILS = Math.max(1, (navigator.hardwareConcurrency || 4) - 1);
+  let noms = {}; // nom court du deck → nom du héros (/api/decks)
+  const nomDeck = (n) => noms[n] || n;
+  const court = (n) => nomDeck(n).split(",")[0];
   const sides = (choisi) => SIDES.map(([v, l]) => `<option value="${v}"${v === choisi ? " selected" : ""}>${l}</option>`).join("");
 
   sec.innerHTML = `<header class="dk-tete">
       <a class="btn small home-btn" href="#accueil">${Arsenal.HOME_SVG}Accueil</a>
       <h1>Entraîner</h1>
-      <span class="muted">Tournoi des bots, banc SPRT, apprentissage</span>
+      <span class="muted">Faire jouer les bots entre eux et mesurer leur force</span>
     </header>
     <div class="en-grille">
       <section class="en-bloc" aria-labelledby="en-t1">
@@ -33,13 +40,18 @@
             <label>Niveau <select id="en-bot-b"></select></label>
             <label>Side <select id="en-side-b">${sides("appris")}</select></label></fieldset>
           <fieldset><legend>Parties</legend>
-            <label title="Parties par paire de decks (A avec le deck de la ligne, B avec celui de la colonne)">Par paire <input type="number" id="en-parties" min="1" max="100000" value="10"></label>
-            <label title="Parties jouées en même temps">Fils <input type="number" id="en-threads" min="1" max="64" value="4"></label>
-            <label>Graine <input type="number" id="en-graine" min="1" value="1"></label></fieldset>
-          <fieldset><legend>Banc SPRT</legend>
-            <label title="Le tournoi s'arrête dès que le test tranche entre « A n'a pas d'avance » et « A a au moins cette avance »"><input type="checkbox" id="en-sprt"> s'arrêter dès que le test tranche</label>
-            <label>Avance cherchée <input type="number" id="en-sprt-elo" min="1" max="400" value="30"> Elo</label></fieldset>
+            <label title="Parties par paire de decks (A avec le deck de la ligne, B avec celui de la colonne)">Par paire de decks <input type="number" id="en-parties" min="1" max="100000" value="10"></label></fieldset>
         </div>
+        <details class="en-avance"><summary>Réglages avancés</summary>
+          <div class="en-form">
+            <fieldset><legend>Calcul</legend>
+              <label title="Nombre de parties jouées en même temps. Par défaut : les cœurs de l'ordinateur moins un.">Parties en même temps <input type="number" id="en-threads" min="1" max="64" value="${FILS}"></label>
+              <label title="Même graine et mêmes réglages = exactement les mêmes parties (pour comparer deux versions)">Graine <input type="number" id="en-graine" min="1" value="1"></label></fieldset>
+            <fieldset><legend>Arrêt anticipé (test SPRT)</legend>
+              <label title="Le tournoi s'arrête dès que le test tranche entre « A n'a pas d'avance » et « A a au moins cette avance »"><input type="checkbox" id="en-sprt"> s'arrêter dès que l'écart est prouvé</label>
+              <label>Écart recherché <input type="number" id="en-sprt-elo" min="1" max="400" value="30"> points Elo</label></fieldset>
+          </div>
+        </details>
         <div class="en-decks"><div class="en-decks-tete"><b>Decks</b>
           <button class="btn small quiet" id="en-tous">Tous</button><button class="btn small quiet" id="en-aucun">Aucun</button>
           <span class="muted" id="en-nb"></span></div><div id="en-liste-decks" class="en-coches"></div></div>
@@ -56,13 +68,14 @@
     </div>
     <section class="en-bloc en-resultat" id="en-resultat" hidden aria-live="polite"></section>
     <section class="en-bloc" aria-labelledby="en-t3">
-      <h2 id="en-t3">Apprentissage (fab-sim)</h2>
-      <p class="muted petit">Lance <code>fab-sim --apprendre-side</code> (table de side de B1, <code>data/side/b1.txt</code>) ou <code>--apprendre-b3</code> (poids de B3, <code>data/b3/evaluation.txt</code>) sur les decks du projet. Le fichier écrit ne sert qu'après avoir recompilé. <b>Un seul agent à la fois</b> doit refaire <code>data/side/b1.txt</code> (voir <code>docs/taches.md</code>).</p>
+      <h2 id="en-t3">Apprentissage</h2>
+      <p class="muted petit">Les bots rejouent beaucoup de parties entre eux pour apprendre : soit leurs plans de side (quelles cartes mettre dans les 40 contre chaque héros), soit l'évaluation des positions de B3. Compter plusieurs heures. Le résultat ne sert qu'au prochain lancement du jeu après une mise à jour.</p>
+      <p class="muted petit" title="fab-sim --apprendre-side écrit data/side/b1.txt ; fab-sim --apprendre-b3 écrit data/b3/evaluation.txt. Un seul agent à la fois doit refaire data/side/b1.txt (docs/taches.md).">Fichiers modifiés : survolez ici pour le détail technique.</p>
       <div class="en-actions">
-        <label>Parties par paire <input type="number" id="en-t-parties" min="1" value="200"></label>
-        <label>Fils <input type="number" id="en-t-threads" min="1" max="64" value="4"></label>
-        <button class="btn" id="en-t-side">Apprendre la table de side</button>
-        <button class="btn" id="en-t-b3">Apprendre les poids de B3</button>
+        <label>Parties par paire de decks <input type="number" id="en-t-parties" min="1" value="200"></label>
+        <label title="Nombre de parties jouées en même temps">Parties en même temps <input type="number" id="en-t-threads" min="1" max="64" value="${FILS}"></label>
+        <button class="btn" id="en-t-side">Apprendre les plans de side</button>
+        <button class="btn" id="en-t-b3">Apprendre l'évaluation de B3</button>
         <button class="btn" id="en-t-arreter" hidden>Arrêter</button>
         <span id="en-t-msg" class="muted"></span>
       </div>
@@ -74,6 +87,7 @@
 
   async function remplir() {
     const d = await fetch("/api/decks").then((r) => r.json());
+    noms = d.noms || {};
     const ba = $("en-bot-a"), bb = $("en-bot-b");
     if (!ba.options.length) {
       ba.innerHTML = opts(d.niveaux, "b1");
@@ -81,17 +95,24 @@
     }
     const coches = new Set([...document.querySelectorAll("#en-liste-decks input:checked")].map((i) => i.value));
     const premier = !document.querySelector("#en-liste-decks input");
-    const ligne = (n, maison) => `<label class="${maison ? "maison" : ""}"><input type="checkbox" value="${esc(n)}"${(premier ? !maison : coches.has(n)) ? " checked" : ""}> ${esc(n)}${maison ? " <small>maison</small>" : ""}</label>`;
+    const ligne = (n, maison) => `<label class="en-puce${maison ? " maison" : ""}"><input type="checkbox" value="${esc(n)}"${(premier ? !maison : coches.has(n)) ? " checked" : ""}><span>${esc(nomDeck(n))}${maison ? " <small>maison</small>" : ""}</span></label>`;
     $("en-liste-decks").innerHTML = d.decks.map((n) => ligne(n, false)).join("") + (d.decks_maison || []).map((n) => ligne(n, true)).join("");
     compter();
   }
   const choisis = () => [...document.querySelectorAll("#en-liste-decks input:checked")].map((i) => i.value);
   function compter() {
     const n = choisis().length, p = +$("en-parties").value || 0;
-    $("en-nb").textContent = n ? `${n} deck${n > 1 ? "s" : ""} : ${n * n} paires, ${n * n * p} parties au plus` : "aucun deck";
+    let txt = n ? `${n} deck${n > 1 ? "s" : ""} : ${n * n} paires, ${n * n * p} parties au plus` : "aucun deck";
+    const v = vitesse[[$("en-bot-a").value, $("en-bot-b").value].join("/")];
+    if (n && v) txt += `, environ ${duree((n * n * p) / v)} (vitesse du dernier tournoi de ces bots, à ${$("en-threads").value} en même temps : ${v.toFixed(1)} parties/s)`;
+    else if (n) txt += " (durée estimée après un premier tournoi de ces bots)";
+    $("en-nb").textContent = txt;
   }
+  // Parties par seconde du dernier tournoi fini pour chaque paire de bots (historique).
+  let vitesse = {};
   $("en-liste-decks").addEventListener("change", compter);
   $("en-parties").addEventListener("input", compter);
+  for (const id of ["en-bot-a", "en-bot-b", "en-threads"]) $(id).addEventListener("change", compter);
   $("en-tous").onclick = () => { document.querySelectorAll("#en-liste-decks input").forEach((i) => (i.checked = true)); compter(); };
   $("en-aucun").onclick = () => { document.querySelectorAll("#en-liste-decks input").forEach((i) => (i.checked = false)); compter(); };
 
@@ -145,8 +166,8 @@
         <div class="en-llr" title="LLR ${v.sprt.llr.toFixed(2)} (bornes ±${v.sprt.borne.toFixed(2)})"><i style="--x:${x}"></i></div>
         <span class="num muted">LLR ${v.sprt.llr.toFixed(2)}</span></div>`;
     }
-    const tete = decks.map((d, j) => `<th title="${esc(r.heros[j])}">${esc(d.slice(0, 7))}</th>`).join("");
-    const lignes = decks.map((d, i) => `<tr><th title="${esc(r.heros[i])}">${esc(d)}</th>${v.matrice[i].map((c, j) => cellule(c, `${A} avec ${d} contre ${B} avec ${decks[j]}`)).join("")}
+    const tete = decks.map((d, j) => `<th title="${esc(r.heros[j])}">${esc(court(d).slice(0, 9))}</th>`).join("");
+    const lignes = decks.map((d, i) => `<tr><th title="${esc(r.heros[i])}">${esc(court(d))}</th>${v.matrice[i].map((c, j) => cellule(c, `${A} avec ${d} contre ${B} avec ${decks[j]}`)).join("")}
       ${cellule(v.lignes[i], `${A} avec ${d}, moyenne`)}<td class="num muted">${elo(v.elo_ligne[i])}</td></tr>`).join("");
     const bas = `<tr class="moy"><th>moy.</th>${v.colonnes.map((c, j) => cellule(c, `contre ${B} avec ${decks[j]}, moyenne`)).join("")}<td></td><td></td></tr>`;
     const memeBot = r.bots[0] === r.bots[1] && r.sides[0] === r.sides[1];
@@ -192,8 +213,14 @@
 
   async function historique() {
     const h = await fetch("/api/tournois").then((r) => r.json());
+    vitesse = {};
+    for (const t of h.tournois) { // du plus récent au plus ancien : on garde le plus récent
+      const k = (t.reglage.bots || []).join("/");
+      if (!(k in vitesse) && t.parties_par_s > 0) vitesse[k] = t.parties_par_s;
+    }
+    compter();
     const div = $("en-historique");
-    if (!h.tournois.length) { div.innerHTML = `<p class="muted">Aucun tournoi fini pour l'instant. Ils sont rangés dans <code>${esc(h.dossier)}</code>.</p>`; return; }
+    if (!h.tournois.length) { div.innerHTML = `<p class="muted" title="Dossier : ${esc(h.dossier)}">Aucun tournoi fini pour l'instant. Chaque tournoi fini s'ajoute ici.</p>`; return; }
     div.innerHTML = `<table><tbody>${h.tournois.map((t) => `<tr><td class="num">${date(t.date)}</td>
         <td>${esc(t.reglage.bots.join(" / ").toUpperCase())}</td><td class="muted">${t.reglage.decks.length} decks, ${t.fait} parties</td>
         <td class="num">${pct(t.total_a.score)}</td><td class="num">${elo(t.total_a.elo)}</td>
@@ -231,7 +258,7 @@
   $("en-t-arreter").onclick = () => fetch("/api/tache/arreter", { method: "POST" });
   function afficherTache(v) {
     if (v.aucune) {
-      $("en-t-msg").textContent = v.fab_sim ? "" : "fab-sim n'est pas compilé à côté de fab-web (cargo build --release -p fab-sim).";
+      $("en-t-msg").textContent = v.fab_sim ? "" : "Pas encore disponible sur cet ordinateur : l'outil d'apprentissage n'est pas préparé. Demandez à Claude de le compiler (commande « cargo build --release -p fab-sim »).";
       return;
     }
     $("en-t-arreter").hidden = !v.en_cours;

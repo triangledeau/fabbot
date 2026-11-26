@@ -26,11 +26,11 @@
       </a>
       <a class="ht" style="--c:#ffd84a" href="#entrainer">
         <div class="pic"><div class="art"></div><span class="sym" aria-hidden="true">♜</span></div>
-        <div class="txt"><h2>Entraîner</h2><ul><li>Tournoi des bots, matrice des decks</li><li>Banc SPRT</li><li>Apprentissage (side, B3)</li></ul></div>
-        <div class="foot"><div class="row"><span class="muted">Moteur</span><span>fab-sim dans la page</span></div></div>
+        <div class="txt"><h2>Entraîner</h2><ul><li>Tournoi des bots, decks contre decks</li><li>Comparer deux niveaux de bot</li><li>Faire apprendre les bots</li></ul></div>
+        <div class="foot"><div class="row"><span class="muted">Calcul</span><span>sur cet ordinateur</span></div></div>
       </a>
     </nav>
-    <div class="homefoot"><a class="btn small" href="#decks">Mes decks</a><a class="btn small" href="#impression">Imprimer</a><span>Moteur <b>fabbot</b> (Rust)</span><span id="a-textes"></span></div>
+    <div class="homefoot"><a class="btn small" href="#decks">Mes decks</a><a class="btn small" href="#impression">Imprimer</a><span>Moteur <b>fabbot</b></span><span id="a-textes"></span></div>
   </div></div>`;
 
   // Match en cours (le serveur en lance un au démarrage) : on propose de le reprendre.
@@ -43,12 +43,14 @@
       const nm = (d.decks_maison || []).length;
       document.getElementById("a-decks").innerHTML = `<b class="num">${d.decks.length}</b> jouables` + (nm ? ` + <b class="num">${nm}</b> maison` : "");
       document.getElementById("a-bots").textContent = d.niveaux.map((n) => n.toUpperCase()).join(" · ");
-      document.getElementById("a-textes").textContent = d.textes ? "Textes officiels des cartes chargés" : "Textes officiels absents (tools/fetch_cards.sh)";
+      document.getElementById("a-textes").textContent = d.textes ? "Textes officiels des cartes chargés" : "Textes officiels des cartes absents : relancez Jouer.bat avec Internet pour les télécharger.";
+      const noms = d.noms || {};
+      const nomDeck = (id) => (noms[id] || nom(id)).split(",")[0];
       const r = document.getElementById("a-resume");
       if (e && e.reglages && !e.erreur) {
         const m = e.match || {};
         const fini = m.gagnant ? " (terminé)" : "";
-        r.innerHTML = `<span><b>Match en cours${fini}</b> : ${esc(nom(e.reglages.deck))} contre ${esc(nom(e.reglages.deck_bot))} (${esc(String(e.reglages.niveau).toUpperCase())}), score <span class="num">${m.vous ?? 0}–${m.bot ?? 0}</span></span>
+        r.innerHTML = `<span><b>Match en cours${fini}</b> : ${esc(nomDeck(e.reglages.deck))} contre ${esc(nomDeck(e.reglages.deck_bot))} (bot ${esc(String(e.reglages.niveau).toUpperCase())}), score <span class="num">${m.vous ?? 0}–${m.bot ?? 0}</span></span>
           <a class="btn small primary" href="#partie">Reprendre</a><a class="btn small quiet" href="#nouveau-match">Nouveau match</a>`;
         r.hidden = false;
       } else r.hidden = true;
