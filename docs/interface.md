@@ -31,18 +31,35 @@ Si le port 8080 est déjà pris, le jeu prend le suivant libre (8081…).
 
 ### Avant chaque manche : équipement et deck
 
-Comme en tournoi (CR 4.1.3 à 4.1.6), avant chaque manche :
+Comme en tournoi (CR 4.1.3 à 4.1.6), avant chaque manche, une fenêtre
+d'ajustement (reprise de l'Arsenal JS) occupe la place du tapis :
 
-1. **Qui commence ?** Le joueur désigné choisit : à la première manche, il
-   est tiré au sort ; ensuite, c'est le perdant de la manche précédente. Le
-   bot choisit toujours de commencer.
-2. **Votre équipement** : cliquez une carte par zone (cliquer à nouveau la
-   retire ; une zone peut rester vide). Pour les armes, deux mains au plus
-   et un seul off-hand. Le bot choisit le sien **sans voir** le vôtre.
-3. **Votre deck** : l'équipement du bot est maintenant montré. Chaque
-   carte est une **pile** de ses exemplaires : clic = un exemplaire de plus
-   dans le deck, clic droit = un de moins (les exemplaires hors du deck
-   sont grisés). Le compteur doit indiquer **40 / 40** pour valider.
+- **En-tête** : « Hala contre Dorinthea », la pastille « tiré au sort » et
+  le bouton **Retirer au sort** si le deck du bot a été tiré au hasard
+  (première manche seulement : le match est refait avec un autre deck),
+  **Ce que joue le bot ▾** (son héros, ses armes et les équipements de son
+  card-pool ; pas son choix, qu'il fait sans voir le vôtre) et le point de
+  départ (voir plus bas).
+- **Qui commence ?** Le joueur désigné choisit : à la première manche, il
+  est tiré au sort ; ensuite, c'est le perdant de la manche précédente. Le
+  bot choisit toujours de commencer.
+- **Le deck** : chaque carte est une **pile** de ses exemplaires : clic (ou
+  Entrée, +) = un exemplaire de plus dans le deck, clic droit (ou Suppr, −)
+  = un de moins ; les exemplaires hors du deck sont grisés, un message dit
+  quand ce n'est pas possible. Le deck se règle dès l'ouverture et le reste
+  jusqu'au lancement.
+- **L'équipement** : une rangée par zone, la carte choisie encadrée ; une
+  carte par zone (cliquer à nouveau la retire), deux mains au plus pour les
+  armes. **Valider l'équipement** le présente au bot (qui a choisi le sien
+  sans voir le vôtre) ; l'équipement du bot s'affiche alors à côté du
+  vôtre, et **Lancer la partie** s'active quand le compteur indique
+  **40 / 40**.
+- **Pied de fenêtre** : le compteur, **Rythme** (Normal / Rapide : le film
+  des coups va deux fois plus vite ; aussi dans Options en partie), le
+  niveau du bot (modifiable avant la première manche seulement : le match
+  est refait) et **Retour** (écran Jouer ; le match est gardé).
+- Les cartes prennent la plus grande taille qui laisse tout tenir sans
+  défiler ; le panneau de droite montre la carte survolée en grand.
 
 Point de départ (boutons « Départ ») : **Dernier réglage** (votre dernier
 choix contre ce deck du bot, gardé par le navigateur ; c'est le départ par

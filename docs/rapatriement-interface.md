@@ -75,14 +75,14 @@ contre Bot, signalement de bug, Importer une partie.
 
 | # | Arsenal JS | fabbot aujourd'hui | État |
 |---|---|---|---|
-| A1 | Fenêtre plein écran : « Bravo contre Ira », pastille « tiré au sort », bouton « Retirer au sort » | préparation de manche dans l'écran de partie | 🟡 |
+| A1 | Fenêtre plein écran : « Bravo contre Ira », pastille « tiré au sort », bouton « Retirer au sort » | préparation de manche dans l'écran de partie | ✅ (fenêtre à la place du tapis, panneau Carte gardé à droite ; Retirer au sort refait le match, manche 1 seulement) |
 | A2 | « Départ : … » + choix Dernier réglage / Plan conseillé / Deck par défaut (grisés si absents) | ✅ (Dernier réglage, Plan conseillé, Proposition) | ✅ |
-| A3 | « Ce que joue le bot ▾ » : déplie ce que joue le deck adverse | non | ❌ |
-| A4 | Le pool en **piles de cartes** (une pile par carte, exemplaires décalés), « 2/2 » ; **clic gauche active un exemplaire, clic droit le désactive** ; clavier Entrée/+ et Suppr/− ; message si impossible | grille de cartes | 🟡 |
-| A5 | Compteur « Deck 40 / 40 prêt / manque N / N de trop », « n exemplaires désactivés (side) » | compteur présent | 🟡 |
-| A6 | Équipement et arme : une rangée par emplacement, la carte choisie encadrée | ✅ (étape « Valider l'équipement ») | 🟡 |
-| A7 | Bas de fenêtre : **Rythme** (Normal / Rapide) et **Réflexion** (Rapide / Normale / Sans limite) du bot | non | ❌ |
-| A8 | Taille des cartes ajustée pour que tout tienne sans défiler | non | ❌ |
+| A3 | « Ce que joue le bot ▾ » : déplie ce que joue le deck adverse | non | 🟡 héros, armes et équipements du card-pool du bot ; **pas** son side contre votre deck (le bot choisit sans voir le vôtre, on ne montre pas son choix à l'avance : à confirmer avec Antoine) |
+| A4 | Le pool en **piles de cartes** (une pile par carte, exemplaires décalés), « 2/2 » ; **clic gauche active un exemplaire, clic droit le désactive** ; clavier Entrée/+ et Suppr/− ; message si impossible | grille de cartes | ✅ (piles, clic / clic droit, Entrée + / Suppr −, message si impossible) |
+| A5 | Compteur « Deck 40 / 40 prêt / manque N / N de trop », « n exemplaires désactivés (side) » | compteur présent | ✅ |
+| A6 | Équipement et arme : une rangée par emplacement, la carte choisie encadrée | ✅ (étape « Valider l'équipement ») | ✅ (une rangée par zone ; l'équipement du bot apparaît à côté après validation, CR 4.1.5) |
+| A7 | Bas de fenêtre : **Rythme** (Normal / Rapide) et **Réflexion** (Rapide / Normale / Sans limite) du bot | non | 🟡 Rythme ✅ (Normal / Rapide) ; Réflexion = niveau du bot (B0 à B3, B2 ½ s, B2 1 000 essais), modifiable avant la première manche seulement (changer en cours de match casserait la reprise d'une partie sauvegardée) |
+| A8 | Taille des cartes ajustée pour que tout tienne sans défiler | non | ✅ |
 | A9 | Retour / LANCER LA PARTIE (actif seulement à 40) | ✅ (Valider le deck) | ✅ |
 
 ## 4. Éditeur de deck

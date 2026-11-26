@@ -338,11 +338,12 @@
   async function lancer() {
     const moi = trouver(SEL.moi); if (!moi || !moi.v.jouable) return;
     let bot = SEL.bot === "hasard" ? null : trouver(SEL.bot);
+    const auHasard = !bot;
     if (!bot) { const L = BOT.filter((d) => !ARCH_BOT.has(d.nom)); bot = L[Math.floor(Math.random() * L.length)]; }
     const q = { deck: moi.nom, bot: bot.nom, niveau: SEL.niveau, manches: SEL.manches, graine: $("dk-graine").value.trim() };
     $("dk-erreur").textContent = "";
     $("dk-lancer").disabled = true;
-    try { await PartieArsenal.lancer(q); } catch (e) { $("dk-erreur").textContent = e.message; }
+    try { await PartieArsenal.lancer(q, auHasard); } catch (e) { $("dk-erreur").textContent = e.message; }
     $("dk-lancer").disabled = false;
   }
 
