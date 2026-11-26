@@ -9,7 +9,7 @@ retire en finissant.
 
 | Début | Agent | Branche | Tâche | Zone touchée (crates, fichiers) |
 |---|---|---|---|---|
-| 2026-11-26 | Claude | `claude/project-thread-lcawsx` | Rapatriement de l'Arsenal JS, phase 1 (lots 0, 1, 2… dans l'ordre de `docs/rapatriement-arsenal.md`) | `crates/ui/` (web, serveur, vue), `tools/` (images), `docs/interface.md` |
+| 2026-11-26 | Claude | `claude/project-thread-lcawsx` | Rapatriement de l'Arsenal JS, phase 1 (lot 0 fait ; lots 1, 2… dans l'ordre de `docs/rapatriement-arsenal.md`) | `crates/ui/` (web, serveur, vue), `tools/` (images), `docs/interface.md` |
 | 2026-11-26 | Claude | `claude/vigilant-fermat-iq5cjs` | B2/B3 : estimation qui comprend le blood debt et les cartes bannies (Levia), mesurée contre B2 | `crates/ai/src/b2.rs`, `b3.rs` (recherche seulement), `docs/bots.md` |
 
 ## Découpage conseillé des prochaines tâches

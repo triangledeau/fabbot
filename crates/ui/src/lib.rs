@@ -4,8 +4,11 @@
 //! - étape 5 : page web locale ([`serveur`], [`web`] ; plateau, boutons de
 //!   choix, « Annuler », journal), lancée par `cargo run --release -p fab-ui --bin fab-web` ;
 //! - étape 6 : matchs en plusieurs manches et choix de l'équipement et du
-//!   deck avant chaque manche dans la page web ([`match_web`]).
+//!   deck avant chaque manche dans la page web ([`match_web`]) ;
+//! - Arsenal, lot 0 : page en plusieurs fichiers intégrés au programme
+//!   ([`fichiers`]), accueil et navigation par `#`.
 
+pub mod fichiers;
 pub mod jeu;
 pub mod match_web;
 pub mod serveur;
