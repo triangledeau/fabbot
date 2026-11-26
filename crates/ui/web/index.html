@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="accueil/accueil.css">
 <link rel="stylesheet" href="partie/partie.css">
 <link rel="stylesheet" href="partie/finition.css">
+<link rel="stylesheet" href="partie/extras.css">
 <link rel="stylesheet" href="decks/decks.css">
 <link rel="stylesheet" href="impression/impression.css">
 <link rel="stylesheet" href="entrainer/entrainer.css">
@@ -30,6 +31,7 @@
     <button id="b-exporter" title="Télécharger la sauvegarde du match (fichier .json)">Exporter</button>
     <button id="b-importer" title="Reprendre un match depuis un fichier de sauvegarde">Importer</button>
     <input type="file" id="f-importer" accept=".json,application/json" hidden>
+    <button id="b-bug" title="Décrire un problème : il est enregistré avec la partie, pour la rejouer">Signaler un bug</button>
     <button id="b-nouvelle">Nouveau match</button>
   </header>
   <main>
@@ -47,6 +49,7 @@
         <div id="question"></div>
         <div id="options"></div>
         <div id="erreur"></div>
+        <div id="aide-bot" class="aide-bot"></div>
         <div class="reglages-fx">
           <label title="Cartes qui volent, impacts, PV qui défilent, bandeaux"><input type="checkbox" id="o-anim"> Animations</label>
           <label title="Le film des coups s'arrête avant les dégâts : cliquez « Continuer » (ou Espace)"><input type="checkbox" id="o-pause"> Pause avant les dégâts</label>
@@ -65,6 +68,16 @@
   <div id="d-zone-cartes" class="cartes"></div>
   <form method="dialog"><button>Fermer</button></form>
 </dialog>
+<dialog id="d-bug">
+    <form method="dialog" id="f-bug">
+      <h2 style="margin-top:0">Signaler un bug</h2>
+      <p class="aide">Décrivez ce qui ne va pas (règle mal appliquée, choix bizarre du bot, affichage…). La partie en cours est jointe : on pourra la rejouer coup par coup.</p>
+      <textarea id="t-bug" rows="6" cols="50" placeholder="Ex. : au tour 4, Hala a perdu 3 PV alors que l'attaque était bloquée."></textarea>
+      <p id="bug-msg" class="aide"></p>
+      <button value="annuler" formnovalidate>Fermer</button>
+      <button value="ok" class="principal" id="b-bug-envoyer">Enregistrer</button>
+    </form>
+  </dialog>
 <dialog id="d-nouvelle">
     <form method="dialog" id="f-nouvelle">
       <h2 style="margin-top:0">Nouveau match</h2>
@@ -88,6 +101,7 @@
 <script src="accueil/accueil.js"></script>
 <script src="partie/finition.js"></script>
 <script src="partie/partie.js"></script>
+<script src="partie/extras.js"></script>
 <script src="decks/editeur.js"></script>
 <script src="decks/decks.js"></script>
 <script src="impression/impression.js"></script>

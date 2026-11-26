@@ -54,6 +54,9 @@ pub static FICHIERS: &[Fichier] = &[
     // impression des proxies (lot 5)
     fichier!("impression/impression.css", CSS),
     fichier!("impression/impression.js", JS),
+    // extras de la partie : conseil, évaluation, Bot contre Bot, bug (lot 9)
+    fichier!("partie/extras.css", CSS),
+    fichier!("partie/extras.js", JS),
     // entraîner : tournoi, SPRT, apprentissage (lot 8)
     fichier!("entrainer/entrainer.css", CSS),
     fichier!("entrainer/entrainer.js", JS),
