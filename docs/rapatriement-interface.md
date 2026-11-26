@@ -96,9 +96,9 @@ contre Bot, signalement de bug, Importer une partie.
 | E5 | **Clic droit sur une carte** (grille ou liste) : menu « Ajouter un exemplaire (au deck, au side, aux envies) · Déplacer (1 ou tous, Deck ↔ Side ↔ Envies) · Retirer (1, toutes les copies) · 🔍 Voir en grand · ◐ Les autres couleurs de cette carte » ; touche Menu ou ⇧F10 au clavier | ✅ | ✅ |
 | E6 | Glisser une carte vers une catégorie (⇧ en lâchant = tous les exemplaires) | ✅ | ✅ |
 | E7 | **Quatre catégories** : Deck (40), Side (reste des 55), Équipement et armes, **Liste d'envies** (hors réserve) ; repliables | ✅ (Deck = 40 premières cartes du fichier, Side = la suite ; envies gardées dans le navigateur, pas dans le fichier) | ✅ |
-| E8 | En-tête du héros (illustration, PV, intellect), compteurs Deck / Side / Équipement / Envies | 🟡 illustration, nom, classe et compteurs ; pas de PV ni d'intellect (la collection ne les donne pas) | 🟡 |
+| E8 | En-tête du héros (illustration, PV, intellect), compteurs Deck / Side / Équipement / Envies | ✅ illustration, nom, classe, PV et intellect, compteurs | ✅ |
 | E9 | Pitch en barre, ressources par main de 4, courbe de coût | ✅ | ✅ |
-| E10 | Onglets **Liste / Équilibrage / Vérifications ✓** ; Équilibrage = rôles des cartes comparés à la moyenne des decks du bot ; Vérifications = liste des problèmes, clic = montrer les cartes en cause | 🟡 trois onglets et repère des 9 decks du bot ; le clic ne montre que les cartes pas encore jouables par le bot | 🟡 |
+| E10 | Onglets **Liste / Équilibrage / Vérifications ✓** ; Équilibrage = rôles des cartes comparés à la moyenne des decks du bot ; Vérifications = liste des problèmes, clic = montrer les cartes en cause | ✅ trois onglets, repère des 9 decks du bot ; « Montrer » ouvre la liste sur la carte en cause | ✅ |
 | E11 | Lignes de la liste avec l'illustration de la carte en fond, boutons + / − | ✅ | ✅ |
 | E12 | Aperçu au survol (grande image + texte + « jouable par le bot ») | ✅ (posé à côté de la carte, jamais sur le panneau) | ✅ |
 | E13 | Bandeau « Deck du bot » + « Dupliquer plutôt » | ✅ bandeau « Copie du deck du bot » (Modifier fait déjà une copie : pas de « Dupliquer plutôt ») | ✅ |

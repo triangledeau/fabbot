@@ -199,6 +199,13 @@ const Editeur = (() => {
       const h = e.target.closest(".cat > header"); if (h) { h.parentElement.classList.toggle("closed"); return; }
       const b = e.target.closest("[data-op]");
       if (b) { const r = b.closest(".rw"); if (b.dataset.op === "+") ajouter(r.dataset.k, r.dataset.cat); else retirer(r.dataset.k, r.dataset.cat); return; }
+      const vc = e.target.closest("[data-carte]");
+      if (vc) {
+        choisirOnglet("liste");
+        const r = vc.dataset.carte && [...document.querySelectorAll("#ed-dbody .rw")].find((x) => x.dataset.k === vc.dataset.carte);
+        if (r) { r.closest(".cat").classList.remove("closed"); r.scrollIntoView({ block: "center" }); r.classList.remove("flash"); void r.offsetWidth; r.classList.add("flash"); }
+        return;
+      }
       if (e.target.closest("[data-montrer]")) { FL.q = ""; $("ed-q").value = ""; FL.dedans = true; FL.heros = false; FL.bot = false; filtres(); refiltrer(); }
     });
     $("ed-dbody").addEventListener("dragover", (e) => {
@@ -443,7 +450,7 @@ const Editeur = (() => {
     const dm = nd < 40 ? [`manque ${40 - nd}`, "ko"] : nd > 40 ? [`${nd - 40} de trop`, "trop"] : ["complet", "ok"];
     const dh = $("ed-dhead");
     dh.style.setProperty("--art", h && h.image ? `url('${Images.url(h.image, "large")}')` : "none");
-    dh.innerHTML = `<div class="hn"><span class="ava"></span><div><b>${esc(ED.heros)}</b><small>${esc(h ? String(h.type_texte || "").replace(" - Young", "") : "")}${h && !h.codee ? ' · <span style="color:var(--dmg)">héros pas encore codé</span>' : ""}</small></div></div>
+    dh.innerHTML = `<div class="hn"><span class="ava"></span><div><b>${esc(ED.heros)}</b><small>${esc(h ? String(h.type_texte || "").replace(" - Young", "") : "")}${h && h.pv != null ? ` · <span class="num">${h.pv}</span> PV` : ""}${h && h.intellect != null ? ` · intellect <span class="num">${h.intellect}</span>` : ""}${h && !h.codee ? ' · <span style="color:var(--dmg)">héros pas encore codé</span>' : ""}</small></div></div>
       <div class="meters">${jauge("d", "Deck", nd, 40, ...dm)}${jauge("s", "Side", ns, 0, `${pool}/55 en tout`, pool > 55 ? "trop" : "")}${jauge("e", "Équipement", ne, 0, manquent.length ? `sans ${manquent.join(", ")}` : "complet", manquent.length ? "ko" : "ok")}${jauge("w", "Envies", nw, 0, "hors card-pool", "")}</div>`;
     if (h && h.image) dh.querySelector(".ava").style.setProperty("--art", Images.fond(h.image));
     dh.querySelectorAll(".mt").forEach((m) => m.addEventListener("click", () => { choisirOnglet("liste"); const c = document.querySelector(`#ed-vue .cat[data-cat="${m.dataset.cat}"]`); if (c) { c.classList.remove("closed"); c.scrollIntoView({ behavior: "smooth", block: "start" }); } }));
@@ -561,14 +568,15 @@ const Editeur = (() => {
   function problemes() {
     const L = [];
     const nd = somme("d"), pool = nd + somme("s") + somme("e");
-    if (nd !== 40) L.push(["ko", `Le deck doit compter 40 cartes au départ (${nd} aujourd'hui) : le reste va au side.`]);
+    if (nd !== 40) L.push(["ko", `Le deck doit compter 40 cartes au départ (${nd} aujourd'hui) : le reste va au side. <span class="lien" data-carte="">Voir la liste</span>`]);
     if (pool > 55) L.push(["ko", `Le card-pool dépasse 55 cartes (${pool}).`]);
     for (const k of Object.keys(ED.cartes)) {
       const t = dansPool(k); if (!t) continue;
       const c = carte(k);
-      if (!c) { L.push(["ko", `${esc(k.split("|")[0])} : absente de la collection Silver Age (bannie ou hors format).`]); continue; }
-      if (t > maxCopies(c)) L.push(["ko", `${esc(c.nom)}${c.couleur ? " (" + c.couleur + ")" : ""} : ${t} exemplaires (${maxCopies(c)} au plus).`]);
-      if (!pourLeHeros(c)) L.push(["ko", `${esc(c.nom)} : hors de la classe ou du talent de ${esc(ED.heros.split(",")[0])}.`]);
+      const voir = ` <span class="lien" data-carte="${esc(k)}">Montrer</span>`;
+      if (!c) { L.push(["ko", `${esc(k.split("|")[0])} : absente de la collection Silver Age (bannie ou hors format).${voir}`]); continue; }
+      if (t > maxCopies(c)) L.push(["ko", `${esc(c.nom)}${c.couleur ? " (" + c.couleur + ")" : ""} : ${t} exemplaires (${maxCopies(c)} au plus).${voir}`]);
+      if (!pourLeHeros(c)) L.push(["ko", `${esc(c.nom)} : hors de la classe ou du talent de ${esc(ED.heros.split(",")[0])}.${voir}`]);
     }
     if (!cartesDe("e").some((c) => a(c, "Weapon"))) L.push(["warn", "Aucune arme."]);
     const h = herosC();
@@ -576,7 +584,9 @@ const Editeur = (() => {
     const nob = Object.keys(ED.cartes).filter((k) => dansPool(k) && carte(k) && !carte(k).codee).length;
     if (nob) L.push(["warn", `${nob} carte${nob > 1 ? "s" : ""} pas encore jouable${nob > 1 ? "s" : ""} par le bot : le deck s'enregistre et s'imprime, mais ne peut pas être joué contre le bot. <span class="lien" data-montrer>Les afficher</span>`]);
     if (ED.serveur && pool > 0) {
-      for (const p of ED.serveur.problemes || []) if (!L.some((x) => x[1].includes(esc(p)))) L.push(["ko", "Serveur : " + esc(p)]);
+      // Les problèmes déjà signalés ici (nombre de cartes, exemplaires) ne sont pas répétés.
+      const deja = (p) => (nd !== 40 && /cartes de deck/.test(p)) || (L.some((x) => /exemplaires \(/.test(x[1])) && /copies de/.test(p));
+      for (const p of ED.serveur.problemes || []) if (!deja(p) && !L.some((x) => x[1].includes(esc(p)))) L.push(["ko", "Serveur : " + esc(p)]);
     }
     if (!L.some((i) => i[0] === "ko")) L.unshift(["ok", "Deck conforme aux règles de construction Silver Age vérifiées ici (40 cartes au départ, card-pool de 55, 2 exemplaires au plus, classes du héros)."]);
     if (ED.serveur && ED.serveur.jouable && !L.some((i) => i[0] === "ko")) L.push(["ok", "Jouable contre le bot (vérifié par le serveur)."]);
