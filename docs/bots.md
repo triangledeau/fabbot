@@ -146,7 +146,11 @@ main, arsenal, deck, équipements et leur défense, cartes à blood debt face
 visible dans la zone de bannissement, cimetière, bannissement, « c'est son
 tour » ; le héros (force du deck) et, propres à chaque héros, sa vie et ses
 cartes (main + arsenal) ; chaque permanent contrôlé, **carte par carte**
-(Runechant, Frostbite, Ash, dragons, Might…). Les poids sont lus par nom de
+(Runechant, Frostbite, Ash, dragons, Might…) ; depuis la 3e génération,
+le **contenu de la main** (main + arsenal, valeurs imprimées) : nombre
+d'attaques, leur puissance totale, défense totale, réactions de défense,
+ressources (pitch), et chaque carte, **carte par carte** (« en main
+Command and Conquer (red) = … »). Les poids sont lus par nom de
 carte dans `data/b3/evaluation.txt` (fichier lisible) : un nouveau deck a
 des poids nuls tant qu'on n'a pas refait l'apprentissage.
 
@@ -156,13 +160,18 @@ même pour tous les coups d'une décision, et dans un matchup déséquilibré il
 
 **L'apprentissage** (`--apprendre-b3`) : une position au début de chaque
 tour de chaque partie, avec le résultat final ; régression logistique
-(Newton, pénalité ridge λ = 10). Une partie sur 10 est gardée pour mesurer
+(Newton, pénalité ridge). Une partie sur 10 est gardée pour mesurer
 la qualité des prédictions (perte logarithmique, 0,693 = toujours 50 %).
+Trois pénalités sont essayées (λ/4, λ, 4λ ; λ = 10 par défaut) et la
+meilleure sur ces parties de test est gardée. Sur les mêmes parties, le
+programme apprend aussi des poids **sans** le contenu de la main et les
+écrit à côté (`…_sans_main.txt`), pour comparer.
 
 ```bash
 cargo run --release -p fab-sim -- --apprendre-b3 --games 500
-cargo run --release -p fab-sim -- --apprendre-b3 --games 56 --bots b3-100 b3-100
-cargo run --release -p fab-sim -- --tournoi --bots b3 b2 --games 8 --check
+cargo run --release -p fab-sim -- --apprendre-b3 --games 112 --bots b3-100 b3-100
+cargo run --release -p fab-sim -- --tournoi --bots b3 b2 --games 16 --check
+cargo run --release -p fab-sim -- --tournoi --bots b3 b3:data/b3/generation2.txt --games 32 --check
 ```
 
 Variantes : `b3-800t1` (mêmes réglages que `b2-…`), `b3:fichier` (autre
@@ -176,21 +185,41 @@ fichier de poids).
 | 1re génération | 40 500 parties B1 contre B1 (900 000 positions, 10 s) | 0,346 | 324 | 51,2 % | +9 (−29 à +47) |
 | idem, sans la force du héros dans la recherche | | | 324 | 52,8 % | +19 (−18 à +58) |
 | idem, 1 tour simulé, 800 itérations (même temps que B2) | | | 324 | 46,6 % | −24 (−62 à +14) |
-| **2e génération (retenue)** | 4 536 parties B3-100 contre B3-100 (88 000 positions, 35 min) | 0,391 | 648 | **53,7 %** | **+26 (−1 à +53)** |
+| 2e génération | 4 536 parties B3-100 contre B3-100 (88 000 positions, 35 min) | 0,391 | 648 | 53,7 % | +26 (−1 à +53) |
+| 2e génération, mesure refaite | | | 1 296 | 56,6 % | +46 (+27 à +65) |
+| 3e génération, sans le contenu de la main | 9 072 parties B3-100 (2e gén.) contre B3-100 (153 000 positions, 42 min) | 0,377 | 1 296 | 57,6 % | +53 (+34 à +73) |
+| **3e génération, avec le contenu de la main (retenue)** | mêmes parties, λ = 40 | **0,372** | 1 296 | **57,6 %** | **+53 (+34 à +73)** |
+
+Face-à-face direct, plus sensible : **B3 3e génération contre B3 2e
+génération : 52,0 % sur 2 592 parties, +14 Elo (intervalle +1 à +28)**,
+0 erreur.
 
 0 erreur. Les poids de 1re génération prédisent bien la fin d'une partie
 **jouée par B1** (perte 0,35 contre 0,60 pour la formule fixe), mais
 n'aident presque pas la recherche. Ceux de 2e génération, appris sur des
 parties de B3, donnent une valeur bien plus grande aux cartes (une carte en
 main ≈ 3 PV, contre ≈ 0,4 PV en 1re génération) ; c'est le premier
-réglage qui dépasse B2, de peu. Gardés dans le dépôt :
-`data/b3/evaluation.txt` (2e génération, utilisée par `b3`) et
+réglage qui dépasse B2, de peu (la mesure refaite sur deux fois plus de
+parties donne +46 : la 1re mesure était basse par hasard). La 3e
+génération apporte encore un peu (+14 en face-à-face). Le contenu de la
+main améliore un peu les prédictions (perte 0,372 contre 0,377), mais pas
+le score contre B2, sur ces 1 296 parties (sans doute parce que les cartes en main comptent
+déjà beaucoup par leur nombre, et que la recherche joue de toute façon ces
+cartes dans ses parties simulées). Poids notables : une Passing Mirage
+(blue) en main vaut −1,2, une Dustup (red) +0,8 (par rapport à une carte
+quelconque, qui vaut déjà ≈ +0,3 + le poids du héros). Gardés dans le
+dépôt : `data/b3/evaluation.txt` (3e génération, utilisée par `b3`),
+`data/b3/generation2.txt` (`b3:data/b3/generation2.txt`) et
 `data/b3/generation1_b1.txt` (1re génération, `b3:data/b3/generation1_b1.txt`).
 Coût : le même que B2 (≈ 2,5 s par partie sur un cœur).
 
-Pistes : une 3e génération (parties de B3 2e génération), plus de parties
-d'apprentissage, des caractéristiques sur le contenu de la main (cartes
-bloquantes, attaques), une mesure sur plus de parties.
+Pistes : les gains d'une génération à l'autre diminuent (+46, puis +14) ;
+une 4e génération n'apporterait sans doute pas beaucoup plus. Plus
+prometteur : une évaluation qui regarde des **paires** de caractéristiques
+(ex. vie de l'adversaire × puissance en main : « peut-il finir ? »), ou
+apprendre directement ce que la recherche doit choisir (comme AlphaZero),
+ou garder les poids pendant tout le tour au lieu d'évaluer seulement au
+début des tours.
 
 ## La phase de side (étape 6)
 

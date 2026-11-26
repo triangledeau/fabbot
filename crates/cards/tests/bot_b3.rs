@@ -224,3 +224,85 @@ fn b3_joue_des_parties_completes_avec_chaque_deck_sans_erreur() {
         assert!(x.recherches > 0);
     }
 }
+
+#[test]
+fn le_contenu_de_la_main_compte_chaque_carte_de_la_main_et_de_l_arsenal() {
+    use fab_engine::{Subtypes, Types};
+    let db = Arc::new(real::build());
+    let mut verifies = 0;
+    for graine in 0..6u64 {
+        let mut g = partie(&db, graine as usize % 9, (graine as usize + 3) % 9, graine);
+        avancer(&mut g, graine, 25 + 5 * graine as usize);
+        for p in [PlayerId::P0, PlayerId::P1] {
+            let ps = g.player(p);
+            let cartes: Vec<_> = ps.hand.iter().chain(ps.arsenal.iter()).copied().collect();
+            let mut en_main = 0.0;
+            let mut gen = [0.0f32; 5];
+            caracteristiques(&g, p, &mut |c, v| match c {
+                Carac::EnMain(card) => {
+                    assert!(cartes.iter().any(|&o| g.obj(o).card == card));
+                    en_main += v;
+                }
+                Carac::Generique(k) if k >= 12 => gen[k as usize - 12] = v,
+                _ => {}
+            });
+            assert_eq!(en_main, cartes.len() as f32, "une valeur par carte");
+            let mut attendu = [0.0f32; 5];
+            for &o in &cartes {
+                let d = g.def(o);
+                if d.subtypes.has(Subtypes::ATTACK) {
+                    attendu[0] += 1.0;
+                    attendu[1] += d.power.unwrap_or(0) as f32;
+                }
+                attendu[2] += d.defense.unwrap_or(0) as f32;
+                if d.types.has(Types::DEFENSE_REACTION) {
+                    attendu[3] += 1.0;
+                }
+                attendu[4] += d.pitch.unwrap_or(0) as f32;
+            }
+            assert_eq!(
+                gen, attendu,
+                "attaques, puissance, défense, réactions, ressources"
+            );
+            verifies += (!cartes.is_empty()) as u32;
+        }
+    }
+    assert!(verifies >= 6, "trop peu de mains vérifiées");
+}
+
+#[test]
+fn les_noms_des_caracteristiques_du_contenu_de_la_main() {
+    let db = real::build();
+    assert_eq!(GENERIQUES[12], "attaques en main");
+    assert_eq!(GENERIQUES[16], "ressources en main");
+    let c = fab_engine::CardId(3);
+    assert!(Carac::EnMain(c).nom(&db).starts_with("en main "));
+    assert_eq!(
+        Carac::depuis_code(Carac::EnMain(c).code()),
+        Carac::EnMain(c)
+    );
+    assert!(Apprentissage::est_contenu_de_la_main(Carac::EnMain(c)));
+    assert!(Apprentissage::est_contenu_de_la_main(Carac::Generique(14)));
+    assert!(!Apprentissage::est_contenu_de_la_main(Carac::Generique(3)));
+    assert!(!Apprentissage::est_contenu_de_la_main(Carac::Permanent(c)));
+}
+
+#[test]
+fn filtrer_retire_les_caracteristiques_du_contenu_de_la_main() {
+    let db = Arc::new(real::build());
+    let mut app = Apprentissage::new();
+    for graine in 0..4u64 {
+        let mut g = partie(&db, 1, 2, graine);
+        avancer(&mut g, graine, 30);
+        app.ajouter(&g, (graine % 2) as f32);
+    }
+    let sans = app.filtrer(|c| !Apprentissage::est_contenu_de_la_main(c));
+    assert_eq!(sans.nb_positions(), app.nb_positions());
+    let (poids, _) = app.resoudre(10.0);
+    assert!(poids.iter().any(|(c, _)| matches!(c, Carac::EnMain(_))));
+    let (poids, _) = sans.resoudre(10.0);
+    assert!(!poids
+        .iter()
+        .any(|(c, _)| Apprentissage::est_contenu_de_la_main(*c)));
+    assert!(poids.iter().any(|(c, _)| *c == Carac::Generique(0)));
+}
