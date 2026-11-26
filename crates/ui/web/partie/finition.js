@@ -17,8 +17,10 @@ const ReglagesFx = (() => {
   const lire = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v === "1"; } catch (e) { return d; } };
   const ecrire = (k, v) => { try { localStorage.setItem(k, v ? "1" : "0"); } catch (e) { /* stockage indisponible */ } };
   // rapide : « Rythme » de la fenêtre d'ajustement (le film des coups va plus vite)
-  const CASES = [["o-anim", "anim", "arsenal-anim"], ["o-pause", "pause", "arsenal-pause"], ["o-rapide", "rapide", "arsenal-rapide"]];
-  const r = { anim: lire("arsenal-anim", true), pause: lire("arsenal-pause", false), rapide: lire("arsenal-rapide", false) };
+  // aide : le bloc « Bot / Conseil / Bot contre Bot / chances de gagner » du panneau de droite
+  const CASES = [["o-anim", "anim", "arsenal-anim"], ["o-pause", "pause", "arsenal-pause"], ["o-rapide", "rapide", "arsenal-rapide"], ["o-aide", "aide", "arsenal-aide-bot"]];
+  const r = { anim: lire("arsenal-anim", true), pause: lire("arsenal-pause", false), rapide: lire("arsenal-rapide", false), aide: lire("arsenal-aide-bot", true) };
+  const montrerAide = () => { const z = document.getElementById("aide-bot"); if (z) z.hidden = !r.aide; };
   r.regler = (k, v) => {
     r[k] = v;
     const x = CASES.find((c) => c[1] === k);
@@ -26,6 +28,7 @@ const ReglagesFx = (() => {
     ecrire(x[2], v);
     const c = document.getElementById(x[0]);
     if (c) c.checked = v;
+    if (k === "aide") montrerAide();
   };
   document.addEventListener("DOMContentLoaded", () => {
     for (const [id, k] of CASES) {
@@ -34,6 +37,7 @@ const ReglagesFx = (() => {
       c.checked = r[k];
       c.addEventListener("change", () => r.regler(k, c.checked));
     }
+    montrerAide();
   });
   return r;
 })();

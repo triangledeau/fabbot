@@ -242,7 +242,8 @@ il ne voit que ce que vous voyez. La barre **Vous** donne vos chances de
 gagner selon l'évaluation apprise de B3 (sans regarder la main du bot :
 moyenne sur des mains tirées au hasard). **Bot contre Bot** fait jouer ce
 bot à votre place jusqu'à la fin de la manche (re-cliquez pour reprendre
-la main ; « Annuler » marche toujours). **Signaler un bug** (en haut)
+la main ; « Annuler » marche toujours). La case **Aide du bot** du menu
+Options cache ou remontre tout ce bloc (choix mémorisé). **Signaler un bug** (en haut)
 enregistre votre texte avec la sauvegarde du match dans
 `sauvegardes/bugs/` : on rejoue la partie coup par coup.
 
@@ -347,14 +348,16 @@ L'écran de partie reprend celui de l'Arsenal JS (26/11/2026, liste des
   Défense · Réactions · Dégâts · Résolution, l'étape en cours soulignée),
   qui a la priorité, puis la **chaîne de combat** : chaque maillon avec sa
   carte, « Attaque / Défense » en gros pour le maillon en cours, les
-  bloqueurs à côté, « Touche » ou « Bloquée ». À droite, la **pile** (la carte
-  de devant se résout en premier).
-- **Le ruban**, au-dessus de vos zones : une phrase qui dit la situation
-  (« Le bot · Growl 3 — défense 3, vous subissez 0 ») et les boutons du
-  choix.
+  bloqueurs à côté, « Touche » ou « Bloquée ».
+- **À droite du tapis**, entre la main du bot et la vôtre : la **pile** (la
+  carte de devant se résout en premier ; elle ne défile jamais : les cartes
+  se resserrent, se mettent côte à côte ou rapetissent pour tenir), puis le
+  **ruban** : une question courte (« Défendre : 5 contre 3, vous subissez
+  2 ») et les boutons du choix. Quand la question vient d'une carte, sa
+  petite image est en tête et la carte est montrée en grand à droite.
 - **À droite** : Accueil, **Options** (animations, pause avant les dégâts,
-  nouveau match, importer une partie, signaler un bug, abandonner), le score
-  du match, le conseil du bot et la barre d'évaluation, la carte survolée en
+  aide du bot, nouveau match, importer une partie, signaler un bug,
+  abandonner), le score du match (seulement en plusieurs manches), le conseil du bot et la barre d'évaluation, la carte survolée en
   grand avec son texte, le journal, puis « Annuler mon dernier choix » et
   « Exporter la partie ».
 
@@ -368,9 +371,9 @@ bord pointillé = carte face cachée (que vous seul voyez).
   arsenal) pour la **sélectionner** : ses façons de la jouer apparaissent en
   boutons dans le ruban. L'arme, le héros, l'équipement : un clic active la
   capacité. Vous pouvez aussi **tirer** une carte vers la chaîne, le pitch ou
-  l'arsenal. Le ruban propose « Fin de ma phase d'action », « Passer (fermer
-  la chaîne) » ou « Passer », et pendant le tour du bot « Passer jusqu'à la
-  fin du tour ».
+  l'arsenal. Le ruban propose « Fin de phase d'action », « Passer (fermer
+  la chaîne) » ou « Passer », et pendant le tour du bot « Passer tout le
+  tour ».
 - **Défendre** : touchez les cartes qui bloquent (main, équipement,
   arsenal) ; elles se posent sur la chaîne, le total de défense et « vous
   subissez N » se mettent à jour. Un nouveau clic reprend une carte.

@@ -661,8 +661,11 @@ function ressources(j, estVous) {
   const g = el("div", "gems");
   let h = "";
   for (let k = 0; k < nsym; k++) {
-    h += '<svg class="psym" viewBox="0 0 40 40" aria-hidden="true"><circle class="rim" cx="20" cy="20" r="18.4"/><circle class="rim2" cx="20" cy="20" r="15.6"/>';
-    RDOTS.forEach(([x, y], n) => { const i = k * 3 + n; h += `<circle class="dot${i < j.ressources ? " on" : i < besoin ? " need" : ""}" cx="${x}" cy="${y}" r="4.6"/>`; });
+    h += '<svg class="psym" viewBox="0 0 40 40" aria-hidden="true"><defs><radialGradient id="halo-res"><stop offset=".45" stop-color="#ff6a50" stop-opacity=".75"/><stop offset="1" stop-color="#ff6a50" stop-opacity="0"/></radialGradient></defs><circle class="rim" cx="20" cy="20" r="18.4"/><circle class="rim2" cx="20" cy="20" r="15.6"/>';
+    // Lueur d'une ressource disponible : un halo dégradé dessiné sous le point
+    // (un filtre CSS sur un élément SVG serait coupé en carré).
+    RDOTS.forEach(([x, y], n) => { if (k * 3 + n < j.ressources) h += `<circle class="halo" cx="${x}" cy="${y}" r="8.5" fill="url(#halo-res)"/>`; });
+RDOTS.forEach(([x, y], n) => { const i = k * 3 + n; h += `<circle class="dot${i < j.ressources ? " on" : i < besoin ? " need" : ""}" cx="${x}" cy="${y}" r="4.6"/>`; });
     h += "</svg>";
   }
   g.innerHTML = h;
@@ -909,10 +912,10 @@ function pileCouches() {
 function ajusterPile() {
   const p = $("pile"), ls = p.querySelector(".layers"), em = p.querySelector("em");
   const ly = ls ? [...ls.children] : [];
-  p.style.removeProperty("--sh"); p.style.removeProperty("--ov");
+  p.style.removeProperty("--sh"); p.style.removeProperty("--ov"); p.classList.remove("rangee");
   // Sous la main du bot quand la pile s'étend sur la colonne de droite.
-  const oh = document.querySelector(".ohand");
-  p.style.marginTop = oh && getComputedStyle(p).gridRowStart === "1" ? Math.ceil(oh.getBoundingClientRect().height + 12) + "px" : "";
+  const oh = document.querySelector(".ohand"), dc = $("decide");
+  dc.style.marginTop = oh && getComputedStyle(dc).gridRowStart === "1" ? Math.ceil(oh.getBoundingClientRect().height + 4) + "px" : "";
   if (em) em.hidden = false;
   if (!ly.length || !p.clientHeight) return;
   const cs = getComputedStyle(p);
@@ -928,6 +931,13 @@ function ajusterPile() {
   let sh = taille(dispo, ov);
   if (sh < maxi * .8 && em) { em.hidden = true; dispo = interieur; sh = taille(dispo, ov); }
   if (sh < maxi * .8 && n > 1) { ov = .8; sh = taille(dispo, ov); }
+  // Peu de hauteur : les couches côte à côte (la plus récente à droite),
+  // si les cartes y sont plus grandes.
+  const larg = p.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const shRangee = Math.min(interieur - t, larg / (.716 * (1 + (n - 1) * .45)));
+  const rangee = n > 1 && shRangee > sh * 1.1;
+  p.classList.toggle("rangee", rangee);
+  if (rangee) { if (em) em.hidden = true; sh = shRangee; ov = .55; }
   sh = Math.max(40, Math.min(maxi, Math.floor(sh)));
   p.style.setProperty("--sh", sh + "px");
   p.style.setProperty("--ov", String(-ov));
@@ -953,12 +963,12 @@ function phrasePriorite() {
   const v = etat.vous, l = maillonActif(), cb = etat.combat;
   const pw = l && l.puissance !== null ? `<b>${l.puissance}</b> contre <b>${l.defense_totale}</b>` : "";
   const haut = (etat.couches || [])[0];
-  if (haut) return `Sur la pile : <b>${html(haut.texte)}</b>. Vous pouvez répondre ou passer pour la laisser se résoudre.`;
-  if (!cb && etat.votre_tour && etat.phase_action) return `Votre tour : <b>${v.ressources}</b> ressource${v.ressources > 1 ? "s" : ""}, <b>${v.points_action}</b> point${v.points_action > 1 ? "s" : ""} d'action. Choisissez une carte, votre arme, une capacité, ou terminez votre phase d'action.`;
+  if (haut) return `Répondre à <b>${html(haut.texte)}</b> ?`;
+  if (!cb && etat.votre_tour && etat.phase_action) return `À vous de jouer.`;
   const r = cb ? cb.etape_rang : null;
-  if (r === 5) return etat.votre_tour ? `Maillon résolu. Attaquez à nouveau (<b>${v.points_action}</b> action${v.points_action > 1 ? "s" : ""}) ou passez : la chaîne se fermera.` : "Fin du maillon du bot. Vous pouvez jouer un instant ou passer.";
-  if (r === 3 && l) return l.par_vous ? `Réactions sur votre attaque : ${pw}. Jouez une réaction d'attaque ou passez.` : `Le bot attaque : ${pw}. Jouez une réaction de défense ou passez.`;
-  if (cb && r !== null && l) return `${ETAPES[r]}${pw ? " (" + pw + ")" : ""}. Vous pouvez jouer un instant ou passer.`;
+  if (r === 5) return etat.votre_tour ? `Attaquer à nouveau (<b>${v.points_action}</b> action${v.points_action > 1 ? "s" : ""}) ?` : "Maillon du bot résolu. Un instant ?";
+  if (r === 3 && l) return `${l.par_vous ? "Réaction d'attaque" : "Réaction de défense"} ? ${pw}`;
+  if (cb && r !== null && l) return `${ETAPES[r]}${pw ? " · " + pw : ""}. Un instant ?`;
   return html(etat.decision.titre);
 }
 
@@ -977,6 +987,7 @@ function sourceRuban(q, d) {
 function ruban() {
   const q = $("question"), o = $("options");
   o.replaceChildren();
+  q.title = "";
   boutonsRuban = [];
   const d = etat.decision;
   if (etat.fini) { q.innerHTML = html(etat.resultat || "Partie terminée."); return; }
@@ -997,9 +1008,9 @@ function ruban() {
     if (passe) {
       const propre = etat.votre_tour && !(etat.couches || []).length;
       const r = etat.combat ? etat.combat.etape_rang : null;
-      const lib = propre && !etat.combat && etat.phase_action ? "Fin de ma phase d'action" : propre && r === 5 ? "Passer (fermer la chaîne)" : "Passer";
+      const lib = propre && !etat.combat && etat.phase_action ? "Fin de phase d'action" : propre && r === 5 ? "Passer (fermer la chaîne)" : "Passer";
       o.appendChild(bouton(lib, () => choisir(passe.i), { discret: !propre, i: passe.i }));
-      if (!etat.votre_tour) o.appendChild(bouton("Passer jusqu'à la fin du tour", () => { passerTour = etat.tour; choisir(passe.i); }, { discret: true }));
+      if (!etat.votre_tour) o.appendChild(bouton("Passer tout le tour", () => { passerTour = etat.tour; choisir(passe.i); }, { discret: true }));
     }
     return;
   }
@@ -1009,10 +1020,10 @@ function ruban() {
     const dd = (l ? l.defense_totale : 0) + tente.reduce((s, c) => s + Math.max(0, c.defense || 0), 0);
     const p = l && l.puissance !== null ? l.puissance : 0;
     const notes = [];
-    if (l && l.dominate) notes.push("Dominate : une carte de la main au plus.");
-    if (d.options.some(x => x.carte !== null && dansArsenal(x.carte))) notes.push("Votre arsenal peut bloquer.");
+    if (l && l.dominate) notes.push("Dominate : 1 carte de la main au plus.");
+    if (d.options.some(x => x.carte !== null && dansArsenal(x.carte))) notes.push("L'arsenal peut bloquer.");
     q.innerHTML = l
-      ? `${l.par_vous ? "Vous" : "Le bot"} · ${html(l.attaque.nom_fr || l.attaque.nom || "attaque")} <b>${p}</b> — défense <b>${dd}</b>, vous subissez <b>${Math.max(0, p - dd)}</b>.${notes.length ? ` <span class="muted">${notes.join(" ")}</span>` : ""}`
+      ? `Défendre : <b>${p}</b> contre <b>${dd}</b>, vous subissez <b>${Math.max(0, p - dd)}</b>.${notes.length ? ` <span class="muted">${notes.join(" ")}</span>` : ""}`
       : html(d.titre);
     q.title = "Touchez les cartes qui défendent (main, équipement), puis validez. Le total ne compte pas les préventions éventuelles.";
     const legal = d.options.filter(x => !x.passer && cartesDe(x)).map(x => x.carte);
@@ -1024,22 +1035,23 @@ function ruban() {
   }
   if (d.genre === "pitch") {
     const reste = d.a_payer != null ? Math.max(0, d.a_payer - etat.vous.ressources) : null;
-    q.innerHTML = d.a_payer != null ? `Payez <b>${d.a_payer}</b>${reste !== d.a_payer ? ` (reste <b>${reste}</b>)` : ""} : touchez les cartes à pitcher.` : html(d.titre);
+    q.innerHTML = d.a_payer != null ? `Payez <b>${d.a_payer}</b>${reste !== d.a_payer ? ` (reste <b>${reste}</b>)` : ""} : pitchez.` : html(d.titre);
     sourceRuban(q, d);
     for (const x of autres(x => !cartesDe(x) || !dansMain(x.carte))) o.appendChild(bouton(x.texte, () => choisir(x.i), { i: x.i, carte: x.carte }));
     if (passe) o.appendChild(bouton(passe.texte, () => choisir(passe.i), { discret: true, i: passe.i }));
     return;
   }
   if (d.genre === "arsenal") {
-    q.innerHTML = "Fin de tour : touchez une carte de votre main pour la mettre face cachée en arsenal.";
+    q.innerHTML = "Une carte en arsenal ?";
+    q.title = "Touchez une carte de votre main pour la mettre face cachée en arsenal.";
     for (const x of autres(x => !cartesDe(x) || !dansMain(x.carte))) o.appendChild(bouton(x.texte, () => choisir(x.i), { i: x.i, carte: x.carte }));
-    if (passe) o.appendChild(bouton("Ne rien mettre en arsenal", () => choisir(passe.i), { discret: true, i: passe.i }));
+    if (passe) o.appendChild(bouton("Rien en arsenal", () => choisir(passe.i), { discret: true, i: passe.i }));
     return;
   }
   if (d.genre === "ordre_pitch") {
     const ids = d.options.filter(cartesDe).map(x => x.carte);
     brouillon = brouillon.filter(id => ids.includes(id));
-    q.innerHTML = "Vos cartes pitchées retournent sous votre deck. Touchez-les dans l'ordre où vous voulez les repiocher (la n° 1 sera piochée en premier).";
+    q.innerHTML = "Ordre sous le deck : touchez les cartes (n° 1 repiochée en premier).";
     const ordre = el("div", "order");
     for (const id of ids) { const c = carteParId(id); if (c) ordre.appendChild(carte(c, true)); }
     o.appendChild(ordre);
@@ -1053,7 +1065,9 @@ function ruban() {
     return;
   }
   // Cibles, modes, choix des capacités… : un bouton par option, le premier en évidence.
-  q.innerHTML = html(d.titre);
+  // La carte source est montrée : son nom en fin de titre devient inutile.
+  const suffixe = d.source ? ` (${d.source.nom})` : null;
+  q.innerHTML = html(suffixe && d.titre.endsWith(suffixe) ? d.titre.slice(0, -suffixe.length) : d.titre);
   sourceRuban(q, d);
   const horsPlateau = d.options.filter(x => cartesDe(x) && !document.querySelector(`#plateau [data-k="${x.carte}"]`));
   if (horsPlateau.length) {
@@ -1080,6 +1094,7 @@ function journal() {
 function afficher() {
   document.querySelectorAll("#v-partie button").forEach(b => b.disabled = false);
   if (!etat || etat.aucune_partie) {
+    document.querySelector(".cote .infos").hidden = false;
     $("info").textContent = "Aucun match : « Nouveau match » ou « Importer une partie » (menu Options).";
     $("b-annuler").disabled = true;
     $("b-exporter").disabled = true;
@@ -1087,12 +1102,14 @@ function afficher() {
     return;
   }
   const m = etat.match;
-  $("score").textContent = m ? `Match : vous ${m.vous} – ${m.bot} bot (${m.manches} manche${m.manches > 1 ? "s" : ""} à gagner)` : "";
+  // Le score du match n'est montré que pour un match en plusieurs manches.
+  const plusieurs = !!(m && m.manches > 1);
+  document.querySelector(".cote .infos").hidden = !plusieurs;
+  $("score").textContent = plusieurs ? `Match : vous ${m.vous} – ${m.bot} bot (${m.manches} manches gagnantes)` : "";
   const prep = etat.phase === "preparation";
   $("preparation").style.display = prep ? "flex" : "none";
   $("plateau").style.display = prep ? "none" : "grid";
   if (prep) {
-    const r = etat.reglages;
     $("info").textContent = `Préparation de la manche ${m.jouees + 1}`;
     $("journal").replaceChildren(); // le journal d'une autre partie n'a rien à faire ici
     $("b-annuler").disabled = true;
@@ -1109,8 +1126,7 @@ function afficher() {
   const cle = d ? `${etat.film_no}|${d.genre}|${d.options.length}` : null;
   if (cle !== cleDecision) { cleDecision = cle; sel = null; brouillon = []; }
   if (sel !== null && !optionsDeCarte(sel).length) sel = null;
-  const r = etat.reglages;
-  $("info").textContent = `Manche ${m ? m.jouees + (etat.fini ? 0 : 1) : 1} · vous : ${r.deck} · bot ${r.nom_bot} : ${r.deck_bot} · graine ${r.graine}`;
+  $("info").textContent = `Manche ${m ? m.jouees + (etat.fini ? 0 : 1) : 1}`;
   $("b-annuler").disabled = etat.annulables === 0;
   $("b-exporter").disabled = false;
   FX.avant();
