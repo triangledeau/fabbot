@@ -239,10 +239,18 @@ fn cartes_codees(
 ) -> Vec<CarteCollection> {
     let mut vus: HashSet<Cle> = deja.iter().map(|c| (c.nom.clone(), c.couleur)).collect();
     vus.extend(exclues.iter().cloned());
+    // Les côtés d'une carte double (« Arcane Seeds // Life ») ne sont pas des
+    // cartes à part : seule la carte entière va dans un deck.
+    let cotes: HashSet<&str> = (0..db.len())
+        .map(|i| db.get(fab_engine::CardId(i as u16)).name.as_str())
+        .filter(|n| n.contains(" // "))
+        .flat_map(|n| n.split(" // "))
+        .collect();
     let mut out = Vec::new();
     for i in 0..db.len() {
         let d = db.get(fab_engine::CardId(i as u16));
-        if d.types.has(Types::TOKEN) || !vus.insert((d.name.clone(), d.color)) {
+        let cote = cotes.contains(d.name.as_str());
+        if cote || d.types.has(Types::TOKEN) || !vus.insert((d.name.clone(), d.color)) {
             continue;
         }
         let (image, nom_fr) = images::champs(d);

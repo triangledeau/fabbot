@@ -321,3 +321,16 @@ fn l_ecran_jouer_recoit_les_neuf_decks_du_bot_avec_heros_et_source() {
     assert_eq!(ira["source"], "Sunday Showdown: Sydney 2nd (Ira)");
     assert_eq!(ira["jouable"], true);
 }
+
+#[test]
+fn la_collection_ne_propose_pas_les_cotes_d_une_carte_double_comme_cartes_a_part() {
+    let mut e = etat_serveur();
+    let v = json(&repondre("GET", "/api/collection", &mut e));
+    let cartes = v["cartes"].as_array().unwrap();
+    for cote in ["Arcane Seeds", "Life"] {
+        assert!(
+            !cartes.iter().any(|c| c["nom"] == cote),
+            "« {cote} » seul ne doit pas être dans la collection"
+        );
+    }
+}

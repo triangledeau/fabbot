@@ -192,8 +192,14 @@
     fermerMenu();
     const m = document.createElement("div");
     m.className = "ctx"; m.setAttribute("role", "menu");
-    m.innerHTML = tete + items.map((it, i) => it === null ? '<div class="sep"></div>'
-      : `<button role="menuitem" data-i="${i}" class="${it[3] || ""}"><span class="ico">${it[0]}</span>${esc(it[1])}</button>`).join("");
+    // élément : null (séparateur), {grp} (titre de groupe), [icône, libellé, action, raccourci, grisé, classe]
+    // (forme courte de l'écran Jouer : [icône, libellé, action, classe])
+    m.innerHTML = tete + items.map((it, i) => {
+      if (it === null) return '<div class="sep"></div>';
+      if (it.grp) return `<div class="grp">${esc(it.grp)}</div>`;
+      const long = it.length > 4, cls = long ? it[5] || "" : it[3] || "", kbd = long ? it[3] : "";
+      return `<button role="menuitem" data-i="${i}" class="${cls}"${long && it[4] ? " disabled" : ""}><span class="ico">${it[0]}</span>${esc(it[1])}${kbd ? `<kbd>${esc(kbd)}</kbd>` : ""}</button>`;
+    }).join("");
     $("dk-couche").appendChild(m);
     const r = m.getBoundingClientRect();
     m.style.left = Math.max(8, Math.min(x, innerWidth - r.width - 8)) + "px";
@@ -217,6 +223,9 @@
     );
     ouvrirMenu(x, y, `<div class="h">${esc(d.titre)}<small>${d.bot ? "deck du bot" : "mon deck"}</small></div>`, items);
   }
+
+  // Couche partagée avec l'éditeur (editeur.js)
+  window.DecksCouche = { menu: ouvrirMenu, toast, dialogue: (...a) => dialogue(...a), fermerMenu: () => fermerMenu(), imprimer: (nom) => imprimer({ nom }) };
 
   // ---------- toasts et boîtes de dialogue ----------
   let minToast = null;
