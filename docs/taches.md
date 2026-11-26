@@ -9,7 +9,7 @@ retire en finissant.
 
 | Début | Agent | Branche | Tâche | Zone touchée (crates, fichiers) |
 |---|---|---|---|---|
-| — | — | — | (aucune) | — |
+| 2026-11-26 | Claude | `claude/loving-hamilton-itnnhv` | Améliorer B3 : caractéristiques sur la main, 3e génération d'auto-jeu, mesure sur plus de parties | `crates/ai/src/b3.rs`, `crates/sim/src/main.rs` (`--apprendre-b3`), `data/b3/`, `docs/bots.md` (section B3 seulement) |
 
 ## Découpage conseillé des prochaines tâches
 
