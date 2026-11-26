@@ -83,6 +83,7 @@
       if (s) corps.querySelector("#ap-suite").onclick = () => ouvrir(s.id);
       return;
     }
+    if (et.cartes !== undefined) return montrerCartes(corps, et);
     if (et.texte !== undefined) return texte(corps, et);
     if (et.quiz !== undefined) return quiz(corps, et);
     if (et.scene !== undefined) return jouer(corps, et);
@@ -100,6 +101,22 @@
   function texte(corps, et) {
     corps.innerHTML = `<div class="ap-carte"><p class="ap-texte">${et.texte}</p>${crs(et.cr)}${nav(true)}</div>`;
     brancher(corps);
+  }
+
+  // Des cartes montrées hors partie (/api/apprendre/fiche), avec le texte de l'étape.
+  async function montrerCartes(corps, et) {
+    corps.innerHTML = `<div class="ap-carte ap-avec-cartes"><p class="ap-texte">${et.texte}</p>${crs(et.cr)}<div class="ap-rang" id="ap-cartes"></div>${nav(true)}</div>`;
+    brancher(corps);
+    const zone = corps.querySelector("#ap-cartes");
+    for (const [nom, couleur] of et.cartes) {
+      try {
+        const c = await api("GET", `/api/apprendre/fiche?nom=${encodeURIComponent(nom)}&couleur=${encodeURIComponent(couleur || "")}`);
+        const vals = [["Coût", c.cout], ["Pitch", c.pitch], ["Puissance", c.puissance], ["Défense", c.defense], ["PV", c.vie], ["Intellect", c.intellect]]
+          .filter(([, v]) => v != null).map(([k, v]) => `${k} <b class="num">${v}</b>`).join(" · ");
+        zone.insertAdjacentHTML("beforeend", `<figure class="ap-fig">${carteHtml({ ...c, id: "", genre: "" })}
+          <figcaption><b>${esc(c.nom)}</b>${c.couleur ? ` (${esc(c.couleur)})` : ""}<br><span class="petit">${vals}</span>${c.type ? `<br><span class="petit muted">${esc(c.type)}</span>` : ""}</figcaption></figure>`);
+      } catch (err) { zone.insertAdjacentHTML("beforeend", `<p class="erreur">${esc(nom)} : ${esc(err.message)}</p>`); }
+    }
   }
 
   function quiz(corps, et) {

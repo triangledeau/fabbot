@@ -7,6 +7,7 @@
 //
 // Une leçon est une suite d'étapes :
 //   { texte: "…", cr: ["4.5.3a"] }                       explication
+//   { cartes: [["Brutal Assault", "bleu"]], texte: "…" }   explication avec des cartes
 //   { scene: "attaquer", consigne: "…", reussi: (e) => …, bravo: "…" }
 //                                                         scène jouée sur le moteur
 //   { quiz: "…", choix: ["…", "…"], bonne: 0, pourquoi: "…", cr: [...] }
@@ -53,7 +54,59 @@ const LECONS = [
       },
     ],
   },
-  { no: 2, titre: "Lire une carte", lecons: [] },
+  {
+    no: 2, titre: "Lire une carte",
+    lecons: [
+      {
+        id: "2-1", titre: "Les nombres d'une carte",
+        etapes: [
+          { cartes: [["Raging Onslaught", "rouge"]], texte: "Voici <b>Raging Onslaught</b> rouge. Ses nombres sont imprimés aux quatre coins, toujours aux mêmes places en général." },
+          { texte: "En haut à droite, le <b>coût</b> : les ressources à payer pour jouer la carte. En haut à gauche, le <b>pitch</b> : les ressources que la carte te donne si tu t'en sers pour payer.", cr: ["2.2.1", "2.2.2", "2.8.1", "2.8.2"] },
+          { texte: "En bas à gauche, la <b>puissance</b> : la force de l'attaque. En bas à droite, la <b>défense</b> : ce que la carte arrête quand elle défend.", cr: ["2.9.2", "2.3.1", "2.3.2"] },
+          { texte: "Une carte sans un de ces nombres n'a pas cette caractéristique. Un 0 imprimé, lui, est une vraie valeur.", cr: ["2.2.2", "2.3.2", "2.9.2"] },
+          { quiz: "Raging Onslaught rouge coûte 3 et a 7 de puissance. Combien de ressources faut-il payer pour la jouer ?", choix: ["3", "7", "1"], bonne: 0,
+            pourquoi: "Le coût (en haut à droite) dit ce qu'il faut payer : 3. La puissance sert au combat.", cr: ["2.2.1"] },
+          { quiz: "Où lit-on en général la défense d'une carte ?", choix: ["En bas à droite", "En bas à gauche", "En haut à gauche"], bonne: 0,
+            pourquoi: "La défense est en bas à droite, la puissance en bas à gauche.", cr: ["2.3.2", "2.9.2"] },
+        ],
+      },
+      {
+        id: "2-2", titre: "La couleur et le pitch",
+        etapes: [
+          { cartes: [["Brutal Assault", "rouge"], ["Brutal Assault", "jaune"], ["Brutal Assault", "bleu"]], texte: "La <b>couleur</b> d'une carte est la bande en haut de la carte. Beaucoup de cartes existent en trois couleurs." , cr: ["2.1.2"] },
+          { texte: "En général, une carte rouge a un pitch de 1, une jaune de 2, une bleue de 3. Couleur et pitch restent deux choses distinctes : c'est le pitch imprimé qui compte.", cr: ["2.1.2a", "2.8.2"] },
+          { texte: "Le plus souvent, plus le pitch est haut, plus l'attaque est faible : Brutal Assault a 6 de puissance en rouge, 5 en jaune, 4 en bleu. Tu choisis entre une carte forte et une carte qui paie bien." },
+          { texte: "Le nom et le pitch ensemble font l'identité d'une carte : Brutal Assault rouge et Brutal Assault bleu sont deux cartes différentes.", cr: ["2.7.1", "2.8.1"] },
+          { quiz: "Une carte bleue, pitchée, donne en général combien de ressources ?", choix: ["3", "1", "2"], bonne: 0,
+            pourquoi: "Rouge 1, jaune 2, bleu 3, en général : c'est le pitch imprimé qui fait foi.", cr: ["2.1.2a"] },
+        ],
+      },
+      {
+        id: "2-3", titre: "La ligne de type",
+        etapes: [
+          { cartes: [["Raging Onslaught", "rouge"], ["Steelblade Shunt", "rouge"], ["Dorinthea", ""]], texte: "En bas de la carte, la <b>ligne de type</b> se lit ainsi : [classe ou talent] [type] — [sous-types]. Par exemple « Generic Action – Attack », « Warrior Defense Reaction », « Warrior Hero – Young ». Sur les cartes françaises, la ligne est traduite : « Guerrier Réaction de défense » se lit « Warrior Defense Reaction ».", cr: ["2.14.1"] },
+          { texte: "Les premiers mots sont la <b>classe</b> (Warrior, Guardian, Ninja…) et le <b>talent</b> (Draconic, Ice, Shadow…), s'il y en a. Ils décident si la carte peut aller dans ton deck : ton héros doit avoir toutes les classes et tous les talents écrits. « Generic » veut dire : aucune classe, n'importe quel héros peut la jouer.", cr: ["2.11.1", "2.11.6", "2.14.1a", "1.1.3"] },
+          { texte: "Ensuite vient le <b>type</b> : Action, Attack Reaction, Defense Reaction, Instant, Equipment, Weapon, Hero… Il dit comment et quand la carte se joue. Les chapitres suivants les présentent un par un.", cr: ["2.15.1", "2.15.6a"] },
+          { texte: "Après le tiret viennent les <b>sous-types</b>. Certains ajoutent des règles : « Attack » fait de la carte une attaque. D'autres ne font que décrire, comme « Young » ou « Sword ».", cr: ["2.10.1", "2.10.6"] },
+          { quiz: "Steelblade Shunt est une « Warrior Defense Reaction ». Quelle est sa classe ?", choix: ["Warrior", "Defense Reaction", "Elle n'en a pas"], bonne: 0,
+            pourquoi: "La classe vient avant le type (ici Defense Reaction).", cr: ["2.14.1"] },
+          { quiz: "Une carte « Generic » peut-elle aller dans le deck de n'importe quel héros ?", choix: ["Oui", "Non, seulement d'un héros Generic"], bonne: 0,
+            pourquoi: "Generic veut dire sans classe ni talent : rien ne l'interdit à un héros.", cr: ["2.14.1a", "1.1.3"] },
+        ],
+      },
+      {
+        id: "2-4", titre: "Le texte de la carte",
+        etapes: [
+          { cartes: [["Sharpen Steel", "rouge"]], texte: "Au milieu de la carte, sous l'illustration, se trouve le <b>texte</b>. Il peut contenir trois choses.", cr: ["2.12.1", "2.12.2"] },
+          { texte: "Le <b>texte de règles</b>, en caractères droits : c'est lui qui agit sur la partie. Un paragraphe correspond en général à une capacité.", cr: ["2.12.2", "2.12.3"] },
+          { texte: "Le <b>texte de rappel</b>, en italique entre parenthèses, et le <b>texte d'ambiance</b>, en italique sous un trait : ils n'ont aucun effet sur le jeu.", cr: ["2.12.2", "2.12.3"] },
+          { texte: "Le nom imprimé compte toujours dans sa version anglaise, même sur une carte française.", cr: ["2.7.4"] },
+          { quiz: "Le texte d'ambiance (en italique, sous un trait) change-t-il quelque chose à la partie ?", choix: ["Non", "Oui, comme le texte de règles"], bonne: 0,
+            pourquoi: "Seul le texte de règles agit. Le texte de rappel et le texte d'ambiance n'ont pas d'effet.", cr: ["2.12.3"] },
+        ],
+      },
+    ],
+  },
   { no: 3, titre: "Le tapis et les zones", lecons: [] },
   { no: 4, titre: "Le déroulement d'un tour", lecons: [] },
   { no: 5, titre: "Payer : coût et pitch", lecons: [] },

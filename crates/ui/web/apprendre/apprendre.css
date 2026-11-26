@@ -71,3 +71,7 @@ html[data-vue="apprendre"] #v-apprendre { display: block; }
 .ap-couv tr.ok td:first-child { color: var(--good); }
 .ap-choix .btn:disabled { opacity: .75; cursor: default; }
 .ap-choix .btn.bon:disabled, .ap-choix .btn.faux:disabled { opacity: 1; }
+.ap-avec-cartes { max-width: 980px; }
+.ap-fig { margin: 0; width: 220px; display: flex; flex-direction: column; gap: 6px; }
+.ap-fig .ap-c.a-img { width: 220px; }
+.ap-fig .ap-c { width: 220px; min-height: 160px; }

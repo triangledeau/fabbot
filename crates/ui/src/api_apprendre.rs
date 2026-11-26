@@ -15,7 +15,8 @@
 //! | `GET /api/apprendre/etat` | état de la scène en cours (comme `/api/etat`) |
 //! | `POST /api/apprendre/choix?i=0` | choix de l'élève |
 //! | `POST /api/apprendre/annuler` | annule le dernier choix |
-//! | `GET /api/apprendre/carte?id=12` | fiche et texte officiel d'une carte |
+//! | `GET /api/apprendre/carte?id=12` | fiche et texte officiel d'une carte de la scène |
+//! | `GET /api/apprendre/fiche?nom=Brutal%20Assault&couleur=bleu` | une carte montrée dans une leçon |
 
 use crate::textes::Textes;
 use crate::vue;
@@ -195,6 +196,36 @@ fn etat(id: &str, s: &Session) -> Value {
     v
 }
 
+/// Base des cartes, chargée une fois (pour les fiches montrées hors scène).
+fn base() -> &'static CardDb {
+    static DB: std::sync::OnceLock<CardDb> = std::sync::OnceLock::new();
+    DB.get_or_init(fab_cards::real::build)
+}
+
+/// Une carte montrée dans une leçon (hors partie) : image, valeurs
+/// imprimées, ligne de type et texte officiel.
+fn fiche(nom: &str, couleur: Option<Color>, textes: Option<&Textes>) -> Resultat {
+    let db = base();
+    let Some(id) = db.find(nom, couleur) else {
+        return erreur(404, format!("carte inconnue : {nom}"));
+    };
+    let d = db.get(id);
+    let (image, nom_fr) = crate::images::champs(d);
+    let (typ, texte) = textes
+        .and_then(|t| t.texte(&d.name, d.color))
+        .unwrap_or_default();
+    (
+        200,
+        json!({
+            "nom": d.name, "nom_fr": nom_fr, "image": image,
+            "couleur": crate::web::nom_couleur(d.color),
+            "cout": d.cost, "pitch": d.pitch, "puissance": d.power, "defense": d.defense,
+            "vie": d.life, "intellect": d.intellect,
+            "type": typ, "texte": texte,
+        }),
+    )
+}
+
 fn erreur(code: u16, m: impl Into<String>) -> Resultat {
     (code, json!({ "erreur": m.into() }))
 }
@@ -215,6 +246,16 @@ pub fn repondre(
             200,
             json!({ "scenes": SCENES.iter().map(|s| s.id).collect::<Vec<_>>() }),
         ),
+        ("GET", "/api/apprendre/fiche") => {
+            let nom = param("nom").unwrap_or_default();
+            let couleur = match param("couleur").as_deref() {
+                Some("rouge") => R,
+                Some("jaune") => Some(Color::Yellow),
+                Some("bleu") => B,
+                _ => None,
+            };
+            fiche(&nom, couleur, textes)
+        }
         ("POST", "/api/apprendre/scene") => {
             let id = param("id").unwrap_or_default();
             let Some(scene) = SCENES.iter().find(|s| s.id == id) else {
@@ -307,5 +348,32 @@ mod tests {
             }
         }
         assert_eq!(s.etat()["bot"]["vie"].as_i64().unwrap(), vie - 7);
+    }
+
+    /// Toutes les cartes montrées par les leçons (`cartes: [[nom, couleur]]`
+    /// dans `lecons.js`) existent dans la base.
+    #[test]
+    fn les_cartes_des_lecons_existent() {
+        let js = include_str!("../web/apprendre/lecons.js");
+        let mut n = 0;
+        for bloc in js.split("cartes: [").skip(1) {
+            let fin = bloc.find("]]").expect("liste de cartes fermée");
+            for paire in bloc[..fin].split('[').skip(1) {
+                let champs: Vec<&str> = paire.split('"').collect();
+                let (nom, couleur) = (champs[1], champs[3]);
+                let c = match couleur {
+                    "rouge" => R,
+                    "jaune" => Some(Color::Yellow),
+                    "bleu" => B,
+                    _ => None,
+                };
+                assert!(
+                    base().find(nom, c).is_some(),
+                    "carte inconnue : {nom} {couleur}"
+                );
+                n += 1;
+            }
+        }
+        assert!(n > 0);
     }
 }
