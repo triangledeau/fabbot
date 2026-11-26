@@ -45,4 +45,9 @@ didacticiel des règles, repensé. Choix du propriétaire (2026-11-26) : public
 |---|---|
 | 1. Le but du jeu | 3 leçons, 1 scène |
 | 2. Lire une carte | 4 leçons (cartes montrées avec leur image, sans scène) |
-| 3 à 13 | à écrire |
+| 3. Le tapis et les zones | 4 leçons, 1 scène (arsenal) |
+| 4. Le déroulement d'un tour | 3 leçons, 1 scène (un seul point d'action) |
+| 5. Payer : coût et pitch | 3 leçons, 1 scène (payer de deux façons) |
+| 6. Attaquer : la chaîne de combat | 3 leçons, 1 scène (go again) |
+| 7. Défendre | 3 leçons, 1 scène (bloquer) |
+| 8 à 13 | à écrire |

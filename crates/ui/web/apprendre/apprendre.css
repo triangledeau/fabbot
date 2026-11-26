@@ -75,3 +75,5 @@ html[data-vue="apprendre"] #v-apprendre { display: block; }
 .ap-fig { margin: 0; width: 220px; display: flex; flex-direction: column; gap: 6px; }
 .ap-fig .ap-c.a-img { width: 220px; }
 .ap-fig .ap-c { width: 220px; min-height: 160px; }
+.ap-zones { display: flex; gap: 18px; flex-wrap: wrap; }
+.ap-zones .ap-zone { flex: 1; min-width: 160px; }

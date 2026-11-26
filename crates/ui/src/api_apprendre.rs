@@ -31,6 +31,7 @@ use std::sync::{Arc, Mutex};
 pub type Resultat = (u16, Value);
 
 const R: Option<Color> = Some(Color::Red);
+const Y: Option<Color> = Some(Color::Yellow);
 const B: Option<Color> = Some(Color::Blue);
 
 /// Une carte de deck : nom anglais exact et couleur.
@@ -94,6 +95,126 @@ pub static SCENES: &[Scene] = &[
         ],
         eleve_commence: true,
         script: &[],
+    },
+    // Chapitre 4, « Les points d'action » : un seul point d'action, une seule attaque.
+    Scene {
+        id: "un-point",
+        joueurs: [
+            Cote {
+                heros: "Dorinthea",
+                main: &[
+                    ("Brutal Assault", R),
+                    ("Brutal Assault", R),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                ],
+                suite: &[],
+                arene: &[],
+            },
+            Cote {
+                heros: "Bravo, Flattering Showman",
+                main: &[
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                ],
+                suite: &[],
+                arene: &[],
+            },
+        ],
+        eleve_commence: true,
+        script: &[],
+    },
+    // Chapitre 5, « Payer » : plusieurs façons de payer un coût de 3.
+    Scene {
+        id: "payer",
+        joueurs: [
+            Cote {
+                heros: "Dorinthea",
+                main: &[
+                    ("Raging Onslaught", R),
+                    ("Brutal Assault", R),
+                    ("Brutal Assault", Y),
+                    ("Brutal Assault", B),
+                ],
+                suite: &[],
+                arene: &[],
+            },
+            Cote {
+                heros: "Bravo, Flattering Showman",
+                main: &[
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                ],
+                suite: &[],
+                arene: &[],
+            },
+        ],
+        eleve_commence: true,
+        script: &[],
+    },
+    // Chapitre 6, « Enchaîner » : une attaque avec go again, puis une seconde.
+    Scene {
+        id: "go-again",
+        joueurs: [
+            Cote {
+                heros: "Ira, Crimson Haze",
+                main: &[
+                    ("Bittering Thorns", R),
+                    ("Brutal Assault", R),
+                    ("Brutal Assault", Y),
+                    ("Brutal Assault", B),
+                ],
+                suite: &[],
+                arene: &[],
+            },
+            Cote {
+                heros: "Bravo, Flattering Showman",
+                main: &[
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                ],
+                suite: &[],
+                arene: &[],
+            },
+        ],
+        eleve_commence: true,
+        script: &[],
+    },
+    // Chapitre 7, « Défendre » : l'adversaire attaque avec 7 de puissance.
+    Scene {
+        id: "defendre",
+        joueurs: [
+            Cote {
+                heros: "Dorinthea",
+                main: &[
+                    ("Brutal Assault", R),
+                    ("Brutal Assault", R),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                ],
+                suite: &[],
+                arene: &[],
+            },
+            Cote {
+                heros: "Bravo, Flattering Showman",
+                main: &[
+                    ("Raging Onslaught", R),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                ],
+                suite: &[],
+                arene: &[],
+            },
+        ],
+        eleve_commence: false,
+        script: &["Jouer Raging Onslaught", "Pitcher"],
     },
 ];
 
@@ -250,7 +371,7 @@ pub fn repondre(
             let nom = param("nom").unwrap_or_default();
             let couleur = match param("couleur").as_deref() {
                 Some("rouge") => R,
-                Some("jaune") => Some(Color::Yellow),
+                Some("jaune") => Y,
                 Some("bleu") => B,
                 _ => None,
             };
@@ -363,7 +484,7 @@ mod tests {
                 let (nom, couleur) = (champs[1], champs[3]);
                 let c = match couleur {
                     "rouge" => R,
-                    "jaune" => Some(Color::Yellow),
+                    "jaune" => Y,
                     "bleu" => B,
                     _ => None,
                 };
@@ -375,5 +496,119 @@ mod tests {
             }
         }
         assert!(n > 0);
+    }
+
+    /// Scène « un-point » : après la première attaque, l'élève n'a plus de
+    /// point d'action et ne peut plus jouer la seconde (CR 8.1.1c, 4.3.2).
+    #[test]
+    fn scene_un_point_une_seule_attaque() {
+        let sc = SCENES.iter().find(|s| s.id == "un-point").unwrap();
+        let mut s = lancer(sc).unwrap();
+        let joue = |s: &mut Session, mot: &str| {
+            let v = s.etat();
+            let o = v["decision"]["options"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|o| o["texte"].as_str().unwrap().contains(mot))
+                .map(|o| o["i"].as_u64().unwrap() as usize);
+            o.map(|i| s.choisir(i).unwrap()).is_some()
+        };
+        assert!(joue(&mut s, "Jouer Brutal Assault (rouge)"));
+        assert!(joue(&mut s, "Pitcher Brutal Assault (bleu)"));
+        let v = s.etat();
+        assert_eq!(v["bot"]["vie"].as_i64().unwrap(), 20 - 6);
+        let plus_d_action = v["decision"]["options"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|o| o["action"] == "jouer");
+        assert!(!plus_d_action, "plus aucune carte ne se joue : {v}");
+    }
+
+    /// Scène « payer » : jaune + rouge (2 + 1) paient le coût de 3 de
+    /// Raging Onslaught ; il ne reste rien (CR 1.14.2d).
+    #[test]
+    fn scene_payer_avec_deux_cartes() {
+        let sc = SCENES.iter().find(|s| s.id == "payer").unwrap();
+        let mut s = lancer(sc).unwrap();
+        for mot in [
+            "Jouer Raging Onslaught",
+            "Pitcher Brutal Assault (jaune)",
+            "Pitcher Brutal Assault (rouge)",
+        ] {
+            let v = s.etat();
+            let i = v["decision"]["options"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|o| o["texte"].as_str().unwrap().contains(mot))
+                .map(|o| o["i"].as_u64().unwrap() as usize)
+                .unwrap_or_else(|| panic!("option « {mot} » absente : {v}"));
+            s.choisir(i).unwrap();
+        }
+        let v = s.etat();
+        assert_eq!(v["bot"]["vie"].as_i64().unwrap(), 20 - 7);
+        assert_eq!(v["vous"]["pitch"].as_array().unwrap().len(), 2);
+    }
+
+    /// Applique les options dont le texte contient chacun des mots, dans l'ordre.
+    fn jouer_suite(s: &mut Session, mots: &[&str]) {
+        for mot in mots {
+            let v = s.etat();
+            let i = v["decision"]["options"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|o| o["texte"].as_str().unwrap().contains(mot))
+                .map(|o| o["i"].as_u64().unwrap() as usize)
+                .unwrap_or_else(|| panic!("option « {mot} » absente : {v}"));
+            s.choisir(i).unwrap();
+        }
+    }
+
+    /// Scène « go-again » : Bittering Thorns (4, go again) puis Brutal
+    /// Assault rouge (6, +1 grâce à Bittering Thorns, +1 par la capacité
+    /// d'Ira, « Your second attack each turn gets +1 ») : 12 PV en tout.
+    #[test]
+    fn scene_go_again_deux_attaques() {
+        let sc = SCENES.iter().find(|s| s.id == "go-again").unwrap();
+        let mut s = lancer(sc).unwrap();
+        jouer_suite(
+            &mut s,
+            &[
+                "Jouer Bittering Thorns",
+                "Pitcher Brutal Assault (jaune)",
+                "Jouer Brutal Assault (rouge)",
+                "Pitcher Brutal Assault (bleu)",
+            ],
+        );
+        assert_eq!(s.etat()["bot"]["vie"].as_i64().unwrap(), 20 - 12);
+    }
+
+    /// Scène « defendre » : deux cartes de défense 3 contre 7 de
+    /// puissance, 1 dégât (CR 7.5.2).
+    #[test]
+    fn scene_defendre_deux_cartes() {
+        let sc = SCENES.iter().find(|s| s.id == "defendre").unwrap();
+        let mut s = lancer(sc).unwrap();
+        assert_eq!(s.etat()["decision"]["genre"], "defense");
+        jouer_suite(
+            &mut s,
+            &[
+                "Défendre avec Brutal Assault (rouge)",
+                "Défendre avec Brutal Assault (rouge)",
+                "Terminer la déclaration",
+            ],
+        );
+        // Les réactions éventuelles : l'élève passe.
+        while s.etat()["vous"]["vie"].as_i64() == Some(20)
+            && !s.etat()["decision"].is_null()
+            && s.etat()["vous"]["cimetiere"].as_array().unwrap().is_empty()
+        {
+            jouer_suite(&mut s, &["Passer"]);
+        }
+        let v = s.etat();
+        assert_eq!(v["vous"]["vie"].as_i64().unwrap(), 20 - 1, "{v}");
     }
 }
