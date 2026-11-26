@@ -803,3 +803,113 @@ fn path_of_same_ends_sans_degats_infliges_il_n_a_pas_go_again() {
         "tout prévenu, aucun dégât : pas de go again"
     );
 }
+
+// ---------------------------------------------------------------------------
+// Twinkle Toes (équipement sans couleur, Lightning, Legs)
+// ---------------------------------------------------------------------------
+
+/// P0 a Twinkle Toes équipé et `main0` en main ; P1 n'a rien.
+fn twinkle_partie(main0: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie(
+        [HEROS, HEROS],
+        main0,
+        RIEN,
+        RIEN,
+        RIEN,
+        &["Twinkle Toes"],
+        &[],
+    )
+}
+
+/// Active Twinkle Toes (aucun coût à payer).
+fn activer_twinkle(t: &mut Partie, w: ObjectId) {
+    passer_jusqua_que(t, |t| t.joueur() == P0 && t.peut(Choice::Activate(w, 0)));
+    t.choisir(Choice::Activate(w, 0));
+}
+
+#[test]
+fn twinkle_toes_instant_detruit_quand_activee() {
+    let mut t = twinkle_partie(&[("Essai Appel", B)]);
+    let w = t.equipement(P0, "Twinkle Toes");
+    jouer(&mut t, P0, "Essai Appel", B);
+    resoudre(&mut t);
+    activer_twinkle(&mut t, w);
+    resoudre(&mut t);
+    assert_eq!(
+        t.g.obj(w).zone,
+        Zone::Graveyard,
+        "détruite par son activation"
+    );
+}
+
+#[test]
+fn twinkle_toes_previent_les_2_prochains_degats_ce_tour() {
+    let mut t = twinkle_partie(&[("Essai Appel", B)]);
+    let w = t.equipement(P0, "Twinkle Toes");
+    jouer(&mut t, P0, "Essai Appel", B);
+    resoudre(&mut t);
+    activer_twinkle(&mut t, w);
+    resoudre(&mut t);
+    t.g.deal_damage(None, P1, P0, 3, false);
+    assert_eq!(t.vie(P0), 19, "3 - 2 prévenus");
+}
+
+#[test]
+fn twinkle_toes_ne_previent_que_2_degats() {
+    let mut t = twinkle_partie(&[("Essai Appel", B)]);
+    let w = t.equipement(P0, "Twinkle Toes");
+    jouer(&mut t, P0, "Essai Appel", B);
+    resoudre(&mut t);
+    activer_twinkle(&mut t, w);
+    resoudre(&mut t);
+    t.g.deal_damage(None, P1, P0, 5, false);
+    assert_eq!(t.vie(P0), 17, "5 - 2 prévenus : le reste passe");
+}
+
+#[test]
+fn twinkle_toes_prevention_ne_dure_que_ce_tour() {
+    let mut t = twinkle_partie(&[("Essai Appel", B)]);
+    let w = t.equipement(P0, "Twinkle Toes");
+    jouer(&mut t, P0, "Essai Appel", B);
+    resoudre(&mut t);
+    activer_twinkle(&mut t, w);
+    resoudre(&mut t);
+    t.finir_le_tour();
+    t.g.deal_damage(None, P1, P0, 3, false);
+    assert_eq!(t.vie(P0), 17, "la prévention a expiré à la fin du tour");
+}
+
+#[test]
+fn twinkle_toes_sans_instant_joue_ce_tour_ne_peut_pas_s_activer() {
+    let mut t = twinkle_partie(&[]);
+    let w = t.equipement(P0, "Twinkle Toes");
+    assert!(
+        !t.peut(Choice::Activate(w, 0)),
+        "aucun instant joué ce tour"
+    );
+}
+
+#[test]
+fn twinkle_toes_instant_joue_ce_tour_permet_l_activation() {
+    let mut t = twinkle_partie(&[("Essai Appel", B)]);
+    let w = t.equipement(P0, "Twinkle Toes");
+    assert!(!t.peut(Choice::Activate(w, 0)), "avant de jouer l'instant");
+    jouer(&mut t, P0, "Essai Appel", B);
+    resoudre(&mut t);
+    assert!(t.peut(Choice::Activate(w, 0)), "un instant joué ce tour");
+}
+
+#[test]
+fn twinkle_toes_instant_du_tour_precedent_ne_compte_pas() {
+    let mut t = twinkle_partie(&[("Essai Appel", B)]);
+    let w = t.equipement(P0, "Twinkle Toes");
+    jouer(&mut t, P0, "Essai Appel", B);
+    resoudre(&mut t);
+    t.finir_le_tour();
+    t.finir_le_tour();
+    assert_eq!(t.g.turn_player, P0, "retour au tour de P0");
+    assert!(
+        !t.peut(Choice::Activate(w, 0)),
+        "l'instant date du tour précédent"
+    );
+}

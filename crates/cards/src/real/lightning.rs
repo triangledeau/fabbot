@@ -4,7 +4,7 @@
 #![allow(unused_imports)]
 
 use super::assassin::this_hits_a_hero;
-use super::generic::when_this_attacks;
+use super::generic::{destroy_source, when_this_attacks};
 use super::{by_color, deck_card, equipment, grant, power, target_obj, COLORS};
 use fab_engine::card::{CardDb, CardDef, Color, Delta, Keywords, Subtypes, Supertypes, Types};
 use fab_engine::script::{Ask, Ctx, Op, Target, TargetSpec};
@@ -25,6 +25,7 @@ pub const NAMES: &[&str] = &[
     "Harness Lightning",
     "Static Shock",
     "Path of Same Ends",
+    "Twinkle Toes",
     // NOMS
 ];
 
@@ -438,6 +439,21 @@ pub fn add(db: &mut CardDb) {
         db.add(d);
     }
 
+    // Twinkle Toes — Lightning Equipment - Legs, déf. 0, sans couleur.
+    // « Instant -- Destroy this: Prevent the next 2 damage that would be dealt
+    //   to you this turn. Activate this only if you've played an instant card
+    //   this turn. »
+    let mut d = equipment("Twinkle Toes", LIGHTNING, Subtypes::LEGS, 0);
+    d.activated = vec![ActivatedDef {
+        label: "Détruire : prévenir les 2 prochains dégâts",
+        speed: Speed::Instant,
+        condition: Some(|g, p, _| a_joue_un_instant_ce_tour(g, p)),
+        effect_cost: vec![Op::Do(|g, c| destroy_source(g, c))],
+        script: vec![Op::Do(|g, c| g.prevent_next(c.controller, 2, false, None))],
+        ..Default::default()
+    }];
+    db.add(d);
+
     // CARTES
 }
 
@@ -457,6 +473,12 @@ fn hit_hero(c: &Ctx) -> Option<fab_engine::PlayerId> {
 /// carte de supertype Lightning.
 fn a_joue_une_carte_lightning(g: &GameState, p: fab_engine::PlayerId) -> bool {
     g.played_def_this_turn(p, |d| d.supertypes.has(Supertypes::LIGHTNING))
+}
+
+/// « If you've played an instant card this turn » : `p` a joué ce tour une
+/// carte de type Instant.
+fn a_joue_un_instant_ce_tour(g: &GameState, p: fab_engine::PlayerId) -> bool {
+    g.played_def_this_turn(p, |d| d.types.has(Types::INSTANT))
 }
 
 /// « If you've dealt damage this turn » : `p` a infligé des dégâts ce tour
