@@ -18,7 +18,7 @@ même temps : règles dans `AGENTS.md`, qui fait quoi dans `docs/taches.md`.
 | 5 | Interface web locale + annulation | ✅ (`fab-web`, à essayer par le propriétaire) |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ✅ bots (choix appris, +96 Elo) et page web (écran avant chaque manche) ; à essayer par le propriétaire |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ✅ B3 (3e génération) = B2 + 53 Elo (+34 à +73) ; procédure : `docs/nouveau-deck.md` |
-| 8 | Rapatriement de l'Arsenal JS dans la page web (plan : `docs/rapatriement-arsenal.md`) | 🔄 lots 0 (accueil Arsenal, page en plusieurs fichiers, navigation par #), 1 (images des cartes en VF, noms français), 2 (plateau animé, tapis de jeu), 3 (sauvegarde et reprise) et 4a (decks maison, import FaBrary) faits ; avancement lot par lot dans le plan |
+| 8 | Rapatriement de l'Arsenal JS dans la page web (plan : `docs/rapatriement-arsenal.md`) | 🔄 lots 0 (accueil Arsenal, page en plusieurs fichiers, navigation par #), 1 (images des cartes en VF, noms français), 2 (plateau animé, tapis de jeu), 3 (sauvegarde et reprise), 4a (decks maison, import FaBrary) et 4b (éditeur de deck) faits ; avancement lot par lot dans le plan |
 
 **Branche de départ :** `main` (depuis le 2026-11-26, Claude crée et
 fusionne lui-même la pull request à la fin de chaque tâche ; l'étape 7 est
@@ -102,6 +102,15 @@ exemplaires est équipée deux fois si les mains le permettent (Arakni : deux
 Mark of the Huntsman).
 
 ## Questions ouvertes pour le propriétaire
+
+**Decks maison (Arsenal, lot 4a) :** la vérification d'un deck importé ne
+contrôle pas encore que chaque carte est de la classe (ou du talent) du
+héros. `TODO(règles)` : il faut la règle exacte de construction (CR,
+section sur le card-pool), que la session cloud n'a pas pu lire
+(rules.fabtcg.com renvoie 403). Pouvez-vous copier ce passage, ou
+`bash tools/fetch_rules.sh` sur votre PC ? D'ici là, l'éditeur a seulement
+un filtre « pour ce héros » (classe, talent ou Generic), sans valeur de
+règle.
 
 **Étape 6, à regarder :** le fichier `data/side/b1.txt` (choix appris des
 bots, paire par paire, avec l'écart estimé de chaque carte laissée hors du
@@ -306,8 +315,8 @@ est voulu (donner sa liste).
 commence par l'accueil Arsenal ; dire si l'habillage de la partie convient.
 
 **Pour Claude (étape 8) :** suivre `docs/rapatriement-arsenal.md`, lot par
-lot dans l'ordre validé (colonne « Avancement ») ; prochain lot : 4b
-(éditeur de deck).
+lot dans l'ordre validé (colonne « Avancement ») ; prochain lot : 4c
+(ajustement avant partie).
 
 **Pour Claude :** l'étape 7 est finie ; il n'y a plus d'étape prévue.
 Prochaine tâche proposée (B3 3e génération faite le 2026-11-26 : les

@@ -106,6 +106,21 @@ est enregistré dans `data/decks/maison/<nom>.txt` ; s'il est jouable, il
 apparaît dans la fenêtre **Nouveau match** (« Decks maison »), pour vous
 comme pour le bot.
 
+**Éditeur de deck** : « Nouveau deck » (choisir un héros Young),
+« Modifier » un deck maison, ou « Dupliquer » un deck du projet (l'original
+ne change pas). À gauche la collection Silver Age (recherche en français ou
+en anglais, filtres pitch, type, « pour ce héros », « jouables par le bot »,
+« dans le deck », tri) ; les cartes que le bot ne sait pas encore jouer sont
+grisées. Clic : +1 ; clic droit : −1 ; Ctrl+Z : annuler. À droite : le
+card-pool (55 au plus, 40 cartes de deck au moins), la répartition du
+pitch, la courbe de coût, la liste par équipement et deck, et la
+vérification du serveur à chaque changement. « Enregistrer » écrit le deck
+maison ; « Copier la liste » donne le texte au format FaBrary. Un deck
+maison se range dans les **archives** (« Archiver ») ; on ne supprime
+qu'un deck archivé. Le filtre « pour ce héros » (classe, talent ou
+Generic) aide au tri ; ce n'est pas une vérification de règle (question
+ouverte dans `docs/suivi.md`).
+
 La légalité vient de la base communautaire (`bash tools/fetch_cards.sh`) ;
 sans elle, seuls le format et les cartes codées sont vérifiés.
 
