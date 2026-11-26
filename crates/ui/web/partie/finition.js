@@ -20,7 +20,11 @@ const ReglagesFx = (() => {
   // aide : le bloc « Bot / Conseil / Bot contre Bot / chances de gagner » du panneau de droite
   const CASES = [["o-anim", "anim", "arsenal-anim"], ["o-pause", "pause", "arsenal-pause"], ["o-rapide", "rapide", "arsenal-rapide"], ["o-aide", "aide", "arsenal-aide-bot"]];
   const r = { anim: lire("arsenal-anim", true), pause: lire("arsenal-pause", false), rapide: lire("arsenal-rapide", false), aide: lire("arsenal-aide-bot", true) };
-  const montrerAide = () => { const z = document.getElementById("aide-bot"); if (z) z.hidden = !r.aide; };
+  // Le bloc est affiché ou masqué par extras.js à chaque état (il tient aussi compte de la préparation).
+  const montrerAide = () => {
+    if (typeof etat !== "undefined" && etat) document.dispatchEvent(new CustomEvent("arsenal:etat"));
+    else { const z = document.getElementById("aide-bot"); if (z) z.hidden = !r.aide; }
+  };
   r.regler = (k, v) => {
     r[k] = v;
     const x = CASES.find((c) => c[1] === k);
