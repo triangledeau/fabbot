@@ -802,13 +802,40 @@ fn apprendre_b3(games: u64, threads: u64, seed0: u64, bots: [&str; 2], sortie: &
         app.nb_positions(),
         test.nb_positions()
     );
-    let (poids, perte_app) = app.resoudre(lambda);
-    let perte_test = test.perte(&poids);
     let perte_b2 = perte_b2 / test.nb_positions().max(1) as f64;
     println!(
-        "Perte logarithmique (plus petit = mieux, 0,693 = toujours 50 %) : apprentissage {perte_app:.4}, \
-         test {perte_test:.4} ; formule fixe de B2 sur le test : {perte_b2:.4}"
+        "Perte logarithmique (plus petit = mieux, 0,693 = toujours 50 %) ; \
+         formule fixe de B2 sur le test : {perte_b2:.4}"
     );
+    // Comparaison sur les mêmes parties : sans les caractéristiques du
+    // contenu de la main (comme la 2e génération).
+    {
+        let garder = |c| !Apprentissage::est_contenu_de_la_main(c);
+        let (poids, perte_app) = app.filtrer(garder).resoudre(lambda);
+        let perte_test = test.filtrer(garder).perte(&poids);
+        let chemin = sortie.replace(".txt", "_sans_main.txt");
+        println!(
+            "  sans le contenu de la main, λ = {lambda} : apprentissage {perte_app:.4}, \
+             test {perte_test:.4} → {chemin}"
+        );
+        let entete = format!(
+            "# Sans les caractéristiques du contenu de la main, mêmes parties que {sortie}.\n\
+             # Perte logarithmique sur des parties de test : {perte_test:.4}.\n"
+        );
+        std::fs::write(&chemin, ecrire_modele(&db, &poids, &entete)).expect("écriture des poids");
+    }
+    // Plusieurs pénalités : on garde celle qui prédit le mieux les parties
+    // de test (le contenu de la main ajoute beaucoup de poids).
+    let mut meilleur: Option<(f64, Vec<_>, f64)> = None;
+    for l in [lambda / 4.0, lambda, lambda * 4.0] {
+        let (poids, perte_app) = app.resoudre(l);
+        let perte_test = test.perte(&poids);
+        println!("  avec le contenu de la main, λ = {l} : apprentissage {perte_app:.4}, test {perte_test:.4}");
+        if meilleur.as_ref().is_none_or(|m| perte_test < m.2) {
+            meilleur = Some((l, poids, perte_test));
+        }
+    }
+    let (lambda, poids, perte_test) = meilleur.expect("au moins une pénalité");
     let entete = format!(
         "# Évaluation apprise de B3 (voir crates/ai/src/b3.rs) : une ligne « caractéristique = poids ».\n\
          # Chances de gagner du joueur 0 = σ(note₀ − note₁), note = Σ poids × valeur.\n\

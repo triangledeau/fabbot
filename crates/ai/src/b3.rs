@@ -17,7 +17,11 @@
 //! - son **héros** (force du deck), et la vie et la main **propres au
 //!   héros** (une carte en main ne vaut pas la même chose pour tous) ;
 //! - chacun de ses **permanents**, carte par carte (un Runechant, un
-//!   Frostbite, une Ash, un dragon…).
+//!   Frostbite, une Ash, un dragon…) ;
+//! - le **contenu de sa main** (main + arsenal) : des totaux (attaques,
+//!   puissance des attaques, défense, réactions de défense, ressources) et
+//!   chaque carte, **carte par carte** (une Command and Conquer en main ne
+//!   vaut pas une Sigil of Solace).
 //!
 //! Les chances de gagner du joueur 0 sont σ(note₀ − note₁), avec
 //! σ(x) = 1 / (1 + e^−x). Le modèle est donc symétrique : échanger les
@@ -38,12 +42,12 @@
 //! vraie partie.
 
 use crate::side::{nom_carte, resoudre_systeme};
-use fab_engine::{CardDb, CardId, GameState, Keywords, PlayerId, Types};
+use fab_engine::{CardDb, CardId, GameState, Keywords, PlayerId, Subtypes, Types};
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 
 /// Les caractéristiques génériques, dans l'ordre des poids.
-pub const GENERIQUES: [&str; 12] = [
+pub const GENERIQUES: [&str; 17] = [
     "vie",
     "vie sous 10",
     "vie sous 5",
@@ -56,6 +60,12 @@ pub const GENERIQUES: [&str; 12] = [
     "cartes au cimetière",
     "cartes bannies",
     "c'est son tour",
+    // Contenu de la main (main + arsenal), valeurs imprimées.
+    "attaques en main",
+    "puissance des attaques en main",
+    "défense en main",
+    "réactions de défense en main",
+    "ressources en main",
 ];
 
 /// Une caractéristique d'un joueur.
@@ -71,6 +81,8 @@ pub enum Carac {
     MainHeros(CardId),
     /// Un permanent qu'il contrôle (vaut 1 par exemplaire).
     Permanent(CardId),
+    /// Une carte de sa main ou de son arsenal (vaut 1 par exemplaire).
+    EnMain(CardId),
 }
 
 impl Carac {
@@ -82,6 +94,7 @@ impl Carac {
             Carac::VieHeros(c) => (2 << 16) | c.0 as u32,
             Carac::MainHeros(c) => (3 << 16) | c.0 as u32,
             Carac::Permanent(c) => (4 << 16) | c.0 as u32,
+            Carac::EnMain(c) => (5 << 16) | c.0 as u32,
         }
     }
 
@@ -92,7 +105,8 @@ impl Carac {
             1 => Carac::Heros(c),
             2 => Carac::VieHeros(c),
             3 => Carac::MainHeros(c),
-            _ => Carac::Permanent(c),
+            4 => Carac::Permanent(c),
+            _ => Carac::EnMain(c),
         }
     }
 
@@ -104,6 +118,7 @@ impl Carac {
             Carac::VieHeros(c) => format!("vie × héros {}", nom_carte(db, c)),
             Carac::MainHeros(c) => format!("main × héros {}", nom_carte(db, c)),
             Carac::Permanent(c) => format!("permanent {}", nom_carte(db, c)),
+            Carac::EnMain(c) => format!("en main {}", nom_carte(db, c)),
         }
     }
 }
@@ -174,6 +189,33 @@ pub fn caracteristiques(g: &GameState, p: PlayerId, f: &mut impl FnMut(Carac, f3
         }
         f(Carac::Permanent(ob.card), 1.0);
     }
+    // Contenu de la main et de l'arsenal (valeurs imprimées, CR 1.7.4 :
+    // hors de l'arène, les capacités statiques ne modifient rien).
+    let (mut attaques, mut puissance, mut defense, mut reactions, mut ressources) =
+        (0.0, 0.0, 0.0, 0.0, 0.0);
+    for &o in ps.hand.iter().chain(ps.arsenal.iter()) {
+        let d = g.def(o);
+        if d.subtypes.has(Subtypes::ATTACK) {
+            attaques += 1.0;
+            puissance += d.power.unwrap_or(0) as f32;
+        }
+        defense += d.defense.unwrap_or(0) as f32;
+        if d.types.has(Types::DEFENSE_REACTION) {
+            reactions += 1.0;
+        }
+        ressources += d.pitch.unwrap_or(0) as f32;
+        f(Carac::EnMain(g.obj(o).card), 1.0);
+    }
+    let mut gen = |k: u8, v: f32| {
+        if v != 0.0 {
+            f(Carac::Generique(k), v)
+        }
+    };
+    gen(12, attaques);
+    gen(13, puissance);
+    gen(14, defense);
+    gen(15, reactions);
+    gen(16, ressources);
 }
 
 // ---------------------------------------------------------------------------
@@ -220,6 +262,7 @@ impl Modele {
             generique: [0.0; GENERIQUES.len()],
             heros: vec![[0.0; 3]; n],
             permanent: vec![0.0; n],
+            en_main: vec![0.0; n],
         };
         let par_nom: HashMap<&str, f32> =
             self.poids.iter().map(|(k, v)| (k.as_str(), *v)).collect();
@@ -237,6 +280,7 @@ impl Modele {
             };
             e.heros[i] = [lire("héros "), lire("vie × héros "), lire("main × héros ")];
             e.permanent[i] = lire("permanent ");
+            e.en_main[i] = lire("en main ");
         }
         e
     }
@@ -270,6 +314,7 @@ pub struct Evaluation {
     /// Par carte : [héros, vie × héros, main × héros].
     heros: Vec<[f32; 3]>,
     permanent: Vec<f32>,
+    en_main: Vec<f32>,
 }
 
 impl Evaluation {
@@ -282,6 +327,7 @@ impl Evaluation {
             Carac::VieHeros(h) => self.heros.get(i(h)).map_or(0.0, |w| w[1]),
             Carac::MainHeros(h) => self.heros.get(i(h)).map_or(0.0, |w| w[2]),
             Carac::Permanent(p) => self.permanent.get(i(p)).copied().unwrap_or(0.0),
+            Carac::EnMain(p) => self.en_main.get(i(p)).copied().unwrap_or(0.0),
         }
     }
 
@@ -357,6 +403,29 @@ impl Apprentissage {
             }
         }
         self.positions.push((debut, resultat));
+    }
+
+    /// Les mêmes positions, avec seulement les caractéristiques que `garder`
+    /// accepte (pour comparer deux jeux de caractéristiques sur les mêmes
+    /// parties).
+    pub fn filtrer(&self, garder: impl Fn(Carac) -> bool) -> Apprentissage {
+        let mut o = Apprentissage::new();
+        for i in 0..self.positions.len() {
+            let debut = o.entrees.len() as u32;
+            o.entrees.extend(
+                self.position(i)
+                    .iter()
+                    .filter(|e| garder(Carac::depuis_code(e.0))),
+            );
+            o.positions.push((debut, self.positions[i].1));
+        }
+        o
+    }
+
+    /// Vrai pour les caractéristiques du contenu de la main (ajoutées à la
+    /// 3e génération).
+    pub fn est_contenu_de_la_main(c: Carac) -> bool {
+        matches!(c, Carac::EnMain(_)) || matches!(c, Carac::Generique(k) if k >= 12)
     }
 
     pub fn fusionner(&mut self, o: &Apprentissage) {
@@ -460,6 +529,7 @@ pub fn ecrire_modele(db: &CardDb, poids: &[(Carac, f64)], entete: &str) -> Strin
                 Carac::Generique(_) => 0,
                 Carac::Heros(_) | Carac::VieHeros(_) | Carac::MainHeros(_) => 1,
                 Carac::Permanent(_) => 2,
+                Carac::EnMain(_) => 3,
             };
             let cle = match c {
                 Carac::Generique(k) => format!("{k:02}"),
@@ -471,7 +541,7 @@ pub fn ecrire_modele(db: &CardDb, poids: &[(Carac, f64)], entete: &str) -> Strin
                     };
                     format!("{} {sous}", nom_carte(db, h))
                 }
-                Carac::Permanent(p) => nom_carte(db, p),
+                Carac::Permanent(p) | Carac::EnMain(p) => nom_carte(db, p),
             };
             (rang, format!("{cle}\u{0}{}", c.nom(db)), v)
         })
@@ -482,6 +552,7 @@ pub fn ecrire_modele(db: &CardDb, poids: &[(Carac, f64)], entete: &str) -> Strin
         "\n# --- Caractéristiques génériques ---\n",
         "\n# --- Héros : force du deck, vie et cartes (main + arsenal) propres au héros ---\n",
         "\n# --- Permanents contrôlés (par exemplaire) ---\n",
+        "\n# --- Cartes en main ou en arsenal (par exemplaire) ---\n",
     ];
     let mut rang = u8::MAX;
     for (r, cle, v) in lignes {

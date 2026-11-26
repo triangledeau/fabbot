@@ -19,6 +19,11 @@ blood debt dans le bannissement = -0.2161
 cartes au cimetière = +0.0693
 cartes bannies = +0.1739
 c'est son tour = +0.6419
+attaques en main = +0.0000
+puissance des attaques en main = +0.0000
+défense en main = +0.0000
+réactions de défense en main = +0.0000
+ressources en main = +0.0000
 
 # --- Héros : force du deck, vie et cartes (main + arsenal) propres au héros ---
 héros Arakni, Web of Deceit = -0.3676
