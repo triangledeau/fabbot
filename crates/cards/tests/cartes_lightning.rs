@@ -881,7 +881,7 @@ fn twinkle_toes_prevention_ne_dure_que_ce_tour() {
 
 #[test]
 fn twinkle_toes_sans_instant_joue_ce_tour_ne_peut_pas_s_activer() {
-    let mut t = twinkle_partie(&[]);
+    let t = twinkle_partie(&[]);
     let w = t.equipement(P0, "Twinkle Toes");
     assert!(
         !t.peut(Choice::Activate(w, 0)),
@@ -1595,4 +1595,149 @@ fn voltbound_duality_pas_activable_une_fois_defaussee() {
         "plus en main, plus activable"
     );
     assert_eq!(t.vie(P1), 19, "un seul dégât");
+}
+
+// ---------------------------------------------------------------------------
+// Aurora et Embodiment of Lightning
+// ---------------------------------------------------------------------------
+
+const AURORA: &str = "Aurora";
+
+fn partie_aurora(main0: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie([AURORA, HEROS], main0, RIEN, RIEN, RIEN, &[], &[])
+}
+
+/// Paie les coûts en pitchant des Essai Rempart.
+fn payer_aurora(t: &mut Partie) {
+    while t.kind() == DecisionKind::Pitch {
+        let opts = t.options();
+        let c = opts
+            .iter()
+            .copied()
+            .find(|c| matches!(c, Choice::Pitch(o) if t.g.def(*o).name == "Essai Rempart"))
+            .unwrap_or(opts[0]);
+        t.choisir(c);
+    }
+}
+
+/// P0 active Aurora (ce qui paie {r}{r} en pitchant des Rempart) et résout.
+fn activer_aurora(t: &mut Partie) {
+    let h = t.g.player(P0).hero;
+    passer_jusqua_que(t, |t| t.joueur() == P0 && t.peut(Choice::Activate(h, 0)));
+    t.choisir(Choice::Activate(h, 0));
+    payer_aurora(t);
+    resoudre(t);
+}
+
+/// Crée un jeton Embodiment of Lightning pour `p`.
+fn creer_embodiment(t: &mut Partie, p: PlayerId) {
+    let c =
+        t.g.db
+            .find_name("Embodiment of Lightning")
+            .expect("jeton codé");
+    t.g.create_tokens(p, c, 1);
+}
+
+fn jetons_embodiment(t: &Partie, p: PlayerId) -> usize {
+    t.g.permanents
+        .iter()
+        .copied()
+        .filter(|&o| t.g.obj(o).controller == p && t.g.def(o).name == "Embodiment of Lightning")
+        .count()
+}
+
+#[test]
+fn aurora_est_un_heros_jeune_elementaire_runeblade_de_20_pv_et_4_intellect() {
+    let t = partie_aurora(&[]);
+    let d = t.g.def(t.g.player(P0).hero);
+    assert_eq!(d.name, AURORA);
+    assert_eq!(d.life, Some(20));
+    assert_eq!(d.intellect, Some(4));
+    assert!(d.subtypes.has(fab_engine::card::Subtypes::YOUNG));
+    assert!(d.supertypes.has(Supertypes::ELEMENTAL));
+    assert!(d.supertypes.has(Supertypes::RUNEBLADE));
+}
+
+#[test]
+fn aurora_cree_un_jeton_embodiment_of_lightning_apres_une_carte_lightning() {
+    let mut t = partie_aurora(&[("Cloud Cover", B), REMPART, REMPART, REMPART]);
+    jouer(&mut t, P0, "Cloud Cover", B);
+    resoudre(&mut t);
+    activer_aurora(&mut t);
+    assert_eq!(jetons_embodiment(&t, P0), 1, "un jeton pour Aurora");
+    assert_eq!(jetons_embodiment(&t, P1), 0);
+}
+
+#[test]
+fn aurora_pas_activable_sans_carte_lightning_jouee_ce_tour() {
+    let mut t = partie_aurora(&[REMPART, REMPART, REMPART, REMPART]);
+    let h = t.g.player(P0).hero;
+    passer_jusqua_que(&mut t, |t| {
+        t.joueur() == P0 && t.kind() == DecisionKind::Priority
+    });
+    assert!(
+        !t.peut(Choice::Activate(h, 0)),
+        "aucune carte Lightning jouée"
+    );
+    assert_eq!(jetons_embodiment(&t, P0), 0);
+}
+
+#[test]
+fn aurora_une_fois_par_tour() {
+    let mut t = partie_aurora(&[("Cloud Cover", B), REMPART, REMPART, REMPART, REMPART]);
+    jouer(&mut t, P0, "Cloud Cover", B);
+    resoudre(&mut t);
+    activer_aurora(&mut t);
+    let h = t.g.player(P0).hero;
+    assert!(!t.peut(Choice::Activate(h, 0)), "une seule fois par tour");
+    assert_eq!(jetons_embodiment(&t, P0), 1);
+}
+
+#[test]
+fn embodiment_of_lightning_detruit_et_donne_go_again_a_l_attaque_jouee() {
+    let mut t = partie_vraie(
+        [HEROS, HEROS],
+        &[("Essai Frappe", R), REMPART, REMPART, REMPART],
+        RIEN,
+        RIEN,
+        RIEN,
+        &[],
+        &[],
+    );
+    creer_embodiment(&mut t, P0);
+    let a = jouer(&mut t, P0, "Essai Frappe", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(jetons_embodiment(&t, P0), 0, "détruit par l'attaque jouée");
+    assert!(t.g.keywords(a).has(Keywords::GO_AGAIN));
+}
+
+#[test]
+fn embodiment_of_lightning_reste_si_la_carte_jouee_n_attaque_pas() {
+    let mut t = partie_aurora(&[("Cloud Cover", B), REMPART, REMPART, REMPART]);
+    creer_embodiment(&mut t, P0);
+    jouer(&mut t, P0, "Cloud Cover", B);
+    resoudre(&mut t);
+    assert_eq!(
+        jetons_embodiment(&t, P0),
+        1,
+        "carte non attaque : le jeton reste"
+    );
+}
+
+#[test]
+fn embodiment_of_lightning_ne_se_declenche_pas_pour_l_attaque_adverse() {
+    let mut t = partie_vraie(
+        [HEROS, HEROS],
+        &[("Essai Frappe", R), REMPART, REMPART, REMPART],
+        RIEN,
+        &[REMPART, REMPART, REMPART, REMPART],
+        RIEN,
+        &[],
+        &[],
+    );
+    creer_embodiment(&mut t, P1);
+    let a = jouer(&mut t, P0, "Essai Frappe", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(jetons_embodiment(&t, P1), 1, "le jeton de P1 ne bouge pas");
+    assert!(!t.g.keywords(a).has(Keywords::GO_AGAIN));
 }

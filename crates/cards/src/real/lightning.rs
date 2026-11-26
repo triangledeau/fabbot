@@ -4,7 +4,7 @@
 #![allow(unused_imports)]
 
 use super::assassin::this_hits_a_hero;
-use super::generic::{destroy_source, when_this_attacks};
+use super::generic::{destroy_source, is_attack_action_card, when_this_attacks};
 use super::shadow::{ask_object, picked};
 use super::wizard::{arcane_to_target, TARGET_HERO};
 use super::{by_color, card_named, deck_card, equipment, grant, power, target_obj, COLORS};
@@ -16,6 +16,7 @@ use fab_engine::{
 };
 
 const LIGHTNING_FLOW: &str = "Lightning Flow";
+const EMBODIMENT_OF_LIGHTNING: &str = "Embodiment of Lightning";
 
 /// Noms des cartes de ce module (pour `docs/cards/STATUS.md`).
 pub const NAMES: &[&str] = &[
@@ -39,6 +40,8 @@ pub const NAMES: &[&str] = &[
     "Quick Succession",
     "Voltbound Duality",
     "Lightning Flow",
+    "Aurora",
+    "Embodiment of Lightning",
     // NOMS
 ];
 
@@ -732,6 +735,63 @@ pub fn add(db: &mut CardDb) {
         types: Types::TOKEN,
         subtypes: Subtypes::AURA,
         supertypes: Supertypes::ELEMENTAL,
+        ..Default::default()
+    });
+
+    // Aurora — Elemental Runeblade Hero - Young, 20 PV, intellect 4.
+    // « Once per Turn Instant -- {r}{r}: Create an Embodiment of Lightning token.
+    //   Activate this only if you've played a Lightning card this turn.
+    //   Essence of Lightning »
+    // Essence of Lightning (CR 8.3.16) ne concerne que la construction du deck.
+    db.add(CardDef {
+        name: "Aurora".into(),
+        life: Some(20),
+        intellect: Some(4),
+        types: Types::HERO,
+        subtypes: Subtypes::YOUNG,
+        supertypes: ELEMENTAL_RB,
+        activated: vec![ActivatedDef {
+            label: "Créer un jeton Embodiment of Lightning",
+            speed: Speed::Instant,
+            cost: 2,
+            once_per_turn: true,
+            condition: Some(|g, p, _| a_joue_une_carte_lightning(g, p)),
+            script: vec![Op::Do(|g, c| {
+                let e = card_named(g, EMBODIMENT_OF_LIGHTNING);
+                g.create_tokens(c.controller, e, 1);
+            })],
+            ..Default::default()
+        }],
+        ..Default::default()
+    });
+
+    // Embodiment of Lightning — Elemental Token - Aura, sans couleur.
+    // « When you play an attack action card, destroy this and the attack gets
+    //   go again. »
+    db.add(CardDef {
+        name: EMBODIMENT_OF_LIGHTNING.into(),
+        types: Types::TOKEN,
+        subtypes: Subtypes::AURA,
+        supertypes: Supertypes::ELEMENTAL,
+        triggers: vec![TriggerDef {
+            when: |g, me, e| match *e {
+                Event::Played { player, card, .. } => {
+                    player == g.obj(me).controller && is_attack_action_card(g, card)
+                }
+                _ => false,
+            },
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| {
+                destroy_source(g, c);
+                if let Some(Event::Played { card, .. }) = c.event {
+                    // Seulement si l'attaque est encore sur la pile.
+                    if matches!(g.obj(card).zone, Zone::Stack | Zone::CombatChain) {
+                        g.modify(g.obj_ref(card), grant(Keywords::GO_AGAIN), Until::EndOfTurn);
+                    }
+                }
+            })],
+        }],
         ..Default::default()
     });
 
