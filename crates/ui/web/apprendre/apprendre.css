@@ -69,3 +69,5 @@ html[data-vue="apprendre"] #v-apprendre { display: block; }
 .ap-couv table { border-collapse: collapse; margin-top: 8px; font-size: .88rem; }
 .ap-couv td, .ap-couv th { padding: 2px 10px; text-align: left; border-bottom: 1px solid var(--line2); }
 .ap-couv tr.ok td:first-child { color: var(--good); }
+.ap-choix .btn:disabled { opacity: .75; cursor: default; }
+.ap-choix .btn.bon:disabled, .ap-choix .btn.faux:disabled { opacity: 1; }
