@@ -177,10 +177,10 @@ pub fn lire(
                     name: nom,
                     slot,
                 }),
-                Classement::Deck => return Err(format!(
-                    "ligne {} : « {nom} » est une carte de deck, sa couleur manque (ex. « (red) »)",
-                    i + 1
-                )),
+                Classement::Deck => {
+                    let m = "est une carte de deck, sa couleur manque (ex. « (red) »)";
+                    return Err(format!("ligne {} : « {nom} » {m}", i + 1));
+                }
                 Classement::Inconnue => {
                     return Err(format!("ligne {} : carte inconnue « {nom} »", i + 1))
                 }
