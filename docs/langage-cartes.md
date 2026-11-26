@@ -47,3 +47,13 @@ Il faut le fichier officiel (`bash tools/fetch_cards.sh`).
 - Pool entier, vocabulaire Warrior seul : 65 noms sur 2 189 (3 %). Les phrases
   bloquantes les plus fréquentes sont surtout des mots-clés (Stealth, Boost,
   Cloaked, Legendary, Blade Break…) : voir `couverture`.
+
+## Modèle local (2026-11-26, Surface Pro 9, processeur seul)
+
+Qwen2.5-Coder 7B (Q4_K_M) dans LM Studio, `tools/bench_modele_local.py` :
+**1 carte réussie sur 16 faisables**, 140 s par carte en moyenne. Échecs : le
+modèle écrit `native` ou répond IMPOSSIBLE (8), bloc illisible (2), texte
+différent (5 : ordre des mots-clés, couleurs oubliées). Conclusion : un modèle
+de cette taille ne suffit pas sur cette machine ; l'étage « modèle local » est
+mis de côté. Pistes si on y revient : sortie forcée par une grammaire, nouvel
+essai au lieu d'abandonner, exemples choisis parmi les cartes les plus proches.
