@@ -122,12 +122,17 @@ pitch, la courbe de coût, la liste par équipement et deck, et la
 vérification du serveur à chaque changement. « Enregistrer » écrit le deck
 maison ; « Copier la liste » donne le texte au format FaBrary. Un deck
 maison se range dans les **archives** (« Archiver ») ; on ne supprime
-qu'un deck archivé. Le filtre « pour ce héros » (classe, talent ou
-Generic) aide au tri ; ce n'est pas une vérification de règle (question
-ouverte dans `docs/suivi.md`).
+qu'un deck archivé. Le filtre « pour ce héros » garde les cartes que le
+héros peut avoir (même règle que la vérification ci-dessous).
 
 La légalité vient de la base communautaire (`bash tools/fetch_cards.sh`) ;
-sans elle, seuls le format et les cartes codées sont vérifiés.
+sans elle, seuls le format et les cartes codées sont vérifiés. Avec elle,
+la vérification contrôle aussi les classes et talents : le héros doit
+avoir toutes les classes et tous les talents de chaque carte (Generic :
+pour tous) ; pour une carte hybride (« Brute / Warrior »), un seul des deux
+côtés suffit (réponse du propriétaire, 2026-11-26) ; « Essence of Ice »
+(Iyslander), « Essence of Earth, Ice, and Lightning » (Bravo)… ajoutent
+ces talents au héros.
 
 Pour les développeurs : `crates/ui/src/api_decks.rs` (routes
 `/api/collection`, `/api/decks-maison`, `/api/deck-maison`,

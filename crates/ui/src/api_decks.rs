@@ -295,6 +295,50 @@ impl Collection {
             .map(|&i| &self.cartes[i])
     }
 
+    /// Classes et talents d'un texte de type, par côté d'une carte hybride
+    /// (« Brute / Warrior Action » → {Brute}, {Warrior}) ; un seul côté pour
+    /// une carte ordinaire. « Generic » ne compte pas.
+    fn cotes(type_texte: &str) -> Vec<HashSet<&str>> {
+        let sup = type_texte.split(" - ").next().unwrap_or("");
+        sup.split(" / ")
+            .map(|c| {
+                c.split_whitespace()
+                    .filter(|m| *m != "Generic" && (CLASSES.contains(m) || TALENTS.contains(m)))
+                    .collect()
+            })
+            .collect()
+    }
+
+    /// La carte `nom` est d'une classe ou d'un talent que le héros n'a pas.
+    /// Le héros doit avoir toutes les classes et tous les talents de la
+    /// carte ; pour une carte hybride, ceux d'un seul des deux côtés
+    /// suffisent (réponse du propriétaire du 2026-11-26). « Essence of X »
+    /// sur le héros ajoute le talent X.
+    /// `None` : on ne sait pas (types inconnus du héros ou de la carte).
+    pub fn hors_classe(&self, heros: &str, nom: &str) -> Option<bool> {
+        let h = self
+            .par_nom(heros)
+            .find(|c| c.heros && !c.type_texte.is_empty())?;
+        let c = self.par_nom(nom).find(|c| !c.type_texte.is_empty())?;
+        let mut du_heros: HashSet<&str> =
+            Self::cotes(&h.type_texte).into_iter().flatten().collect();
+        // « Essence of Ice » (Iyslander), « Essence of Earth, Ice, and
+        // Lightning » (Bravo) : le héros peut avoir des cartes de ces talents.
+        for l in h.texte.lines() {
+            if let Some(r) = l.trim().strip_prefix("Essence of ") {
+                du_heros.extend(
+                    r.split(|c: char| !c.is_alphabetic())
+                        .filter(|m| TALENTS.contains(m)),
+                );
+            }
+        }
+        Some(
+            !Self::cotes(&c.type_texte)
+                .iter()
+                .any(|cote| cote.is_subset(&du_heros)),
+        )
+    }
+
     /// La carte de ce nom et de cette couleur est légale en Silver Age.
     /// `None` : on ne sait pas (pas de base communautaire, ou carte trop
     /// récente pour elle).
@@ -510,6 +554,23 @@ pub fn verifier(liste: &Decklist) -> Value {
     }
     for n in &illegales {
         problemes.push(format!("pas légale en Silver Age : {n}"));
+    }
+    let mut hors: Vec<&str> = Vec::new();
+    for n in liste
+        .arena
+        .iter()
+        .map(|e| e.name.as_str())
+        .chain(liste.deck.iter().map(|e| e.name.as_str()))
+    {
+        if col.hors_classe(&liste.hero, n) == Some(true) && !hors.contains(&n) {
+            hors.push(n);
+        }
+    }
+    for n in hors {
+        problemes.push(format!(
+            "« {n} » n'est pas d'une classe ou d'un talent de {}",
+            liste.hero
+        ));
     }
     // Le card-pool se monte-t-il dans le moteur (emplacements, mains) ?
     if problemes.is_empty() && non_codees.is_empty() {

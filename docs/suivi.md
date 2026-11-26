@@ -103,14 +103,13 @@ Mark of the Huntsman).
 
 ## Questions ouvertes pour le propriétaire
 
-**Decks maison (Arsenal, lot 4a) :** la vérification d'un deck importé ne
-contrôle pas encore que chaque carte est de la classe (ou du talent) du
-héros. `TODO(règles)` : il faut la règle exacte de construction (CR,
-section sur le card-pool), que la session cloud n'a pas pu lire
-(rules.fabtcg.com renvoie 403). Pouvez-vous copier ce passage, ou
-`bash tools/fetch_rules.sh` sur votre PC ? D'ici là, l'éditeur a seulement
-un filtre « pour ce héros » (classe, talent ou Generic), sans valeur de
-règle.
+**Decks maison, classes et talents (réglé le 2026-11-26) :** pour une
+carte hybride, une seule des deux classes suffit (réponse du
+propriétaire). Hypothèses à confirmer : une carte ordinaire demande
+**toutes** ses classes et tous ses talents au héros (une carte
+« Draconic Ninja » n'est pas pour un héros seulement Ninja), et
+« Essence of X » sur le héros ajoute le talent X (Iyslander peut avoir
+des cartes Ice). Code : `Collection::hors_classe` (`crates/ui/src/api_decks.rs`).
 
 **Étape 6, à regarder :** le fichier `data/side/b1.txt` (choix appris des
 bots, paire par paire, avec l'écart estimé de chaque carte laissée hors du
