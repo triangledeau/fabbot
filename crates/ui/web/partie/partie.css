@@ -316,7 +316,7 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
    (ajusterPile() la place sous la main du bot). */
 .decide { grid-area: stack; display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; padding: 8px 0 10px; }
 .decide .pilebox { flex: 1 1 auto; min-height: 0; width: auto; margin: 0; }
-@media (min-width: 1001px) { .decide { grid-row: 1 / 3; grid-column: 3; justify-self: end; width: clamp(190px, 16vw, 270px); } }
+@media (min-width: 1001px) { .decide { grid-row: 1 / 3; grid-column: 3; justify-self: end; width: clamp(170px, 13vw, 250px); } }
 .pilebox .layers { display: flex; flex-direction: column; align-items: center; }
 .pilebox .layer + .layer { margin-top: calc(var(--sh) * var(--ov, -.55)); }
 .pilebox.rangee .layers { flex-direction: row; align-items: flex-start; }
