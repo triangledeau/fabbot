@@ -76,11 +76,13 @@
   // nouvelle évaluation ; les boutons restent actifs pendant Bot contre Bot.
   document.addEventListener("arsenal:etat", () => {
     const prep = !etat || etat.aucune_partie || etat.phase === "preparation";
-    zone.hidden = prep;
+    // Masqué aussi quand l'option « Aide du bot » est décochée (finition.js).
+    const masque = prep || (typeof ReglagesFx !== "undefined" && !ReglagesFx.aide);
+    zone.hidden = masque;
     $("ab-conseil-texte").textContent = "";
     $("ab-conseil").disabled = auto || !etat.decision;
     $("ab-auto").disabled = !auto && (!etat.decision || etat.fini);
-    if (!prep) evaluer();
+    if (!masque) evaluer();
   });
 
   // ---- signalement de bug
