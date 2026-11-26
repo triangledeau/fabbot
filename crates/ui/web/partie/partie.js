@@ -26,16 +26,23 @@ async function action(methode, chemin) {
   $("erreur").textContent = "";
   const minuterie = setTimeout(() => { $("attente").style.display = "block"; }, 250);
   document.querySelectorAll("button").forEach(b => b.disabled = true);
+  let nouveau = null;
   try {
-    etat = await api(methode, chemin);
+    nouveau = await api(methode, chemin);
   } catch (e) {
     $("erreur").textContent = e.message;
   } finally {
     clearTimeout(minuterie);
     $("attente").style.display = "none";
-    occupe = false;
-    afficher();
   }
+  // Lot 2 : on rejoue d'abord le « film » des pas du moteur (votre choix,
+  // puis les réponses du bot), puis on affiche l'état final.
+  if (nouveau) {
+    try { await Film.jouer(nouveau); } catch (e) { console.error(e); }
+    etat = nouveau;
+  }
+  occupe = false;
+  afficher();
 }
 
 const choisir = (i) => action("POST", "/api/choix?i=" + i);
@@ -74,6 +81,7 @@ function carte(c, petite) {
     e.addEventListener("mouseenter", () => montrerPool(c.carte_id, c));
     return e;
   }
+  e.dataset.k = c.id;
   const opts = optionsDeCarte(c.id);
   if (opts.length) {
     e.classList.add("jouable");
@@ -273,8 +281,10 @@ function preparation() {
 
 // ---------- affichage ----------
 
-function zone(titre, liste, petite) {
+function zone(titre, liste, petite, ancre, depot) {
   const z = el("div", "zone");
+  if (ancre) z.dataset.a = ancre;
+  if (depot) z.dataset.depot = depot;
   z.appendChild(el("div", "titre", titre));
   const c = el("div", "cartes");
   if (!liste || liste.length === 0) c.appendChild(el("span", "vide", "—"));
@@ -284,36 +294,46 @@ function zone(titre, liste, petite) {
 }
 
 function joueur(j, estVous, actif) {
+  const qui = estVous ? "vous" : "bot";
   const b = el("div");
+  b.dataset.o = qui;
   const t = el("div", "entete-joueur");
   if (j.heros_image) {
     const a = el("span", "ava");
     a.style.setProperty("--art", Images.fond(j.heros_image));
+    a.dataset.a = "heros-" + qui;
     a.addEventListener("mouseenter", () => montrer(j.heros_id, { image: j.heros_image }));
     t.appendChild(a);
   }
   const h = el("span", "heros", (estVous ? "Vous — " : "Bot — ") + j.heros);
   h.addEventListener("mouseenter", () => montrer(j.heros_id, { image: j.heros_image }));
   t.appendChild(h);
-  t.appendChild(el("span", "vie", j.vie + " PV"));
+  const vie = el("span", "vie");
+  const nv = el("b", null, String(FX.vieAffichee(qui, j.vie)));
+  nv.dataset.vie = qui;
+  vie.append(nv, " PV");
+  vie.dataset.a = "vie-" + qui;
+  t.appendChild(vie);
   if (j.marque) t.appendChild(el("span", "marque", "marqué"));
-  const c = (lib, v) => { const s = el("span", "compteur", lib + " "); s.appendChild(el("b", null, v)); return s; };
+  const c = (lib, v, a) => { const s = el("span", "compteur", lib + " "); s.appendChild(el("b", null, v)); if (a) s.dataset.a = a + "-" + qui; return s; };
   t.appendChild(c("Points d'action", j.points_action));
-  t.appendChild(c("Ressources", j.ressources));
-  t.appendChild(c("Deck", j.deck));
-  if (!estVous) t.appendChild(c("Main", j.main_nombre));
+  t.appendChild(c("Ressources", j.ressources, "res"));
+  t.appendChild(c("Deck", j.deck, "deck"));
+  if (!estVous) t.appendChild(c("Main", j.main_nombre, "main"));
   b.appendChild(t);
 
   const r = el("div", "rangees");
   r.appendChild(zone("Armes et équipement", j.equipement, true));
-  r.appendChild(zone("Arsenal", j.arsenal ? [j.arsenal] : [], true));
+  r.appendChild(zone("Arsenal", j.arsenal ? [j.arsenal] : [], true, "arsenal-" + qui, estVous ? "arsenal" : null));
   r.appendChild(zone("Permanents", j.permanents, true));
-  r.appendChild(zone("Pitch", j.pitch, true));
+  r.appendChild(zone("Pitch", j.pitch, true, "pitch-" + qui, estVous ? "pitch" : null));
   b.appendChild(r);
-  if (estVous) b.appendChild(zone("Votre main", j.main, false));
+  if (estVous) b.appendChild(zone("Votre main", j.main, false, "main-vous"));
 
   const det = el("details");
-  det.appendChild(el("summary", null, `Cimetière (${j.cimetiere.length}) · Bannies (${j.bannies.length})`));
+  const resume = el("summary", null, `Cimetière (${j.cimetiere.length}) · Bannies (${j.bannies.length})`);
+  resume.dataset.a = "cimetiere-" + qui;
+  det.appendChild(resume);
   const r2 = el("div", "rangees");
   r2.appendChild(zone("Cimetière", j.cimetiere, true));
   r2.appendChild(zone("Bannies", j.bannies, true));
@@ -332,6 +352,7 @@ function joueur(j, estVous, actif) {
 function milieu() {
   const m = $("milieu");
   m.replaceChildren();
+  m.dataset.depot = "chaine";
   const cb = etat.combat;
   if (cb) {
     m.appendChild(el("div", "titre", "Chaîne de combat — étape : " + cb.etape));
@@ -344,6 +365,7 @@ function milieu() {
       if (l.defenseurs.length) res.appendChild(el("div", null, "défense totale " + l.defense_totale));
       if (l.touche) res.appendChild(el("div", null, "a touché"));
       r.appendChild(res);
+      r.dataset.o = l.par_vous ? "vous" : "bot";
       r.appendChild(carte(l.attaque, true));
       for (const d of l.defenseurs) r.appendChild(carte(d, true));
       m.appendChild(r);
@@ -415,12 +437,14 @@ function afficher() {
   $("info").textContent = `Manche ${m ? m.jouees + (etat.fini ? 0 : 1) : 1} · tour ${etat.tour} (${etat.votre_tour ? "votre tour" : "tour du bot"}) · vous : ${r.deck} · bot ${r.nom_bot} : ${r.deck_bot} · graine ${r.graine}`;
   $("b-annuler").disabled = etat.annulables === 0;
   $("b-annuler").textContent = "↶ Annuler" + (etat.annulables ? ` (${etat.annulables})` : "");
+  FX.avant();
   joueur(etat.bot, false, !etat.votre_tour);
   milieu();
   joueur(etat.vous, true, etat.votre_tour);
   panneau();
   suite();
   journal();
+  FX.apres(etat);
 }
 
 function suite() {
@@ -489,5 +513,6 @@ document.addEventListener("keydown", (e) => {
 (async () => {
   try { await preparerDialogue(); } catch (e) { $("erreur").textContent = e.message; }
   try { etat = await api("GET", "/api/etat"); } catch (e) { $("erreur").textContent = e.message; }
+  Film.vu(etat);
   afficher();
 })();

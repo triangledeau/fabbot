@@ -94,6 +94,34 @@ Pour les développeurs : `data/cards/images.tsv` (produit par
 `crates/ui/src/images.rs` ajoute `image` et `nom_fr` au JSON des cartes ;
 `crates/ui/web/commun/cartes.js` construit l'adresse.
 
+### Plateau animé
+
+Après chacun de vos choix, la page **rejoue les coups** un par un (votre
+choix, puis les réponses du bot) au lieu de sauter directement au résultat :
+
+- les cartes **volent** d'une zone à l'autre (main → chaîne, pitch,
+  cimetière…) ; une carte jouée par le bot part de sa main ;
+- une attaque qui touche **fonce sur le héros** : impact, secousse, dégâts
+  en gros chiffres, PV qui **défilent** ; une attaque entièrement bloquée
+  affiche « Bloqué » ;
+- un **bandeau** annonce « Votre tour » / « Tour du bot » et chaque étape du
+  combat ; le pitch envoie des étincelles vers les ressources ;
+- **tirer une carte** surlignée : une chaîne de laiton la relie à la zone
+  visée ; lâchez-la sur la chaîne de combat (jouer, défendre), sur votre
+  pitch ou sur votre arsenal. Le clic marche toujours.
+
+Dans le panneau de droite : **Animations** (tout couper) et **Pause avant
+les dégâts** (le film s'arrête avant chaque coup porté ; « Continuer » ou
+Espace). Le bouton **Passer l'animation** (ou Échap) va directement à la fin.
+Ces réglages sont gardés par le navigateur. Si votre système demande moins
+d'animations, elles sont coupées.
+
+Pour les développeurs : le serveur ajoute à l'état un `film` (plateau après
+chaque pas du moteur + événements `tour`, `joue`, `attaque`, `defense`,
+`touche`, `bloque`, `degats`, `pitch`, `chaine_fermee`) et `film_no` ; chaque
+option a une `action` (`jouer`, `pitch`, `defendre`, `arsenal`, `activer`,
+`autre`). Page : `crates/ui/web/partie/finition.js`.
+
 ### La page
 
 - **En haut** : le bot (héros, PV, points d'action, ressources, taille du

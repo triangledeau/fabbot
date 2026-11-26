@@ -54,6 +54,16 @@ pub struct Session {
     historique: History<Instantane>,
     journal: Vec<Ligne>,
     tour: u32,
+    /// Le « film » du dernier choix de l'humain : le plateau après chacun
+    /// des pas du moteur qui ont suivi (son choix, puis les réponses du
+    /// bot), avec les événements à animer. La page le rejoue (lot 2 du plan
+    /// de rapatriement) ; tout y est vu par l'humain.
+    film: Vec<Value>,
+    /// Numéro du film : change à chaque choix, pour que la page ne rejoue
+    /// pas deux fois le même.
+    film_no: u64,
+    /// Attaques qui ont touché depuis leur déclaration (pour « Bloqué »).
+    touchees: Vec<ObjectId>,
 }
 
 impl Session {
@@ -87,6 +97,9 @@ impl Session {
             historique: History::new(),
             journal: Vec::new(),
             tour: 0,
+            film: Vec::new(),
+            film_no: 0,
+            touchees: Vec::new(),
         };
         s.avancer()?;
         Ok(s)
@@ -101,15 +114,20 @@ impl Session {
         self.historique.len()
     }
 
-    /// Recopie les nouveaux événements dans le journal.
-    fn lire_evenements(&mut self) {
+    /// Recopie les nouveaux événements dans le journal ; renvoie ceux qui
+    /// s'animent dans la page.
+    fn lire_evenements(&mut self) -> Vec<Value> {
         let evenements = self
             .g
             .record
             .as_mut()
             .map(std::mem::take)
             .unwrap_or_default();
+        let mut anim = Vec::new();
         for e in &evenements {
+            if let Some(a) = self.animation(e) {
+                anim.push(a);
+            }
             let Some(texte) = vue::evenement(&self.g, self.humain, e) else {
                 continue;
             };
@@ -123,13 +141,126 @@ impl Session {
                 texte,
             });
         }
+        anim
+    }
+
+    /// `vous` ou `bot`.
+    fn qui(&self, p: PlayerId) -> &'static str {
+        if p == self.humain {
+            "vous"
+        } else {
+            "bot"
+        }
+    }
+
+    /// Un événement du moteur, tel que la page l'anime (seulement ce que
+    /// l'humain peut voir : une carte cachée n'a pas de numéro).
+    fn animation(&mut self, e: &Event) -> Option<Value> {
+        let g = &self.g;
+        let vu = |id: ObjectId| {
+            let id = g.obj(id).proxy_of.unwrap_or(id);
+            vue::visible(g, self.humain, id).then_some(id.0)
+        };
+        Some(match *e {
+            Event::StartOfTurn(p) => json!({ "t": "tour", "par": self.qui(p) }),
+            Event::Played { player, card, .. } => {
+                json!({ "t": "joue", "par": self.qui(player), "carte": vu(card) })
+            }
+            Event::Attack {
+                attack,
+                attacker,
+                target,
+                target_obj,
+                ..
+            } => {
+                self.touchees.retain(|&a| a != attack);
+                json!({
+                    "t": "attaque",
+                    "par": self.qui(attacker),
+                    "cible": self.qui(target),
+                    "allie": target_obj.is_some(),
+                    "carte": vu(attack),
+                })
+            }
+            Event::Defend { card, defender, .. } => {
+                json!({ "t": "defense", "par": self.qui(defender), "carte": vu(card) })
+            }
+            Event::Hit {
+                attack,
+                attacker,
+                target,
+                target_obj,
+                damage,
+                effect,
+                ..
+            } => {
+                self.touchees.push(attack);
+                json!({
+                    "t": "touche",
+                    "par": self.qui(attacker),
+                    "cible": self.qui(target),
+                    "allie": target_obj.is_some(),
+                    "degats": damage,
+                    "effet": effect,
+                })
+            }
+            Event::ChainLinkResolved { attack, attacker } if !self.touchees.contains(&attack) => {
+                json!({ "t": "bloque", "par": self.qui(attacker), "cible": self.qui(attacker.opponent()) })
+            }
+            Event::Damage {
+                target,
+                target_obj,
+                amount,
+                arcane,
+                ..
+            } => json!({
+                "t": "degats",
+                "cible": self.qui(target),
+                "allie": target_obj.is_some(),
+                "n": amount,
+                "arcane": arcane,
+            }),
+            Event::Pitched { player, card } => {
+                json!({ "t": "pitch", "par": self.qui(player), "carte": vu(card) })
+            }
+            Event::CombatChainClosed => json!({ "t": "chaine_fermee" }),
+            _ => return None,
+        })
+    }
+
+    /// Le plateau seul (sans question ni journal), vu par l'humain.
+    fn plateau(&self) -> Value {
+        let g = &self.g;
+        let h = self.humain;
+        let pile: Vec<String> = g.stack.iter().rev().map(|l| vue::couche(g, h, l)).collect();
+        json!({
+            "tour": g.turn,
+            "votre_tour": g.turn_player == h,
+            "vous": joueur(g, h, h),
+            "bot": joueur(g, h, h.opponent()),
+            "combat": combat(g, h),
+            "pile": pile,
+        })
+    }
+
+    /// Lit les événements et ajoute une image au film si quelque chose a
+    /// changé.
+    fn tourner(&mut self) {
+        let anim = self.lire_evenements();
+        let plateau = self.plateau();
+        let pareil = self.film.last().is_some_and(|d| d["plateau"] == plateau);
+        if anim.is_empty() && pareil {
+            return;
+        }
+        self.film
+            .push(json!({ "plateau": plateau, "evenements": anim }));
     }
 
     /// Le moteur avance ; le bot répond à ses décisions, jusqu'à une
     /// décision de l'humain ou la fin de la partie.
     fn avancer(&mut self) -> Result<(), String> {
         loop {
-            self.lire_evenements();
+            self.tourner();
             let Some(d) = self.g.pending_decision().cloned() else {
                 return Ok(());
             };
@@ -163,6 +294,8 @@ impl Session {
             journal: self.journal.len(),
             tour: self.tour,
         });
+        self.film.clear();
+        self.film_no += 1;
         self.g
             .apply(i)
             .map_err(|e| format!("choix refusé par le moteur : {e:?}"))?;
@@ -177,6 +310,9 @@ impl Session {
                 self.g = avant.g;
                 self.journal.truncate(avant.journal);
                 self.tour = avant.tour;
+                self.film.clear();
+                self.film_no += 1;
+                self.touchees.clear();
                 true
             }
             None => false,
@@ -223,6 +359,7 @@ impl Session {
                             "texte": vue::option(g, d, c),
                             "carte": carte_de_l_option(g, h, c).map(|o| o.0),
                             "passer": matches!(c, Choice::Pass),
+                            "action": action_de(c),
                         })
                     })
                     .collect();
@@ -259,7 +396,23 @@ impl Session {
             "fini": g.is_over(),
             "resultat": if g.is_over() { Some(vue::resultat(g, h)) } else { None },
             "journal": journal,
+            "film": self.film,
+            "film_no": self.film_no,
         })
+    }
+}
+
+/// Ce que fait une option, pour le glisser-déposer de la page : on lâche
+/// la carte sur la chaîne (`jouer`, `defendre`, `activer`), sur le pitch
+/// (`pitch`) ou sur l'arsenal (`arsenal`).
+fn action_de(c: Choice) -> &'static str {
+    match c {
+        Choice::Play(_) => "jouer",
+        Choice::Activate(..) => "activer",
+        Choice::Pitch(_) => "pitch",
+        Choice::Defend(_) => "defendre",
+        Choice::Arsenal(_) => "arsenal",
+        _ => "autre",
     }
 }
 

@@ -36,8 +36,21 @@ fn numeros(v: &Value, out: &mut Vec<u32>) {
     }
 }
 
+/// L'état sans le « film » du dernier choix (le film montre le plateau tel
+/// qu'il était à chaque pas : une carte alors visible a pu être cachée
+/// depuis, par exemple une carte pitchée remise sous le deck). Le film est
+/// construit pas à pas avec la même règle (`vue::visible`) ; voir
+/// `le_film_rejoue_les_pas_du_bot_sans_rien_de_cache`.
+fn sans_film(mut v: Value) -> Value {
+    if let Some(o) = v.as_object_mut() {
+        o.remove("film");
+        o.remove("film_no");
+    }
+    v
+}
+
 fn verifier_rien_de_cache(s: &Session, contexte: &str) {
-    let v = s.etat();
+    let v = sans_film(s.etat());
     let mut ns = Vec::new();
     numeros(&v, &mut ns);
     for n in ns {
@@ -114,8 +127,8 @@ fn annuler_revient_exactement_a_l_etat_affiche_avant_le_choix() {
     assert_eq!(s.annulables(), avant.len());
     while let Some(attendu) = avant.pop() {
         assert!(s.annuler());
-        let mut v = s.etat();
-        let mut a = attendu;
+        let mut v = sans_film(s.etat());
+        let mut a = sans_film(attendu);
         // Seul le nombre de choix annulables change… et il doit être égal.
         assert_eq!(v["annulables"], a["annulables"]);
         v["annulables"] = Value::Null;
@@ -196,6 +209,7 @@ fn routes_du_serveur() {
     let v = preparer_avec_la_proposition(&mut e, v);
     assert_eq!(v["phase"], "partie");
     let premier = v.clone();
+    assert!(v["film_no"].is_number());
 
     assert_eq!(repondre("POST", "/api/annuler", &mut e).code, 400);
     assert_eq!(repondre("POST", "/api/choix?i=9999", &mut e).code, 400);
@@ -205,7 +219,7 @@ fn routes_du_serveur() {
     assert_eq!(json(&r)["annulables"], 1);
     let r = repondre("POST", "/api/annuler", &mut e);
     assert_eq!(r.code, 200);
-    assert_eq!(json(&r), premier);
+    assert_eq!(sans_film(json(&r)), sans_film(premier.clone()));
 
     let id = premier["vous"]["heros_id"].as_u64().unwrap();
     let r = repondre("GET", &format!("/api/carte?id={id}"), &mut e);
@@ -526,4 +540,71 @@ fn l_etat_donne_l_image_des_cartes_visibles_mais_rien_des_cartes_cachees() {
     // Une carte cachée ne porte que `cache` : ni nom, ni image.
     assert!(!texte.contains("\"cache\":true,\"image\""));
     assert!(!texte.contains("\"cache\":true,\"nom"));
+}
+
+// ---------- Arsenal, lot 2 : film des pas du moteur ----------
+
+#[test]
+fn le_film_rejoue_les_pas_du_bot_sans_rien_de_cache() {
+    let connus = [
+        "tour",
+        "joue",
+        "attaque",
+        "defense",
+        "touche",
+        "bloque",
+        "degats",
+        "pitch",
+        "chaine_fermee",
+    ];
+    let mut s = Session::nouvelle(reglages("dorinthea", "ira", 11)).unwrap();
+    let mut vus = std::collections::HashSet::new();
+    for n in 0..400 {
+        if s.g.is_over() {
+            break;
+        }
+        let k = s.g.pending_decision().unwrap().options.len();
+        let no = s.etat()["film_no"].as_u64().unwrap();
+        s.choisir(n % k).unwrap();
+        let v = s.etat();
+        assert_eq!(v["film_no"].as_u64().unwrap(), no + 1, "un film par choix");
+        let film = v["film"].as_array().unwrap();
+        assert!(
+            !film.is_empty(),
+            "le choix de l'humain fait au moins un pas"
+        );
+        for image in film {
+            let p = &image["plateau"];
+            assert!(p["bot"]["main"].is_null(), "main du bot dans le film");
+            assert!(!p.to_string().contains("\"cache\":true,\"id\""));
+            for e in image["evenements"].as_array().unwrap() {
+                let t = e["t"].as_str().unwrap();
+                assert!(connus.contains(&t), "événement inconnu {t}");
+                vus.insert(t.to_string());
+            }
+        }
+        // Le dernier plateau du film est le plateau affiché.
+        let dernier = &film.last().unwrap()["plateau"];
+        assert_eq!(dernier["vous"], v["vous"]);
+        assert_eq!(dernier["bot"], v["bot"]);
+    }
+    for t in ["tour", "joue", "attaque", "pitch"] {
+        assert!(
+            vus.contains(t),
+            "aucun événement « {t} » en toute une partie"
+        );
+    }
+}
+
+#[test]
+fn les_options_disent_ce_qu_elles_font_pour_le_glisser_deposer() {
+    let s = Session::nouvelle(reglages("hala", "dorinthea", 5)).unwrap();
+    let v = s.etat();
+    for o in v["decision"]["options"].as_array().unwrap() {
+        let a = o["action"].as_str().unwrap();
+        assert!(["jouer", "activer", "pitch", "defendre", "arsenal", "autre"].contains(&a));
+        if o["passer"] == true {
+            assert_eq!(a, "autre");
+        }
+    }
 }
