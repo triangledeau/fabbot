@@ -58,7 +58,7 @@ pub(crate) const TARGET_HERO: TargetSpec = TargetSpec {
 };
 
 /// « Deal N arcane damage to [la cible n° 0] » : la source est la carte.
-fn arcane_to_target(g: &mut GameState, c: &Ctx, n: i16) {
+pub(crate) fn arcane_to_target(g: &mut GameState, c: &Ctx, n: i16) {
     if let Some(t) = c.target(0) {
         g.deal_damage_to(c.source_id(), c.controller, t, n as i32, true);
     }

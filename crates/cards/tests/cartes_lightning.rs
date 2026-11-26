@@ -1475,3 +1475,124 @@ fn quick_succession_bleu_pas_de_plus_1_sans_go_again() {
     jusqua_active(&mut t, a);
     assert_eq!(t.g.power(a), 4, "pas de go again : pas de +1");
 }
+
+// ---------------------------------------------------------------------------
+// Voltbound Duality (Lightning Runeblade Action - Attack, bleu / rouge / jaune)
+// ---------------------------------------------------------------------------
+
+const REMPART: (&str, Option<Color>) = ("Essai Rempart", B);
+
+/// Partie où P0 a Voltbound Duality (couleur `c`) et trois Remparts en main
+/// (de quoi payer le {r}).
+fn partie_voltbound(c: Option<Color>) -> Partie {
+    partie_vraie(
+        [HEROS, HEROS],
+        &[("Voltbound Duality", c), REMPART, REMPART, REMPART],
+        RIEN,
+        RIEN,
+        RIEN,
+        &[],
+        &[],
+    )
+}
+
+fn en_main_voltbound(t: &Partie, couleur: Option<Color>) -> ObjectId {
+    t.en_main(P0, "Voltbound Duality", couleur)
+}
+
+/// Active Voltbound Duality depuis la main : cible le héros adverse, paie
+/// {r} en défaussant un Rempart, puis résout la capacité.
+fn activer_voltbound(t: &mut Partie, c: ObjectId) {
+    passer_jusqua_que(t, |t| t.joueur() == P0 && t.peut(Choice::Activate(c, 0)));
+    t.choisir(Choice::Activate(c, 0));
+    for _ in 0..20 {
+        if t.g.is_over() || t.g.pending_decision().is_none() {
+            break;
+        }
+        match t.kind() {
+            DecisionKind::Pitch => {
+                let opts = t.options();
+                let rempart = opts
+                    .iter()
+                    .copied()
+                    .find(|o| matches!(o, Choice::Pitch(x) if t.g.def(*x).name == "Essai Rempart"))
+                    .unwrap_or(opts[0]);
+                t.choisir(rempart);
+            }
+            DecisionKind::Target => t.choisir(Choice::Target(Target::Player(P1))),
+            _ => break,
+        }
+    }
+    resoudre(t);
+}
+
+fn jetons_lightning_flow(t: &Partie, p: PlayerId) -> usize {
+    t.g.permanents
+        .iter()
+        .copied()
+        .filter(|&o| t.g.obj(o).controller == p && t.g.def(o).name == "Lightning Flow")
+        .count()
+}
+
+#[test]
+fn voltbound_duality_instant_se_defausse_en_payant_r() {
+    let mut t = partie_voltbound(B);
+    let c = en_main_voltbound(&t, B);
+    activer_voltbound(&mut t, c);
+    assert_ne!(t.g.obj(c).zone, Zone::Hand, "la carte est défaussée");
+}
+
+#[test]
+fn voltbound_duality_inflige_1_degat_arcanique_au_heros_cible() {
+    let mut t = partie_voltbound(R);
+    let c = en_main_voltbound(&t, R);
+    activer_voltbound(&mut t, c);
+    assert_eq!(t.vie(P1), 19, "1 dégât arcane au héros adverse");
+    assert_eq!(t.vie(P0), 20, "le héros de P0 n'est pas touché");
+}
+
+#[test]
+fn voltbound_duality_cree_un_jeton_lightning_flow() {
+    let mut t = partie_voltbound(Y);
+    let c = en_main_voltbound(&t, Y);
+    activer_voltbound(&mut t, c);
+    assert_eq!(
+        jetons_lightning_flow(&t, P0),
+        1,
+        "un jeton pour le contrôleur"
+    );
+    assert_eq!(jetons_lightning_flow(&t, P1), 0);
+}
+
+#[test]
+fn voltbound_duality_puissance_selon_la_couleur() {
+    for (couleur, attendue) in [(B, 2), (R, 4), (Y, 3)] {
+        let t = partie_voltbound(couleur);
+        let c = en_main_voltbound(&t, couleur);
+        assert_eq!(t.g.def(c).power, Some(attendue));
+        assert_eq!(t.g.def(c).defense, Some(3));
+    }
+}
+
+#[test]
+fn lightning_flow_est_un_jeton_aura_elementaire_sans_texte() {
+    let t = partie_voltbound(B);
+    let id = t.g.db.find_name("Lightning Flow").expect("jeton codé");
+    let d = t.g.db.get(id);
+    assert!(d.types.has(fab_engine::card::Types::TOKEN));
+    assert!(d.subtypes.has(fab_engine::card::Subtypes::AURA));
+    assert!(d.supertypes.has(Supertypes::ELEMENTAL));
+    assert!(d.triggers.is_empty() && d.activated.is_empty());
+}
+
+#[test]
+fn voltbound_duality_pas_activable_une_fois_defaussee() {
+    let mut t = partie_voltbound(B);
+    let c = en_main_voltbound(&t, B);
+    activer_voltbound(&mut t, c);
+    assert!(
+        !t.peut(Choice::Activate(c, 0)),
+        "plus en main, plus activable"
+    );
+    assert_eq!(t.vie(P1), 19, "un seul dégât");
+}

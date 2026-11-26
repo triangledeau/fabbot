@@ -6,13 +6,16 @@
 use super::assassin::this_hits_a_hero;
 use super::generic::{destroy_source, when_this_attacks};
 use super::shadow::{ask_object, picked};
-use super::{by_color, deck_card, equipment, grant, power, target_obj, COLORS};
+use super::wizard::{arcane_to_target, TARGET_HERO};
+use super::{by_color, card_named, deck_card, equipment, grant, power, target_obj, COLORS};
 use fab_engine::card::{CardDb, CardDef, Color, Delta, Keywords, Subtypes, Supertypes, Types};
 use fab_engine::script::{Ask, Ctx, Op, Target, TargetSpec};
 use fab_engine::PlayerId;
 use fab_engine::{
     ActivatedDef, Choice, Event, GameState, ObjectId, Speed, TriggerDef, Until, Zone,
 };
+
+const LIGHTNING_FLOW: &str = "Lightning Flow";
 
 /// Noms des cartes de ce module (pour `docs/cards/STATUS.md`).
 pub const NAMES: &[&str] = &[
@@ -34,6 +37,8 @@ pub const NAMES: &[&str] = &[
     "Flash of Brilliance",
     "Beckoning Haunt",
     "Quick Succession",
+    "Voltbound Duality",
+    "Lightning Flow",
     // NOMS
 ];
 
@@ -682,6 +687,53 @@ pub fn add(db: &mut CardDb) {
         })];
         db.add(d);
     }
+
+    // Voltbound Duality — Lightning Runeblade Action - Attack, coût 0, déf. 3.
+    // Puissance 2 (bleu), 4 (rouge), 3 (jaune) ; pitch 3 / 1 / 2.
+    // « Instant -- {r}, discard this: Deal 1 arcane damage to target hero.
+    //   Create a Lightning Flow token. »
+    for (c, power) in [(Color::Blue, 2), (Color::Red, 4), (Color::Yellow, 3)] {
+        let mut d = deck_card(
+            "Voltbound Duality",
+            c,
+            LIGHTNING_RB,
+            Types::ACTION,
+            Some(0),
+            Some(power),
+            Some(3),
+        );
+        d.arcane_damage = true;
+        d.activated = vec![ActivatedDef {
+            label: "{r}, défausser : 1 dégât arcane au héros cible",
+            speed: Speed::Instant,
+            cost: 1,
+            from_hand: true,
+            targets: vec![TARGET_HERO],
+            effect_cost: vec![Op::Do(|g, c| {
+                if let Some(s) = c.source_id() {
+                    g.discard(s);
+                }
+            })],
+            script: vec![
+                Op::Do(|g, c| arcane_to_target(g, c, 1)),
+                Op::Do(|g, c| {
+                    let flow = card_named(g, LIGHTNING_FLOW);
+                    g.create_tokens(c.controller, flow, 1);
+                }),
+            ],
+            ..Default::default()
+        }];
+        db.add(d);
+    }
+
+    // Lightning Flow — Elemental Token - Aura, sans texte (CR 8.6.38).
+    db.add(CardDef {
+        name: LIGHTNING_FLOW.into(),
+        types: Types::TOKEN,
+        subtypes: Subtypes::AURA,
+        supertypes: Supertypes::ELEMENTAL,
+        ..Default::default()
+    });
 
     // CARTES
 }
