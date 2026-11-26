@@ -1205,3 +1205,162 @@ fn sigil_of_voltaris_la_cible_peut_etre_son_propre_heros() {
     resoudre(&mut t);
     assert_eq!(t.vie(P0), avant - 1, "cas limite : héros quelconque");
 }
+
+// ---------------------------------------------------------------------------
+// Flash of Brilliance (Lightning Equipment - Head, déf. 1, sans couleur)
+// ---------------------------------------------------------------------------
+
+const FLASH: &str = "Flash of Brilliance";
+const SIGIL: &str = "Sigil of Voltaris";
+const CARTE_LIGHTNING: (&str, Option<Color>) = ("Cloud Cover", R);
+
+/// P0 a `main0` en main et `FLASH` en arène ; P1 attaque avec Essai Frappe.
+fn flash_partie(main0: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie(
+        [HEROS, HEROS],
+        main0,
+        RIEN,
+        &[("Essai Frappe", R), RAMPART_HELM],
+        RIEN,
+        &[FLASH],
+        &[],
+    )
+}
+
+/// Pose l'aura Sigil of Voltaris de P0 sur l'arène (il joue la carte).
+fn poser_sigil(t: &mut Partie) -> ObjectId {
+    let s = jouer(t, P0, SIGIL, B);
+    cibler_heros(t, P1);
+    resoudre(t);
+    s
+}
+
+/// Vrai quand la question « défausser / renvoyer en main » est posée à P0.
+fn question_flash(t: &Partie) -> bool {
+    let o = t.options();
+    o.contains(&Choice::Pass) && o.iter().any(|c| matches!(c, Choice::Object(_)))
+}
+
+/// P1 attaque, P0 défend avec `flash` ; s'arrête à la question du déclencheur.
+fn flash_defend_jusqua_question(t: &mut Partie, flash: ObjectId) {
+    helm_attaque_par_p1(t);
+    helm_defend(t, &[flash]);
+    passer_jusqua_que(t, |t| question_flash(t) || !t.g.combat.open);
+}
+
+/// Termine la défense ; le « leaves the arena » du Sigil demande sa cible.
+fn finir_flash(t: &mut Partie) {
+    passer_jusqua_que(t, |t| !t.g.combat.open || t.kind() == DecisionKind::Target);
+    if t.kind() == DecisionKind::Target {
+        t.choisir(Choice::Target(Target::Player(P1)));
+    }
+    passer_jusqua_que(t, |t| !t.g.combat.open);
+}
+
+#[test]
+fn flash_of_brilliance_defense_1_sans_couleur_et_lightning() {
+    let t = flash_partie(&[]);
+    let f = t.equipement(P0, FLASH);
+    assert_eq!(t.g.defense(f), 1);
+    assert_eq!(t.g.def(f).color, None);
+    assert!(t.g.def(f).supertypes.has(Supertypes::LIGHTNING));
+}
+
+#[test]
+fn flash_of_brilliance_blade_break() {
+    let t = flash_partie(&[]);
+    let f = t.equipement(P0, FLASH);
+    assert!(t.g.keywords(f).has(Keywords::BLADE_BREAK));
+}
+
+#[test]
+fn flash_of_brilliance_quand_il_defend_propose_de_defausser_une_carte_lightning() {
+    let mut t = flash_partie(&[CARTE_LIGHTNING]);
+    let f = t.equipement(P0, FLASH);
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    flash_defend_jusqua_question(&mut t, f);
+    assert!(question_flash(&t), "question de défausse attendue");
+    assert!(t.options().contains(&Choice::Object(cloud)));
+}
+
+#[test]
+fn flash_of_brilliance_ne_pose_pas_de_question_quand_il_ne_defend_pas() {
+    let mut t = flash_partie(&[CARTE_LIGHTNING]);
+    helm_attaque_par_p1(&mut t);
+    helm_defend(&mut t, &[]);
+    passer_jusqua_que(&mut t, |t| !t.g.combat.open);
+}
+
+#[test]
+fn flash_of_brilliance_may_passer_ne_defausse_rien_ni_ne_renvoie_d_aura() {
+    let mut t = flash_partie(&[CARTE_LIGHTNING, (SIGIL, B)]);
+    let f = t.equipement(P0, FLASH);
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    let s = poser_sigil(&mut t);
+    flash_defend_jusqua_question(&mut t, f);
+    t.choisir(Choice::Pass);
+    finir_flash(&mut t);
+    assert_eq!(t.g.obj(cloud).zone, Zone::Hand, "carte gardée en main");
+    assert_eq!(t.g.obj(s).zone, Zone::Permanent, "aura restée en arène");
+}
+
+#[test]
+fn flash_of_brilliance_defausse_la_carte_lightning_choisie() {
+    let mut t = flash_partie(&[CARTE_LIGHTNING]);
+    let f = t.equipement(P0, FLASH);
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    flash_defend_jusqua_question(&mut t, f);
+    t.choisir(Choice::Object(cloud));
+    finir_flash(&mut t);
+    assert_eq!(
+        t.g.obj(cloud).zone,
+        Zone::Graveyard,
+        "carte Lightning défaussée"
+    );
+}
+
+#[test]
+fn flash_of_brilliance_ne_propose_pas_une_carte_qui_n_est_pas_lightning() {
+    let mut t = flash_partie(&[CARTE_LIGHTNING, RAMPART_HELM]);
+    let f = t.equipement(P0, FLASH);
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    let rempart = t.en_main(P0, "Essai Rempart", B);
+    flash_defend_jusqua_question(&mut t, f);
+    let o = t.options();
+    assert!(o.contains(&Choice::Object(cloud)));
+    assert!(!o.contains(&Choice::Object(rempart)), "{o:?}");
+}
+
+#[test]
+fn flash_of_brilliance_si_defausse_renvoie_l_aura_controlee_en_main_de_son_proprietaire() {
+    let mut t = flash_partie(&[CARTE_LIGHTNING, (SIGIL, B)]);
+    let f = t.equipement(P0, FLASH);
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    let s = poser_sigil(&mut t);
+    flash_defend_jusqua_question(&mut t, f);
+    t.choisir(Choice::Object(cloud));
+    finir_flash(&mut t);
+    assert_eq!(t.g.obj(cloud).zone, Zone::Graveyard, "carte défaussée");
+    assert_eq!(t.g.obj(s).zone, Zone::Hand, "aura renvoyée en main");
+    assert_eq!(t.g.obj(s).owner, P0);
+}
+
+#[test]
+fn flash_of_brilliance_sans_aura_controlee_defausse_sans_rien_renvoyer() {
+    let mut t = flash_partie(&[CARTE_LIGHTNING]);
+    let f = t.equipement(P0, FLASH);
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    flash_defend_jusqua_question(&mut t, f);
+    t.choisir(Choice::Object(cloud));
+    finir_flash(&mut t);
+    assert_eq!(t.g.obj(cloud).zone, Zone::Graveyard, "carte défaussée");
+}
+
+#[test]
+fn flash_of_brilliance_sans_carte_lightning_en_main_ne_pose_pas_de_question() {
+    let mut t = flash_partie(&[RAMPART_HELM]);
+    let f = t.equipement(P0, FLASH);
+    helm_attaque_par_p1(&mut t);
+    helm_defend(&mut t, &[f]);
+    passer_jusqua_que(&mut t, |t| !t.g.combat.open);
+}

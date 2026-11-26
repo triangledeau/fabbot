@@ -5,9 +5,11 @@
 
 use super::assassin::this_hits_a_hero;
 use super::generic::{destroy_source, when_this_attacks};
+use super::shadow::{ask_object, picked};
 use super::{by_color, deck_card, equipment, grant, power, target_obj, COLORS};
 use fab_engine::card::{CardDb, CardDef, Color, Delta, Keywords, Subtypes, Supertypes, Types};
 use fab_engine::script::{Ask, Ctx, Op, Target, TargetSpec};
+use fab_engine::PlayerId;
 use fab_engine::{
     ActivatedDef, Choice, Event, GameState, ObjectId, Speed, TriggerDef, Until, Zone,
 };
@@ -29,6 +31,7 @@ pub const NAMES: &[&str] = &[
     "Star Fall",
     "Helm of Might and Magic",
     "Sigil of Voltaris",
+    "Flash of Brilliance",
     // NOMS
 ];
 
@@ -560,7 +563,74 @@ pub fn add(db: &mut CardDb) {
     ];
     db.add(d);
 
+    // Flash of Brilliance (sans couleur) — Lightning Equipment - Head, déf. 1.
+    // « When this defends, you may discard a Lightning card. If you do, return
+    //   an aura you control to its owner's hand.
+    //   Blade Break »
+    let mut d = equipment("Flash of Brilliance", LIGHTNING, Subtypes::HEAD, 1);
+    d.keywords = Keywords::BLADE_BREAK;
+    d.triggers = vec![TriggerDef {
+        when: super::generic::when_this_defends,
+        anywhere: false,
+        targets: vec![],
+        script: vec![
+            // « you may discard a Lightning card » : Pass = ne rien faire.
+            Op::Ask(|g, c| {
+                let mut options: Vec<Choice> = g
+                    .player(c.controller)
+                    .hand
+                    .iter()
+                    .filter(|&&x| g.def(x).supertypes.has(Supertypes::LIGHTNING))
+                    .map(|&x| Choice::Object(x))
+                    .collect();
+                if options.is_empty() {
+                    return None;
+                }
+                options.push(Choice::Pass);
+                Some(Ask {
+                    player: c.controller,
+                    label: "Défausser une carte Lightning pour renvoyer une aura en main ?",
+                    options,
+                })
+            }),
+            Op::Do(|g, c| {
+                if let Some(Choice::Object(x)) = c.answer {
+                    if g.obj(x).zone == Zone::Hand && g.def(x).supertypes.has(Supertypes::LIGHTNING)
+                    {
+                        g.discard(x);
+                        c.flag = true;
+                    }
+                }
+            }),
+            // « If you do » : sans défausse, on saute la suite.
+            Op::If(|_, c| c.flag, 2),
+            Op::Ask(|g, c| {
+                ask_object(
+                    c.controller,
+                    "Renvoyer quelle aura en main ?",
+                    auras_you_control(g, c.controller),
+                )
+            }),
+            Op::Do(|g, c| {
+                let v = auras_you_control(g, c.controller);
+                if let Some(x) = picked(c, &v) {
+                    g.return_to_hand(x);
+                }
+            }),
+        ],
+    }];
+    db.add(d);
+
     // CARTES
+}
+
+/// Les auras que `p` contrôle sur l'arène.
+fn auras_you_control(g: &GameState, p: PlayerId) -> Vec<ObjectId> {
+    g.permanents
+        .iter()
+        .copied()
+        .filter(|&o| g.obj(o).controller == p && g.def(o).subtypes.has(Subtypes::AURA))
+        .collect()
 }
 
 /// Le héros touché (« them ») d'une capacité « when this hits a hero ».
