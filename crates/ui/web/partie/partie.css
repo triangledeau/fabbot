@@ -344,7 +344,7 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 .ruban .btns > button { flex: 1 1 auto; }
 .ruban .btns:empty { display: none; }
 .ruban .btns .sp { flex-basis: 100%; height: 0; }
-#v-partie .ruban button { font-weight: 700; min-height: 32px; padding: 5px 10px; line-height: 1.2; white-space: normal; }
+#v-partie .ruban button { font-weight: 700; min-height: 32px; padding: 5px 10px; line-height: 1.2; white-space: normal; border-radius: 10px; }
 #v-partie button.discret { background: transparent; }
 .ruban .order { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .ruban .order .carte, .ruban .order .carte.img { width: 54px; height: 76px; min-height: 0; }
@@ -468,3 +468,6 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 
 /* La carte qui pose la question, en tête de la question */
 .ruban .prompt .src-ruban, .ruban .prompt .src-ruban.img { float: left; width: 40px; height: 56px; min-height: 0; margin: 0 8px 2px 0; border-radius: 4px; box-shadow: 0 0 0 1px var(--brass), 0 3px 8px #000; cursor: help; }
+/* Centrage exact du nombre dans le médaillon, quelle que soit la police :
+   la boîte du texte est rognée à la hauteur des chiffres (capitale → ligne de base). */
+.z .pv b { display: block; line-height: 1; text-box: trim-both cap alphabetic; }
