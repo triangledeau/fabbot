@@ -428,3 +428,76 @@ fn le_blood_debt_a_venir_fait_baisser_l_estimation_de_levia() {
     assert_eq!(e.estimer_pour_la_recherche_avec_dette(&g, [0.0, 0.0]), sans);
     assert!(e.estimer_pour_la_recherche_avec_dette(&g, [3.0, 0.0]) < sans);
 }
+
+/// Levia (P0) au tour 1, deux Feeding Frenzy (5{p} et 4{p}, blood debt)
+/// bannies face visible par l'adversaire, `main` en main.
+fn levia_endettee(main: &[(&str, Option<fab_engine::Color>)], dettes: usize) -> Partie {
+    let mut t = partie_vraie(
+        ["Levia", "Essai Héros"],
+        main,
+        &[("Feeding Frenzy", Y), ("Feeding Frenzy", B)],
+        RIEN,
+        RIEN,
+        &[],
+        &[],
+    );
+    let frenzy: Vec<ObjectId> = t
+        .g
+        .player(P0)
+        .deck
+        .iter()
+        .copied()
+        .filter(|&c| t.g.def(c).name == "Feeding Frenzy")
+        .take(dettes)
+        .collect();
+    for c in frenzy {
+        t.g.banish(P1, c, false);
+    }
+    t.g.refresh_priority();
+    t
+}
+
+/// L'option « passer » de la décision en cours de Levia (qui finirait son tour).
+fn passer_de_levia(t: &Partie) -> (fab_engine::Decision, usize) {
+    let d = t.g.pending_decision().expect("décision").clone();
+    assert_eq!(d.player, P0);
+    assert_eq!(d.kind, DecisionKind::Priority);
+    let i = d.index_of(Choice::Pass).expect("passer");
+    (d, i)
+}
+
+const REMPART: (&str, Option<fab_engine::Color>) = ("Essai Rempart", B);
+
+#[test]
+fn parties_simulees_levia_bannit_cleave_rouge_plutot_que_payer_son_blood_debt() {
+    use fab_ai::b2::eviter_le_blood_debt;
+    let mut t = levia_endettee(&[("Cleave the Heavens", R), REMPART, REMPART, REMPART], 2);
+    let (d, passer) = passer_de_levia(&t);
+    let i = eviter_le_blood_debt(&t.g, &d, passer).expect("une capacité à activer");
+    let cleave = t.en_main(P0, "Cleave the Heavens", R);
+    assert!(matches!(d.options[i], Choice::Activate(o, _) if o == cleave));
+    // Cleave rouge (6{p}) bannie : Levia ne perd rien en fin de tour.
+    let avant = t.vie(P0);
+    t.g.apply(i).unwrap();
+    t.finir_le_tour();
+    assert_eq!(t.vie(P0), avant);
+    // Autre choix que « passer » : rien ne change.
+    assert_eq!(eviter_le_blood_debt(&t.g, &d, i), None);
+}
+
+#[test]
+fn parties_simulees_cleave_jaune_ne_protege_pas_levia_donc_rien_n_est_active() {
+    use fab_ai::b2::eviter_le_blood_debt;
+    // 5{p} : bannir la jaune ne protège pas Levia (et ajoute une dette).
+    let t = levia_endettee(&[("Cleave the Heavens", Y), REMPART, REMPART, REMPART], 2);
+    let (d, passer) = passer_de_levia(&t);
+    assert_eq!(eviter_le_blood_debt(&t.g, &d, passer), None);
+}
+
+#[test]
+fn parties_simulees_une_seule_carte_de_dette_ne_vaut_pas_une_carte_de_la_main() {
+    use fab_ai::b2::eviter_le_blood_debt;
+    let t = levia_endettee(&[("Cleave the Heavens", R), REMPART, REMPART, REMPART], 1);
+    let (d, passer) = passer_de_levia(&t);
+    assert_eq!(eviter_le_blood_debt(&t.g, &d, passer), None);
+}

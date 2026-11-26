@@ -45,8 +45,8 @@ use crate::b3::{Evaluation, Modele};
 use crate::determinisation::determiniser;
 use crate::{Agent, HeuristicAgent, RandomAgent};
 use fab_engine::{
-    Choice, Decision, GameState, Keywords, ObjectId, Outcome, PlayerId, PreventRef, Rng, Target,
-    Zone,
+    Choice, Decision, DecisionKind, GameState, Keywords, ObjectId, Outcome, PlayerId, PreventRef,
+    Rng, Target, Zone,
 };
 use std::time::{Duration, Instant};
 
@@ -94,6 +94,10 @@ pub struct ReglagesB2 {
     /// comme une future carte bannie (Levia bannit son cimetière pour
     /// payer ses attaques).
     pub dette_cimetiere: f32,
+    /// Parties simulées : avant de finir son tour avec du blood debt à
+    /// payer, le bot qui les joue cherche une capacité qui l'évite
+    /// ([`eviter_le_blood_debt`]) ; B1 seul ne le fait jamais.
+    pub eviter_dette: bool,
 }
 
 impl Default for ReglagesB2 {
@@ -109,6 +113,7 @@ impl Default for ReglagesB2 {
             modele: None,
             dette_tours: 0.0,
             dette_cimetiere: 0.0,
+            eviter_dette: false,
         }
     }
 }
@@ -153,6 +158,7 @@ impl ReglagesB2 {
             reste = &reste[1..];
             match c {
                 'a' => r.politique = Politique::Aleatoire,
+                'l' => r.eviter_dette = true,
                 't' | 'c' | 'p' | 'v' | 'd' | 'g' => {
                     let (n, l) = nombre(reste);
                     reste = &reste[l..];
@@ -324,9 +330,14 @@ impl IsmctsAgent {
             let i = if d.options.len() == 1 {
                 0
             } else {
-                match self.reglages.politique {
+                let i = match self.reglages.politique {
                     Politique::Heuristique => self.b1.choose(g, d),
                     Politique::Aleatoire => aleatoire.choose(g, d),
+                };
+                if self.reglages.eviter_dette {
+                    eviter_le_blood_debt(g, d, i).unwrap_or(i)
+                } else {
+                    i
                 }
             };
             let _ = g.apply(i);
@@ -437,19 +448,59 @@ pub fn dette_a_venir(g: &GameState, p: PlayerId, tours: f32, cimetiere: f32) -> 
         return 0.0;
     }
     let ps = g.player(p);
-    let dette = |c: &&ObjectId| g.def(**c).keywords.has(Keywords::BLOOD_DEBT);
-    let bannies = ps
-        .banished
-        .iter()
-        .filter(|c| !g.obj(**c).face_down)
-        .filter(dette)
-        .count() as f32;
+    let bannies = dette_face_visible(g, p) as f32;
     let au_cimetiere = if cimetiere == 0.0 {
         0.0
     } else {
+        let dette = |c: &&ObjectId| g.def(**c).keywords.has(Keywords::BLOOD_DEBT);
         ps.graveyard.iter().filter(dette).count() as f32
     };
     (tours * (bannies + cimetiere * au_cimetiere)).min(ps.life.max(0) as f32)
+}
+
+/// Nombre de cartes à blood debt face visible dans la zone de bannissement
+/// de `p` (chacune lui fera perdre 1{h} à sa fin de tour, CR 8.3.11, 8.3.11a).
+pub fn dette_face_visible(g: &GameState, p: PlayerId) -> usize {
+    g.player(p)
+        .banished
+        .iter()
+        .filter(|&&c| !g.obj(c).face_down && g.def(c).keywords.has(Keywords::BLOOD_DEBT))
+        .count()
+}
+
+/// Pour les parties simulées : `choix` (l'option choisie par la politique)
+/// est-il « passer » alors que cela finit le tour du joueur (phase
+/// d'action, pile et chaîne de combat vides) avec au moins 2 cartes à blood
+/// debt face visible à payer (CR 8.3.11), sans que son héros soit protégé
+/// ce tour (Levia : une carte de 6{p} ou plus mise dans sa zone de
+/// bannissement) ? Si oui, renvoie la première capacité activable qui
+/// déclenche cette protection en étant activée (Cleave the Heavens bannie
+/// de la main, Hex Gauntlet), essayée sur une copie de la partie (le coût
+/// est payé dès l'activation). `None` sinon.
+pub fn eviter_le_blood_debt(g: &GameState, d: &Decision, choix: usize) -> Option<usize> {
+    let p = d.player;
+    if d.kind != DecisionKind::Priority
+        || d.options.get(choix) != Some(&Choice::Pass)
+        || g.turn_player != p
+        || !g.action_phase
+        || g.combat.open
+        || !g.stack.is_empty()
+    {
+        return None;
+    }
+    let heros = g.player(p).hero;
+    let protege = g.def(heros).blood_debt_immune?;
+    if g.lost_abilities(heros) || protege(g, p) || dette_face_visible(g, p) < 2 {
+        return None;
+    }
+    d.options.iter().enumerate().find_map(|(i, c)| {
+        if !matches!(c, Choice::Activate(..)) {
+            return None;
+        }
+        let mut essai = g.clone();
+        essai.apply(i).ok()?;
+        protege(&essai, p).then_some(i)
+    })
 }
 
 /// Les options de `d`, une par clé (la première option de chaque clé).
