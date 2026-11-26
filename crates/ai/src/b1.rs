@@ -8,7 +8,9 @@
 //! - **au tour adverse**, il défend quand une carte empêche assez de dégâts
 //!   (en tenant compte de sa vie) et joue ses réactions de défense utiles ;
 //! - il pitche les cartes qui servent le moins, au plus juste ;
-//! - il met en arsenal sa meilleure carte d'attaque.
+//! - il met en arsenal sa meilleure carte d'attaque ;
+//! - il attaque un allié adverse (un dragon) quand son attaque peut le
+//!   détruire et que l'allié frappe fort, sinon le héros adverse.
 //!
 //! Limites connues (B2 fera mieux par la recherche) : il ne lit pas le texte
 //! des cartes, donc il ne sait pas si une cible est amie ou ennemie (il vise
