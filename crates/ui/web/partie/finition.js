@@ -403,7 +403,11 @@ const Film = (() => {
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && reprendre) { sauter = true; reprendre(); } });
   return {
     vu(e) { if (e) dernier = cle(e); },
-    async jouer(nouveau) {
+    // `envoyees` : cartes du brouillon (défense préparée…) que le joueur
+    // voit déjà posées. Les images sans événement où elles sont encore en
+    // main (le moteur ne les déplace qu'à la validation) sont sautées : sinon
+    // elles revenaient dans la main puis refaisaient leur vol.
+    async jouer(nouveau, envoyees = []) {
       if (!nouveau || nouveau.film_no === undefined) return;
       const k = cle(nouveau);
       if (k === dernier) return;
@@ -417,6 +421,8 @@ const Film = (() => {
       try {
         for (const image of film) {
           const ev = image.evenements || [];
+          const main = (image.plateau && image.plateau.vous && image.plateau.vous.main) || [];
+          if (!ev.length && envoyees.length && main.some((c) => envoyees.includes(c.id))) continue;
           const degats = ev.some((x) => (x.t === "touche" || x.t === "bloque") && !x.allie);
           if (degats && ReglagesFx.pause && !sauter) await continuer();
           etat = Object.assign({}, nouveau, image.plateau, { decision: null, fini: false, resultat: null, manche_suivante: false });
