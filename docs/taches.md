@@ -9,7 +9,7 @@ retire en finissant.
 
 | Début | Agent | Branche | Tâche | Zone touchée (crates, fichiers) |
 |---|---|---|---|---|
-| — | — | — | (aucune) | — |
+| 2026-11-26 | Claude | `claude/vigilant-fermat-iq5cjs` | B2/B3 : estimation qui comprend le blood debt et les cartes bannies (Levia), mesurée contre B2 | `crates/ai/src/b2.rs`, `b3.rs` (recherche seulement), `docs/bots.md` |
 
 ## Découpage conseillé des prochaines tâches
 
