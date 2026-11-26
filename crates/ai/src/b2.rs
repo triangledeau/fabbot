@@ -45,7 +45,8 @@ use crate::b3::{Evaluation, Modele};
 use crate::determinisation::determiniser;
 use crate::{Agent, HeuristicAgent, RandomAgent};
 use fab_engine::{
-    Choice, Decision, GameState, ObjectId, Outcome, PlayerId, PreventRef, Rng, Target, Zone,
+    Choice, Decision, GameState, Keywords, ObjectId, Outcome, PlayerId, PreventRef, Rng, Target,
+    Zone,
 };
 use std::time::{Duration, Instant};
 
@@ -85,6 +86,14 @@ pub struct ReglagesB2 {
     /// Estimation apprise (B3, [`crate::b3`]) à la place de la formule fixe
     /// (vie + cartes) ; `None` : la formule fixe de B2.
     pub modele: Option<&'static Modele>,
+    /// Blood debt : nombre de fins de tour **à venir** (après l'arrêt de la
+    /// partie simulée) comptées pour chaque carte à blood debt face visible
+    /// dans la zone de bannissement ([`dette_a_venir`]) ; 0 : ignoré.
+    pub dette_tours: f32,
+    /// Blood debt : part d'une carte à blood debt du **cimetière** comptée
+    /// comme une future carte bannie (Levia bannit son cimetière pour
+    /// payer ses attaques).
+    pub dette_cimetiere: f32,
 }
 
 impl Default for ReglagesB2 {
@@ -98,6 +107,8 @@ impl Default for ReglagesB2 {
             profondeur: 1,
             valeur_carte: 1.5,
             modele: None,
+            dette_tours: 0.0,
+            dette_cimetiere: 0.0,
         }
     }
 }
@@ -142,7 +153,7 @@ impl ReglagesB2 {
             reste = &reste[1..];
             match c {
                 'a' => r.politique = Politique::Aleatoire,
-                't' | 'c' | 'p' | 'v' => {
+                't' | 'c' | 'p' | 'v' | 'd' | 'g' => {
                     let (n, l) = nombre(reste);
                     reste = &reste[l..];
                     match c {
@@ -152,6 +163,8 @@ impl ReglagesB2 {
                                 Some(n.parse().ok()?).filter(|&p| p > 0).unwrap_or(u32::MAX)
                         }
                         'v' => r.valeur_carte = n.parse().ok()?,
+                        'd' => r.dette_tours = n.parse().ok()?,
+                        'g' => r.dette_cimetiere = n.parse().ok()?,
                         _ => r.exploration = n.parse().ok()?,
                     }
                 }
@@ -297,11 +310,14 @@ impl IsmctsAgent {
         while let Some(d) = g.pending.as_ref() {
             if let Some(t) = self.reglages.tours_simules {
                 if g.turn >= tour0 + t {
+                    let r = &self.reglages;
+                    let dette = |p: PlayerId| dette_a_venir(g, p, r.dette_tours, r.dette_cimetiere);
+                    let dettes = [dette(PlayerId::P0), dette(PlayerId::P1)];
                     return match &self.evaluation {
-                        Some((_, e)) if self.reglages.modele.is_some() => {
-                            e.estimer_pour_la_recherche(g)
+                        Some((_, e)) if r.modele.is_some() => {
+                            e.estimer_pour_la_recherche_avec_dette(g, dettes)
                         }
-                        _ => estimer(g, self.reglages.valeur_carte),
+                        _ => estimer_avec_dette(g, r.valeur_carte, dettes),
                     };
                 }
             }
@@ -392,13 +408,48 @@ impl Agent for IsmctsAgent {
 /// Estimation du résultat d'une partie simulée arrêtée avant la fin, pour le
 /// joueur 0 : écart de vie et de cartes disponibles, ramené entre 0 et 1.
 pub fn estimer(g: &GameState, valeur_carte: f32) -> f32 {
+    estimer_avec_dette(g, valeur_carte, [0.0, 0.0])
+}
+
+/// [`estimer`], la vie de chaque joueur diminuée de la perte de vie
+/// attendue à cause du blood debt (`dettes`, voir [`dette_a_venir`]).
+pub fn estimer_avec_dette(g: &GameState, valeur_carte: f32, dettes: [f32; 2]) -> f32 {
     let p = |i: usize| {
         let ps = &g.players[i];
         let cartes = ps.hand.len() + ps.arsenal.is_some() as usize;
-        ps.life as f32 + valeur_carte * cartes as f32 + 0.25 * ps.deck.len() as f32
+        ps.life as f32 - dettes[i] + valeur_carte * cartes as f32 + 0.25 * ps.deck.len() as f32
     };
     let ecart = p(0) - p(1);
     1.0 / (1.0 + (-ecart / 8.0).exp())
+}
+
+/// Perte de vie **attendue** du joueur `p` à cause du blood debt après
+/// l'arrêt d'une partie simulée (CR 8.3.11 : à chacune de ses fins de tour,
+/// 1{h} par carte à blood debt face visible de sa zone de bannissement ;
+/// CR 8.3.11a : les cartes face cachée ne comptent pas) :
+/// `tours` × (cartes bannies face visible) + `cimetiere` × `tours` × (cartes
+/// à blood debt de son cimetière, qui seront sans doute bannies plus tard).
+/// Si son héros évite parfois cette perte (Levia : une carte de 6{p} ou plus
+/// bannie dans le tour), c'est à `tours` d'en tenir compte (valeur mesurée).
+/// Elle ne dépasse pas sa vie (la partie est alors perdue de toute façon).
+pub fn dette_a_venir(g: &GameState, p: PlayerId, tours: f32, cimetiere: f32) -> f32 {
+    if tours == 0.0 {
+        return 0.0;
+    }
+    let ps = g.player(p);
+    let dette = |c: &&ObjectId| g.def(**c).keywords.has(Keywords::BLOOD_DEBT);
+    let bannies = ps
+        .banished
+        .iter()
+        .filter(|c| !g.obj(**c).face_down)
+        .filter(dette)
+        .count() as f32;
+    let au_cimetiere = if cimetiere == 0.0 {
+        0.0
+    } else {
+        ps.graveyard.iter().filter(dette).count() as f32
+    };
+    (tours * (bannies + cimetiere * au_cimetiere)).min(ps.life.max(0) as f32)
 }
 
 /// Les options de `d`, une par clé (la première option de chaque clé).

@@ -271,7 +271,12 @@ fn main() {
         return;
     }
     if args.iter().any(|a| a == "--tournoi") {
-        tournoi(games, threads, check, seed0, bots, sides);
+        // `--avec levia` : seulement les paires où l'un des decks est Levia.
+        let avec = args
+            .iter()
+            .position(|a| a == "--avec")
+            .map(|i| args.get(i + 1).expect("--avec deck").to_lowercase());
+        tournoi(games, threads, check, seed0, bots, sides, avec.as_deref());
         return;
     }
 
@@ -389,19 +394,40 @@ fn main() {
     }
 }
 
-/// `--tournoi` : `bots[0]` (A) contre `bots[1]` (B) sur les 81 paires de decks.
-fn tournoi(games: u64, threads: u64, check: bool, seed0: u64, bots: [&str; 2], sides: [&str; 2]) {
+/// `--tournoi` : `bots[0]` (A) contre `bots[1]` (B) sur les 81 paires de decks
+/// (avec `avec` : seulement les 17 paires où l'un des deux decks est celui-là).
+fn tournoi(
+    games: u64,
+    threads: u64,
+    check: bool,
+    seed0: u64,
+    bots: [&str; 2],
+    sides: [&str; 2],
+    avec: Option<&str>,
+) {
     let db = Arc::new(real::build());
     let table = table_side(&db, sides);
     let decks: Vec<(String, CardPool)> =
         tous_les_decks().iter().map(|n| lire_deck(&db, n)).collect();
     let n = decks.len();
-    let cases = (n * n) as u64;
-    let total_jobs = cases * games;
+    let noms_decks = tous_les_decks();
+    let garder = |i: usize| avec.is_none_or(|a| noms_decks[i].to_lowercase().contains(a));
+    if avec.is_some() && !(0..n).any(garder) {
+        eprintln!("--avec : aucun deck de ce nom");
+        std::process::exit(2);
+    }
+    let cases: Vec<usize> = (0..n * n)
+        .filter(|&c| garder(c / n) || garder(c % n))
+        .collect();
+    let total_jobs = cases.len() as u64 * games;
     println!(
-        "fab-sim — tournoi {} (A, side {}) contre {} (B, side {}) : {n}×{n} paires de decks, \
+        "fab-sim — tournoi {} (A, side {}) contre {} (B, side {}) : {} paires de decks, \
          {games} parties par paire ({total_jobs} parties), {threads} threads, vérification : {check}",
-        bots[0], sides[0], bots[1], sides[1]
+        bots[0],
+        sides[0],
+        bots[1],
+        sides[1],
+        cases.len()
     );
     let start = Instant::now();
     let next = AtomicU64::new(0);
@@ -410,7 +436,7 @@ fn tournoi(games: u64, threads: u64, check: bool, seed0: u64, bots: [&str; 2], s
     let par_case: Vec<Stats> = std::thread::scope(|s| {
         let handles: Vec<_> = (0..threads)
             .map(|_| {
-                let (db, decks, next, table) = (db.clone(), &decks, &next, &table);
+                let (db, decks, next, table, cases) = (db.clone(), &decks, &next, &table, &cases);
                 s.spawn(move || {
                     let mut v = vec![Stats::default(); n * n];
                     loop {
@@ -418,13 +444,15 @@ fn tournoi(games: u64, threads: u64, check: bool, seed0: u64, bots: [&str; 2], s
                         if job >= total_jobs {
                             break;
                         }
-                        let case = (job / games) as usize;
+                        let case = cases[(job / games) as usize];
                         let k = job % games;
                         let (da, db_) = (case / n, case % n);
                         // Alterner la place de A et le joueur qui choisit.
                         let a_place = (k % 2) as usize;
                         let chooser = PlayerId(((k / 2) % 2) as u8);
-                        let seed = seed0.wrapping_mul(1_000_003).wrapping_add(job);
+                        let seed = seed0
+                            .wrapping_mul(1_000_003)
+                            .wrapping_add(case as u64 * games + k);
                         let mut pools = [&decks[da].1, &decks[db_].1];
                         let mut b = bots;
                         let mut sd = sides;
@@ -516,7 +544,11 @@ fn tournoi(games: u64, threads: u64, check: bool, seed0: u64, bots: [&str; 2], s
         for j in 0..n {
             let c = &par_case[i * n + j];
             ligne.add(c);
-            print!("{:>7.0}", 100.0 * c.points0() / c.played().max(1) as f64);
+            if c.played() == 0 {
+                print!("{:>7}", "-");
+            } else {
+                print!("{:>7.0}", 100.0 * c.points0() / c.played() as f64);
+            }
         }
         let s = ligne.points0() / ligne.played().max(1) as f64;
         println!("{:>7.0} ({:+.0} Elo)", 100.0 * s, ecart(s));

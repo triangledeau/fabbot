@@ -135,8 +135,19 @@ pub fn heros_d_origine(g: &GameState, p: PlayerId) -> CardId {
 
 /// Les caractéristiques du joueur `p` : `f(caractéristique, valeur)`.
 pub fn caracteristiques(g: &GameState, p: PlayerId, f: &mut impl FnMut(Carac, f32)) {
+    caracteristiques_avec_dette(g, p, 0.0, f)
+}
+
+/// [`caracteristiques`], la vie diminuée de `dette` (perte de vie attendue
+/// à cause du blood debt, voir [`crate::b2::dette_a_venir`]).
+pub fn caracteristiques_avec_dette(
+    g: &GameState,
+    p: PlayerId,
+    dette: f32,
+    f: &mut impl FnMut(Carac, f32),
+) {
     let ps = g.player(p);
-    let vie = ps.life as f32;
+    let vie = ps.life as f32 - dette;
     let main = (ps.hand.len() + ps.arsenal.is_some() as usize) as f32;
     let mut gen = |k: u8, v: f32| {
         if v != 0.0 {
@@ -338,6 +349,13 @@ impl Evaluation {
         s
     }
 
+    /// Note d'un joueur, sa vie diminuée de `dette` (blood debt à venir).
+    pub fn note_avec_dette(&self, g: &GameState, p: PlayerId, dette: f32) -> f32 {
+        let mut s = 0.0;
+        caracteristiques_avec_dette(g, p, dette, &mut |c, v| s += self.poids(c) * v);
+        s
+    }
+
     /// Chances de gagner du joueur 0, entre 0 et 1 (avec la force des
     /// héros : c'est la prédiction apprise).
     pub fn estimer(&self, g: &GameState) -> f32 {
@@ -351,9 +369,18 @@ impl Evaluation {
     /// déséquilibré (Levia : −3,3), et la recherche ne voit plus de
     /// différence entre les coups (mesuré : Levia 0 % contre B2).
     pub fn estimer_pour_la_recherche(&self, g: &GameState) -> f32 {
+        self.estimer_pour_la_recherche_avec_dette(g, [0.0, 0.0])
+    }
+
+    /// [`Self::estimer_pour_la_recherche`], la vie de chaque joueur diminuée
+    /// de sa perte de vie attendue à cause du blood debt.
+    pub fn estimer_pour_la_recherche_avec_dette(&self, g: &GameState, dettes: [f32; 2]) -> f32 {
         let h0 = self.poids(Carac::Heros(heros_d_origine(g, PlayerId::P0)));
         let h1 = self.poids(Carac::Heros(heros_d_origine(g, PlayerId::P1)));
-        let x = self.note(g, PlayerId::P0) - h0 - self.note(g, PlayerId::P1) + h1;
+        let x = self.note_avec_dette(g, PlayerId::P0, dettes[0])
+            - h0
+            - self.note_avec_dette(g, PlayerId::P1, dettes[1])
+            + h1;
         1.0 / (1.0 + (-x).exp())
     }
 }

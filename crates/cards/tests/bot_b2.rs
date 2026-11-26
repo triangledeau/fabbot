@@ -329,6 +329,9 @@ fn les_reglages_de_b2_se_lisent_dans_son_nom() {
     let r = ReglagesB2::depuis_nom("100t0p0").unwrap();
     assert_eq!(r.tours_simules, None);
     assert_eq!(r.profondeur, u32::MAX);
+    let r = ReglagesB2::depuis_nom("300d2.5g0.5").unwrap();
+    assert_eq!(r.dette_tours, 2.5);
+    assert_eq!(r.dette_cimetiere, 0.5);
     assert!(ReglagesB2::depuis_nom("0").is_none());
     assert!(ReglagesB2::depuis_nom("12x").is_none());
     assert!(creer_agent("b2-50", 1).is_some());
@@ -362,4 +365,66 @@ fn b2_joue_des_parties_completes_avec_les_9_decks_sans_erreur() {
         assert!(g.is_over());
         assert!(x.recherches > 0);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Blood debt dans l'estimation (Levia)
+// ---------------------------------------------------------------------------
+
+/// Une partie Levia (joueur 0) contre Ira, avec trois cartes à blood debt de
+/// Levia prises dans son deck : une bannie face visible, une bannie face
+/// cachée, une au cimetière.
+fn levia_avec_dette() -> GameState {
+    use fab_engine::Keywords;
+    let mut g = partie_en_cours(6, 0, 5, 0);
+    assert_eq!(g.def(g.player(P0).hero).name, "Levia");
+    let dettes: Vec<ObjectId> = g
+        .player(P0)
+        .deck
+        .iter()
+        .copied()
+        .filter(|&c| g.def(c).keywords.has(Keywords::BLOOD_DEBT))
+        .take(3)
+        .collect();
+    assert_eq!(dettes.len(), 3);
+    g.banish(P0, dettes[0], false);
+    g.banish(P0, dettes[1], true);
+    g.put_in_graveyard(dettes[2]);
+    g
+}
+
+#[test]
+fn dette_a_venir_compte_les_cartes_bannies_face_visible_et_une_part_du_cimetiere() {
+    use fab_ai::b2::dette_a_venir;
+    let g = levia_avec_dette();
+    // CR 8.3.11a : la carte bannie face cachée ne compte pas.
+    assert_eq!(dette_a_venir(&g, P0, 2.0, 0.0), 2.0);
+    // Cimetière : 0,5 × 2 tours × 1 carte.
+    assert_eq!(dette_a_venir(&g, P0, 2.0, 0.5), 3.0);
+    assert_eq!(dette_a_venir(&g, P0, 0.0, 0.5), 0.0);
+    // Ira n'a pas de blood debt.
+    assert_eq!(dette_a_venir(&g, P1, 2.0, 0.5), 0.0);
+}
+
+#[test]
+fn dette_a_venir_ne_depasse_pas_la_vie() {
+    use fab_ai::b2::dette_a_venir;
+    let mut g = levia_avec_dette();
+    g.players[0].life = 2;
+    assert_eq!(dette_a_venir(&g, P0, 10.0, 0.0), 2.0);
+}
+
+#[test]
+fn le_blood_debt_a_venir_fait_baisser_l_estimation_de_levia() {
+    use fab_ai::b2::{estimer, estimer_avec_dette};
+    let g = levia_avec_dette();
+    let sans = estimer(&g, 1.5);
+    assert_eq!(estimer_avec_dette(&g, 1.5, [0.0, 0.0]), sans);
+    assert!(estimer_avec_dette(&g, 1.5, [3.0, 0.0]) < sans);
+    assert!(estimer_avec_dette(&g, 1.5, [0.0, 3.0]) > sans);
+    // B3 : même sens.
+    let e = fab_ai::b3::Modele::par_defaut().indexer(&g.db);
+    let sans = e.estimer_pour_la_recherche(&g);
+    assert_eq!(e.estimer_pour_la_recherche_avec_dette(&g, [0.0, 0.0]), sans);
+    assert!(e.estimer_pour_la_recherche_avec_dette(&g, [3.0, 0.0]) < sans);
 }
