@@ -20,7 +20,7 @@ async function api(methode, chemin) {
   return v;
 }
 
-async function action(methode, chemin) {
+async function action(methode, chemin, envoyees = []) {
   if (occupe) return;
   occupe = true;
   $("erreur").textContent = "";
@@ -40,7 +40,7 @@ async function action(methode, chemin) {
   // Lot 2 : on rejoue d'abord le « film » des pas du moteur (votre choix,
   // puis les réponses du bot), puis on affiche l'état final.
   if (nouveau) {
-    try { await Film.jouer(nouveau); } catch (e) { console.error(e); }
+    try { await Film.jouer(nouveau, envoyees); } catch (e) { console.error(e); }
     etat = nouveau;
   }
   occupe = false;
@@ -156,7 +156,10 @@ function basculer(id) {
   }
   afficher();
 }
-const envoyerBrouillon = (passer) => action("POST", `/api/choix-cartes?cartes=${brouillon.join(",")}&passer=${passer ? 1 : 0}`);
+// Les cartes du brouillon sont passées au film : il ne remontre pas les
+// images où elles sont encore en main (bug : la défense validée repartait
+// de la main et rejouait son animation).
+const envoyerBrouillon = (passer) => action("POST", `/api/choix-cartes?cartes=${brouillon.join(",")}&passer=${passer ? 1 : 0}`, [...brouillon]);
 // Carte lâchée sur une zone (tirer une carte, finition.js).
 function deposerOption(o) {
   if (o.action === "defendre" && genreDecision() === "defense") { if (!brouillon.includes(o.carte)) basculer(o.carte); return; }
