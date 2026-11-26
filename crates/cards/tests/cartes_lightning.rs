@@ -913,3 +913,110 @@ fn twinkle_toes_instant_du_tour_precedent_ne_compte_pas() {
         "l'instant date du tour précédent"
     );
 }
+
+// ---------------------------------------------------------------------------
+// Star Fall
+// ---------------------------------------------------------------------------
+
+const RAMPART_STAR_FALL: (&str, Option<Color>) = ("Essai Rempart", B);
+
+fn star_fall_partie(main0: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie([HEROS, HEROS], main0, RIEN, RIEN, RIEN, &["Star Fall"], &[])
+}
+
+/// Joue une carte de la main en pitchant (premières options) pour payer son coût.
+fn jouer_en_pitchant(t: &mut Partie, p: PlayerId, nom: &str, couleur: Option<Color>) -> ObjectId {
+    let c = t.en_main(p, nom, couleur);
+    passer_jusqua_que(t, |t| t.joueur() == p && t.peut(Choice::Play(c)));
+    t.choisir(Choice::Play(c));
+    while t.g.pending_decision().is_some() && t.kind() == DecisionKind::Pitch {
+        let o = t.options()[0];
+        t.choisir(o);
+    }
+    c
+}
+
+/// Active l'arme (payée par les ressources ou en pitchant) et renvoie
+/// l'attaque-proxy, une fois active.
+fn attaquer_star_fall(t: &mut Partie, p: PlayerId) -> ObjectId {
+    let w = t.equipement(p, "Star Fall");
+    passer_jusqua_que(t, |t| t.joueur() == p && t.peut(Choice::Activate(w, 0)));
+    t.choisir(Choice::Activate(w, 0));
+    for _ in 0..300 {
+        if let Some(a) = t.g.active_attack() {
+            return a;
+        }
+        match t.kind() {
+            DecisionKind::Pitch => {
+                let o = t.options()[0];
+                t.choisir(o);
+            }
+            DecisionKind::Priority | DecisionKind::Defend | DecisionKind::Arsenal => {
+                t.choisir(Choice::Pass)
+            }
+            k => panic!("décision {k:?} inattendue ; options {:?}", t.options()),
+        }
+    }
+    panic!("attaque de Star Fall jamais active");
+}
+
+#[test]
+fn star_fall_attaque_pour_1_ressource_une_fois_par_tour() {
+    let mut t = star_fall_partie(&[]);
+    let w = t.equipement(P0, "Star Fall");
+    let proxy = attaquer_star_fall(&mut t, P0);
+    assert_eq!(t.g.power(proxy), 1, "sans carte Lightning jouée ce tour");
+    assert!(!t.peut(Choice::Activate(w, 0)), "une fois par tour");
+}
+
+#[test]
+fn star_fall_une_carte_lightning_jouee_ce_tour_donne_plus_1_puissance() {
+    // Sizzle (rouge, Lightning) : son propre +3 s'ajoute à l'attaque ; on
+    // vérifie donc d'abord la puissance de l'arme seule (1 + 1).
+    let mut t = star_fall_partie(&[("Sizzle", R)]);
+    let w = t.equipement(P0, "Star Fall");
+    jouer(&mut t, P0, "Sizzle", R);
+    resoudre(&mut t);
+    assert_eq!(t.g.power(w), 2, "1 de base + 1 : une carte Lightning jouée");
+}
+
+#[test]
+fn star_fall_une_carte_lightning_jouee_ce_tour_donne_go_again() {
+    let mut t = star_fall_partie(&[("Sizzle", R)]);
+    jouer(&mut t, P0, "Sizzle", R);
+    resoudre(&mut t);
+    let proxy = attaquer_star_fall(&mut t, P0);
+    assert!(t.g.keywords(proxy).has(Keywords::GO_AGAIN));
+}
+
+#[test]
+fn star_fall_carte_non_lightning_jouee_ne_compte_pas() {
+    let mut t = star_fall_partie(&[
+        ("Harvest Season", R),
+        RAMPART_STAR_FALL,
+        RAMPART_STAR_FALL,
+        RAMPART_STAR_FALL,
+    ]);
+    let w = t.equipement(P0, "Star Fall");
+    jouer_en_pitchant(&mut t, P0, "Harvest Season", R);
+    resoudre(&mut t);
+    assert_eq!(
+        t.g.power(w),
+        1,
+        "Harvest Season n'est pas une carte Lightning"
+    );
+    let proxy = attaquer_star_fall(&mut t, P0);
+    assert!(!t.g.keywords(proxy).has(Keywords::GO_AGAIN));
+}
+
+#[test]
+fn star_fall_carte_lightning_du_tour_precedent_ne_compte_pas() {
+    let mut t = star_fall_partie(&[("Sizzle", R)]);
+    let w = t.equipement(P0, "Star Fall");
+    jouer(&mut t, P0, "Sizzle", R);
+    resoudre(&mut t);
+    t.finir_le_tour();
+    t.finir_le_tour();
+    assert_eq!(t.g.turn_player, P0, "retour au tour de P0");
+    assert_eq!(t.g.power(w), 1, "Sizzle date du tour précédent");
+}

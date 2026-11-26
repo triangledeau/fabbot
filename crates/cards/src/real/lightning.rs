@@ -26,6 +26,7 @@ pub const NAMES: &[&str] = &[
     "Static Shock",
     "Path of Same Ends",
     "Twinkle Toes",
+    "Star Fall",
     // NOMS
 ];
 
@@ -453,6 +454,54 @@ pub fn add(db: &mut CardDb) {
         ..Default::default()
     }];
     db.add(d);
+
+    // Star Fall — Lightning Runeblade Weapon - Sword (2H), 1{p}, sans couleur.
+    // « Once per Turn Action -- {r}: **Attack**
+    //   If you've played a Lightning card this turn, this card's attacks get +1{p}
+    //   and **go again**. »
+    db.add(CardDef {
+        name: "Star Fall".into(),
+        power: Some(1),
+        types: Types::WEAPON,
+        subtypes: Subtypes::SWORD | Subtypes::TWO_HAND,
+        supertypes: LIGHTNING_RB,
+        activated: vec![ActivatedDef {
+            label: "Attaquer",
+            speed: Speed::Action,
+            cost: 1,
+            once_per_turn: true,
+            attack: true,
+            ..Default::default()
+        }],
+        self_mod: Some(|g, me| {
+            // « this card's attacks » : le bonus porte sur l'arme (et son attaque-proxy).
+            if a_joue_une_carte_lightning(g, g.obj(me).controller) {
+                power(1)
+            } else {
+                Delta::default()
+            }
+        }),
+        // Le « go again » d'une arme ne passe pas par `self_mod` (il n'atteint
+        // pas la proxy d'attaque) : il est accordé à l'attaque elle-même quand
+        // elle est déclarée, comme pour Graphene Chelicera (assassin.rs).
+        // TODO(règles) : la condition « a joué une carte Lightning ce tour » est
+        // évaluée à la déclaration de l'attaque. Une carte Lightning jouée ensuite
+        // (en chaîne, avant la résolution) ne donnerait pas le go again ici. À
+        // vérifier dans le CR (`docs/rules/sources/regles-cr.txt`).
+        triggers: vec![TriggerDef {
+            when: when_this_attacks,
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| {
+                if a_joue_une_carte_lightning(g, c.controller) {
+                    if let Some(a) = g.active_link().map(|l| l.attack) {
+                        g.modify(a, grant(Keywords::GO_AGAIN), Until::EndOfTurn);
+                    }
+                }
+            })],
+        }],
+        ..Default::default()
+    });
 
     // CARTES
 }
