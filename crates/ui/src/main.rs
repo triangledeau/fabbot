@@ -16,6 +16,8 @@ use fab_ui::textes::Textes;
 use std::io::{self, Write};
 
 fn main() {
+    // Interface texte : la commande `t` demande le numéro des cartes.
+    fab_ui::vue::montrer_numeros(true);
     let args: Vec<String> = std::env::args().collect();
     let valeur = |nom: &str| {
         args.iter()

@@ -160,6 +160,7 @@ pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mu
             "decks": decks_jouables(),
             "decks_maison": crate::api_decks::maison_jouables(),
             "niveaux": BOTS,
+            "noms": crate::noms_affiches(),
             "textes": etat.textes.is_some(),
         })),
         ("GET", "/api/etat") => match &etat.partie {

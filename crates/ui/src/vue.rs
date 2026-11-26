@@ -11,6 +11,7 @@ use fab_engine::{
     PreventRef, Target, Zone,
 };
 use std::fmt::Write;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Le joueur `viewer` a-t-il le droit de voir cette carte ?
 ///
@@ -31,14 +32,29 @@ fn couleur(c: Option<Color>) -> &'static str {
     }
 }
 
-/// « Edict of Steel (rouge) [12] » : nom, couleur et numéro de l'objet
-/// (le numéro sert à la commande `t`). Une attaque d'arme est nommée
-/// d'après son arme.
+/// Montrer le numéro de l'objet après chaque nom (« [12] ») ? Utile
+/// seulement à l'interface texte, où la commande `t` le demande ; la page
+/// web ne l'affiche pas (c'est un identifiant interne du moteur).
+static NUMEROS: AtomicBool = AtomicBool::new(false);
+
+/// Active (interface texte) ou coupe (page web, par défaut) les numéros
+/// d'objet dans les noms.
+pub fn montrer_numeros(oui: bool) {
+    NUMEROS.store(oui, Ordering::Relaxed);
+}
+
+/// « Edict of Steel (rouge) », ou « Edict of Steel (rouge) [12] » quand
+/// les numéros sont montrés (interface texte). Une attaque d'arme est
+/// nommée d'après son arme.
 pub fn nom(g: &GameState, id: ObjectId) -> String {
     let o = g.obj(id);
     let id = o.proxy_of.unwrap_or(id);
     let d = g.def(id);
-    format!("{}{} [{}]", d.name, couleur(d.color), id.0)
+    if NUMEROS.load(Ordering::Relaxed) {
+        format!("{}{} [{}]", d.name, couleur(d.color), id.0)
+    } else {
+        format!("{}{}", d.name, couleur(d.color))
+    }
 }
 
 /// Le nom si la carte est visible pour `viewer`, sinon « une carte face cachée ».
@@ -407,7 +423,7 @@ pub fn details_permanent(g: &GameState, id: ObjectId) -> Vec<String> {
     }
     // Allié : puissance et vie actuelles (CR 2.5.3), compteurs.
     if let Some(vie) = g.life_total(id) {
-        extra.push(format!("{}{{p}}, {vie} PV", g.power(id)));
+        extra.push(format!("{} puissance, {vie} PV", g.power(id)));
         if d.counter_prevention > 0 {
             extra.push(format!("{} compteur(s) endurance", o.counters));
         }
