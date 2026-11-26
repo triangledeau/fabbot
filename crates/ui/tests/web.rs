@@ -486,3 +486,44 @@ fn un_fichier_inconnu_ou_un_chemin_qui_remonte_donne_404() {
     // Une adresse avec paramètres sert quand même le fichier.
     assert_eq!(repondre("GET", "/partie/partie.js?v=2", &mut e).code, 200);
 }
+
+// ---------- Arsenal, lot 1 : images des cartes ----------
+
+#[test]
+fn chaque_carte_des_neuf_decks_a_une_image() {
+    // Si ce test échoue après l'ajout d'un deck ou d'une carte : relancer
+    // `python3 tools/images_cartes.py` (voir docs/nouveau-deck.md).
+    let db = fab_cards::real::build();
+    let mut sans = Vec::new();
+    for nom in fab_ui::decks_jouables() {
+        let pool = fab_ui::charger_pool(&db, &nom).unwrap();
+        let mut ids = vec![pool.hero];
+        ids.extend(pool.arena.iter().chain(&pool.deck).copied());
+        for c in ids {
+            let d = db.get(c);
+            if fab_ui::images::image(d).is_none() {
+                sans.push(format!("{} ({nom})", d.name));
+            }
+        }
+    }
+    assert!(sans.is_empty(), "cartes sans image : {sans:?}");
+}
+
+#[test]
+fn l_etat_donne_l_image_des_cartes_visibles_mais_rien_des_cartes_cachees() {
+    let s = Session::nouvelle(reglages("hala", "dorinthea", 3)).unwrap();
+    let v = s.etat();
+    assert!(v["vous"]["heros_image"].is_string(), "image du héros");
+    assert!(
+        v["bot"]["heros_image"].is_string(),
+        "image du héros adverse"
+    );
+    let texte = v.to_string();
+    assert!(
+        texte.contains("\"image\":\""),
+        "au moins une carte visible a son image"
+    );
+    // Une carte cachée ne porte que `cache` : ni nom, ni image.
+    assert!(!texte.contains("\"cache\":true,\"image\""));
+    assert!(!texte.contains("\"cache\":true,\"nom"));
+}

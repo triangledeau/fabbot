@@ -1,0 +1,399 @@
+# Image officielle et nom français de chaque carte codée.
+# Produit par tools/images_cartes.py (ne pas modifier à la main).
+# nom anglais	couleur	code de l'image (FR_ = version française)	nom français
+Aether Ashwing		DRO003	
+Aethersling	Red	FR_OMN134	Fronde d’éther
+Aetherstorm Wellingtons		FR_SBZ007	Bottes de tempête d’éther
+Agile Windup	Blue	FR_SKA025	Liquidation agile
+Agile Windup	Red	FR_HVY163	Liquidation agile
+Agile Windup	Yellow	FR_HVY164	Liquidation agile
+Agility		FR_SBL034	Agilité
+Amplify the Arknight	Blue	FR_1HP284	Amplifie l'Archenuit
+Amplify the Arknight	Red	FR_SVI011	Amplifie l’archenuit
+Amplify the Arknight	Yellow	FR_1HP283	Amplifie l'Archenuit
+Annals of Sutcliffe		DYN172	
+Arakni, Black Widow		FR_SAR034	Arakni, veuve noire
+Arakni, Funnel Web		FR_SAR035	Arakni, toile-entonnoir
+Arakni, Orb-Weaver		FR_SAR036	Arakni, tisseur d’orbes
+Arakni, Redback		FR_SAR037	Arakni, veuve à dos rouge
+Arakni, Tarantula		FR_SAR038	Arakni, tarentule
+Arakni, Trap-Door		FR_SAR039	Arakni, trappe
+Arakni, Web of Deceit		FR_SAR001	Arakni, toile de tromperie
+Arcane Lantern		FR_SLY003	Lanterne arcanique
+Arcane Polarity	Blue	FR_ROS233	Polarité arcanique
+Arcane Polarity	Red	FR_SBW023	Polarité arcanique
+Arcane Polarity	Yellow	FR_ROS232	Polarité arcanique
+Arcane Seeds // Life	Red	FR_SBA024	Graines d’arcane||Vie
+Arcane Twining	Blue	FR_SBZ026	Dédoublement arcanique
+Art of Desire: Body	Red	FR_SAR010	Art du désir : corps
+Ash		DRO002	
+Aspect of Tiger: Body	Red	FR_MST164	Aspect du tigre : corps
+Autumn's Touch	Blue	FR_AJV014	Toucher de l’automne
+Autumn's Touch	Red	FR_ROS046	Toucher de l’automne
+Autumn's Touch	Yellow	FR_TER013	Toucher de l’automne
+Azvolai		UPR009_BACK	
+Billowing Mirage	Red	DRO012	
+Bite	Blue	FR_HNT019	Morsure
+Bite	Red	FR_HNT017	Morsure
+Bite	Yellow	FR_HNT018	Morsure
+Bittering Thorns	Blue	FR_ASR020	Épines amères
+Bittering Thorns	Red	FR_ASR007	Épines amères
+Bittering Thorns	Yellow	FR_IRA005	Épines Amères
+Blade Beckoner Boots		FR_SAT009	Bottes attire-lames
+Blade Beckoner Gauntlets		FR_SBZ005	Gantelets attire-lames
+Blade Beckoner Helm		FR_SLY005	Casque attire-lames
+Blade Beckoner Plating		FR_SLY007	Armure de plates attire-lames
+Blasmophet, the Insatiable Hunger		FR_IAR221	Blasmophet, l’appétit insatiable
+Blaze Headlong	Red	FR_SFA011	Flamboyer la tête la première
+Blessing of Qi	Blue	FR_MST172	Bénédiction du Qi
+Blessing of Qi	Red	FR_MST170	Bénédiction du Qi
+Blessing of Qi	Yellow	FR_MST171	Bénédiction du Qi
+Blood Scent		FR_SFA006	Effluve de sang
+Bloodied Oval		FR_HVY206	Ovale ensanglanté
+Bloodrot Pox		FR_SLV034	Variole hématoputréfiante
+Blossom of Spring		FR_SBW006	Floraison du printemps
+Bluster Buff	Red	FR_SUP221	Renfort fulminant
+Boneyard Marauder	Red	FR_2HP229	Maraudeur des cimetières
+Boulder Drop	Blue	FR_SBR023	Lâcher de rocher
+Boulder Drop	Red	FR_SBR013	Lâcher de rocher
+Bravo, Flattering Showman		FR_SBR001	Bravo, forain flatteur
+Brutal Assault	Blue	FR_IRA010	Assaut Brutal
+Brutal Assault	Red	DRO024	
+Brutal Assault	Yellow	CRU193	
+Buckling Blow	Blue	FR_SBR024	Frappe anéantissante
+Buzzard Helm		FR_PEN002	Heaume de rapace
+Chest Puff	Red	FR_SUP222	Bomber le torse
+Chokeslam	Blue	FR_SBR025	Étouffclac
+Chokeslam	Red	FR_SBR016	Étouffclac
+Chorus of Rotwood	Red	FR_PEN213	Chœur de Putrebois
+Civic Steps		TCC033	
+Clash of Agility	Blue	FR_HVY159	Duel d’agilité
+Clash of Agility	Red	FR_SKA012	Duel d’agilité
+Clash of Agility	Yellow	FR_HVY158	Duel d’agilité
+Clash of Might	Blue	FR_HVY139	Duel de puissance
+Clash of Mountains	Blue	FR_BDD012	Duel de montagnes
+Clash of Vigor	Blue	FR_SBR026	Duel de vigueur
+Cleave the Heavens	Blue	FR_IAR022	Pourfendre les cieux
+Cleave the Heavens	Red	FR_IAR020	Pourfendre les cieux
+Cleave the Heavens	Yellow	FR_IAR021	Pourfendre les cieux
+Colors of Aria	Red	FR_PEN206	Les couleurs d’Aria
+Concoct Disorder	Blue	FR_PEN281	Concocter le désordre
+Concoct Disorder	Red	FR_SAR011	Concocter le désordre
+Concoct Disorder	Yellow	FR_PEN280	Concocter le désordre
+Consuming Strength	Yellow	FR_IAR010	Force dévorante
+Countdown to Extinction	Blue	FR_IAR169	Compte à rebours à l’extinction
+Countdown to Extinction	Red	FR_IAR167	Compte à rebours à l’extinction
+Countdown to Extinction	Yellow	FR_IAR168	Compte à rebours à l’extinction
+Crash and Bash	Red	FR_SBR022	Heurt et collision
+Cromai		UPR010_BACK	
+Crouching Tiger		FR_SFA036	Tigre accroupi
+Crown of Dichotomy		FR_SBW005	Couronne de dichotomie
+Crucible of Aetherweave		FR_SBZ002	Fournaise d’éther
+Crush Confidence	Red	FR_MPG064	Assurance écrasante
+Cut n' Carve	Blue	FR_PEN056	Coupe et taille
+Cut n' Carve	Red	FR_AOL013	Coupe et taille
+Cut n' Carve	Yellow	FR_PEN055	Coupe et taille
+Dam the Shadowake	Blue	FR_IAR220	Contenir le sillage d’ombre
+Dam the Shadowake	Red	FR_IAR218	Contenir le sillage d’ombre
+Dam the Shadowake	Yellow	FR_IAR219	Contenir le sillage d’ombre
+Danger Digits		FR_SAR007	Doigts dangereux
+Deadwood Rumbler	Blue	FR_2HP234	Combattant de bois mort
+Deadwood Rumbler	Red	FR_2HP232	Combattant de bois mort
+Deadwood Rumbler	Yellow	FR_2HP233	Combattant de bois mort
+Debilitate	Blue	FR_SBR028	Affaiblissement
+Debilitate	Red	FR_SBR017	Affaiblissement
+Decimator Great Axe		FR_DTD205	Grande hache décimatrice
+Deep Blue		FR_MPW137	Grand bleu
+Disable	Blue	FR_SBR029	Désarmement
+Display of Craftsmanship	Blue	FR_PEN053	Exposition de savoir-faire
+Display of Craftsmanship	Red	FR_PEN051	Exposition de savoir-faire
+Display of Craftsmanship	Yellow	FR_PEN052	Exposition de savoir-faire
+Dorinthea		FR_SDO001	Dorinthea
+Double Cross Strap		FR_SFA007	Sangle croisée doublée
+Double Trouble	Blue	FR_MST114	Double problème
+Double Trouble	Red	FR_MST112	Double problème
+Double Trouble	Yellow	FR_MST113	Double problème
+Dread Screamer	Blue	FR_2HP237	Effroyable hurleur
+Dread Screamer	Red	FR_2HP235	Effroyable hurleur
+Dread Screamer	Yellow	FR_2HP236	Effroyable hurleur
+Dromai		UPR002	
+Dunebreaker Cenipai	Red	DRO015	
+Dustup	Red	DRO014	
+Edge Laden Plate		FR_MPW014	Cuirasse aux bords tranchants
+Edge of Autumn		FR_ASR002	Bord de l’automne
+Edict of Steel	Blue	FR_MPW105	Décret d’acier
+Edict of Steel	Red	FR_SBL020	Décret d’acier
+Edict of Steel	Yellow	FR_MPW104	Décret d’acier
+Embodiment of Earth		FR_SBA034	Incarnation de la terre
+Embraforged Gauntlet		FR_PEN192	Gantelet forgé par Embra
+Endless Maw	Blue	FR_2HP225	Gueule sans fin
+Endless Maw	Red	FR_2HP223	Gueule sans fin
+Endless Maw	Yellow	FR_2HP224	Gueule sans fin
+Engulfing Shadows	Yellow	FR_PEN194	Ombres dévorantes
+Essence of Ancestry: Body	Red	FR_MST137	Essence d’ascendance : corps
+Fatal Engagement	Blue	FR_HVY111	Affrontement fatal
+Fatal Engagement	Red	FR_HVY109	Affrontement fatal
+Fatal Engagement	Yellow	FR_HVY110	Affrontement fatal
+Fault Line	Red	FR_SBR018	Ligne de faille
+Feasting Shadowbeast	Blue	FR_IAR025	Festin de la bête de pénombre
+Feasting Shadowbeast	Red	FR_IAR023	Festin de la bête de pénombre
+Feasting Shadowbeast	Yellow	FR_IAR024	Festin de la bête de pénombre
+Feeding Frenzy	Blue	FR_IAR028	Frénésie vorace
+Feeding Frenzy	Red	FR_IAR026	Frénésie vorace
+Feeding Frenzy	Yellow	FR_IAR027	Frénésie vorace
+Feign Vengeance	Blue	FR_PEN036	Feinte vengeresse
+Felling Swing	Blue	DYN084	
+Felling Swing	Red	DYN082	
+Felling Swing	Yellow	DYN083	
+Flatten the Field	Blue	FR_SBR030	Aplanir le terrain
+Florian		FR_ROS002	Florian
+Flurry		FR_SBL036	Rafale
+Flying Kick	Blue	FR_ASR021	Coup de pied volant
+Flying Kick	Red	FR_ASR009	Coup de pied volant
+Flying Kick	Yellow	CRU064	
+Frost Spike	Blue	FR_SIY034	Frappe de glace
+Frostbite		FR_SIY035	Gelure
+Frosting	Blue	FR_SIY026	Givrage
+Fruits of the Forest	Blue	FR_ROS057	Fruits de la forêt
+Fruits of the Forest	Red	FR_ROS055	Fruits de la forêt
+Fruits of the Forest	Yellow	FR_ROS056	Fruits de la forêt
+Fyendal's Fighting Spirit	Blue	FR_ROS229	Esprit combattant de Fyendal
+Fyendal's Fighting Spirit	Red	FR_SBZ009	Esprit combattant de Fyendal
+Fyendal's Fighting Spirit	Yellow	FR_ROS228	Esprit combattant de Fyendal
+Gate to i'Arathael		FR_SBW034	Porte d’i’Arathael
+Gauntlet of Boulderhold		FR_MPG007	Gantelet de priseroc
+Gauntlets of Unity		FR_SBL007	Gantelets d’unité
+Goremass Summoning	Blue	FR_IAR037	Invocation de masse charnelle
+Graphene Chelicera		FR_SAR033	Chélicère de graphène
+Graveling Growl	Blue	MON146	
+Graveling Growl	Red	LEV013	
+Graveling Growl	Yellow	MON145	
+Growl	Red	TCC086	
+Growl	Yellow	TCC094	
+Hala		FR_MPW004	Hala
+Harvest Season	Blue	FR_ROS063	Saison des récoltes
+Harvest Season	Red	FR_ROS061	Saison des récoltes
+Harvest Season	Yellow	FR_ROS062	Saison des récoltes
+Hell Hammer		FR_IAR003	Marteau des enfers
+Helm of Lignum Vitae		FR_ROS029	Heaume de lignum vitae
+Helm of Unity		FR_SBL004	Heaume d’unité
+Hex Gauntlet		FR_IAR004	Gantelet de sortilège
+Hit and Run	Blue	FR_SDO032	Délit de fuite
+Hit and Run	Red	FR_MPW112	Délit de fuite
+Hit and Run	Yellow	FR_MPW113	Délit de fuite
+Hooves of the Shadowbeast		FR_2HP219	Sabots de la bête de pénombre
+Humble	Blue	FR_OUT191	Humilier
+Humble	Red	FR_AKO009	Humilier
+Humble	Yellow	FR_OUT190	Humilier
+Hurl	Blue	FR_OUT150	Lancer de dagues
+Hurl	Red	FR_ARA007	Lancer de dagues
+Hurl	Yellow	FR_OUT149	Lancer de dagues
+Ice Bolt	Blue	FR_SIY027	Éclair de glace
+Ice Bolt	Red	FR_SIY016	Éclair de glace
+Ice Eternal	Blue	FR_SIY028	Glaces éternelles
+Infect	Blue	FR_MPA087	Infecter
+Infect	Red	FR_SAR013	Infecter
+Infect	Yellow	FR_MPA086	Infecter
+Invoke Azvolai	Red	UPR009	
+Invoke Cromai	Red	UPR010	
+Invoke Kyloria	Red	UPR011	
+Invoke Miragai	Red	UPR012	
+Invoke Nekria	Red	UPR013	
+Invoke Ouvia	Red	UPR014	
+Invoke Themai	Red	UPR015	
+Invoke Yendurai	Red	UPR017	
+Ira, Crimson Haze		FR_IRA001	Ira, Brume Pourpre
+Ironsong Response	Blue	FR_SDO025	Réaction Chantefer
+Ironsong Response	Red	FR_SDO013	Réaction Chantefer
+Ironsong Response	Yellow	FR_1HT016	Réaction Chantefer
+Iyslander		FR_SIY001	Iyslander
+Jack Be Quick	Red	FR_SBA014	Jack sois rapide
+Kyloria		UPR011_BACK	
+Lair of the Spider	Red	FR_SAR026	Repaire de l’araignée
+Lay Low	Yellow	FR_SAT022	Rester à couvert
+Legacy of Ikaru	Blue	FR_ASR026	Héritage d’Ikaru
+Levia		FR_IAR002	Lévia
+Look Tuff	Red	FR_SBZ010	Avoir l’air coriace
+Macho Grande	Blue	FR_SBR031	Macho Grande
+Mark of the Black Widow	Blue	FR_SAR029	Marque de la veuve noire
+Mark of the Black Widow	Red	FR_SAR014	Marque de la veuve noire
+Mark of the Black Widow	Yellow	FR_HNT033	Marque de la veuve noire
+Mark of the Funnel Web	Blue	FR_AAC026	Marque de la toile-entonnoir
+Mark of the Funnel Web	Red	FR_SAR015	Marque de la toile-entonnoir
+Mark of the Funnel Web	Yellow	FR_HNT036	Marque de la toile-entonnoir
+Mark of the Huntsman		FR_SAR002	Marque du chasseur
+Mark the Prey	Blue	FR_HNT040	Marquer la proie
+Mark the Prey	Red	FR_SAR016	Marquer la proie
+Mark the Prey	Yellow	FR_HNT039	Marquer la proie
+Mask of the Swarming Claw		FR_SFA005	Masque de la pince grouillante
+Might		FR_SLY035	Puissance
+Miller's Grindstone		FR_HVY050	Meule du meunier
+Miragai		UPR012_BACK	
+Nebula Blade		FR_1HV002	Lame de nébuleuse
+Nekria		UPR013_BACK	
+Night's Embrace	Blue	FR_SAR031	Étreinte de la nuit
+Nimblism	Red	FR_SBA026	Agilisme
+Nullrune Boots		FR_SBW008	Bottes nulrune
+Nullrune Gloves		FR_SGB006	Gants nulrune
+Nullrune Hood		FR_SLY006	Capuche nulrune
+Nullrune Robe		FR_SBL006	Robe nulrune
+Oasis Respite	Red	FR_SLY019	Oasis de répit
+Oath of the Arknight	Blue	FR_ROS160	Serment de l’archenuit
+Oath of the Arknight	Red	FR_ROS158	Serment de l’archenuit
+Oath of the Arknight	Yellow	FR_ROS159	Serment de l’archenuit
+On the Horizon	Blue	FR_SEA243	À l’horizon
+On the Horizon	Red	FR_SIY017	À l’horizon
+On the Horizon	Yellow	FR_SEA242	À l’horizon
+Orb-Weaver Spinneret	Blue	FR_HNT028	Filière de tisseur d’orbes
+Orb-Weaver Spinneret	Red	FR_SAR018	Filière de tisseur d’orbes
+Orb-Weaver Spinneret	Yellow	FR_HNT027	Filière de tisseur d’orbes
+Outed	Red	FR_HNT235	Démasqué
+Ouvia		UPR014_BACK	
+Overpower	Blue	FR_SDO027	Surpuissance
+Overpower	Red	FR_SDO015	Surpuissance
+Overpower	Yellow	FR_1HP154	Surpuissance
+Passing Mirage	Blue	FR_SAT030	Mirage éphémère
+Photon Splicing	Blue	FR_SBZ030	Épissage de photon
+Pick Up the Point	Blue	FR_HNT184	Reprendre la pointe
+Pick Up the Point	Red	FR_SAR017	Reprendre la pointe
+Pick Up the Point	Yellow	FR_HNT183	Reprendre la pointe
+Pillar of Unity		FR_PEN047	Pillier d’unité
+Plating of Unity		FR_PEN045	Armure d’unité
+Plume of Evergrowth		FR_2HP083	Panache de feuillage
+Ponder		FR_SBZ033	Contemplation
+Pouncing Paws		FR_SFA009	Pattes bondissantes
+Pouncing Qi	Blue	FR_MST184	Qi bondissant
+Pouncing Qi	Red	FR_MST182	Qi bondissant
+Pouncing Qi	Yellow	FR_MST183	Qi bondissant
+Predatory Plating		FR_SKA006	Armure de plates prédatoire
+Prey Spotters		FR_SAR003	Détecteurs de proie
+Public Bounty	Blue	FR_HNT243	Prime publique
+Public Bounty	Red	FR_HNT241	Prime publique
+Public Bounty	Yellow	FR_HNT242	Prime publique
+Pummel	Red	FR_SBR020	Rossage
+Pursue to the Edge of Oblivion	Red	FR_HNT224	Poursuivre jusqu’aux limites de l’oubli
+Pursue to the Pits of Despair	Red	FR_HNT225	Poursuivre jusqu’aux gouffres du désespoir
+Pyroglyphic Protection	Blue	FR_SIY030	Protection pyroglyphique
+Qi Unleashed	Blue	FR_MST169	Qi déchaîné
+Qi Unleashed	Red	FR_MST167	Qi déchaîné
+Qi Unleashed	Yellow	FR_MST168	Qi déchaîné
+Quicken		FR_ASB028	Accélérer
+Raging Onslaught	Blue	R-WTR190	
+Raging Onslaught	Red	R-WTR188	
+Raging Onslaught	Yellow	R-WTR189	
+Rake the Embers	Red	DRO011	
+Ravenous Rabble	Red	FR_SBA017	Cohue vorace
+Razor Reflex	Blue	FR_1HP404	Réflexe Acéré
+Razor Reflex	Red	FR_MPA150	Réflexe acéré
+Razor Reflex	Yellow	FR_1HP403	Réflexe Acéré
+Razor's Edge	Blue	FR_MPA123	Sur le fil du rasoir
+Razor's Edge	Red	FR_MPA121	Sur le fil du rasoir
+Razor's Edge	Yellow	FR_MPA122	Sur le fil du rasoir
+Read the Runes	Blue	FR_1HP296	Lire les Runes
+Read the Runes	Red	FR_SVI023	Lire les runes
+Read the Runes	Yellow	FR_1HP295	Lire les Runes
+Reaper's Call	Blue	FR_SAR030	Appel de l’éventreur
+Reaper's Call	Red	FR_HNT044	Appel de l’éventreur
+Reaper's Call	Yellow	FR_HNT045	Appel de l’éventreur
+Reduce to Runechant	Blue	FR_1HP275	Réduire à Chantderune
+Reduce to Runechant	Red	FR_SVI018	Réduire à chanterune
+Reduce to Runechant	Yellow	FR_1HP274	Réduire à Chantderune
+Refraction Bolters		FR_SDO009	Jambières de lumière
+Reinforce the Line	Blue	FR_BDD017	Renforcer la ligne
+Reinforce the Line	Red	FR_HVY219	Renforcer la ligne
+Reinforce the Line	Yellow	FR_HVY220	Renforcer la ligne
+Relentless Pursuit	Blue	FR_HNT229	Poursuite sans relâche
+Richter Scale		FR_MPG006	Armure de plates de Richter
+Rootbound Carapace	Blue	FR_ROS044	Carapace enracinée
+Rootbound Carapace	Red	FR_ROS042	Carapace enracinée
+Rootbound Carapace	Yellow	FR_ROS043	Carapace enracinée
+Runeblood Incantation	Blue	EVR109	
+Runeblood Incantation	Red	EVR107	
+Runeblood Incantation	Yellow	EVR108	
+Runechant		FR_SBW035	Chanterune
+Sand Cover	Red	UPR039	
+Scar for a Scar	Blue	FR_1HP398	Sang pour Sang
+Scar for a Scar	Red	FR_SBA019	Sang pour sang
+Scar for a Scar	Yellow	FR_1HP397	Sang pour Sang
+Scepter of Pain		FR_DTD210	Sceptre de douleur
+Seek Vengeance	Blue	FR_ASR022	Chercher la vengeance
+Seek Vengeance	Red	FR_ASR012	Chercher la vengeance
+Seeker's Leggings		FR_OMN208	Jambières du chercheur
+Seismic Surge		FR_SBR035	Poussée sismique
+Sharp Incline	Blue	FR_MPW121	Pente abrupte
+Sharp Incline	Red	FR_MPW119	Pente abrupte
+Sharp Incline	Yellow	FR_MPW120	Pente abrupte
+Sharpen Steel	Blue	R-WTR143	
+Sharpen Steel	Red	FR_SDO019	Affûter l’acier
+Sharpen Steel	Yellow	R-WTR142	
+Shove Off	Blue	FR_AOL021	Allez ouste !
+Shred	Blue	FR_SAR032	Mettre en pièces
+Shred	Red	DYN130	
+Shred	Yellow	FR_MPA056	Mettre en pièces
+Sift	Blue	UPR199	
+Sift	Red	UPR197	
+Sift	Yellow	UPR198	
+Sigil of Silphidae	Blue	FR_SVI032	Sceau des silphidés
+Silken Shroud		FR_PEN123	Linceul soyeux
+Sirens of Safe Harbor	Blue	FR_SEA228	Sirènes de Port-Sûr
+Sirens of Safe Harbor	Red	FR_SEA226	Sirènes de Port-Sûr
+Sirens of Safe Harbor	Yellow	FR_SEA227	Sirènes de Port-Sûr
+Sit!	Red	FR_SUP210	Assis !
+Skera Strapping		FR_PEN004	Plastron en skera
+Smashback Alehorn	Blue	FR_ARR027	Corne à boire cogneuse
+Smoldering Scales		FR_PEN253	Écailles incandescentes
+Snatch	Red	FR_SBL017	Vol à l’arraché
+Soul Harvest	Blue	FR_2HP283	Moisson d’âmes
+Spectral Shield		FR_SAT033	Bouclier spectral
+Spellfire Cloak		FR_SBZ004	Cape de sortilège
+Stains of the Redback	Blue	FR_HNT025	Taches du Dos rouge
+Stains of the Redback	Red	FR_SAR021	Taches du Dos rouge
+Stains of the Redback	Yellow	FR_HNT024	Taches du Dos rouge
+Stalker's Steps		FR_SAR009	Pas du traqueur
+Staunch Response	Red	FR_SBR021	Réponse ardente
+Steelblade Shunt	Blue	FR_MPW058	Décharge de la lame d’acier
+Steelblade Shunt	Red	FR_MPW056	Décharge de la lame d’acier
+Steelblade Shunt	Yellow	FR_MPW057	Décharge de la lame d’acier
+Steelbraid Buckler		FR_SBR004	Bouclier en acier tressé
+Stir the Aetherwinds	Blue	FR_SIY031	Remue éthervents
+Storm of Sandikai		DRO004	
+Sweeping Blow	Red	DRO017	
+Swordmaster's Path	Blue	FR_MPW132	Voie du maître d’armes
+Swordmaster's Path	Red	FR_MPW130	Voie du maître d’armes
+Swordmaster's Path	Yellow	FR_MPW131	Voie du maître d’armes
+Tearing Shuko		FR_SFA008	Shuko déchiquetant
+Test of Agility	Red	FR_HVY162	Épreuve d’agilité
+Test of Vigor	Red	FR_HVY182	Épreuve de vigueur
+The Suspense is Killing Me	Blue	FR_SLY033	Le suspens me tue
+Themai		UPR015_BACK	
+Thunder Quake	Blue	FR_SBR032	Coup de tonnerre
+Thunk	Blue	FR_HVY079	Bruit sourd
+Tiger Eye Reflex	Blue	TCC102	
+Tiger Eye Reflex	Yellow	TCC098	
+Time Skippers		FR_MPG121	Bottes d’espace-temps
+Timekeeper's Whim	Blue	FR_2HP443	Caprice du gardien du temps
+Timesnap Potion	Blue	FR_SGB032	Potion de saut temporel
+Toe the Line	Red	FR_SBL022	Rentrer dans le rang
+Topsy Turvy		FR_SAR004	Sens dessus dessous
+Turn to Mindfire	Red	FR_SBZ017	Transformer en feu d’esprit
+Unflinching Foothold		FR_PEN318	Posture inébranlable
+Unmovable	Red	FR_SEN012	Inamovible
+Untamed	Blue	FR_MST187	Indompté
+Untamed	Red	FR_MST185	Indompté
+Untamed	Yellow	FR_MST186	Indompté
+Unyielding Grip		FR_PEN317	Prise inflexible
+Vigor		FR_SKA036	Vigueur
+Vigorous Smashup	Blue	FR_SUP166	Écrasement vigoureux
+Vigorous Smashup	Red	FR_SUP164	Écrasement vigoureux
+Vigorous Smashup	Yellow	FR_SUP165	Écrasement vigoureux
+Voltic Bolt	Blue	FR_SBZ031	Tourbillon voltic
+Voltic Bolt	Red	FR_SBZ018	Tourbillon voltic
+Wave of Reality		FR_SAT008	Vague de réalité
+Well Grounded		FR_ROS030	Bien ancré
+Winter's Bite	Blue	FR_SIY033	Morsure de l’hiver
+Wounded Bull	Red	FR_SBZ011	Taureau blessé
+Wrecker Romp	Blue	FR_ARR023	Jeu destructeur
+Wrecker Romp	Red	FR_1HR014	Jeu destructeur
+Wrecker Romp	Yellow	FR_1HR020	Jeu destructeur
+Yendurai		UPR017_BACK	
+Zenith Blade		FR_MPW005	Lame du zénith

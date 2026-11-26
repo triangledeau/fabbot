@@ -79,6 +79,21 @@ Pour les développeurs : la page est découpée en un dossier par volet dans
 `crates/ui/src/fichiers.rs` (un fichier ajouté = une ligne là, un test le
 vérifie).
 
+### Images des cartes
+
+Les cartes s'affichent avec leur **image officielle**, en **version
+française** quand elle existe (343 cartes sur 396), sinon en anglais ; la
+fiche de la carte survolée montre la grande image et le nom français, puis
+le texte officiel (anglais, avec errata). Une puissance ou une défense
+changée en jeu, un compteur, « face cachée » s'affichent en pastilles sur
+l'image. Les images viennent du serveur d'images de Legend Story Studios :
+sans Internet, chaque carte garde son cadre dessiné.
+
+Pour les développeurs : `data/cards/images.tsv` (produit par
+`tools/images_cartes.py`, à relancer quand une carte est ajoutée) ;
+`crates/ui/src/images.rs` ajoute `image` et `nom_fr` au JSON des cartes ;
+`crates/ui/web/commun/cartes.js` construit l'adresse.
+
 ### La page
 
 - **En haut** : le bot (héros, PV, points d'action, ressources, taille du

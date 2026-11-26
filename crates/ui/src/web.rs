@@ -7,6 +7,7 @@
 //! par son nom ni par son numéro (le numéro d'un objet pourrait trahir la
 //! carte, puisqu'il suit l'ordre de la liste du deck).
 
+use crate::images;
 use crate::textes::Textes;
 use crate::vue;
 use fab_ai::{creer_agent, Agent, BOTS};
@@ -340,15 +341,21 @@ pub fn carte(g: &GameState, viewer: PlayerId, id: ObjectId) -> Value {
         _ => Vec::new(),
     };
     let genre = genre_de(d);
+    let (image, nom_fr) = images::champs(d);
     json!({
         "id": id.0,
         "nom": d.name,
+        "nom_fr": nom_fr,
+        "image": image,
         "couleur": nom_couleur(d.color),
         "genre": genre,
         "cout": d.cost,
         "x": d.x_cost,
         "puissance": d.power.map(|_| g.power(id)),
         "defense": d.defense.map(|_| g.defense(id)),
+        // Valeurs imprimées : la page signale ce qui a changé sur l'image.
+        "puissance_imprimee": d.power,
+        "defense_imprimee": d.defense,
         "pitch": d.pitch,
         "engage": o.tapped,
         // Une carte en main est privée, pas « face cachée » au sens du plateau.
@@ -375,6 +382,7 @@ fn joueur(g: &GameState, viewer: PlayerId, p: PlayerId) -> Value {
     json!({
         "heros": vue::heros(g, p),
         "heros_id": ps.hero.0,
+        "heros_image": images::champs(g.def(ps.hero)).0,
         "vie": ps.life,
         "marque": ps.marked,
         "deck": ps.deck.len(),

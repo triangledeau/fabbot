@@ -14,7 +14,7 @@
     <div class="resume" id="a-resume" hidden></div>
     <nav class="tiles3" aria-label="Sections">
       <a class="ht" style="--c:#c9483c" href="#nouveau-match">
-        <div class="pic"><div class="art"></div><span class="sym" aria-hidden="true">⚔</span></div>
+        <div class="pic"><div class="art" id="a-art-jouer"></div><span class="sym" aria-hidden="true">⚔</span></div>
         <div class="txt"><h2>Jouer</h2><ul><li>Affronter le bot</li><li>Match en plusieurs manches</li><li>Équipement et deck avant chaque manche</li></ul></div>
         <div class="foot"><div class="row"><span class="muted">Decks</span><span id="a-decks">…</span></div>
           <div class="row"><span class="muted">Bots</span><span id="a-bots">…</span></div></div>
@@ -51,6 +51,10 @@
           <a class="btn small primary" href="#partie">Reprendre</a><a class="btn small quiet" href="#nouveau-match">Nouveau match</a>`;
         r.hidden = false;
       } else r.hidden = true;
+      // Illustration du volet Jouer : votre héros (images des cartes, lot 1)
+      const art = document.getElementById("a-art-jouer");
+      const img = e && e.vous && e.vous.heros_image;
+      if (img) { art.style.setProperty("--art", Images.fond(img)); art.classList.add("illu"); }
     } catch (err) { /* serveur injoignable : l'accueil reste affiché sans chiffres */ }
   }
   document.addEventListener("arsenal:vue", (ev) => { if (ev.detail.vue === "accueil") rafraichir(); });

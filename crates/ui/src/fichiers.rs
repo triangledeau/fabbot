@@ -34,6 +34,8 @@ pub static FICHIERS: &[Fichier] = &[
     // commun : charte et navigation (lot 0)
     fichier!("commun/arsenal.css", CSS),
     fichier!("commun/navigation.js", JS),
+    // commun : images des cartes (lot 1)
+    fichier!("commun/cartes.js", JS),
     fichier!("commun/logo_arsenal.webp", "image/webp"),
     // accueil (lot 0)
     fichier!("accueil/accueil.css", CSS),

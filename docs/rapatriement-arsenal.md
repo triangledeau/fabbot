@@ -114,14 +114,23 @@ programme par `crates/ui/src/fichiers.rs`. Adresses : `#accueil`,
 `#partie`, `#nouveau-match` ; un nouveau volet ajoute sa ligne dans
 `ADRESSES` (`commun/navigation.js`) et sa règle `.vue` dans
 `commun/arsenal.css`. Pas de fond d'ArtStation (dépôt public) : les volets
-de l'accueil ont un dégradé en attendant les images (lot 1). Chaque lot se
+de l'accueil ont un dégradé en attendant les images (lot 1).
+
+**Lot 1, ce qui a été fait (2026-11-26)** : `tools/images_cartes.py` lit le
+fichier officiel LSS et écrit `data/cards/images.tsv` (nom anglais, couleur,
+code d'image, nom français ; VF normale d'abord, sinon anglaise hors
+Unlimited, Silver Age en priorité) : 396 cartes, 343 en VF, 0 sans image.
+`crates/ui/src/images.rs` ajoute `image`, `nom_fr` (et `heros_image`,
+`puissance_imprimee`, `defense_imprimee`) au JSON ; `commun/cartes.js`
+(`Images.url`, `Images.img`, `Images.fond`) pour tous les volets. Le volet
+Jouer de l'accueil montre votre héros. Chaque lot se
 termine par une pull request fusionnée et peut être pris par n'importe quel
 agent.
 
 | Lot | Contenu | Zone touchée | Dépend de | Effort (sessions) | Avancement |
 |---|---|---|---|---|---|
 | 0. Socle | Page en plusieurs fichiers, accueil Arsenal (logo, 3 volets, fond), charte, navigation par #. L'écran de partie actuel est gardé et rhabillé. | `crates/ui/web/`, `serveur.rs` | rien | 1 | ✅ fait (2026-11-26) |
-| 1. Images | Script qui associe chaque carte codée à son image (VF bord noir d'abord), nom français, champ `image` dans l'API, cadre dessiné en secours | `tools/`, `data/cards/`, `crates/ui/src/vue.rs` | rien | 1 | à faire |
+| 1. Images | Script qui associe chaque carte codée à son image (VF bord noir d'abord), nom français, champ `image` dans l'API, cadre dessiné en secours | `tools/`, `data/cards/`, `crates/ui/src/vue.rs` | rien | 1 | ✅ fait (2026-11-26) |
 | 2. Plateau animé | Reprise de `finition.js` : vols de cartes, glisser-déposer avec chaîne de laiton, impacts, PV qui défilent, bandeau des étapes, pause « Continuer ». Côté serveur : identifiants suivis et événements envoyés à la page | `crates/ui/web/partie/`, `crates/ui/src/web.rs` | 0, 1 | 3 | à faire |
 | 3. Sauvegarde | Partie sauvegardée (graine + choix), reprise depuis l'accueil, export / import du journal .json | `crates/ui/src/`, `web/accueil/` | 0 | 1 | à faire |
 | 4a. Decks en données | Pool Silver Age avec drapeau « jouable par le bot » (carte codée dans fab-cards), légalité, decks maison dans `data/decks/maison/`, chargement à l'exécution, import d'une liste FaBrary | `crates/cards/` (lecture des decks), `api_decks.rs` | 0 | 1 | à faire |

@@ -69,8 +69,9 @@ function carte(c, petite) {
   s.appendChild(el("span", "pitch", c.pitch ? "◆" + c.pitch : ""));
   s.appendChild(el("span", "def", c.defense !== null && c.defense !== undefined ? c.defense + " ⛨" : ""));
   e.appendChild(s);
+  imageDeCarte(e, c);
   if (c.carte_id !== undefined) {
-    e.addEventListener("mouseenter", () => montrerPool(c.carte_id));
+    e.addEventListener("mouseenter", () => montrerPool(c.carte_id, c));
     return e;
   }
   const opts = optionsDeCarte(c.id);
@@ -78,9 +79,25 @@ function carte(c, petite) {
     e.classList.add("jouable");
     e.title = opts.map(o => o.texte).join("\n");
   }
-  e.addEventListener("mouseenter", () => montrer(c.id));
+  e.addEventListener("mouseenter", () => montrer(c.id, c));
   e.addEventListener("click", (ev) => cliquer(c.id, ev));
   return e;
+}
+
+// Image officielle par-dessus le cadre dessiné (qui reste dessous si l'image
+// ne vient pas). Les valeurs changées en jeu, les détails (compteurs…) et
+// « face cachée » sont repris en pastilles sur l'image.
+function imageDeCarte(e, c) {
+  if (!c.image) return;
+  e.classList.add("img");
+  e.title = c.nom_fr ? c.nom_fr + " (" + c.nom + ")" : c.nom;
+  e.prepend(Images.img(c.image, "normal", e, "img"));
+  const p = [];
+  if (c.puissance_imprimee !== undefined && c.puissance !== null && c.puissance !== c.puissance_imprimee) p.push(el("span", "pui", c.puissance + " ⚔"));
+  if (c.defense_imprimee !== undefined && c.defense !== null && c.defense !== c.defense_imprimee) p.push(el("span", "def", c.defense + " ⛨"));
+  for (const d of c.details || []) p.push(el("span", null, d));
+  if (c.face_cachee) p.push(el("span", null, "face cachée"));
+  if (p.length) { const b = el("div", "pastilles"); b.append(...p); e.appendChild(b); }
 }
 
 function cliquer(id, ev) {
@@ -110,30 +127,40 @@ function fermerMenu() { $("menu").style.display = "none"; }
 document.addEventListener("click", (e) => { if (!$("menu").contains(e.target)) fermerMenu(); });
 
 let detailDemande = null;
-async function montrer(id) {
+// Fiche de la carte survolée : grande image (si elle existe), nom français,
+// puis la fiche et le texte officiel donnés par le serveur.
+function remplirDetail(v, c) {
+  const d = $("detail");
+  d.replaceChildren(el("h2", null, "Carte"));
+  if (c && c.image) {
+    const g = el("div", "grande");
+    g.appendChild(Images.img(c.image, "normal", g, "grande"));
+    d.appendChild(g);
+  }
+  if (c && c.nom_fr) d.appendChild(el("div", "nom-fr", c.nom_fr));
+  d.appendChild(el("div", "fiche", v.fiche));
+  if (v.type) d.appendChild(el("div", "type", v.type));
+  d.appendChild(el("div", "texte", v.texte));
+}
+
+async function montrer(id, c) {
   if (id === detailDemande) return;
   detailDemande = id;
   try {
     const v = await api("GET", "/api/carte?id=" + id);
     if (detailDemande !== id) return;
-    const d = $("detail");
-    d.replaceChildren(el("h2", null, "Carte"), el("div", "fiche", v.fiche));
-    if (v.type) d.appendChild(el("div", "type", v.type));
-    d.appendChild(el("div", "texte", v.texte));
+    remplirDetail(v, c);
   } catch (e) { /* carte cachée : rien à montrer */ }
 }
 
-async function montrerPool(id) {
+async function montrerPool(id, c) {
   const cle = "pool-" + id;
   if (cle === detailDemande) return;
   detailDemande = cle;
   try {
     const v = await api("GET", "/api/carte-pool?id=" + id);
     if (detailDemande !== cle) return;
-    const d = $("detail");
-    d.replaceChildren(el("h2", null, "Carte"), el("div", "fiche", v.fiche));
-    if (v.type) d.appendChild(el("div", "type", v.type));
-    d.appendChild(el("div", "texte", v.texte));
+    remplirDetail(v, c);
   } catch (e) { /* rien à montrer */ }
 }
 
@@ -259,8 +286,14 @@ function zone(titre, liste, petite) {
 function joueur(j, estVous, actif) {
   const b = el("div");
   const t = el("div", "entete-joueur");
+  if (j.heros_image) {
+    const a = el("span", "ava");
+    a.style.setProperty("--art", Images.fond(j.heros_image));
+    a.addEventListener("mouseenter", () => montrer(j.heros_id, { image: j.heros_image }));
+    t.appendChild(a);
+  }
   const h = el("span", "heros", (estVous ? "Vous — " : "Bot — ") + j.heros);
-  h.addEventListener("mouseenter", () => montrer(j.heros_id));
+  h.addEventListener("mouseenter", () => montrer(j.heros_id, { image: j.heros_image }));
   t.appendChild(h);
   t.appendChild(el("span", "vie", j.vie + " PV"));
   if (j.marque) t.appendChild(el("span", "marque", "marqué"));
