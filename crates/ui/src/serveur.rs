@@ -25,6 +25,7 @@
 //! | `POST /api/charger` (corps : une sauvegarde) | reprend le match d'une sauvegarde |
 //! | `/api/collection`, `/api/decks-maison`, `/api/deck-maison…` | decks maison ([`crate::api_decks`]) |
 //! | `/api/tournoi…`, `/api/tache…` | entraîner ([`crate::api_tournoi`]) |
+//! | `/api/apprendre/…` | scènes du didacticiel ([`crate::api_apprendre`]) |
 //! | `/api/conseil`, `/api/evaluation`, `/api/auto`, `/api/bug(s)` | extras de la partie ([`crate::extras`]) |
 //!
 //! Après chaque requête `POST` réussie, le match est écrit dans le fichier
@@ -144,7 +145,8 @@ pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mu
     let (chemin, ps) = parametres(requete);
     let param = |k: &str| ps.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone());
     let lot = crate::api_decks::repondre(methode, chemin, &param, corps)
-        .or_else(|| crate::api_tournoi::repondre(methode, chemin, &param));
+        .or_else(|| crate::api_tournoi::repondre(methode, chemin, &param))
+        .or_else(|| crate::api_apprendre::repondre(methode, chemin, &param, etat.textes.as_ref()));
     if let Some((code, v)) = lot {
         return if code == 200 {
             Reponse::json(v)
