@@ -3,6 +3,7 @@
 
 #![allow(unused_imports)]
 
+use super::assassin::this_hits_a_hero;
 use super::generic::when_this_attacks;
 use super::{by_color, deck_card, equipment, grant, power, target_obj, COLORS};
 use fab_engine::card::{CardDb, CardDef, Color, Delta, Keywords, Subtypes, Supertypes, Types};
@@ -22,6 +23,7 @@ pub const NAMES: &[&str] = &[
     "Rush of Power",
     "Visionary of Orbits",
     "Harness Lightning",
+    "Static Shock",
     // NOMS
 ];
 
@@ -340,7 +342,51 @@ pub fn add(db: &mut CardDb) {
         db.add(d);
     }
 
+    // Static Shock (rouge, jaune) — Elemental Runeblade Action - Attack, coût 0,
+    // déf. 3. Puissance : rouge 4 ; jaune 3.
+    // « **Lightning Flow** - When this hits a hero, if you've played a Lightning
+    //   card this turn, deal 1 arcane damage to them. »
+    // La carte elle-même n'est pas une carte Lightning : seule une autre carte
+    // Lightning jouée ce tour compte.
+    for (c, p) in [(Color::Red, 4), (Color::Yellow, 3)] {
+        let mut d = deck_card(
+            "Static Shock",
+            c,
+            ELEMENTAL_RB,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(3),
+        );
+        d.arcane_damage = true;
+        d.triggers = vec![TriggerDef {
+            when: this_hits_a_hero,
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| {
+                if a_joue_une_carte_lightning(g, c.controller) {
+                    if let Some(t) = hit_hero(c) {
+                        g.deal_damage_to(c.source_id(), c.controller, Target::Player(t), 1, true);
+                    }
+                }
+            })],
+        }];
+        db.add(d);
+    }
+
     // CARTES
+}
+
+/// Le héros touché (« them ») d'une capacité « when this hits a hero ».
+fn hit_hero(c: &Ctx) -> Option<fab_engine::PlayerId> {
+    match c.event {
+        Some(Event::Hit {
+            target,
+            target_obj: None,
+            ..
+        }) => Some(target),
+        _ => None,
+    }
 }
 
 /// « If you've played a Lightning card this turn » : `p` a joué ce tour une

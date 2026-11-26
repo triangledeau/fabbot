@@ -669,3 +669,65 @@ fn harness_lightning_cible_un_heros_et_seulement_un_heros() {
         "héros de P1 proposé"
     );
 }
+
+// ---------------------------------------------------------------------------
+// Static Shock : « When this hits a hero, if you've played a Lightning card
+// this turn, deal 1 arcane damage to them. » (rouge : 4 ; jaune : 3)
+// ---------------------------------------------------------------------------
+
+/// Résout l'attaque jusqu'à ce que la chaîne de combat soit vide (les
+/// décisions de défense, `Pass` compris, sont passées).
+fn resoudre_attaque(t: &mut Partie) {
+    passer_jusqua_que(t, |t| {
+        t.kind() != DecisionKind::Defend
+            && t.kind() != DecisionKind::Pitch
+            && t.g.stack.is_empty()
+            && t.g.pending_triggers.is_empty()
+            && t.g.tasks.is_empty()
+    });
+}
+
+fn static_shock_partie(main0: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie([HEROS, HEROS], main0, RIEN, RIEN, RIEN, &[], &[])
+}
+
+#[test]
+fn static_shock_lightning_flow_touche_un_heros_avec_carte_lightning_jouee_inflige_1_arcanique() {
+    let mut t = static_shock_partie(&[("Cloud Cover", B), ("Static Shock", R)]);
+    jouer(&mut t, P0, "Cloud Cover", B);
+    resoudre(&mut t);
+    jouer(&mut t, P0, "Static Shock", R);
+    resoudre_attaque(&mut t);
+    assert_eq!(t.vie(P1), 15, "4 de puissance + 1 dégât arcanique");
+    assert!(arcanique_1_a(&t, P1), "1 dégât arcanique à P1");
+}
+
+#[test]
+fn static_shock_jaune_avec_carte_lightning_jouee_inflige_3_puis_1_arcanique() {
+    let mut t = static_shock_partie(&[("Cloud Cover", Y), ("Static Shock", Y)]);
+    jouer(&mut t, P0, "Cloud Cover", Y);
+    resoudre(&mut t);
+    jouer(&mut t, P0, "Static Shock", Y);
+    resoudre_attaque(&mut t);
+    assert_eq!(t.vie(P1), 16, "3 de puissance + 1 dégât arcanique");
+}
+
+#[test]
+fn static_shock_sans_autre_carte_lightning_jouee_ne_fait_que_sa_puissance() {
+    let mut t = static_shock_partie(&[("Static Shock", R)]);
+    jouer(&mut t, P0, "Static Shock", R);
+    resoudre_attaque(&mut t);
+    assert_eq!(t.vie(P1), 16, "4 de puissance, pas de dégât arcanique");
+    assert!(!arcanique_1_a(&t, P1), "aucun dégât arcanique");
+}
+
+#[test]
+fn static_shock_lui_meme_n_est_pas_une_carte_lightning() {
+    let mut t = static_shock_partie(&[("Static Shock", Y)]);
+    jouer(&mut t, P0, "Static Shock", Y);
+    resoudre_attaque(&mut t);
+    assert!(
+        !arcanique_1_a(&t, P1),
+        "la carte jouée ne compte pas pour son propre Lightning Flow"
+    );
+}
