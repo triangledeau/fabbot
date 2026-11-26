@@ -161,19 +161,38 @@ pas encore jouer (pas codées). Le deck est enregistré dans
 `data/decks/maison/<nom>.txt` ; s'il est jouable, il se choisit pour vous
 comme pour le bot.
 
-**Éditeur de deck** : « Nouveau deck » (choisir un héros Young),
-« Modifier » un deck maison, ou « Modifier » / « Dupliquer » un deck du bot
-(copie : l'original ne change pas). À gauche la collection Silver Age (recherche en français ou
-en anglais, filtres pitch, type, « pour ce héros », « jouables par le bot »,
-« dans le deck », tri) ; les cartes que le bot ne sait pas encore jouer sont
-grisées. Clic : +1 ; clic droit : −1 ; Ctrl+Z : annuler. À droite : le
-card-pool (55 au plus, 40 cartes de deck au moins), la répartition du
-pitch, la courbe de coût, la liste par équipement et deck, et la
-vérification du serveur à chaque changement. « Enregistrer » écrit le deck
-maison ; « Copier la liste » donne le texte au format FaBrary. Un deck
-maison se range dans les **archives** (« Archiver ») ; on ne supprime
-qu'un deck archivé. Le filtre « pour ce héros » garde les cartes que le
-héros peut avoir (même règle que la vérification ci-dessous).
+**Éditeur de deck** (repris de l'Arsenal JS) : « Nouveau deck » (choisir
+un héros Young), « Modifier » un deck maison, ou « Modifier » / « Dupliquer »
+un deck du bot (copie : l'original ne change pas, un bandeau le rappelle).
+
+- Barre du haut : ← Jouer, nom du deck (modifiable), état (« enregistré » ou
+  « ● modifications non enregistrées »), Annuler, Importer (remplace la
+  liste), Exporter (format FaBrary), Imprimer (ouvre Imprimer avec ce deck,
+  une fois enregistré), Enregistrer (Ctrl+S).
+- À gauche, la collection Silver Age : recherche (« / » pour y aller, en
+  français ou en anglais), filtres Pitch, Coût, Type, Mots-clés, Classe /
+  talent, Afficher (légales pour le héros, jouables par le bot, déjà dans
+  le deck, jouables d'abord), tri, taille des cartes (mémorisée). Les cartes
+  que le bot ne sait pas encore jouer sont grisées. Survol : grande image et
+  texte, posés à côté de la carte.
+- Clic : +1 au deck ; ⇧ clic : +1 au side ; Alt clic : +1 aux envies ;
+  Entrée au clavier. **Clic droit** (ou touche Menu) sur une carte de la
+  grille ou de la liste : ajouter, déplacer (1 ou tous), retirer, voir en
+  grand, les autres couleurs. On peut aussi **glisser** une ligne vers une
+  autre catégorie (⇧ en lâchant : tous les exemplaires). Ctrl+Z annule
+  (60 pas) ; Échap ferme menu et aperçu.
+- À droite : héros et compteurs Deck (40) / Side / Équipement / Envies,
+  pitch et courbe de coût, puis trois onglets : **Liste** (catégories
+  repliables Deck, Side, Équipement et armes, Liste d'envies), **Équilibrage**
+  (pitch, courbe, rôles des cartes comparés à la moyenne des 9 decks du
+  bot), **Vérifications** (règles de construction, plus l'avis du serveur).
+- Dans le fichier enregistré, les 40 premières cartes de deck forment le
+  deck de départ, la suite est le side (ligne `// side`). La liste d'envies
+  n'est pas dans le fichier : elle reste dans le navigateur.
+
+Un deck maison se range dans les **archives** (« Archiver ») ; on ne
+supprime qu'un deck archivé. Le filtre « légales pour le héros » garde les
+cartes que le héros peut avoir (même règle que la vérification ci-dessous).
 
 La légalité vient de la base communautaire (`bash tools/fetch_cards.sh`) ;
 sans elle, seuls le format et les cartes codées sont vérifiés. Avec elle,
