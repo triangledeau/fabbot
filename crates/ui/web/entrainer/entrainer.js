@@ -123,11 +123,19 @@
     compter();
   }
   const choisis = () => [...document.querySelectorAll("#en-liste-decks input:checked")].map((i) => i.value);
+  // Durée arrondie, pour une estimation : « environ 18 min », « environ 1 h 20 », « moins d'une minute ».
+  const environ = (sec) => {
+    const m = Math.round(sec / 60);
+    if (m < 1) return "moins d'une minute";
+    if (m < 60) return "environ " + m + " min";
+    const h = Math.floor(m / 60), r = Math.round((m % 60) / 5) * 5;
+    return "environ " + h + " h" + (r ? " " + String(r).padStart(2, "0") : "");
+  };
   function compter() {
     const n = choisis().length, p = +$("en-parties").value || 0;
     let txt = n ? `${n} deck${n > 1 ? "s" : ""} : ${n * n} paires, ${n * n * p} parties au plus` : "aucun deck";
     const v = vitesse[[$("en-bot-a").value, $("en-bot-b").value].join("/")];
-    if (n && v) txt += `, environ ${duree((n * n * p) / v)} (vitesse du dernier tournoi de ces bots, à ${$("en-threads").value} en même temps : ${v.toFixed(1)} parties/s)`;
+    if (n && v) txt += `, ${environ((n * n * p) / v)}`;
     else if (n) txt += " (durée estimée après un premier tournoi de ces bots)";
     $("en-nb").textContent = txt;
   }
