@@ -12,6 +12,7 @@ use fab_engine::{
 
 /// Noms des cartes de ce module (pour `docs/cards/STATUS.md`).
 pub const NAMES: &[&str] = &[
+    "Cloud Cover",
     // NOMS
 ];
 
@@ -24,5 +25,26 @@ const ELEMENTAL_RB: Supertypes = Supertypes(Supertypes::ELEMENTAL.0 | Supertypes
 
 pub fn add(db: &mut CardDb) {
     let _ = &db;
+    // Cloud Cover (bleu, rouge, jaune) — Lightning Instant, coût 0.
+    // « The next time you would be dealt damage this turn, prevent 1 of that
+    //   damage. » (bleu : 1 ; rouge : 3 ; jaune : 2)
+    // Prévention « fixe » (CR 6.4.10i) : ne vaut que pour un seul événement de dégâts.
+    for c in COLORS {
+        let mut d = deck_card(
+            "Cloud Cover",
+            c,
+            LIGHTNING,
+            Types::INSTANT,
+            Some(0),
+            None,
+            None,
+        );
+        d.resolve = vec![Op::Do(|g, c| {
+            let n = by_color(g, c, [3, 2, 1]);
+            g.prevent_next_time(c.controller, Some(n as i32));
+        })];
+        db.add(d);
+    }
+
     // CARTES
 }
