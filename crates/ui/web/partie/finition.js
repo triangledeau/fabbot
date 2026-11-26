@@ -150,7 +150,8 @@ const FX = (() => {
       let de = p ? p.r : null;
       if (!de) { const a = origine(el); if (a) de = rect(a); }
       if (!de || !loin(de, r)) continue;
-      voler(el, de, r, { delai: p ? 0 : 60 * n++ });
+      // La carte qu'on vient de lâcher file vite vers sa zone.
+      voler(el, de, r, { delai: p ? 0 : 60 * n++, duree: p && k === lachee.k && T() < lachee.t ? 240 : undefined });
     }
     // Cartes parties (au cimetière, bannies, sous le deck…) : elles filent vers le cimetière en s'effaçant
     for (const [k, p] of avantVols) {
@@ -237,7 +238,7 @@ const FX = (() => {
   }
 
   /* ----- Tirer une carte : chaîne de laiton, lâcher pour jouer ----- */
-  let tir = null, garde = 0;
+  let tir = null, garde = 0, lachee = { k: null, t: 0 };
   const svg = () => document.getElementById("visee");
   function chaine(de, x, y) {
     let s = svg();
@@ -274,19 +275,46 @@ const FX = (() => {
     const el = e.target.closest("#j-vous .carte.jouable[data-k]");
     if (!el) return;
     const d = depots(el.dataset.k); if (!d.size) return;
-    tir = { el, id: e.pointerId, sx: e.clientX, sy: e.clientY, bouge: false, depots: d, r: rect(el) };
+    const main = el.closest(".hand");
+    tir = { el, id: e.pointerId, sx: e.clientX, sy: e.clientY, px: e.clientX, py: e.clientY, vx: 0, vy: 0, bouge: false, depots: d, r: rect(el), boite: (main || el).getBoundingClientRect() };
   });
+  // Où irait la carte si on la lâchait ici : une zone survolée qui l'accepte
+  // (pitch, arsenal…), sinon « jouer » dès qu'elle est sortie de la main
+  // (au-dessus ou à gauche), comme dans l'Arsenal JS.
+  function cible(t, x, y) {
+    t.el.style.pointerEvents = "none";
+    const z = sous(x, y);
+    t.el.style.pointerEvents = "";
+    if (z && t.depots.has(z)) return z;
+    const b = t.boite, hors = y < b.top - 20 || x < b.left - 20;
+    return hors && t.depots.has("chaine") ? "chaine" : null;
+  }
+  // La carte tirée suit le pointeur sans délai, centrée sous lui, et penche
+  // selon la vitesse du geste (comme dans l'Arsenal JS).
+  function placer(t) {
+    const cl = (v, m) => Math.max(-m, Math.min(m, v));
+    t.el.style.transform = `translate(${t.px - t.base.cx}px,${t.py - t.base.cy - t.base.h * 0.1}px) perspective(900px) rotateX(${cl(t.vy * 1.4, 28)}deg) rotateY(${cl(-t.vx * 1.6, 28)}deg) rotate(${cl(t.vx * 0.7, 14)}deg) scale(1.12)`;
+  }
   window.addEventListener("pointermove", (e) => {
     const t = tir; if (!t || e.pointerId !== t.id) return;
+    t.vx = t.vx * 0.75 + (e.clientX - t.px) * 0.25; t.vy = t.vy * 0.75 + (e.clientY - t.py) * 0.25;
+    t.px = e.clientX; t.py = e.clientY;
     if (!t.bouge) {
-      if (Math.hypot(e.clientX - t.sx, e.clientY - t.sy) < 8) return;
-      t.bouge = true; t.el.classList.add("tiree"); eclairer(t, true);
+      if (Math.hypot(e.clientX - t.sx, e.clientY - t.sy) < 5) return;
+      t.bouge = true;
+      t.el.classList.remove("incline"); t.el.classList.add("tiree");
+      const hc = t.el.closest(".hc"); if (hc) hc.classList.add("tiree-hc");
+      t.el.style.transform = "none";
+      const r = t.el.getBoundingClientRect();
+      t.base = { cx: r.left + r.width / 2, cy: r.top + r.height / 2, h: r.height };
+      eclairer(t, true);
       try { t.el.setPointerCapture(t.id); } catch (err) { /* rien */ }
     }
-    t.el.style.transform = `translate(${e.clientX - t.sx}px,${e.clientY - t.sy}px) scale(1.08) rotate(${Math.max(-10, Math.min(10, (e.clientX - t.sx) * 0.03))}deg)`;
+    placer(t);
     chaine(t.r, e.clientX, e.clientY);
-    const z = sous(e.clientX, e.clientY);
-    for (const x of plateau().querySelectorAll("[data-depot]")) x.classList.toggle("vise", x.dataset.depot === z && t.depots.has(z));
+    const z = cible(t, e.clientX, e.clientY);
+    for (const x of plateau().querySelectorAll("[data-depot]")) x.classList.toggle("vise", x.dataset.depot === z);
+    t.el.classList.toggle("a-jouer", !!z);
   });
   function lacher(e) {
     const t = tir; if (!t || e.pointerId !== t.id) return;
@@ -295,13 +323,18 @@ const FX = (() => {
     eclairer(t, false);
     for (const x of plateau().querySelectorAll(".vise")) x.classList.remove("vise");
     const s = svg(); if (s) s.classList.remove("on");
-    t.el.style.pointerEvents = "none";
-    const z = sous(e.clientX, e.clientY);
-    t.el.style.pointerEvents = "";
+    const z = cible(t, e.clientX, e.clientY);
     const o = z ? t.depots.get(z) : null;
-    t.el.classList.remove("tiree");
-    if (o) { t.el.style.transform = ""; deposerOption(o); }
-    else { t.el.style.transition = "transform .25s ease-out"; t.el.style.transform = ""; setTimeout(() => { t.el.style.transition = ""; }, 260); }
+    t.el.classList.remove("tiree", "a-jouer");
+    const hc = t.el.closest(".hc"); if (hc) hc.classList.remove("tiree-hc");
+    // Carte acceptée : elle reste là où on l'a lâchée, le vol vers sa zone
+    // part de là (avant, elle revenait d'abord dans la main).
+    if (o) {
+      lachee = { k: t.el.dataset.k, t: T() + 3000 };
+      deposerOption(o);
+      setTimeout(() => { if (t.el.isConnected) t.el.style.transform = ""; }, 1500);
+    }
+    else { t.el.style.transition = "transform .18s cubic-bezier(.2,.8,.2,1)"; t.el.style.transform = ""; setTimeout(() => { t.el.style.transition = ""; }, 200); }
   }
   window.addEventListener("pointerup", lacher); window.addEventListener("pointercancel", lacher);
   document.addEventListener("click", (e) => { if (T() < garde) { e.stopPropagation(); e.preventDefault(); } }, true);

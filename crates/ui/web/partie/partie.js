@@ -733,7 +733,23 @@ function joueur(j, estVous, actif) {
   })() : null;
   const perms = j.permanents.length ? (() => {
     const f = el("div", "perms");
-    for (const c of j.permanents) f.appendChild(carte(c, true));
+    // Plus de 3 exemplaires identiques (jetons Runechant…) : un seul, avec
+    // le nombre réel. Seulement pour ceux qu'on ne peut pas choisir.
+    const signe = (c) => { const { id, ...r } = c; return JSON.stringify(r); };
+    const groupes = new Map();
+    for (const c of j.permanents) {
+      const k = c.cache || optionsDeCarte(c.id).length || brouillon.includes(c.id) || sel === c.id ? "id:" + c.id : signe(c);
+      if (!groupes.has(k)) groupes.set(k, []);
+      groupes.get(k).push(c);
+    }
+    for (const g of groupes.values()) {
+      if (g.length <= 3) { for (const c of g) f.appendChild(carte(c, true)); continue; }
+      const e = carte(g[0], true);
+      e.classList.add("pile-perm");
+      e.appendChild(el("span", "nb-perm", "×" + g.length));
+      e.title = (e.title ? e.title + " · " : "") + g.length + " exemplaires";
+      f.appendChild(e);
+    }
     return [f];
   })() : null;
   const dos = () => { const d = el("div", "dos"); d.setAttribute("aria-hidden", "true"); return d; };
