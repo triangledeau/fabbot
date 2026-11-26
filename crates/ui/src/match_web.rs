@@ -100,7 +100,7 @@ fn nom_zone(z: Zone) -> &'static str {
 }
 
 /// Une carte du card-pool (pas encore un objet de partie).
-fn carte_pool(db: &CardDb, c: CardId) -> Value {
+pub(crate) fn carte_pool(db: &CardDb, c: CardId) -> Value {
     let d = db.get(c);
     let (image, nom_fr) = crate::images::champs(d);
     json!({

@@ -106,7 +106,8 @@ const FX = (() => {
   }
 
   /* ----- Vols de cartes ----- */
-  let avantVols = new Map(), premier = true;
+  let avantVols = new Map(), premier = true, arsBotAvant = false;
+  const arsBot = () => { const a = ancre("arsenal-bot"); return !!(a && a.querySelector(".carte")); };
   function releve() {
     const m = new Map();
     for (const el of plateau().querySelectorAll("[data-k]")) {
@@ -137,7 +138,11 @@ const FX = (() => {
   function origine(el) {
     const o = proprio(el);
     if (o === "vous" && el.closest('[data-a="main-vous"]')) return ancre("deck-vous");
-    if (o === "bot") return ancre("main-bot") || ancre("heros-bot");
+    if (o === "bot") {
+      // Une carte jouée depuis l'arsenal du bot (face cachée, donc pas suivie) en part.
+      if (arsBotAvant && !arsBot()) { arsBotAvant = false; return ancre("arsenal-bot"); }
+      return ancre("main-bot") || ancre("heros-bot");
+    }
     return ancre("heros-" + (o || "vous"));
   }
   function vols() {
@@ -342,7 +347,7 @@ const FX = (() => {
 
   return {
     on,
-    avant() { avantVols = on() ? releve() : new Map(); },
+    avant() { avantVols = on() ? releve() : new Map(); arsBotAvant = on() && arsBot(); },
     apres(e) {
       if (!on()) { avantVols = new Map(); etape = e && e.combat ? e.combat.etape : null; return; }
       try {
