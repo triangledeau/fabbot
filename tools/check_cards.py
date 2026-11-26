@@ -2,6 +2,7 @@
 officiel de LSS, avec la bonne couleur.
 
 Usage : python3 tools/check_cards.py   (après bash tools/fetch_cards.sh)
+        python3 tools/check_cards.py data/decks/en_cours/10_kayo.txt   (une liste précise)
 """
 import csv
 import os
@@ -26,10 +27,13 @@ with open(CSV, encoding="utf-8-sig", newline="") as fh:
 
 problems = 0
 checked = set()
-for fn in sorted(os.listdir(DECKS)):
-    if not fn.endswith(".txt"):
-        continue
-    for line in open(os.path.join(DECKS, fn), encoding="utf-8"):
+if len(sys.argv) > 1:
+    paths = sys.argv[1:]
+else:
+    paths = [os.path.join(DECKS, f) for f in sorted(os.listdir(DECKS)) if f.endswith(".txt")]
+for path in paths:
+    fn = os.path.basename(path)
+    for line in open(path, encoding="utf-8"):
         m = (re.match(r"Hero: (.+)", line)
              or re.match(r"\d+ (.+?) \[", line)
              or re.match(r"\d+ (.+?) \((red|yellow|blue)\)", line))

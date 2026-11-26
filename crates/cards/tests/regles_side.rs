@@ -2,41 +2,14 @@
 //! CR 4.1.3 à 4.1.7 et TRP 7.4 (Silver Age), avec les vrais decks.
 
 use fab_ai::side::{Options, SideAppris, TableSide, TABLE_B1};
-use fab_cards::decklist::Decklist;
 use fab_cards::real;
 use fab_engine::{CardDb, CardId, CardPool, ChoixInvalide, FormatConfig, PlayerId};
 use fab_match::{lancer_manche, preparer_manche, InfoSide, Side, SideListe};
-use std::path::PathBuf;
 use std::sync::Arc;
 
 fn pool(db: &CardDb, nom: &str) -> CardPool {
-    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/decks");
-    let f = std::fs::read_dir(&dir)
-        .unwrap()
-        .map(|e| e.unwrap().path())
-        .find(|p| {
-            p.file_name()
-                .unwrap()
-                .to_string_lossy()
-                .split_once('_')
-                .is_some_and(|(_, r)| r.starts_with(nom))
-        })
-        .unwrap();
-    let l = Decklist::parse(&std::fs::read_to_string(f).unwrap()).unwrap();
-    real::card_pool(db, &l).unwrap()
+    fab_cards::decks::charger_pool(db, nom).unwrap()
 }
-
-const DECKS: [&str; 9] = [
-    "ira",
-    "hala",
-    "dorinthea",
-    "bravo",
-    "iyslander",
-    "florian",
-    "levia",
-    "dromai",
-    "arakni",
-];
 
 fn taille() -> usize {
     FormatConfig::silver_age().deck_size as usize
@@ -50,8 +23,8 @@ fn id(db: &CardDb, nom: &str) -> CardId {
 #[test]
 fn trp_7_4_le_card_pool_compte_55_cartes_d_arene_et_de_deck() {
     let db = real::build();
-    for d in DECKS {
-        let p = pool(&db, d);
+    for d in fab_cards::decks::noms() {
+        let p = pool(&db, &d);
         assert_eq!(p.arena.len() + p.deck.len(), 55, "{d}");
     }
 }
@@ -329,7 +302,10 @@ fn un_choix_illegal_est_refuse_avec_le_joueur_fautif() {
 fn la_table_apprise_est_legale_pour_les_81_paires() {
     let db = real::build();
     let table = Arc::new(TableSide::lire(&db, TABLE_B1).unwrap());
-    let pools: Vec<CardPool> = DECKS.iter().map(|d| pool(&db, d)).collect();
+    let pools: Vec<CardPool> = fab_cards::decks::noms()
+        .iter()
+        .map(|d| pool(&db, d))
+        .collect();
     for a in &pools {
         for b in &pools {
             let e = table

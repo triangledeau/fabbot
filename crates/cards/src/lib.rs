@@ -1,6 +1,7 @@
 //! # fab-cards — la base de cartes
 //!
 //! - [`decklist`] : lecture et vérification des listes de `data/decks/` ;
+//! - [`decks`] : la liste des decks du projet (un fichier par deck) ;
 //! - [`real`] : les vraies cartes des 9 decks (étape 2 : Hala et Dorinthea) ;
 //! - [`test_set`] : cartes **fictives** servant à tester les règles du moteur
 //!   (étape 1), avant le codage des vraies cartes (étapes 2 et 3).
@@ -9,6 +10,7 @@
 //! codés à la main, et un statut de validation (`docs/cards/STATUS.md`).
 
 pub mod decklist;
+pub mod decks;
 pub mod real;
 pub mod test_set;
 

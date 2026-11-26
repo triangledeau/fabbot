@@ -296,7 +296,7 @@ impl Regression {
 }
 
 /// Résout A·x = b (Gauss avec pivot partiel) ; le résultat remplace `b`.
-fn resoudre_systeme(a: &mut [f64], b: &mut [f64], p: usize) {
+pub(crate) fn resoudre_systeme(a: &mut [f64], b: &mut [f64], p: usize) {
     for col in 0..p {
         let piv = (col..p)
             .max_by(|&i, &j| a[i * p + col].abs().total_cmp(&a[j * p + col].abs()))
