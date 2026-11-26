@@ -58,6 +58,13 @@ pub struct MatchWeb {
     pub session: Option<Session>,
     /// Le résultat de la manche en cours a-t-il été compté ?
     compte: bool,
+    /// Les choix de l'humain depuis le début du match, dans l'ordre
+    /// (sauvegarde, lot 3) : `{"premier": "vous"}`, `{"arene": [..]}`,
+    /// `{"deck": [..]}`, `{"partie": [coups…]}` (manche finie),
+    /// `{"manche_suivante": true}`. Voir `crate::sauvegarde`.
+    etapes: Vec<Value>,
+    /// Coups à rejouer dans la prochaine manche créée (chargement).
+    rejeu: Option<Vec<u32>>,
 }
 
 /// Ce que sait `moi` au moment de choisir.
@@ -144,6 +151,8 @@ impl MatchWeb {
             proposition,
             session: None,
             compte: false,
+            etapes: Vec::new(),
+            rejeu: None,
         };
         // CR 4.1.3 : première manche, joueur tiré au sort (par la graine).
         let tirage = PlayerId((m.reglages.graine % 2) as u8);
@@ -186,6 +195,7 @@ impl MatchWeb {
             _ => return Err("« vous » ou « bot » attendu".into()),
         };
         self.choisir_premier(p);
+        self.etapes.push(json!({ "premier": qui }));
         Ok(())
     }
 
@@ -209,6 +219,7 @@ impl MatchWeb {
             .map_err(|e| self.message(e))?;
         self.arenes[HUMAIN.index()] = Some(cartes);
         self.etape = Etape::Deck;
+        self.etapes.push(json!({ "arene": indices }));
         Ok(())
     }
 
@@ -271,7 +282,11 @@ impl MatchWeb {
             .map_err(|e| format!("mise en place : {e:?}"))?;
         let mut r = self.reglages.clone();
         r.graine = graine;
-        self.session = Some(Session::avec_partie(g, r)?);
+        self.session = Some(match self.rejeu.take() {
+            Some(coups) => Session::rejouer(g, r, &coups)?,
+            None => Session::avec_partie(g, r)?,
+        });
+        self.etapes.push(json!({ "deck": quantites }));
         self.proposition = (arene_h, deck);
         self.etape = Etape::Partie;
         self.compter();
@@ -337,6 +352,10 @@ impl MatchWeb {
             return Err("le match est terminé".into());
         }
         let chooser = self.score.next_chooser(self.chooser);
+        if let Some(s) = &self.session {
+            self.etapes.push(json!({ "partie": s.coups() }));
+        }
+        self.etapes.push(json!({ "manche_suivante": true }));
         self.preparer(chooser);
         Ok(())
     }
@@ -496,5 +515,27 @@ impl MatchWeb {
             v["preparation"] = self.json_preparation();
         }
         v
+    }
+
+    /// Les choix de l'humain depuis le début du match, plus les coups de
+    /// la manche en cours (pour la sauvegarde).
+    pub fn etapes(&self) -> Vec<Value> {
+        let mut v = self.etapes.clone();
+        if self.etape == Etape::Partie {
+            if let Some(s) = &self.session {
+                v.push(json!({ "partie": s.coups() }));
+            }
+        }
+        v
+    }
+
+    /// Le match est-il fini (un gagnant) ?
+    pub fn termine(&self) -> bool {
+        self.score.winner().is_some()
+    }
+
+    /// La prochaine manche créée rejouera ces coups (chargement).
+    pub(crate) fn preparer_rejeu(&mut self, coups: Vec<u32>) {
+        self.rejeu = Some(coups);
     }
 }

@@ -136,7 +136,16 @@ dégâts, bouton « Passer l'animation », réglages gardés dans le navigateur.
 **Pas repris** (à faire si le propriétaire le souhaite) : le plateau en
 « tapis d'arène » de l'Arsenal JS (disposition des zones comme un playmat),
 l'inclinaison des cartes au survol, le bandeau « CRUSH », les temps de
-lecture minimum de la pile. Chaque lot se
+lecture minimum de la pile.
+
+**Lot 3, ce qui a été fait (2026-11-26)** : sauvegarde = réglages + choix
+(`premier`, `arene`, `deck`, puis `partie` = tous les coups du moteur, ceux
+du bot compris, et `manche_suivante`) ; reprise par rejeu exact, sans
+appeler le bot (`Session::rejouer`, `crates/ui/src/sauvegarde.rs`).
+Sauvegarde automatique après chaque choix dans `sauvegardes/en-cours.json`,
+reprise au lancement (`--nouvelle-partie` pour l'éviter), boutons
+Exporter / Importer dans l'en-tête de la partie, bandeau « reprendre » de
+l'accueil (lot 0). Chaque lot se
 termine par une pull request fusionnée et peut être pris par n'importe quel
 agent.
 
@@ -145,7 +154,7 @@ agent.
 | 0. Socle | Page en plusieurs fichiers, accueil Arsenal (logo, 3 volets, fond), charte, navigation par #. L'écran de partie actuel est gardé et rhabillé. | `crates/ui/web/`, `serveur.rs` | rien | 1 | ✅ fait (2026-11-26) |
 | 1. Images | Script qui associe chaque carte codée à son image (VF bord noir d'abord), nom français, champ `image` dans l'API, cadre dessiné en secours | `tools/`, `data/cards/`, `crates/ui/src/vue.rs` | rien | 1 | ✅ fait (2026-11-26) |
 | 2. Plateau animé | Reprise de `finition.js` : vols de cartes, glisser-déposer avec chaîne de laiton, impacts, PV qui défilent, bandeau des étapes, pause « Continuer ». Côté serveur : identifiants suivis et événements envoyés à la page | `crates/ui/web/partie/`, `crates/ui/src/web.rs` | 0, 1 | 3 | ✅ fait (2026-11-26), compléments possibles ci-dessous |
-| 3. Sauvegarde | Partie sauvegardée (graine + choix), reprise depuis l'accueil, export / import du journal .json | `crates/ui/src/`, `web/accueil/` | 0 | 1 | à faire |
+| 3. Sauvegarde | Partie sauvegardée (graine + choix), reprise depuis l'accueil, export / import du journal .json | `crates/ui/src/`, `web/accueil/` | 0 | 1 | ✅ fait (2026-11-26) |
 | 4a. Decks en données | Pool Silver Age avec drapeau « jouable par le bot » (carte codée dans fab-cards), légalité, decks maison dans `data/decks/maison/`, chargement à l'exécution, import d'une liste FaBrary | `crates/cards/` (lecture des decks), `api_decks.rs` | 0 | 1 | à faire |
 | 4b. Éditeur de deck | Reprise d'`editeur.js` : collection filtrable, catégories, stats, Ctrl+Z, dupliquer / archiver / supprimer | `web/decks/` | 4a, 1 | 1,5 | à faire |
 | 4c. Ajustement avant partie | Fenêtre en piles de l'Arsenal JS à la place de l'écran de side actuel, dernier réglage, plan conseillé par la table apprise | `web/partie/`, `match_web.rs` | 4a, 1 | 0,5 | à faire |

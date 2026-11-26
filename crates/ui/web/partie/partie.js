@@ -413,8 +413,9 @@ function journal() {
 function afficher() {
   document.querySelectorAll("button").forEach(b => b.disabled = false);
   if (!etat || etat.aucune_partie) {
-    $("info").textContent = "Aucun match : cliquez « Nouveau match ».";
+    $("info").textContent = "Aucun match : cliquez « Nouveau match » (ou « Importer » une sauvegarde).";
     $("b-annuler").disabled = true;
+    $("b-exporter").disabled = true;
     return;
   }
   const m = etat.match;
@@ -493,6 +494,41 @@ $("d-nouvelle").addEventListener("close", () => {
   action("POST", "/api/nouvelle?" + q.toString());
 });
 $("b-annuler").addEventListener("click", annuler);
+
+// ---------- sauvegarde (lot 3) ----------
+// Le serveur sauvegarde déjà tout seul après chaque choix ; ces boutons
+// servent à garder un match dans un fichier, ou à le reprendre plus tard.
+$("b-exporter").addEventListener("click", async () => {
+  try {
+    const v = await api("GET", "/api/sauvegarde");
+    const lien = el("a");
+    lien.href = URL.createObjectURL(new Blob([JSON.stringify(v, null, 1)], { type: "application/json" }));
+    const d = new Date();
+    const p2 = (n) => String(n).padStart(2, "0");
+    lien.download = `arsenal-${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}-${p2(d.getHours())}h${p2(d.getMinutes())}.json`;
+    document.body.appendChild(lien);
+    lien.click();
+    lien.remove();
+    setTimeout(() => URL.revokeObjectURL(lien.href), 2000);
+  } catch (e) { $("erreur").textContent = e.message; }
+});
+$("b-importer").addEventListener("click", () => $("f-importer").click());
+$("f-importer").addEventListener("change", async () => {
+  const f = $("f-importer").files[0];
+  $("f-importer").value = "";
+  if (!f || occupe) return;
+  occupe = true;
+  $("erreur").textContent = "";
+  try {
+    const r = await fetch("/api/charger", { method: "POST", body: await f.text(), headers: { "Content-Type": "application/json" } });
+    const v = await r.json();
+    if (!r.ok || v.erreur) throw new Error(v.erreur || ("erreur " + r.status));
+    etat = v;
+    Film.vu(etat);
+  } catch (e) { $("erreur").textContent = "Import impossible : " + e.message; }
+  occupe = false;
+  afficher();
+});
 
 document.addEventListener("keydown", (e) => {
   if (Arsenal.vue() !== "partie") return;
