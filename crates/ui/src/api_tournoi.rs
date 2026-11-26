@@ -539,6 +539,8 @@ fn historique() -> Vec<Value> {
                 "fait": t["fait"],
                 "total_a": t["total_a"],
                 "arret": t["arret"],
+                // Vitesse, pour estimer la durée du prochain tournoi (page).
+                "parties_par_s": t["parties_par_s"],
             }))
         })
         .collect();

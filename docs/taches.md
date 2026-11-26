@@ -10,7 +10,6 @@ retire en finissant.
 | Début | Agent | Branche | Tâche | Zone touchée (crates, fichiers) |
 |---|---|---|---|---|
 | 2026-11-26 | Claude | `claude/project-thread-0p5cpk` | Didacticiel « Apprendre » des règles (phase 2 du rapatriement) | `crates/ui/web/apprendre/` (nouveau), `crates/ui/src/api_apprendre.rs` (nouveau), quelques lignes dans `serveur.rs`, `index.html`, `accueil.js` |
-| 2026-11-26 | Claude | `claude/project-thread-4sgqn2` | Ergonomie d'Arsenal (revue des 46 points) : numéros internes, symboles des cartes, focus, Entraîner, impression, compteurs de l'accueil | `crates/ui/src/vue.rs`, `lib.rs`, une ligne de `serveur.rs`, `crates/ui/web/commun/`, `entrainer/`, `impression/`, textes de `accueil.js` (partie/ et decks/ restent au fil de reprise) |
 | 2026-11-26 | Claude | `claude/vigilant-fermat-iq5cjs` | B2/B3 : estimation qui comprend le blood debt et les cartes bannies (Levia), mesurée contre B2 | `crates/ai/src/b2.rs`, `b3.rs` (recherche seulement), `docs/bots.md` |
 
 ## Découpage conseillé des prochaines tâches

@@ -24,3 +24,9 @@
   .im-feuille { box-shadow: none; margin: 0; }
   .im-feuille:last-child { break-after: auto; }
 }
+/* Cartes déjà possédées : grisées à l'écran, jamais imprimées (feuilles à part). */
+.im-carte { cursor: pointer; }
+.im-carte.im-possedee { filter: grayscale(1) opacity(.35); }
+.im-carte.im-possedee::before { content: "Déjà possédée"; inset: auto 0 40% 0; z-index: 3; background: rgb(0 0 0 / .75); color: #fff; font: 700 10pt/2 var(--f-body); }
+.im-feuille.im-possedee { opacity: .8; }
+@media print { .im-feuille.im-possedee { display: none !important; } }
