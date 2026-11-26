@@ -1,0 +1,12 @@
+/* Extras de la partie (lot 9) : conseil, barre d'évaluation, Bot contre Bot. */
+.aide-bot { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line2); display: flex; flex-direction: column; gap: 6px; }
+.aide-bot[hidden] { display: none; }
+.ab-ligne { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ab-ligne select { font: inherit; color: var(--ink); background: rgb(8 10 15 / .6); border: 1px solid var(--line); border-radius: 8px; padding: 2px 6px; }
+#ab-auto[aria-pressed="true"] { border-color: var(--yellow); color: var(--yellow); }
+.ab-conseil { font-size: .85rem; color: var(--yellow); min-height: 1em; }
+#v-partie .conseil { outline: 2px solid var(--yellow); outline-offset: 1px; }
+.ab-eval { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--muted); }
+.ab-barre { flex: 1; height: 8px; border-radius: 999px; background: rgb(224 87 74 / .55); overflow: hidden; }
+.ab-barre i { display: block; height: 100%; width: 50%; background: var(--good); transition: width .5s; }
+#d-bug textarea { width: 100%; box-sizing: border-box; font: inherit; color: var(--ink); background: rgb(8 10 15 / .6); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }

@@ -7,7 +7,7 @@
 | **B0** | `RandomAgent` (`crates/ai/src/lib.rs`) | au hasard parmi les options légales ; sert de référence (Elo 0) et de testeur de règles |
 | **B1** | `HeuristicAgent` (`crates/ai/src/b1.rs`) | règles fixes, sans recherche (détail ci-dessous) |
 | **B2** | `IsmctsAgent` (`crates/ai/src/b2.rs`) | recherche ISMCTS : mondes imaginés + parties simulées par B1 (détail ci-dessous) |
-| B3 | à venir (étape 7) | évaluation apprise |
+| **B3** | `IsmctsAgent` avec `ReglagesB2::b3()` (`crates/ai/src/b3.rs`) | la recherche de B2, avec une évaluation apprise par auto-jeu (détail ci-dessous) |
 
 ### Un bot ne voit que l'information de son joueur
 
@@ -36,6 +36,16 @@ complètes sur les 9 decks prouvent qu'aucune lecture interdite n'a lieu.
 - **Pitch** : la carte qui paie le reste au plus juste, en gardant les
   cartes les plus fortes.
 - **Arsenal** : la carte d'attaque la plus forte.
+- **Cible d'une attaque** (CR 1.4.5) : le héros adverse, sauf si l'attaque
+  peut détruire un allié adverse (un dragon de Dromai…) dont 2 attaques
+  feraient plus de dégâts qu'elle (2 × puissance de l'allié > puissance de
+  l'attaque) ; jamais un allié si l'attaque peut tuer le héros. Réglage
+  `tours_d_allie` (2). Mesure du 2026-11-26 (tournoi B1 contre B1,
+  1 000 parties par paire) : avant, B1 n'attaquait **jamais** un dragon
+  (0 sur ≈ 7 000 occasions) ; Dromai contre Ira passe de 90 % à 81 %, les
+  autres matchups de Dromai bougent de 1 point au plus (moyenne de Dromai
+  87 % → 86 %). Avec 1 ou 3 au lieu de 2 : 86 % et 85 %. B0, B2 et B3
+  attaquaient déjà les dragons (61 %, 38 %, 45 % des occasions).
 - **Capacités activées** (hors attaques d'arme) : seulement celles du
   héros, des armes et des permanents. Pas « Destroy this » sur un
   équipement, ni « Banish this from your hand ».
@@ -130,6 +140,155 @@ utilisent un nombre d'itérations.
 | idem, exploration 0,4 / 1,2 | 81 % / 78 % | +250 / +218 |
 | 30 itérations, 4 tours, profondeur 1 | 67 % | +122 |
 | **300 itérations, 4 tours, profondeur 1** | **84 %** | **+283** |
+
+### B3 : l'évaluation apprise (étape 7)
+
+B3 cherche exactement comme B2 (300 itérations, 4 tours simulés,
+profondeur 1). Seule change l'**estimation** des parties simulées arrêtées
+après 4 tours : à la place de la formule fixe (vie + 1,5 par carte…), une
+évaluation dont les poids sont **appris** sur des parties jouées par les
+bots eux-mêmes.
+
+**L'évaluation** : chaque joueur reçoit une note = somme de ses
+caractéristiques × leur poids ; les chances de gagner du joueur 0 sont
+σ(note₀ − note₁). Caractéristiques : vie, vie sous 10 et sous 5, cartes en
+main, arsenal, deck, équipements et leur défense, cartes à blood debt face
+visible dans la zone de bannissement, cimetière, bannissement, « c'est son
+tour » ; le héros (force du deck) et, propres à chaque héros, sa vie et ses
+cartes (main + arsenal) ; chaque permanent contrôlé, **carte par carte**
+(Runechant, Frostbite, Ash, dragons, Might…) ; depuis la 3e génération,
+le **contenu de la main** (main + arsenal, valeurs imprimées) : nombre
+d'attaques, leur puissance totale, défense totale, réactions de défense,
+ressources (pitch), et chaque carte, **carte par carte** (« en main
+Command and Conquer (red) = … »). Les poids sont lus par nom de
+carte dans `data/b3/evaluation.txt` (fichier lisible) : un nouveau deck a
+des poids nuls tant qu'on n'a pas refait l'apprentissage.
+
+Pendant la recherche, le terme « force du héros » est retiré : il est le
+même pour tous les coups d'une décision, et dans un matchup déséquilibré il
+écrasait toutes les estimations près de 0 (Levia : −3,3).
+
+**L'apprentissage** (`--apprendre-b3`) : une position au début de chaque
+tour de chaque partie, avec le résultat final ; régression logistique
+(Newton, pénalité ridge). Une partie sur 10 est gardée pour mesurer
+la qualité des prédictions (perte logarithmique, 0,693 = toujours 50 %).
+Trois pénalités sont essayées (λ/4, λ, 4λ ; λ = 10 par défaut) et la
+meilleure sur ces parties de test est gardée. Sur les mêmes parties, le
+programme apprend aussi des poids **sans** le contenu de la main et les
+écrit à côté (`…_sans_main.txt`), pour comparer.
+
+```bash
+cargo run --release -p fab-sim -- --apprendre-b3 --games 500
+cargo run --release -p fab-sim -- --apprendre-b3 --games 112 --bots b3-100 b3-100
+cargo run --release -p fab-sim -- --tournoi --bots b3 b2 --games 16 --check
+cargo run --release -p fab-sim -- --tournoi --bots b3 b3:data/b3/generation2.txt --games 32 --check
+```
+
+Variantes : `b3-800t1` (mêmes réglages que `b2-…`), `b3:fichier` (autre
+fichier de poids).
+
+#### Mesures (2026-11-26, contre B2, 81 paires)
+
+| Poids | Appris sur | Perte (test) | Parties | Score | Elo (intervalle à 95 %) |
+|---|---|---|---|---|---|
+| formule fixe de B2 | — | 0,595 | | | |
+| 1re génération | 40 500 parties B1 contre B1 (900 000 positions, 10 s) | 0,346 | 324 | 51,2 % | +9 (−29 à +47) |
+| idem, sans la force du héros dans la recherche | | | 324 | 52,8 % | +19 (−18 à +58) |
+| idem, 1 tour simulé, 800 itérations (même temps que B2) | | | 324 | 46,6 % | −24 (−62 à +14) |
+| 2e génération | 4 536 parties B3-100 contre B3-100 (88 000 positions, 35 min) | 0,391 | 648 | 53,7 % | +26 (−1 à +53) |
+| 2e génération, mesure refaite | | | 1 296 | 56,6 % | +46 (+27 à +65) |
+| 3e génération, sans le contenu de la main | 9 072 parties B3-100 (2e gén.) contre B3-100 (153 000 positions, 42 min) | 0,377 | 1 296 | 57,6 % | +53 (+34 à +73) |
+| **3e génération, avec le contenu de la main (retenue)** | mêmes parties, λ = 40 | **0,372** | 1 296 | **57,6 %** | **+53 (+34 à +73)** |
+
+Face-à-face direct, plus sensible : **B3 3e génération contre B3 2e
+génération : 52,0 % sur 2 592 parties, +14 Elo (intervalle +1 à +28)**,
+0 erreur.
+
+0 erreur. Les poids de 1re génération prédisent bien la fin d'une partie
+**jouée par B1** (perte 0,35 contre 0,60 pour la formule fixe), mais
+n'aident presque pas la recherche. Ceux de 2e génération, appris sur des
+parties de B3, donnent une valeur bien plus grande aux cartes (une carte en
+main ≈ 3 PV, contre ≈ 0,4 PV en 1re génération) ; c'est le premier
+réglage qui dépasse B2, de peu (la mesure refaite sur deux fois plus de
+parties donne +46 : la 1re mesure était basse par hasard). La 3e
+génération apporte encore un peu (+14 en face-à-face). Le contenu de la
+main améliore un peu les prédictions (perte 0,372 contre 0,377), mais pas
+le score contre B2, sur ces 1 296 parties (sans doute parce que les cartes en main comptent
+déjà beaucoup par leur nombre, et que la recherche joue de toute façon ces
+cartes dans ses parties simulées). Poids notables : une Passing Mirage
+(blue) en main vaut −1,2, une Dustup (red) +0,8 (par rapport à une carte
+quelconque, qui vaut déjà ≈ +0,3 + le poids du héros). Gardés dans le
+dépôt : `data/b3/evaluation.txt` (3e génération, utilisée par `b3`),
+`data/b3/generation2.txt` (`b3:data/b3/generation2.txt`) et
+`data/b3/generation1_b1.txt` (1re génération, `b3:data/b3/generation1_b1.txt`).
+Coût : le même que B2 (≈ 2,5 s par partie sur un cœur).
+
+Pistes : les gains d'une génération à l'autre diminuent (+46, puis +14) ;
+une 4e génération n'apporterait sans doute pas beaucoup plus. Plus
+prometteur : une évaluation qui regarde des **paires** de caractéristiques
+(ex. vie de l'adversaire × puissance en main : « peut-il finir ? »), ou
+apprendre directement ce que la recherche doit choisir (comme AlphaZero),
+ou garder les poids pendant tout le tour au lieu d'évaluer seulement au
+début des tours.
+
+## La phase de side (étape 6)
+
+Avant chaque partie, chaque joueur choisit son équipement et les 40 cartes
+de son deck dans son card-pool de 55 (CR 4.1.4 à 4.1.6, TRP 7.4), dans
+l'ordre officiel : premier joueur (CR 4.1.3), arène sans voir celle de
+l'adversaire, présentation des arènes (CR 4.1.5), puis deck. Code :
+`fab_match::preparer_manche` et le trait `Side` ; façons de choisir des
+bots : `crates/ai/src/side.rs`.
+
+| Side | Règle |
+|---|---|
+| `liste` | la première carte de chaque zone qui trouve sa place, les 40 premières cartes de la liste (l'ancien choix provisoire) |
+| `appris` | la table apprise `data/side/b1.txt`, propre à chaque paire de héros (par défaut) |
+| `general` | la même table, mais l'entrée « contre n'importe qui » du héros (sert à mesurer) |
+| `hasard` | tout au hasard (sert à apprendre) |
+
+**Apprentissage** (`--apprendre-side`, ≈ 3 minutes sur 4 cœurs) : pour
+chacune des 81 paires, 20 000 parties B1 contre B1 où le premier deck tire
+son équipement (une option par zone) et ses 40 cartes au hasard, l'autre
+gardant le choix `liste`. Une régression linéaire estime ce que chaque
+exemplaire de carte et chaque équipement change aux chances de gagner
+(avec « je commence » comme variable à part). L'estimation d'une paire est
+tirée vers l'estimation générale du deck (pénalité « ridge » λ = 1 000).
+Le choix appris garde le meilleur équipement de chaque zone et les 40
+exemplaires les mieux notés.
+
+```bash
+cargo run --release -p fab-sim -- --apprendre-side --games 20000
+cargo run --release -p fab-sim -- --tournoi --bots b1 b1 --side appris liste --games 4000 --check
+```
+
+La table est un fichier texte lisible : pour chaque paire, l'arène choisie,
+les cartes laissées hors du deck et, entre crochets, l'écart estimé (en
+points de % de victoire par exemplaire) par rapport à la meilleure option de
+la zone ou à la moins bonne carte gardée. ⚠️ Ces écarts mesurent ce qui
+réussit **à B1** : une carte que B1 joue mal (Arcane Polarity, par exemple)
+est mal notée même si elle est bonne entre les mains d'un humain.
+
+### Résultats (2026-11-25, graines différentes de l'apprentissage)
+
+| Mesure | Parties | Score | Écart d'Elo (intervalle à 95 %) |
+|---|---|---|---|
+| B1 `appris` contre B1 `liste` | 324 000 | **63,5 %** | **+96** (+95 à +98) |
+| B1 `general` contre B1 `liste` | 162 000 | 62,0 % | +85 (+83 à +87) |
+| B1 `appris` contre B1 `general` (λ = 5 000) | 324 000 | 51,8 % | +12 (+11 à +14) |
+| B1 `appris` contre B1 `general` (λ = 1 000, retenu) | 324 000 | 52,0 % | +14 (+13 à +15) |
+| B1 `appris` contre B1 `general` (λ = 250) | 324 000 | 52,0 % | +14 (+13 à +15) |
+| B2 `appris` contre B2 `liste` | 1 620 | **62,0 %** | **+85** (+68 à +103) |
+
+0 erreur. Le gain vient surtout de l'équipement (ex. Florian : Nebula Blade
+plutôt qu'Annals of Sutcliffe, −12,8 points estimés pour Annals ; Ira : Blade
+Beckoner Helm plutôt que Mask of the Swarming Claw) et de quelques cartes
+que B1 joue mal. B1 `appris` gagne même ses 9 miroirs contre B1 `liste`
+(60 à 87 %).
+
+Les tournois (`--tournoi`) et `--decks` utilisent maintenant `--side appris
+appris` par défaut ; les chiffres B0 / B1 / B2 plus haut ont été mesurés
+avec le choix `liste` des deux côtés.
 
 ## Le classement Elo
 

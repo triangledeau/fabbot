@@ -7,3 +7,9 @@ Thumbs.db
 /out/
 /docs/rules/sources/
 /data/cards/sources/
+/sauvegardes/
+/data/decks/maison/*
+!/data/decks/maison/README.md
+# Outils locaux non publiés (embarquent une base de cartes)
+/data/outils/*
+!/data/outils/README.md

@@ -13,4 +13,5 @@ path = "src/main.rs"
 [dependencies]
 fab-engine.workspace = true
 fab-ai.workspace = true
+fab-match.workspace = true
 fab-cards = { path = "../cards" }

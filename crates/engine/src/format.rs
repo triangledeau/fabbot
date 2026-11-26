@@ -40,6 +40,15 @@ impl FormatConfig {
         toml::from_str(text)
     }
 
+    /// Le format Silver Age, lu dans `config/silver_age.toml` (inclus à la
+    /// compilation).
+    pub fn silver_age() -> Self {
+        let f = Self::from_toml(include_str!("../../../config/silver_age.toml"))
+            .expect("config/silver_age.toml valide");
+        assert!(f.verified, "valeurs du format non vérifiées");
+        f
+    }
+
     /// Nombre maximal d'exemplaires autorisés pour une carte de ce nom.
     pub fn copies_allowed(&self, card_name: &str) -> u8 {
         if self.banned.iter().any(|n| n == card_name) {

@@ -1,12 +1,13 @@
 //! fab-ui — jouer contre le bot dans le terminal.
 //!
 //! Usage :
-//!     cargo run --release -p fab-ui -- [--deck ira|hala|dorinthea|bravo|iyslander|florian|levia|dromai|arakni] [--bot …] [--niveau b0|b1|b2] [--graine N]
+//!     cargo run --release -p fab-ui -- [--deck ira|hala|dorinthea|bravo|iyslander|florian|levia|dromai|arakni] [--bot …] [--niveau b0|b1|b2|b3] [--graine N]
 //!
 //! Par défaut : vous jouez Hala, le bot joue Dorinthea, graine tirée de l'heure.
-//! Le bot est B0 (choix au hasard parmi les options légales) ; `--niveau b1`
-//! donne le bot heuristique, `--niveau b2` le bot qui cherche (ISMCTS ;
-//! variantes : `b2-500ms`, `b2-1000`…, voir `docs/bots.md`).
+//! Le bot est B3 par défaut (le plus fort mesuré : recherche ISMCTS avec
+//! l'évaluation apprise, voir `docs/bots.md`) ; `--niveau b0` le fait jouer
+//! au hasard, `--niveau b1` donne le bot heuristique, `--niveau b2` la
+//! recherche sans évaluation apprise (variantes : `b2-500ms`, `b2-1000`…).
 
 use fab_ai::{creer_agent, BOTS};
 use fab_engine::PlayerId;
@@ -15,6 +16,8 @@ use fab_ui::textes::Textes;
 use std::io::{self, Write};
 
 fn main() {
+    // Interface texte : la commande `t` demande le numéro des cartes.
+    fab_ui::vue::montrer_numeros(true);
     let args: Vec<String> = std::env::args().collect();
     let valeur = |nom: &str| {
         args.iter()
@@ -45,7 +48,7 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let niveau = valeur("--niveau").unwrap_or_else(|| "b0".into());
+    let niveau = valeur("--niveau").unwrap_or_else(|| "b3".into());
     let Some(mut bot) = creer_agent(&niveau, graine ^ 0x5A5A) else {
         eprintln!(
             "Erreur : niveau de bot inconnu « {niveau} » (connus : {}, b2-N)",

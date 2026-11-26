@@ -2,66 +2,114 @@
 //!
 //! - étape 2 : interface texte dans le terminal ([`jeu`], [`vue`]) ;
 //! - étape 5 : page web locale ([`serveur`], [`web`] ; plateau, boutons de
-//!   choix, « Annuler », journal), lancée par `cargo run --release -p fab-ui --bin fab-web`.
+//!   choix, « Annuler », journal), lancée par `cargo run --release -p fab-ui --bin fab-web` ;
+//! - étape 6 : matchs en plusieurs manches et choix de l'équipement et du
+//!   deck avant chaque manche dans la page web ([`match_web`]) ;
+//! - Arsenal, lot 0 : page en plusieurs fichiers intégrés au programme
+//!   ([`fichiers`]), accueil et navigation par `#` ;
+//! - Arsenal, lot 4a : collection Silver Age et decks maison ([`api_decks`]) ;
+//! - Arsenal, lot 8 : tournoi et apprentissage depuis la page ([`api_tournoi`]) ;
+//! - Arsenal, lot 9 : conseil du bot, évaluation, Bot contre Bot, signalement de bug ([`extras`]).
 
+pub mod api_apprendre;
+pub mod api_decks;
+pub mod api_tournoi;
+pub mod extras;
+pub mod fichiers;
+pub mod images;
 pub mod jeu;
+pub mod match_web;
+pub mod sauvegarde;
 pub mod serveur;
 pub mod textes;
 pub mod vue;
 pub mod web;
 
-use fab_cards::decklist::Decklist;
+use fab_ai::side::SideAppris;
 use fab_cards::real;
-use fab_engine::{CardDb, GameSetup, GameState, Loadout, PlayerId};
+use fab_engine::{CardDb, CardPool, FormatConfig, GameSetup, GameState, Loadout, PlayerId};
+use fab_match::{InfoSide, Side};
 use std::sync::Arc;
 
-/// Les decks jouables dans l'interface : (nom court, fichier de `data/decks/`).
-pub const DECKS: &[(&str, &str)] = &[
-    ("ira", "01_ira.txt"),
-    ("hala", "02_hala.txt"),
-    ("dorinthea", "03_dorinthea.txt"),
-    ("bravo", "04_bravo.txt"),
-    ("iyslander", "05_iyslander.txt"),
-    ("florian", "06_florian.txt"),
-    ("levia", "07_levia.txt"),
-    ("dromai", "08_dromai.txt"),
-    ("arakni", "09_arakni.txt"),
-];
+/// Les decks jouables (noms courts), dans l'ordre des fichiers de
+/// `data/decks/` (voir `fab_cards::decks`).
+pub fn decks_jouables() -> Vec<String> {
+    fab_cards::decks::noms()
+}
 
-/// Charge un deck jouable par son nom court, avec le choix provisoire
-/// d'équipement et de 40 cartes (`real::default_loadout`).
+/// Nom à afficher de chaque deck jouable (projet et maison) : le héros de
+/// sa liste (« Ira, Crimson Haze »), à la place du nom court du fichier
+/// (`ira`). Un deck maison garde son nom s'il diffère du héros.
+pub fn noms_affiches() -> serde_json::Map<String, serde_json::Value> {
+    let mut m = serde_json::Map::new();
+    let maison: Vec<String> = fab_cards::decks::maison()
+        .into_iter()
+        .map(|d| d.nom)
+        .collect();
+    for nom in fab_cards::decks::noms()
+        .into_iter()
+        .chain(maison.iter().cloned())
+    {
+        let affiche = match fab_cards::decks::liste(&nom) {
+            Ok(l)
+                if maison.contains(&nom)
+                    && !l.hero.to_lowercase().starts_with(&nom.to_lowercase()) =>
+            {
+                format!("{nom} ({})", l.hero)
+            }
+            Ok(l) => l.hero,
+            Err(_) => nom.clone(),
+        };
+        m.insert(nom, serde_json::Value::String(affiche));
+    }
+    m
+}
+
+/// Charge le card-pool d'un deck jouable par son nom court.
+pub fn charger_pool(db: &CardDb, nom: &str) -> Result<CardPool, String> {
+    fab_cards::decks::charger_pool(db, nom)
+}
+
+/// Charge un deck jouable avec le choix « dans l'ordre de la liste »
+/// (`real::default_loadout`).
 pub fn charger_deck(db: &CardDb, nom: &str) -> Result<Loadout, String> {
-    let fichier = DECKS
-        .iter()
-        .find(|(n, _)| n.eq_ignore_ascii_case(nom))
-        .map(|(_, f)| *f)
-        .ok_or_else(|| {
-            let noms: Vec<&str> = DECKS.iter().map(|(n, _)| *n).collect();
-            format!(
-                "deck inconnu : {nom} (decks jouables : {})",
-                noms.join(", ")
-            )
-        })?;
-    let chemin = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../data/decks")
-        .join(fichier);
-    let texte = std::fs::read_to_string(&chemin)
-        .map_err(|e| format!("lecture de {}: {e}", chemin.display()))?;
-    let liste = Decklist::parse(&texte).map_err(|e| format!("{fichier} : {e:?}"))?;
-    real::default_loadout(db, &liste)
+    Ok(real::default_loadout_pool(db, &charger_pool(db, nom)?))
+}
+
+/// Le choix du bot (table apprise, `fab_ai::side`) contre ce héros adverse.
+pub fn choix_du_bot(db: &CardDb, pool: &CardPool, heros_adverse: fab_engine::CardId) -> Loadout {
+    let taille = FormatConfig::silver_age().deck_size as usize;
+    let info = InfoSide {
+        db,
+        moi: PlayerId::P1,
+        pool,
+        heros_adverse,
+        premier: PlayerId::P1,
+        deck_size: taille,
+    };
+    let mut side = SideAppris::par_defaut(db);
+    let arene = side.arene(&info);
+    let deck = side.deck(&info, &arene, &[]);
+    pool.loadout(db, arene, deck, taille)
+        .expect("choix appris légal")
 }
 
 /// Prépare une partie : l'humain est le joueur 0, le bot le joueur 1.
 /// Le joueur qui choisit qui commence (CR 4.1.3) est tiré au sort.
+/// L'humain joue le choix « liste », le bot son choix appris (la table
+/// apprise ne dépend pas du premier joueur, la décision « qui commence »
+/// peut donc venir après). L'écran de choix complet est dans `fab-web`.
 pub fn nouvelle_partie(
     deck_humain: &str,
     deck_bot: &str,
     graine: u64,
 ) -> Result<GameState, String> {
     let db = Arc::new(real::build());
+    let humain = charger_pool(&db, deck_humain)?;
+    let bot = charger_pool(&db, deck_bot)?;
     let lo = [
-        charger_deck(&db, deck_humain)?,
-        charger_deck(&db, deck_bot)?,
+        real::default_loadout_pool(&db, &humain),
+        choix_du_bot(&db, &bot, humain.hero),
     ];
     let setup = GameSetup {
         players: lo,

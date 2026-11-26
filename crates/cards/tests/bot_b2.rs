@@ -13,21 +13,11 @@ use std::sync::Arc;
 
 /// Les 9 vrais decks, dans l'ordre des fichiers.
 fn vrais_decks(db: &fab_engine::CardDb) -> Vec<Loadout> {
-    let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/decks");
-    let mut fichiers: Vec<_> = std::fs::read_dir(&dir)
-        .unwrap()
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| {
-            p.extension().is_some_and(|x| x == "txt")
-                && p.file_name()
-                    .unwrap()
-                    .to_string_lossy()
-                    .starts_with(|c: char| c.is_ascii_digit())
-        })
+    let fichiers: Vec<_> = fab_cards::decks::tous()
+        .into_iter()
+        .map(|d| d.fichier)
         .collect();
-    fichiers.sort();
-    assert_eq!(fichiers.len(), 9);
+    assert!(fichiers.len() >= 9);
     fichiers
         .iter()
         .map(|f| {

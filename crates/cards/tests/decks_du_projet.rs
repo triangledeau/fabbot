@@ -1,4 +1,4 @@
-//! Vérifie que les 9 listes de `data/decks/` se lisent et respectent le format Silver Age.
+//! Vérifie que les listes de `data/decks/` se lisent et respectent le format Silver Age.
 
 use fab_cards::decklist::Decklist;
 use fab_engine::FormatConfig;
@@ -28,8 +28,45 @@ fn listes() -> Vec<(String, Decklist)> {
 }
 
 #[test]
-fn les_9_decks_sont_presents() {
-    assert_eq!(listes().len(), 9);
+fn les_9_decks_du_depart_sont_presents() {
+    let noms = fab_cards::decks::noms();
+    for d in [
+        "ira",
+        "hala",
+        "dorinthea",
+        "bravo",
+        "iyslander",
+        "florian",
+        "levia",
+        "dromai",
+        "arakni",
+    ] {
+        assert!(noms.iter().any(|n| n == d), "{d} absent de {noms:?}");
+    }
+    assert_eq!(noms.len(), listes().len());
+}
+
+/// Un fichier `.txt` mal nommé serait ignoré sans bruit par
+/// `fab_cards::decks` : on refuse donc tout autre nom que `NN_nom.txt`.
+#[test]
+fn chaque_liste_de_deck_est_nommee_numero_tiret_bas_nom() {
+    for (fichier, _) in listes() {
+        assert!(
+            fab_cards::decks::nom_court(&fichier).is_some(),
+            "{fichier} : nom attendu « NN_nom.txt » (ex. 10_kayo.txt)"
+        );
+    }
+}
+
+/// Tout le card-pool de chaque deck est codé (un deck en cours de codage
+/// attend dans `data/decks/en_cours/`).
+#[test]
+fn toutes_les_cartes_de_chaque_deck_sont_codees() {
+    let db = fab_cards::real::build();
+    for d in fab_cards::decks::noms() {
+        let pool = fab_cards::decks::charger_pool(&db, &d).unwrap_or_else(|e| panic!("{e}"));
+        assert_eq!(pool.arena.len() + pool.deck.len(), 55, "{d}");
+    }
 }
 
 #[test]

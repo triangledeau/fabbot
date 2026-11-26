@@ -1,0 +1,63 @@
+/* Charte Arsenal, commune à tous les volets (lot 0 du plan de rapatriement,
+   docs/rapatriement-arsenal.md). Reprise de l'Arsenal JS (gabarit.html,
+   arsenal.css) : thème sombre, laiton, polices Cinzel / Sofia Sans / IBM Plex
+   Mono (polices de secours si Internet manque). Chaque volet a sa propre
+   feuille (accueil/, partie/…) : ici, seulement ce qui est partagé. */
+:root {
+  --bg: #0a0d13; --mat: #0e1219; --surface: #121722; --surface2: #171d2a;
+  --ink: #efe5cf; --muted: #a9a595; --line: rgb(239 229 207 / .28); --line2: rgb(239 229 207 / .14);
+  --primary: #efe5cf; --primary-ink: #14110c; --brass: #ffd84a; --brass-soft: rgb(255 216 74 / .12);
+  --red: #e0574a; --yellow: #e6b422; --blue: #4f8fe0; --good: #63c98b; --dmg: #ff8a78;
+  --glow: #ffe08a; --mc: #c9a24a; --oc: #c9483c;
+  --shadow: 0 2px 6px rgb(0 0 0 / .65);
+  --f-display: "Cinzel", "Palatino Linotype", Georgia, serif;
+  --f-body: "Sofia Sans Semi Condensed", "Segoe UI", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.35; }
+button { font: inherit; color: inherit; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 800; text-wrap: balance; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+[tabindex="-1"]:focus { outline: none; }
+
+/* Boutons */
+.btn { border: 1px solid var(--line); background: rgb(8 10 15 / .6); color: var(--ink); border-radius: 999px; padding: 6px 16px; cursor: pointer; min-height: 36px; font-weight: 700; transition: transform .12s, filter .12s, border-color .12s; }
+.btn:hover { border-color: var(--ink); transform: translateY(-1px); }
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.btn.primary { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); box-shadow: 0 0 20px rgb(255 224 138 / .3); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn.quiet { background: transparent; }
+.btn.small { min-height: 28px; padding: 3px 12px; font-size: .85rem; font-weight: 600; }
+.btn.home-btn, a.btn { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+.home-btn svg { width: 18px; height: 18px; }
+
+/* Volets : un seul visible à la fois, choisi par le # de l'adresse (commun/navigation.js) */
+.vue { display: none; }
+html[data-vue="accueil"] #v-accueil, html[data-vue="partie"] #v-partie, html[data-vue="decks"] #v-decks, html[data-vue="impression"] #v-impression, html[data-vue="entrainer"] #v-entrainer { display: block; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* Focus clavier visible partout (WCAG 2.4.7) : contour laiton sur tout ce
+   qui se manipule au clavier, pas seulement les .btn. */
+:where(a, button, select, input, textarea, summary, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible { outline: 2px solid var(--glow); outline-offset: 2px; }
+
+/* Symboles des textes de cartes (commun/cartes.js, Symboles.html) */
+.sym { display: inline-flex; align-items: center; justify-content: center; vertical-align: -0.15em; width: 1.05em; height: 1.05em; margin: 0 .08em; line-height: 1; font-size: .95em; }
+.sym svg { width: 100%; height: 100%; }
+.sym-r { color: var(--red); }
+.sym-p { color: var(--brass); }
+.sym-d { color: #c9d2de; }
+.sym-h { color: var(--dmg); }
+.sym-i, .sym-c { width: auto; padding: 0 .25em; border: 1px solid var(--line); border-radius: 4px; font: 700 .72em/1.2 var(--f-num); color: var(--ink); }
+.sym-t { color: var(--ink); font-weight: 700; }
+
+/* Vrai dos de carte : s'il est posé dans data/outils/dos-de-carte.webp (hors
+   du dépôt public), cartes.js ajoute la classe vrai-dos et tous les dos
+   (deck, main du bot, cartes cachées) prennent l'image. Sinon, dos dessiné. */
+.vrai-dos .dos, .vrai-dos .carte.cachee, .vrai-dos .ap-c.cachee { background: url("/outils/dos-de-carte") center / cover no-repeat !important; color: transparent !important; }

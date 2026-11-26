@@ -1,8 +1,10 @@
 # Suivi du projet
 
 Ce fichier est **le point de départ de chaque nouvelle conversation**. Il dit
-où en est le projet, ce qui reste en suspens et quoi faire ensuite. Claude le
-met à jour à la fin de chaque tâche.
+où en est le projet, ce qui reste en suspens et quoi faire ensuite. L'agent
+qui finit une tâche le met à jour (seulement les lignes concernées).
+**Plusieurs agents** (sessions Claude, Antigravity) peuvent travailler en
+même temps : règles dans `AGENTS.md`, qui fait quoi dans `docs/taches.md`.
 
 ## Où en est-on
 
@@ -14,20 +16,22 @@ met à jour à la fin de chaque tâche.
 | 3 | Les 7 autres decks + simulateur rapide | ✅ (Ira, Bravo, Iyslander, Florian, Levia, Dromai, Arakni ; cartes à valider par le propriétaire) |
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ✅ B0 = 0, B1 = +511, B2 = +785 |
 | 5 | Interface web locale + annulation | ✅ (`fab-web`, à essayer par le propriétaire) |
-| 6 | Matchs + choix équipement/deck (« phase de side ») | ⏳ |
-| 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
+| 6 | Matchs + choix équipement/deck (« phase de side ») | ✅ bots (choix appris, +96 Elo) et page web (écran avant chaque manche) ; à essayer par le propriétaire |
+| 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ✅ B3 (3e génération) = B2 + 53 Elo (+34 à +73) ; procédure : `docs/nouveau-deck.md` |
+| 8 | Rapatriement de l'Arsenal JS dans la page web (plan : `docs/rapatriement-arsenal.md`) | 🔄 lots 0 (accueil Arsenal, page en plusieurs fichiers, navigation par #), 1 (images des cartes en VF, noms français), 2 (plateau animé, tapis de jeu), 3 (sauvegarde et reprise), 4a (decks maison, import FaBrary), 4b (éditeur de deck), 4c (ajustement avant la manche), 5 (impression des proxies, en partie), 8 (entraîner : tournoi, SPRT, apprentissage dans la page) et 9 (conseil du bot, évaluation, Bot contre Bot, signalement de bug) faits : phase 1 finie ; puis reprise complète de l'interface, écran par écran (`docs/rapatriement-interface.md`, 2026-11-26) ; avancement lot par lot dans le plan |
 
-**Branche la plus récente :** `claude/youthful-brown-dgcgw0` (interface
-web, partie de `claude/loving-fermi-r75ch8` = bot B2, elle-même pas encore
-fusionnée). Fusionner d'abord la PR de `claude/loving-fermi-r75ch8`, puis
-celle de `claude/youthful-brown-dgcgw0`. Tant qu'elles ne sont pas
-fusionnées dans `main`, partir de `claude/youthful-brown-dgcgw0`.
+**Branche de départ :** `main` (depuis le 2026-11-26, Claude crée et
+fusionne lui-même la pull request à la fin de chaque tâche ; l'étape 7 est
+fusionnée).
 
 **Jouer dans le navigateur :** double-cliquer sur **`Jouer.bat`** (mise à
 jour, textes des cartes, compilation et ouverture du navigateur en un
 clic ; plateau, clic sur les cartes, bouton
 « Annuler », texte officiel au survol, journal ; bot B1 par défaut,
-`--niveau b2` ou bouton « Nouvelle partie » pour changer). Mode d'emploi :
+`--niveau b2` ou bouton « Nouveau match » pour changer). **Étape 6 :** un
+match se joue en plusieurs manches (2 manches gagnantes par défaut) et,
+avant chaque manche, un écran fait choisir qui commence (si c'est à vous),
+votre équipement, puis vos 40 cartes parmi les 55. Mode d'emploi :
 `docs/interface.md`.
 
 **Jouer contre le bot dans le terminal :** `cargo run --release -p fab-ui` (mode d'emploi :
@@ -38,7 +42,19 @@ pour le bot qui cherche (une fraction de seconde par décision ; `b2-1000` ou
 **Bots et Elo :** `docs/bots.md` (règles de B1, tournoi, résultats).
 Tournoi : `cargo run --release -p fab-sim -- --tournoi --bots b1 b0 --games 1000 --check`.
 
-**Chiffres actuels :** 759 tests au vert. **B2 contre B1 : 83,9 % sur les
+**Étape 7 :** **B3** = la recherche de B2 avec une estimation **apprise**
+par auto-jeu (poids lisibles dans `data/b3/evaluation.txt`, appris sur
+des parties de B3 contre B3 ; **3e génération** depuis le 2026-11-26,
+avec le contenu de la main) : **B3 contre B2 : 57,6 % sur 1 296 parties
+(+53 Elo, intervalle +34 à +73), 0 erreur** ; contre la 2e génération :
+52,0 % sur 2 592 parties (+14 Elo, +1 à +28) ; `--niveau b3` dans
+`fab-ui`, menu « niveau » de la page web. Gain modeste : détail et pistes
+dans `docs/bots.md`. **Ajouter un deck** : `docs/nouveau-deck.md` (liste
+dans `data/decks/en_cours/`, `verifier-deck`, cartes, puis le fichier passe
+dans `data/decks/` et il est pris en compte partout ; tables des bots à
+refaire).
+
+**Chiffres actuels :** 797 tests au vert. **B2 contre B1 : 83,9 % sur les
 81 paires des 9 decks (1 620 parties, 0 erreur) → +287 Elo** ; B2 contre
 B0 : 98,8 %. Classement commun : **B0 = 0, B1 = +511, B2 = +796**. B2
 imagine la main adverse dans le **card-pool de 55** (pas les 40 choisies).
@@ -66,8 +82,16 @@ tours, surtout avec Arakni et Dromai dont le héros a des capacités
 déclenchées). Avec les bots aléatoires, 3 à 11 % des parties d'Arakni
 finissent ainsi (une carte injouable reste en arsenal).
 
-**Choix provisoire d'équipement et de deck** (`real::default_loadout`, en
-attendant la phase de side de l'étape 6) : la première carte de chaque
+**Phase de side des bots (étape 6)** : chaque bot choisit son équipement
+et ses 40 cartes avec une **table apprise** par simulation
+(`data/side/b1.txt`, une entrée par paire de héros, lisible ; méthode et
+mesures : `docs/bots.md`, « La phase de side »). **B1 avec la table contre
+B1 avec le choix « liste » : 63,5 % sur 324 000 parties (+96 Elo, 0
+erreur).** **B2 avec la table contre B2 « liste » : 62,0 % sur 1 620 parties (+85 Elo, intervalle +68 à +103).** Les tournois du simulateur utilisent la table par
+défaut (`--side liste liste` pour l'ancien choix).
+
+**Choix « liste »** (`real::default_loadout`, ancien choix provisoire,
+toujours utilisé par les tests et par l'humain dans le terminal) : la première carte de chaque
 emplacement d'arène dans l'ordre de la liste (Hala : Helm of Unity, Edge Laden
 Plate, Gauntlets of Unity, Pillar of Unity ; Dorinthea : Helm of Unity,
 Plating of Unity, Gauntlets of Unity, Refraction Bolters), et les 40 premières
@@ -83,6 +107,23 @@ les 25 cartes Warrior sont écrites en données (`crates/cards/cartes/warrior.ca
 et réécrites en anglais pour vérification. Voir `docs/langage-cartes.md`.
 
 ## Questions ouvertes pour le propriétaire
+
+**Decks maison, classes et talents (réglé le 2026-11-26) :** règles
+confirmées par le propriétaire : une carte demande au héros toutes ses
+classes et tous ses talents (une carte « Draconic Ninja » n'est pas pour un
+héros seulement Ninja) ; pour une carte hybride, un seul des deux côtés
+suffit ; « Essence of X » sur le héros ajoute le talent X. Code :
+`Collection::hors_classe` (`crates/ui/src/api_decks.rs`).
+
+**Étape 6, à regarder :** le fichier `data/side/b1.txt` (choix appris des
+bots, paire par paire, avec l'écart estimé de chaque carte laissée hors du
+deck). Ces choix reflètent ce qui réussit **à B1** : par exemple B1 retire
+souvent Arcane Polarity, Reinforce the Line ou Oasis Respite, sans doute
+parce qu'il les joue mal. Si un choix vous paraît absurde pour un humain,
+dites-le : c'est une piste pour améliorer B1. Une question de règle :
+CR 4.1.4a dit « up to one arena-card for each of their … weapon zones » ;
+le moteur accepte deux armes à une main (Arakni : deux Mark of the
+Huntsman), comme le choix provisoire le faisait déjà. Est-ce bien ça ?
 
 Aucune question bloquante. Bots : par défaut, `fab-ui` garde le bot B0
 (au hasard), plus utile pour vérifier les cartes ; `--niveau b1` / `b2`
@@ -265,34 +306,47 @@ Essayer aussi le bot B2 (`--niveau b2`) et noter ses erreurs flagrantes.
 clics peu pratiques. C'est désormais le moyen le plus simple de vérifier
 les cartes.
 
-**Pour Claude :** **étape 6**, matchs en plusieurs manches et choix de
-l'équipement et du deck de 40 avant chaque manche dans le card-pool de 55
-(CR 4.1 ; `fab-match`), d'abord pour les bots (règle simple et mesurée),
-puis dans l'interface web (écran de choix avant chaque manche). Pistes
-d'amélioration de B2, à mesurer plus tard : une estimation qui compte le
+**Pour le propriétaire (étape 6) :** jouer un match dans la page web
+(`Jouer.bat`) et essayer l'écran de choix avant chaque manche ; dire ce
+qui gêne. Relire `data/side/b1.txt`.
+
+**Pour le propriétaire (étape 7) :** essayer B3 (`--niveau b3`, ou le
+menu de la page web) ; relire `docs/nouveau-deck.md` et dire si un 10e deck
+est voulu (donner sa liste).
+
+**Pour le propriétaire (étape 8) :** ouvrir `Jouer.bat` : la page
+commence par l'accueil Arsenal ; parcourir les écrans et comparer à la
+liste `docs/rapatriement-interface.md` ; pour l'impression complète,
+copier `proxies-de-rathe.html` dans `data/outils/`.
+
+**Pour Claude (étape 8) :** suivre `docs/rapatriement-arsenal.md`, lot par
+lot dans l'ordre validé (colonne « Avancement ») ; phase 1 finie ;
+la suite (lot 6 puzzles, lot 7 didacticiel) attend les choix du
+propriétaire.
+
+**Analyse Iyslander / Hala / Ira avec B3 (2026-11-26)** :
+`docs/analyses/2026-11-26-iyslander-hala-ira-b3.md`. B3 contre B3 : Iyslander
+21 %, Hala 42 %, Ira 60 %. Correctifs proposés, **en attente de l'accord du
+propriétaire** : B1 voit le go again de Zenith Blade aiguisée (Hala +3,4 points
+avec B1, +10 avec B3 sur 108 parties), puis celui des combos d'Ira ; refaire le
+side contre un adversaire qui utilise la table (Iyslander face à AB3/AB4).
+Question au propriétaire : en Silver Age réel, les adversaires d'Iyslander
+prennent-ils trois ou quatre Nullrune ?
+
+**Pour Claude :** l'étape 7 est finie ; il n'y a plus d'étape prévue.
+Prochaine tâche proposée (B3 3e génération faite le 2026-11-26 : les
+gains diminuent, pistes dans `docs/bots.md`) : **améliorer B2/B3 avec
+Levia** (B3 ne gagne que 12 % avec Levia contre B2 : blood debt), ou **un 10e deck** si le propriétaire en donne la liste (suivre
+`docs/nouveau-deck.md`). Pistes pour la phase de side : apprendre avec B2
+plutôt que B1, tenir compte du premier joueur et de l'arène adverse
+(variables croisées), refaire l'apprentissage contre l'adversaire qui
+utilise lui-même la table. Pistes d'amélioration de B2, à mesurer plus tard : une estimation qui compte le
 blood debt et les cartes bannies (Levia), garder l'arbre d'une décision à la
 suivante, aller plus vite (plus d'itérations pour le même temps), pondérer
 les cartes imaginées par leur fréquence dans les decks du méta.
 
 ## Journal des sessions
 
-| Date | Travail | Branche |
-|---|---|---|
-| 2026-11-22 | Étape 0 : squelette, règles Silver Age officielles, 9 listes de decks, source officielle des cartes | `claude/squelette-projet`, `claude/listes-decks` |
-| 2026-11-22 | Étape 1 : cœur des règles (tour, priorité, combat), puis système d'effets suspendable | `claude/etape-1-regles`, `claude/etape-1-suite` |
-| 2026-11-22 | Fin de l'étape 1 : arcane barrier / ward / spellvoid, remplacements, attaques contre alliés et spectra, perte des capacités, durées « prochain tour », étape de fermeture avec déclenchements | `claude/etape-1-moteur` |
-| 2026-11-22 | Étape 2 : toutes les cartes de Hala et Dorinthea (55 lignes de STATUS.md + token Flurry) codées et testées (73 tests de cartes) ; moteur : sharpen, effets « prochaine attaque de cette arme », coût d'activation réduit, attaques supplémentaires (CR 5.2.3), paiement « unless you pay », renvoi d'une carte qui défend, fin de la marque (CR 9.3.3) ; `tools/check_coded_cards.py` ; `fab-sim --vrais` | `claude/quirky-ritchie-a0y1et` |
-| 2026-11-22 | Fin de l'étape 2 : interface texte `fab-ui` (état visible du joueur, options numérotées, annulation illimitée, texte officiel des cartes avec `t`, journal des événements) ; moteur : `GameState::record` (journal complet facultatif), libellé des questions des cartes (`Ask::label`) ; `docs/interface.md` | `claude/fervent-ride-8osack` |
-| 2026-11-22 | Étape 3, deck Ira : 27 lignes de STATUS.md + Crouching Tiger codées et testées (45 tests Ninja, 12 tests génériques, 8 tests de règles) ; moteur : jouer depuis la zone de bannissement (permission), cartes créées dans le bannissement, ephemeral, ambush, capacités déclenchées accordées (`CardDef::granted`), effets « this combat chain » sur la prochaine attaque, modes proposés seulement s'ils ont une cible ; `fab-sim --decks a b` | `claude/intelligent-mayer-kvrq5b` |
-| 2026-11-22 | Réponses aux questions 1 et 3 à 14 : commentaires des règles confirmées, correction de Shove Off (épée partie du maillon), cartes bannies face cachée visibles par leur propriétaire dans l'interface, test Legacy of Ikaru sur une 2e attaque d'Edge of Autumn | `claude/intelligent-mayer-kvrq5b` |
-| 2026-11-22 | Liste officielle Silver Age (40 cartes bannies, 4 héros mis sur la touche) dans `config/silver_age.toml`, noms français traduits par le fichier officiel ; aucune carte de nos decks concernée | `claude/intelligent-mayer-kvrq5b` |
-| 2026-11-22 | Étape 3, deck Bravo : 35 lignes de STATUS.md + tokens Seismic Surge, Might, Vigor, Quicken codés et testés (61 tests de cartes, 7 tests de règles) ; moteur : clash (CR 8.5.45), « win a clash revealing this » depuis le deck, crush (CR 8.4.2, sur les dégâts), heave (capacité cachée depuis la main), suspense (CR 8.3.42), réductions « your next … costs {r} less », « can't gain {p} » (Chokeslam), « loses and can't gain dominate » ; `fab-ui --deck bravo` | `claude/wizardly-pasteur-r91h2w` |
-| 2026-11-22 | Étape 3, deck Iyslander : 25 lignes de STATUS.md + tokens Frostbite et Ponder codés et testés (67 tests de cartes, 8 tests de règles) ; moteur : jouer une action « as though it were an instant » (CR 8.1.1d), surcoût Frostbite (CR 5.1.6a), coût « XX », amp (CR 8.5.47), tap (CR 8.5.55), « the next card you play … plus N » (`Replacement::bind`), zones exposées et token créé dans une zone d'équipement (CR 3.0.1a, 8.5.2c), prévention statique (Pyroglyphic Protection) ; `fab-ui --deck iyslander` | `claude/gallant-thompson-jslxg7` |
-| 2026-11-23 | Étape 3, deck Levia : 34 lignes de STATUS.md + tokens Agility, Gate to i'Arathael et Blasmophet, the Insatiable Hunger codés et testés (76 tests de cartes, 7 tests de règles) ; moteur : blood debt (CR 8.3.11), qui a banni une carte et puissance imprimée hors de l'arène, cibles dans la zone de bannissement, permission « once per turn » de jouer depuis le bannissement (CR 5.1.3d), déclenchements identiques regroupés pour l'ordre, points d'action seulement en phase d'action (CR 1.13.2b) ; `fab-ui --deck levia` | `claude/nifty-pasteur-apci3j` |
-| 2026-11-23 | Étape 3, deck Florian : 32 lignes de STATUS.md + tokens Runechant et Embodiment of Earth codés et testés (64 tests de cartes, 9 tests de règles) ; moteur : cartes doubles et meld (CR 9.2, 8.3.38, 5.3.4d), cibles dans un cimetière (CR 1.8.5a), créateur d'un token (CR 8.5.2c), supertypes « face-up » (Colors of Aria), compteurs à l'entrée, « pitched this way » (`Ctx::log_start`), decompose (CR 8.4.14) ; choix provisoire d'équipement respectant les mains ; `fab-ui --deck florian` | `claude/epic-faraday-pg52sk` |
-| 2026-11-23 | Étape 3, deck Dromai : 30 lignes de STATUS.md + 8 dragons (faces arrière) + tokens Ash, Aether Ashwing, Spectral Shield codés et testés (70 tests de cartes, 16 tests de règles) ; moteur : cartes sous un permanent et material (CR 3.0.14, 8.4.5), transform (CR 8.5.36), invocations et cartes retournables (CR 8.2.13, 9.1.3), phantasm (CR 8.3.13), fermeture de la chaîne quand l'attaque disparaît (CR 7.7.2c), alliés qui attaquent (capacité accordée par Storm of Sandikai), vie des alliés remise à zéro en fin de tour (CR 4.4.3a) et compteurs de vie, prévention propre à un allié (Yendurai), steal / gain control, Themai, opt 1 ; interface : alliés, cartes dessous, texte des dragons ; `fab-ui --deck dromai` | `ccr-9b06529e-h1bljg` |
-| 2026-11-23 | Étape 3, deck Arakni (fin de l'étape 3) : 28 lignes de STATUS.md + 6 Agents of Chaos + tokens Graphene Chelicera et Bloodrot Pox codés et testés (76 tests de cartes, 11 tests de règles) ; moteur : stealth, marque lue au moment de la touche (`Hit::marked`), dague qui touche par un effet, équiper un token arme, retrieve, become / return to the brood (CR 8.5.25, 8.5.52), traits (CR 2.13), effets sur toutes les attaques du tour, « the next time you attack », go again d'une carte qui quitte la pile (CR 5.3.5a), blocage élargi (CR 4.5.4d) ; deux armes à une main dans le choix provisoire ; `fab-ui --deck arakni` | `claude/dreamy-gates-r3giw6` |
-| 2026-11-23 | Étape 4, B1 : bot heuristique `HeuristicAgent` (attaque à son tour, défense chiffrée, pitch au plus juste) qui ne lit la partie qu'à travers une `Vue` (information de son joueur, lecture d'une carte cachée = panique) ; classement Elo (`fab_ai::elo`, Bradley-Terry) ; `fab-sim --bots a b` et `--tournoi` (81 paires de decks, Elo + matrice) ; `fab-ui --niveau b1` ; `docs/bots.md`. B1 = +512 Elo contre B0 (95,0 %) | `claude/youthful-gauss-iihtxx` |
-| 2026-11-23 | Étape 4, B2 : bot `IsmctsAgent` (ISMCTS) : mondes imaginés (`determinisation`, main adverse et decks redistribués, hasard renouvelé ; test : même choix quelle que soit la vraie main adverse), parties simulées par B1 sur 4 tours puis estimées ; réglages mesurés (arbre limité à la décision présente, 300 itérations) ; `--bots b2`, `b2-N`, `b2-Nms` ; `fab-ui --niveau b2`. B2 = +283 Elo contre B1 (83,6 %), classement B0 0 / B1 +511 / B2 +785 ; puis B2 imagine la main adverse dans le card-pool de 55 (`Loadout::pool`, `GameState::card_pools`) : 83,9 % contre B1, B2 = +796 | `claude/loving-fermi-r75ch8` |
-| 2026-11-23 | Étape 5 : interface web locale `fab-web` (serveur HTTP maison sur 127.0.0.1, sans nouvelle dépendance ; page unique : plateau des deux joueurs, chaîne de combat et pile, options cliquables et cartes jouables surlignées, annulation illimitée, texte officiel au survol, journal, nouvelle partie avec decks / niveau / graine) ; l'état envoyé au navigateur ne contient ni nom ni numéro de carte cachée (testé) ; `docs/interface.md` | `claude/youthful-brown-dgcgw0` |
-| 2026-11-25 | Lancement simplifié à la demande du propriétaire : `Jouer.bat` (double-clic : `git pull`, textes officiels, compilation, lancement) ; `fab-web` ouvre lui-même le navigateur et prend le premier port libre | `claude/youthful-brown-dgcgw0` |
+Une session = un fichier `docs/journal/AAAA-MM-JJ-<sujet>.md` (voir
+`AGENTS.md`, « Travailler à plusieurs »). Historique jusqu'au 2026-11-26 :
+`docs/journal/historique.md`.

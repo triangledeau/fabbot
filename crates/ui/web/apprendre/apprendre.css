@@ -1,0 +1,79 @@
+/* Didacticiel « Apprendre » (volet #apprendre, phase 2). Charte : commun/arsenal.css. */
+html[data-vue="apprendre"] #v-apprendre { display: block; }
+.ap { max-width: 1280px; margin: 0 auto; padding: 16px; }
+.ap-tete { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+.ap-tete h1 { font-size: 1.35rem; margin: 0; flex: 1; min-width: 240px; }
+.ap-intro { max-width: 760px; font-size: 1.05rem; color: var(--ink); }
+.ap .petit { font-size: .85rem; }
+.ap-chaps { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.ap-chap { background: var(--surface); border: 1px solid var(--line2); border-radius: 12px; padding: 12px 14px; }
+.ap-chap.vide { opacity: .55; }
+.ap-chap h2 { font-size: 1.02rem; margin: 0 0 4px; }
+.ap-chap h2 .num { color: var(--brass); margin-right: 4px; }
+.ap-chap ol { margin: 8px 0 0; padding-left: 18px; }
+.ap-chap li { margin: 3px 0; }
+.ap-lien { background: none; border: 0; padding: 2px 0; cursor: pointer; text-align: left; color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.ap-lien:hover { color: var(--brass); }
+.ap-lien.fait { color: var(--good); }
+.ap-prog { display: flex; gap: 4px; }
+.ap-prog span { width: 22px; height: 6px; border-radius: 3px; background: var(--line2); }
+.ap-prog span.ok { background: var(--good); }
+.ap-prog span.ici { background: var(--brass); }
+.ap-carte { background: var(--surface); border: 1px solid var(--line2); border-radius: 12px; padding: 16px 18px; max-width: 760px; margin-bottom: 12px; }
+.ap-fin h2 { margin-top: 0; }
+.ap-texte { font-size: 1.15rem; line-height: 1.5; margin: 4px 0 10px; }
+.ap-cr { display: inline-block; font-family: var(--f-num); font-size: .78rem; color: var(--mc); border: 1px solid rgb(201 162 74 / .4); border-radius: 6px; padding: 1px 6px; }
+.ap-etiq { font-family: var(--f-display); font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--brass); margin-bottom: 4px; }
+.ap-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.ap-choix { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.ap-choix .btn { text-align: left; border-radius: 10px; }
+.ap-choix .btn.bon { border-color: var(--good); background: rgb(99 201 139 / .15); }
+.ap-choix .btn.faux { border-color: var(--red); background: rgb(224 87 74 / .15); }
+.ap-retour { margin-top: 10px; }
+.ap .erreur { color: var(--dmg); }
+.ap-scene { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 14px; align-items: start; }
+.ap-scene .ap-carte { max-width: none; }
+.ap-consigne .ap-texte { font-size: 1.05rem; }
+@media (max-width: 820px) { .ap-scene { grid-template-columns: 1fr; } }
+.ap-plateau { background: var(--mat); border: 1px solid var(--line2); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.ap-heros { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.ap-hnom { font-family: var(--f-display); font-weight: 800; }
+.ap-pv .num { font-size: 1.6rem; color: var(--brass); }
+.ap-zone { border-top: 1px dashed var(--line2); padding-top: 8px; }
+.ap-rang { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+.ap-maillon { display: flex; flex-direction: column; gap: 4px; }
+.ap-c { width: 124px; min-height: 120px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface2); color: var(--ink); padding: 8px; display: flex; flex-direction: column; gap: 2px; text-align: left; font-size: .85rem; border-top-width: 6px; }
+.ap-c.coul-rouge { border-top-color: var(--red); }
+.ap-c.coul-jaune { border-top-color: var(--yellow); }
+.ap-c.coul-bleu { border-top-color: var(--blue); }
+.ap-c.cachee { background: repeating-linear-gradient(45deg, #1a2030, #1a2030 6px, #141926 6px, #141926 12px); }
+.ap-c.jouable { cursor: pointer; box-shadow: 0 0 0 2px var(--brass), 0 0 14px rgb(255 216 74 / .35); }
+.ap-c.jouable:hover { transform: translateY(-2px); }
+.ap-c .nom { font-weight: 700; line-height: 1.15; }
+.ap-c .nom-en { font-size: .72rem; color: var(--muted); }
+.ap-c .genre { font-size: .72rem; color: var(--muted); }
+.ap-c .vals { margin-top: auto; display: flex; flex-wrap: wrap; gap: 4px; font-family: var(--f-num); }
+.ap-c .vals span { border-radius: 5px; padding: 0 5px; border: 1px solid var(--line2); }
+.ap-c .vals .cout::before { content: "coût "; color: var(--muted); }
+.ap-c .vals .pitch::before { content: "pitch "; color: var(--muted); }
+.ap-c .vals .pui::before { content: "puis. "; color: var(--muted); }
+.ap-c .vals .def::before { content: "déf. "; color: var(--muted); }
+.ap-officiel { white-space: pre-wrap; }
+#ap-journal .debut { font-weight: 700; margin-top: 6px; }
+.ap-c img { display: none; }
+.ap-c.a-img { padding: 0; border: 0; background: none; width: 150px; border-radius: 8px; overflow: hidden; }
+.ap-c.a-img img { display: block; width: 100%; height: auto; }
+.ap-c.a-img > :not(img) { display: none; }
+.ap-couv { margin-top: 18px; background: var(--surface); border: 1px solid var(--line2); border-radius: 12px; padding: 10px 14px; }
+.ap-couv summary { cursor: pointer; }
+.ap-couv table { border-collapse: collapse; margin-top: 8px; font-size: .88rem; }
+.ap-couv td, .ap-couv th { padding: 2px 10px; text-align: left; border-bottom: 1px solid var(--line2); }
+.ap-couv tr.ok td:first-child { color: var(--good); }
+.ap-choix .btn:disabled { opacity: .75; cursor: default; }
+.ap-choix .btn.bon:disabled, .ap-choix .btn.faux:disabled { opacity: 1; }
+.ap-avec-cartes { max-width: 980px; }
+.ap-fig { margin: 0; width: 220px; display: flex; flex-direction: column; gap: 6px; }
+.ap-fig .ap-c.a-img { width: 220px; }
+.ap-fig .ap-c { width: 220px; min-height: 160px; }
+.ap-zones { display: flex; gap: 18px; flex-wrap: wrap; }
+.ap-zones .ap-zone { flex: 1; min-width: 160px; }

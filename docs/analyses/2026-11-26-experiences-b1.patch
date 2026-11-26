@@ -1,0 +1,237 @@
+diff --git a/crates/ai/src/b1.rs b/crates/ai/src/b1.rs
+index f84bc4a..17e3887 100644
+--- a/crates/ai/src/b1.rs
++++ b/crates/ai/src/b1.rs
+@@ -37,6 +37,41 @@ pub struct Reglages {
+     /// Nombre d'attaques d'un allié adverse qu'on compte éviter en le
+     /// détruisant (0 : toujours viser le héros).
+     pub tours_d_allie: f32,
++    /// EXPÉRIENCE (analyse Iyslander, non fusionnée) : variantes activées par
++    /// la variable d'environnement `FAB_B1_EXP` (mots séparés par des virgules).
++    pub exp: Exp,
++}
++
++/// Variantes expérimentales de B1 (mesures seulement).
++#[derive(Clone, Copy, Debug, Default)]
++pub struct Exp {
++    /// Frost Spike : Frostbite dans une zone de l'adversaire plutôt que chez soi.
++    pub givre: bool,
++    /// Tour adverse : jouer les actions non-attaque de l'arsenal (Iyslander).
++    pub instant: bool,
++    /// Arsenal : garder une action bleue non-attaque (Iyslander).
++    pub arsenal: bool,
++    /// Ice Eternal : ne pas pitcher la dernière carte Ice (fusion).
++    pub fusion: bool,
++    /// Arcane Barrier : ne payer que s'il reste des ressources (sans pitcher).
++    pub ab: bool,
++    /// Zenith Blade aiguisée : voir son go again (donné à l'attaque-proxy).
++    pub zenith: bool,
++}
++
++impl Exp {
++    fn depuis_env() -> Exp {
++        let v = std::env::var("FAB_B1_EXP").unwrap_or_default();
++        let a = |m: &str| v.split(',').any(|x| x == m || x == "tout");
++        Exp {
++            givre: a("givre"),
++            instant: a("instant"),
++            arsenal: a("arsenal"),
++            fusion: a("fusion"),
++            ab: a("ab"),
++            zenith: a("zenith"),
++        }
++    }
+ }
+ 
+ impl Default for Reglages {
+@@ -47,6 +82,7 @@ impl Default for Reglages {
+             cout_par_carte_deja_posee: 0.75,
+             vie_basse: 10,
+             tours_d_allie: 2.0,
++            exp: Exp::depuis_env(),
+         }
+     }
+ }
+@@ -71,17 +107,45 @@ impl Agent for HeuristicAgent {
+     fn choose(&mut self, state: &GameState, d: &Decision) -> usize {
+         let v = Vue::new(state, d.player);
+         let i = match d.kind {
+-            DecisionKind::Priority => priorite(&v, d),
+-            DecisionKind::Pitch => pitch(&v, d),
++            DecisionKind::Priority => priorite(&v, d, &self.reglages.exp),
++            DecisionKind::Pitch => pitch(&v, d, &self.reglages.exp),
+             DecisionKind::Defend => defendre(&v, d, &self.reglages),
+-            DecisionKind::Arsenal => arsenal(&v, d),
++            DecisionKind::Arsenal => arsenal(&v, d, &self.reglages.exp),
+             DecisionKind::FirstPlayer => d.index_of(Choice::Player(d.player)),
+             DecisionKind::AttackTarget => cible_d_attaque(&v, d, &self.reglages),
+             DecisionKind::Target => cible(&v, d),
++            DecisionKind::ChooseX if self.reglages.exp.fusion && x_fusion(&v).is_some() => {
++                let x = x_fusion(&v).unwrap_or(0);
++                meilleur(d, |c| match c {
++                    Choice::Number(n) if n as u32 <= x => n as f32,
++                    _ => -1.0,
++                })
++            }
+             DecisionKind::ChooseX => meilleur(d, |c| match c {
+                 Choice::Number(n) => n as f32,
+                 _ => -1.0,
+             }),
++            DecisionKind::Effect
++                if self.reglages.exp.givre
++                    && d.options.iter().any(|c| matches!(c, Choice::Zone(..))) =>
++            {
++                d.options
++                    .iter()
++                    .position(|c| matches!(c, Choice::Zone(p, _) if *p == v.adversaire()))
++                    .or(Some(0))
++            }
++            DecisionKind::Prevention if self.reglages.exp.ab => d
++                .options
++                .iter()
++                .position(|&c| match c {
++                    Choice::Prevent(fab_engine::PreventRef::ArcaneBarrier(_)) => {
++                        v.points_de_ressource() >= 1
++                    }
++                    Choice::Pass => false,
++                    _ => true,
++                })
++                .or_else(|| d.index_of(Choice::Pass))
++                .or(Some(0)),
+             DecisionKind::OptionalCost
+             | DecisionKind::Replacement
+             | DecisionKind::Effect
+@@ -97,6 +161,30 @@ impl Agent for HeuristicAgent {
+     }
+ }
+ 
++/// EXPÉRIENCE : X d'Ice Eternal qui laisse une carte Ice en main pour la
++/// fusion (coût XX). `None` si ce n'est pas Ice Eternal ou s'il n'y a pas de
++/// carte Ice en main.
++fn x_fusion(v: &Vue) -> Option<u32> {
++    let c = v.ma_carte_sur_la_pile()?;
++    if v.carte(c).name != "Ice Eternal" {
++        return None;
++    }
++    let ice = |id: fab_engine::ObjectId| v.carte(id).supertypes.has(fab_engine::Supertypes::ICE);
++    let garde = v
++        .ma_main()
++        .iter()
++        .filter(|&&x| ice(x))
++        .min_by_key(|&&x| v.carte(x).pitch_value())?;
++    let total: u32 = v
++        .ma_main()
++        .iter()
++        .filter(|&&x| x != *garde)
++        .map(|&x| v.carte(x).pitch_value() as u32)
++        .sum::<u32>()
++        + v.points_de_ressource() as u32;
++    Some(total / 2)
++}
++
+ /// L'index de l'option de plus haut score (la première en cas d'égalité).
+ fn meilleur(d: &Decision, score: impl Fn(Choice) -> f32) -> Option<usize> {
+     let mut best: Option<(usize, f32)> = None;
+@@ -136,7 +224,7 @@ fn valeur_gardee(v: &Vue, id: fab_engine::ObjectId) -> f32 {
+ // Priorité : jouer une carte, activer une capacité, ou passer.
+ // ---------------------------------------------------------------------------
+ 
+-fn priorite(v: &Vue, d: &Decision) -> Option<usize> {
++fn priorite(v: &Vue, d: &Decision, exp: &Exp) -> Option<usize> {
+     let mon_action = v.mon_tour()
+         && v.phase_d_action()
+         && v.pile_vide()
+@@ -186,6 +274,15 @@ fn priorite(v: &Vue, d: &Decision) -> Option<usize> {
+                     }
+                 } else if t.has(Types::INSTANT) && (mon_action || j_attaque) {
+                     1.0
++                } else if exp.instant
++                    && !v.mon_tour()
++                    && v.pile_vide()
++                    && v.zone(id) == fab_engine::Zone::Arsenal
++                    && t.has(Types::ACTION)
++                    && !carte.is_attack_card()
++                {
++                    // Iyslander : action bleue de l'arsenal jouée comme un instant.
++                    1.5
+                 } else {
+                     -1.0
+                 }
+@@ -196,7 +293,11 @@ fn priorite(v: &Vue, d: &Decision) -> Option<usize> {
+                     if !mon_action {
+                         return -1.0;
+                     }
+-                    let ga = a.go_again || v.mots_cles(src).has(Keywords::GO_AGAIN);
++                    let zenith = exp.zenith
++                        && v.carte(src).name == "Zenith Blade"
++                        && v.puissance(src) > v.carte(src).power.unwrap_or(0) as i16
++                        && v.zone(src) == fab_engine::Zone::Weapon;
++                    let ga = a.go_again || v.mots_cles(src).has(Keywords::GO_AGAIN) || zenith;
+                     v.puissance(src).max(0) as f32 + if ga { 10.0 } else { 0.0 }
+                         - 0.1 * v.cout_activation(src, i) as f32
+                 } else if mon_action && !a.from_hand && activation_sans_perte(v, src) {
+@@ -229,15 +330,27 @@ fn activation_sans_perte(v: &Vue, src: fab_engine::ObjectId) -> bool {
+ // Pitch : la carte qui sert le moins, en couvrant le reste à payer au plus juste.
+ // ---------------------------------------------------------------------------
+ 
+-fn pitch(v: &Vue, d: &Decision) -> Option<usize> {
++fn pitch(v: &Vue, d: &Decision, exp: &Exp) -> Option<usize> {
+     let reste = v.reste_a_payer().unwrap_or(1).max(1) as f32;
++    // Ice Eternal : garder une carte Ice en main pour la fusion.
++    let fusion = exp.fusion
++        && v
++            .ma_carte_sur_la_pile()
++            .is_some_and(|c| v.carte(c).name == "Ice Eternal");
++    let ice = |id: fab_engine::ObjectId| {
++        v.carte(id)
++            .supertypes
++            .has(fab_engine::Supertypes::ICE)
++    };
++    let nb_ice = v.ma_main().iter().filter(|&&c| ice(c)).count();
+     meilleur(d, |c| match c {
+         Choice::Pitch(id) => {
+             let p = v.carte(id).pitch_value() as f32;
+             // Couvrir le reste en une carte, sans trop de gaspillage ; sinon
+             // la plus grosse valeur. Puis garder les meilleures cartes.
+             let couverture = if p >= reste { 10.0 - (p - reste) } else { p };
+-            couverture * 3.0 - valeur_gardee(v, id)
++            let garde = if fusion && nb_ice <= 1 && ice(id) { 100.0 } else { 0.0 };
++            couverture * 3.0 - valeur_gardee(v, id) - garde
+         }
+         _ => f32::MIN,
+     })
+@@ -305,9 +418,16 @@ fn defendre(v: &Vue, d: &Decision, r: &Reglages) -> Option<usize> {
+ // Arsenal : la carte la plus utile au prochain tour.
+ // ---------------------------------------------------------------------------
+ 
+-fn arsenal(v: &Vue, d: &Decision) -> Option<usize> {
++fn arsenal(v: &Vue, d: &Decision, exp: &Exp) -> Option<usize> {
++    let iyslander = exp.arsenal && v.carte(v.mon_heros()).name == "Iyslander";
+     meilleur(d, |c| match c {
+-        Choice::Arsenal(id) => valeur_gardee(v, id),
++        Choice::Arsenal(id) => {
++            let carte = v.carte(id);
++            let bleue_non_attaque = carte.color == Some(fab_engine::Color::Blue)
++                && carte.types.has(Types::ACTION)
++                && !carte.is_attack_card();
++            valeur_gardee(v, id) + if iyslander && bleue_non_attaque { 5.0 } else { 0.0 }
++        }
+         _ => -1.0,
+     })
+ }
+diff --git a/crates/ai/src/vue.rs b/crates/ai/src/vue.rs
+index f64d4af..ceb5043 100644
+--- a/crates/ai/src/vue.rs
++++ b/crates/ai/src/vue.rs
+@@ -45,6 +45,11 @@ impl<'a> Vue<'a> {
+         self.moi.opponent()
+     }
+ 
++    /// Mon héros (public).
++    pub fn mon_heros(&self) -> ObjectId {
++        self.g.player(self.moi).hero
++    }
++
+     /// La carte est-elle visible pour moi ? (même règle que `fab-ui`)
+     pub fn visible(&self, id: ObjectId) -> bool {
+         let o = self.g.obj(id);

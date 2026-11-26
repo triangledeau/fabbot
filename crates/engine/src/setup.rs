@@ -1,8 +1,11 @@
 //! Mise en place d'une partie (CR 4.1, « start-of-game procedure »).
 //!
-//! Étape 1 : les cartes d'arène et le deck sont fournis déjà choisis
-//! ([`Loadout`]). Le choix de l'équipement et du deck dans le card-pool de 55
-//! cartes (CR 4.1.4 à 4.1.7) sera une décision du joueur à l'étape 6.
+//! Les cartes d'arène et le deck sont fournis déjà choisis ([`Loadout`]).
+//! Le choix lui-même dans le card-pool de 55 cartes (CR 4.1.4 à 4.1.7) est
+//! vérifié par [`crate::pool::CardPool`] et fait avant la partie par
+//! `fab-match` (phase de side). Ici, la décision « qui commence » (CR 4.1.3)
+//! vient après ce choix ; dans un match, `fab-match` la fait avant et y
+//! répond lui-même.
 
 use crate::card::{CardDb, Subtypes, Types};
 use crate::decision::{Choice, Decision, DecisionKind};

@@ -41,6 +41,7 @@
 //! simulations se déroulent dans les mondes imaginés, jamais dans la partie
 //! réelle.
 
+use crate::b3::{Evaluation, Modele};
 use crate::determinisation::determiniser;
 use crate::{Agent, HeuristicAgent, RandomAgent};
 use fab_engine::{
@@ -81,6 +82,9 @@ pub struct ReglagesB2 {
     /// Estimation d'une partie simulée arrêtée : valeur d'une carte en main
     /// ou en arsenal, en points de vie.
     pub valeur_carte: f32,
+    /// Estimation apprise (B3, [`crate::b3`]) à la place de la formule fixe
+    /// (vie + cartes) ; `None` : la formule fixe de B2.
+    pub modele: Option<&'static Modele>,
 }
 
 impl Default for ReglagesB2 {
@@ -93,11 +97,21 @@ impl Default for ReglagesB2 {
             tours_simules: Some(4),
             profondeur: 1,
             valeur_carte: 1.5,
+            modele: None,
         }
     }
 }
 
 impl ReglagesB2 {
+    /// Réglages de B3 : ceux de B2, avec l'estimation apprise
+    /// (`data/b3/evaluation.txt`).
+    pub fn b3() -> Self {
+        ReglagesB2 {
+            modele: Some(Modele::par_defaut()),
+            ..ReglagesB2::default()
+        }
+    }
+
     /// Lit des réglages écrits après « b2- » : un nombre d'itérations
     /// (`1000`) ou une durée (`500ms`), puis des options : `t4` (parties
     /// simulées arrêtées après 4 tours), `a` (parties simulées par B0),
@@ -183,6 +197,9 @@ pub struct IsmctsAgent {
     rng: Rng,
     b1: HeuristicAgent,
     arbre: Vec<Noeud>,
+    /// Le modèle de B3 rangé pour la base de cartes de la partie (adresse de
+    /// la base, poids) ; refait si la base change.
+    evaluation: Option<(usize, Evaluation)>,
     /// Statistiques : itérations faites depuis la création du bot.
     pub iterations_faites: u64,
     /// Statistiques : décisions où une recherche a eu lieu.
@@ -200,6 +217,7 @@ impl IsmctsAgent {
             rng: Rng::new(graine),
             b1: HeuristicAgent::new(),
             arbre: Vec::new(),
+            evaluation: None,
             iterations_faites: 0,
             recherches: 0,
         }
@@ -279,7 +297,12 @@ impl IsmctsAgent {
         while let Some(d) = g.pending.as_ref() {
             if let Some(t) = self.reglages.tours_simules {
                 if g.turn >= tour0 + t {
-                    return estimer(g, self.reglages.valeur_carte);
+                    return match &self.evaluation {
+                        Some((_, e)) if self.reglages.modele.is_some() => {
+                            e.estimer_pour_la_recherche(g)
+                        }
+                        _ => estimer(g, self.reglages.valeur_carte),
+                    };
                 }
             }
             let i = if d.options.len() == 1 {
@@ -306,7 +329,11 @@ impl IsmctsAgent {
 
 impl Agent for IsmctsAgent {
     fn name(&self) -> &str {
-        "B2-ismcts"
+        if self.reglages.modele.is_some() {
+            "B3-ismcts-evaluation-apprise"
+        } else {
+            "B2-ismcts"
+        }
     }
 
     fn choose(&mut self, state: &GameState, decision: &Decision) -> usize {
@@ -319,6 +346,12 @@ impl Agent for IsmctsAgent {
             return cles[0].1;
         }
         self.recherches += 1;
+        if let Some(m) = self.reglages.modele {
+            let adresse = std::sync::Arc::as_ptr(&state.db) as usize;
+            if self.evaluation.as_ref().is_none_or(|(a, _)| *a != adresse) {
+                self.evaluation = Some((adresse, m.indexer(&state.db)));
+            }
+        }
         self.arbre.clear();
         self.arbre.push(Noeud::new(0, 0));
         let debut = Instant::now();
@@ -358,7 +391,7 @@ impl Agent for IsmctsAgent {
 
 /// Estimation du résultat d'une partie simulée arrêtée avant la fin, pour le
 /// joueur 0 : écart de vie et de cartes disponibles, ramené entre 0 et 1.
-fn estimer(g: &GameState, valeur_carte: f32) -> f32 {
+pub fn estimer(g: &GameState, valeur_carte: f32) -> f32 {
     let p = |i: usize| {
         let ps = &g.players[i];
         let cartes = ps.hand.len() + ps.arsenal.is_some() as usize;

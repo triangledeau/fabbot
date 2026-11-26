@@ -30,7 +30,7 @@ pub mod wizard;
 use crate::decklist::{self, Decklist};
 use fab_engine::card::{CardDb, CardDef, Color, Delta, Keywords, Subtypes, Supertypes, Types};
 use fab_engine::script::{Ctx, Target, TargetSpec};
-use fab_engine::{CardId, GameState, Loadout, ObjectId};
+use fab_engine::{CardId, CardPool, GameState, Loadout, ObjectId};
 
 /// Construit la base des vraies cartes déjà codées.
 pub fn build() -> CardDb {
@@ -222,54 +222,16 @@ fn engine_color(c: decklist::Color) -> Color {
     }
 }
 
-/// Choix **provisoire** d'équipement et de deck dans un card-pool de 55
-/// (CR 4.1.4 à 4.1.7), en attendant la phase de side (étape 6) : la première
-/// carte de chaque emplacement d'arène dans l'ordre de la liste, et les 40
-/// premières cartes du deck dans l'ordre de la liste.
-pub fn default_loadout(db: &CardDb, list: &Decklist) -> Result<Loadout, String> {
+/// Le card-pool d'une liste de deck (CR 4.1, TRP 7.4) : le héros, chaque
+/// exemplaire des cartes d'arène et des cartes de deck, dans l'ordre de la liste.
+pub fn card_pool(db: &CardDb, list: &Decklist) -> Result<CardPool, String> {
     let hero = find(db, &list.hero, None)?;
     let mut arena = Vec::new();
-    let mut slots: Vec<&str> = Vec::new();
-    // CR 8.2.2b : deux mains au plus pour les armes et les off-hands (une
-    // arme 2H occupe les deux ; ex. Florian : Nebula Blade, puis aucun
-    // off-hand ni Annals of Sutcliffe).
-    let mut hands = 0;
     for e in &list.arena {
         let id = find(db, &e.name, None)?;
-        let def = db.get(id);
-        let h = if def.types.has(Types::WEAPON) || def.subtypes.has(Subtypes::OFF_HAND) {
-            if def.subtypes.has(Subtypes::TWO_HAND) {
-                2
-            } else {
-                1
-            }
-        } else {
-            0
-        };
-        if h > 0 {
-            // Armes à une main : autant d'exemplaires que de mains libres
-            // (Arakni : deux Mark of the Huntsman).
-            // CR 8.2.10b : un seul off-hand.
-            let off_hand = def.subtypes.has(Subtypes::OFF_HAND);
-            if off_hand && slots.contains(&e.slot.as_str()) {
-                continue;
-            }
-            if off_hand {
-                slots.push(&e.slot);
-            }
-            for _ in 0..if off_hand { 1 } else { e.count } {
-                if hands + h <= 2 {
-                    hands += h;
-                    arena.push(id);
-                }
-            }
-            continue;
+        for _ in 0..e.count {
+            arena.push(id);
         }
-        if slots.contains(&e.slot.as_str()) {
-            continue;
-        }
-        slots.push(&e.slot);
-        arena.push(id);
     }
     let mut deck = Vec::new();
     for e in &list.deck {
@@ -278,13 +240,21 @@ pub fn default_loadout(db: &CardDb, list: &Decklist) -> Result<Loadout, String> 
             deck.push(id);
         }
     }
-    // Le card-pool : toutes les cartes de deck de la liste (CR 4.1).
-    let pool = deck.clone();
-    deck.truncate(40);
-    Ok(Loadout {
-        hero,
-        arena,
-        deck,
-        pool,
-    })
+    Ok(CardPool { hero, arena, deck })
+}
+
+/// Choix « dans l'ordre de la liste » (`CardPool::choix_par_ordre`) : la
+/// première carte de chaque zone d'arène qui trouve sa place (les mains
+/// d'armes sont respectées, CR 8.2.2b), et les 40 premières cartes du deck.
+/// C'est le choix du bot « liste » de la phase de side et celui des tests.
+pub fn default_loadout(db: &CardDb, list: &Decklist) -> Result<Loadout, String> {
+    Ok(default_loadout_pool(db, &card_pool(db, list)?))
+}
+
+/// [`default_loadout`] à partir d'un card-pool.
+pub fn default_loadout_pool(db: &CardDb, pool: &CardPool) -> Loadout {
+    let taille = fab_engine::FormatConfig::silver_age().deck_size as usize;
+    let (arena, deck) = pool.choix_par_ordre(db, taille);
+    pool.loadout(db, arena, deck, taille)
+        .expect("le choix dans l'ordre de la liste est légal")
 }

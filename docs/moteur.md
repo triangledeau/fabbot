@@ -327,6 +327,22 @@ destruction, bannissement…) est un `Event`. Il est ajouté au journal du tour
 (`turn_log`) et déclenche les capacités concernées. Les conditions du type
 « si vous avez joué une autre carte rouge ce tour » lisent ce journal.
 
+## Card-pool et phase de side (étape 6)
+
+`fab_engine::CardPool` (`crates/engine/src/pool.rs`) : le héros, chaque
+exemplaire des cartes d'arène et de deck d'une liste (`real::card_pool`).
+`verifier_arene` / `verifier_deck` / `loadout` vérifient un choix : cartes
+du card-pool (exemplaire par exemplaire), une carte par zone (CR 4.1.4a),
+deux mains et un seul off-hand (CR 8.2.2b, 8.2.10b), pas de carte d'arène
+dans le deck (CR 4.1.6a), exactement `FormatConfig::deck_size` cartes
+(TRP 7.4, lu dans `config/silver_age.toml`).
+
+`fab_match::preparer_manche` déroule la mise en place dans l'ordre du CR
+(premier joueur, arènes, présentation, decks) en interrogeant un `Side`
+par joueur ; `lancer_manche` crée la partie et répond à la décision « qui
+commence » avec le joueur déjà choisi. `GameState::new` garde cette
+décision pour les tests et les simulations sans phase de side.
+
 ## Interface
 
 `GameState::record` : journal complet facultatif des événements (`None` par

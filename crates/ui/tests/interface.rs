@@ -10,6 +10,8 @@ const P0: PlayerId = PlayerId::P0;
 
 /// Joue avec des réponses tapées à l'avance ; renvoie la fin et le texte affiché.
 fn jouer(g: &mut GameState, reponses: &str, graine_bot: u64) -> (Fin, String) {
+    // Interface texte : numéros d'objet affichés, comme dans `fab-ui`.
+    vue::montrer_numeros(true);
     let mut bot = RandomAgent::new(graine_bot);
     let mut ui = Interface {
         humain: P0,

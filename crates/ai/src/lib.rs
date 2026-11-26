@@ -7,14 +7,16 @@
 //! - B0 [`RandomAgent`] : aléatoire, sert de référence et de testeur de règles ;
 //! - B1 [`HeuristicAgent`] : heuristique simple, sans recherche ;
 //! - B2 [`IsmctsAgent`] : recherche ISMCTS (mondes imaginés + parties simulées par B1) ;
-//! - B3 évaluation apprise par auto-jeu (étape 7).
+//! - B3 (même recherche que B2, [`b3`]) : estimation apprise par auto-jeu.
 
 use fab_engine::{Decision, GameState, Rng};
 
 pub mod b1;
 pub mod b2;
+pub mod b3;
 pub mod determinisation;
 pub mod elo;
+pub mod side;
 pub mod vue;
 
 pub use b1::HeuristicAgent;
@@ -22,7 +24,7 @@ pub use b2::IsmctsAgent;
 
 /// Les bots disponibles, par leur nom court (`b0`, `b1`, `b2`). B2 accepte
 /// aussi un nombre d'itérations par décision : `b2-1000`.
-pub const BOTS: [&str; 3] = ["b0", "b1", "b2"];
+pub const BOTS: [&str; 4] = ["b0", "b1", "b2", "b3"];
 
 /// Crée un bot à partir de son nom court ; `graine` règle son hasard.
 ///
@@ -31,16 +33,30 @@ pub const BOTS: [&str; 3] = ["b0", "b1", "b2"];
 /// décision), `b2-200t4` (parties simulées arrêtées après 4 tours),
 /// `b2-200a` (parties simulées par B0).
 pub fn creer_agent(nom: &str, graine: u64) -> Option<Box<dyn Agent + Send>> {
-    let nom = nom.to_lowercase();
-    match nom.as_str() {
-        "b0" => Some(Box::new(RandomAgent::new(graine))),
-        "b1" => Some(Box::new(HeuristicAgent::new())),
-        "b2" => Some(Box::new(IsmctsAgent::new(graine))),
+    // B3 avec un autre fichier de poids : `b3:chemin` ou `b3-300t2:chemin`.
+    let (nom, fichier) = match nom.split_once(':') {
+        Some((n, f)) => (n.to_lowercase(), Some(f)),
+        None => (nom.to_lowercase(), None),
+    };
+    let mut reglages = match nom.as_str() {
+        "b0" => return Some(Box::new(RandomAgent::new(graine))),
+        "b1" => return Some(Box::new(HeuristicAgent::new())),
+        "b2" => b2::ReglagesB2::default(),
+        "b3" => b2::ReglagesB2::b3(),
         _ => {
-            let reglages = b2::ReglagesB2::depuis_nom(nom.strip_prefix("b2-")?)?;
-            Some(Box::new(IsmctsAgent::avec(graine, reglages)))
+            if let Some(r) = nom.strip_prefix("b2-") {
+                b2::ReglagesB2::depuis_nom(r)?
+            } else {
+                let mut r = b2::ReglagesB2::depuis_nom(nom.strip_prefix("b3-")?)?;
+                r.modele = Some(b3::Modele::par_defaut());
+                r
+            }
         }
+    };
+    if let Some(f) = fichier {
+        reglages.modele = Some(b3::Modele::depuis_fichier(f).ok()?);
     }
+    Some(Box::new(IsmctsAgent::avec(graine, reglages)))
 }
 
 /// Le nom désigne-t-il un bot connu ?

@@ -1,6 +1,10 @@
 # Listes des decks
 
-Les 9 decks du projet, un fichier par deck (`01_ira.txt` … `09_arakni.txt`).
+Les decks du projet, un fichier par deck (`01_ira.txt` … `09_arakni.txt`),
+nommé `NN_nom.txt` : `nom` est le nom court utilisé partout (`--deck ira`).
+Tout fichier de ce dossier est lu par le simulateur, l'interface et les tests
+(`fab_cards::decks`) ; un deck dont les cartes ne sont pas toutes codées
+attend dans `en_cours/`. Ajouter un deck : `docs/nouveau-deck.md`.
 Le fichier d'origine fourni par le propriétaire est conservé dans `source/`.
 
 Format :

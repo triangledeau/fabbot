@@ -13,6 +13,7 @@ name = "fab-ai"
 version = "0.1.0"
 dependencies = [
  "fab-engine",
+ "fab-match",
 ]
 
 [[package]]
@@ -21,6 +22,7 @@ version = "0.1.0"
 dependencies = [
  "fab-ai",
  "fab-engine",
+ "fab-match",
  "serde",
  "serde_json",
 ]
@@ -47,6 +49,7 @@ dependencies = [
  "fab-ai",
  "fab-cards",
  "fab-engine",
+ "fab-match",
 ]
 
 [[package]]

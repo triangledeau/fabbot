@@ -1,456 +1,139 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-vue="accueil">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>fabbot</title>
-<style>
-:root {
-  --fond: #1d2a24;
-  --tapis: #24382e;
-  --zone: #2c4437;
-  --bord: #3d5a4a;
-  --texte: #eef2ee;
-  --doux: #a9bcb0;
-  --accent: #f0c24b;
-  --danger: #e2625a;
-  --ok: #6fcf8f;
-  --carte: #f7f3e8;
-  --carte-texte: #1f1f1f;
-  --rouge: #c8463d;
-  --jaune: #e2b73a;
-  --bleu: #3a7fd0;
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0; background: var(--fond); color: var(--texte);
-  font: 14px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
-header {
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  padding: 8px 16px; background: #14201b; border-bottom: 1px solid var(--bord);
-}
-header h1 { font-size: 18px; margin: 0 12px 0 0; }
-header .info { color: var(--doux); flex: 1; min-width: 200px; }
-button {
-  font: inherit; color: var(--texte); background: var(--zone);
-  border: 1px solid var(--bord); border-radius: 6px; padding: 6px 12px; cursor: pointer;
-}
-button:hover:not(:disabled) { border-color: var(--accent); }
-button:disabled { opacity: .45; cursor: default; }
-button.principal { background: #5a4a17; border-color: var(--accent); }
-main {
-  display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 12px; padding: 12px 16px;
-}
-@media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
-.plateau { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.joueur { background: var(--tapis); border: 1px solid var(--bord); border-radius: 10px; padding: 10px; }
-.joueur.actif { border-color: var(--accent); }
-.entete-joueur { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
-.heros { font-weight: 700; font-size: 16px; cursor: pointer; }
-.vie { font-size: 22px; font-weight: 800; color: var(--danger); }
-.compteur { color: var(--doux); }
-.compteur b { color: var(--texte); }
-.marque { background: var(--danger); color: white; border-radius: 4px; padding: 0 6px; font-size: 12px; }
-.rangees { display: flex; flex-wrap: wrap; gap: 8px 16px; }
-.zone { min-width: 0; }
-.zone > .titre { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--doux); margin: 4px 0 3px; }
-.cartes { display: flex; flex-wrap: wrap; gap: 6px; min-height: 20px; }
-.vide { color: var(--doux); font-style: italic; font-size: 12px; padding: 2px 0; }
-.carte {
-  position: relative; width: 112px; min-height: 92px; padding: 14px 6px 22px;
-  background: var(--carte); color: var(--carte-texte); border-radius: 7px;
-  border: 2px solid transparent; cursor: pointer; user-select: none;
-  box-shadow: 0 1px 3px rgba(0,0,0,.4); font-size: 12px;
-}
-.carte .bande { position: absolute; left: 0; right: 0; top: 0; height: 8px; border-radius: 5px 5px 0 0; background: #999; }
-.carte.rouge .bande { background: var(--rouge); }
-.carte.jaune .bande { background: var(--jaune); }
-.carte.bleu .bande { background: var(--bleu); }
-.carte .nom { font-weight: 700; line-height: 1.15; padding-right: 12px; }
-.carte .genre { color: #666; font-size: 11px; }
-.carte .det { color: #444; font-size: 11px; margin-top: 2px; }
-.carte .stats { position: absolute; left: 6px; right: 6px; bottom: 3px; display: flex; justify-content: space-between; font-weight: 700; font-size: 12px; }
-.carte .cout { position: absolute; right: 5px; top: 10px; font-weight: 800; font-size: 12px; color: #555; }
-.carte .pui { color: #b33a2f; }
-.carte .def { color: #2f5fa0; }
-.carte.engage { transform: rotate(4deg); opacity: .75; }
-.carte.cachee { background: repeating-linear-gradient(45deg, #5b3a2a, #5b3a2a 6px, #6c4733 6px, #6c4733 12px); color: #f3e3d3; display: flex; align-items: center; justify-content: center; cursor: default; }
-.carte.face-cachee { border-style: dashed; border-color: #7a5a3a; }
-.carte .fc { color: #7a5a3a; font-size: 10px; font-style: italic; }
-.carte.jouable { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(240,194,75,.35), 0 1px 3px rgba(0,0,0,.4); }
-.carte.petite { width: 96px; min-height: 60px; padding-bottom: 18px; }
-.milieu { background: #1a2a22; border: 1px dashed var(--bord); border-radius: 10px; padding: 10px; min-height: 60px; }
-.maillon { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; padding: 6px 0; border-top: 1px solid #2b3f34; }
-.maillon:first-of-type { border-top: 0; }
-.maillon .resume { min-width: 150px; color: var(--doux); }
-.maillon .resume b { color: var(--texte); }
-.pile li { margin: 2px 0; }
-aside { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.panneau { background: var(--tapis); border: 1px solid var(--bord); border-radius: 10px; padding: 10px; }
-.panneau h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--doux); margin: 0 0 6px; }
-#question { font-weight: 700; margin-bottom: 8px; color: var(--accent); }
-#options { display: flex; flex-direction: column; gap: 4px; max-height: 42vh; overflow: auto; }
-#options button { text-align: left; }
-#options button .num { display: inline-block; min-width: 22px; color: var(--accent); font-weight: 700; }
-#options button.passer { color: var(--doux); }
-#detail .fiche { font-weight: 700; margin-bottom: 4px; }
-#detail .type { color: var(--doux); font-style: italic; margin-bottom: 4px; }
-#detail .texte { white-space: pre-wrap; }
-#journal { max-height: 34vh; overflow: auto; font-size: 13px; }
-#journal .debut { color: var(--accent); font-weight: 700; margin-top: 6px; }
-#journal div { padding: 1px 0; }
-#resultat { font-size: 18px; font-weight: 800; color: var(--accent); }
-#attente { position: fixed; right: 16px; bottom: 16px; background: #5a4a17; border: 1px solid var(--accent); padding: 8px 14px; border-radius: 8px; display: none; }
-#erreur { color: var(--danger); font-weight: 700; }
-#menu { position: fixed; z-index: 10; background: #14201b; border: 1px solid var(--accent); border-radius: 8px; padding: 6px; display: none; flex-direction: column; gap: 4px; max-width: 360px; }
-#menu button { text-align: left; }
-dialog { background: var(--tapis); color: var(--texte); border: 1px solid var(--accent); border-radius: 10px; }
-dialog label { display: block; margin: 8px 0; }
-dialog select, dialog input { font: inherit; padding: 4px; margin-left: 6px; }
-details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
-.aide { color: var(--doux); font-size: 12px; }
-</style>
+<title>Arsenal — FaB Silver Age</title>
+<!-- Page servie par fab-web (crates/ui/src/serveur.rs, fichiers intégrés au
+     programme). Un dossier par volet : commun/ (charte, navigation),
+     accueil/, partie/, decks/. Plan : docs/rapatriement-arsenal.md. -->
+<link rel="icon" href="commun/logo_arsenal.webp">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Sofia+Sans+Semi+Condensed:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="commun/arsenal.css">
+<link rel="stylesheet" href="accueil/accueil.css">
+<link rel="stylesheet" href="partie/partie.css">
+<link rel="stylesheet" href="partie/finition.css">
+<link rel="stylesheet" href="partie/extras.css">
+<link rel="stylesheet" href="decks/decks.css">
+<link rel="stylesheet" href="impression/impression.css">
+<link rel="stylesheet" href="entrainer/entrainer.css">
+<link rel="stylesheet" href="apprendre/apprendre.css">
 </head>
 <body>
-<header>
-  <h1>fabbot</h1>
-  <span class="info" id="info">Chargement…</span>
-  <button id="b-annuler" title="Annuler votre dernier choix (touche A ou Ctrl+Z)">↶ Annuler</button>
-  <button id="b-nouvelle">Nouvelle partie</button>
-</header>
-<main>
-  <section class="plateau">
-    <div class="joueur" id="j-bot"></div>
-    <div class="milieu" id="milieu"></div>
-    <div class="joueur" id="j-vous"></div>
-  </section>
-  <aside>
-    <div class="panneau">
-      <h2>Votre choix</h2>
+<section class="vue" id="v-accueil" aria-label="Accueil"></section>
+<section class="vue" id="v-partie" aria-label="Partie">
+  <div id="fx" aria-hidden="true"></div>
+  <main class="jeu">
+    <section id="preparation"></section>
+    <!-- Tapis (disposition de l'Arsenal JS) : le bot en haut, vous en bas, la
+         chaîne au milieu ; à droite, la pile et, dessous, la question et ses boutons. -->
+    <section class="plateau mat" id="plateau">
+      <div class="matart o" id="art-bot" aria-hidden="true"></div>
+      <div class="matart m" id="art-vous" aria-hidden="true"></div>
+      <div class="joueur" id="j-bot"></div>
+      <div class="milieu" id="milieu"></div>
+      <div class="decide" id="decide">
+        <div class="pilebox" id="pile" data-a="pile"></div>
+        <div class="ruban" id="ruban" aria-live="polite"><div class="prompt" id="question"></div><div class="btns" id="options"></div></div>
+      </div>
+      <div class="joueur" id="j-vous"></div>
+    </section>
+    <aside class="cote">
+      <div class="gh">
+        <a class="btn small home-btn" href="#accueil" title="Retour à l'accueil (le match est sauvegardé : vous le reprenez depuis l'accueil)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Accueil</a>
+        <span class="sp"></span>
+        <button id="b-options" class="small" aria-expanded="false" aria-controls="gopts">Options</button>
+        <div class="gopts" id="gopts" hidden>
+          <label title="Cartes qui volent, impacts, PV qui défilent, bandeaux"><input type="checkbox" id="o-anim"> Animations</label>
+          <label title="Le film des coups (vos choix, puis les réponses du bot) va deux fois plus vite"><input type="checkbox" id="o-rapide"> Rythme rapide</label>
+          <label title="Le film des coups s'arrête avant les dégâts : cliquez « Continuer » (ou Espace)"><input type="checkbox" id="o-pause"> Pause avant les dégâts</label>
+          <label title="Le bloc Bot, Conseil, Bot contre Bot et la barre de vos chances de gagner"><input type="checkbox" id="o-aide"> Aide du bot (conseil, chances)</label>
+          <button id="b-nouvelle" class="small">Nouveau match</button>
+          <button id="b-importer" class="small" title="Reprendre un match depuis un fichier de sauvegarde">Importer une partie</button>
+          <button id="b-bug" class="small" title="Décrire un problème : il est enregistré avec la partie, pour la rejouer">Signaler un bug</button>
+          <button id="b-abandon" class="small" title="Le match est oublié ; vous revenez au choix des decks">Abandonner et revenir au choix des decks</button>
+          <p class="aide">Touches : 1 à 9 = bouton du ruban, P = passer, A ou Ctrl+Z = annuler, C = conseil. Survolez une carte pour son texte officiel.</p>
+        </div>
+        <input type="file" id="f-importer" accept=".json,application/json" hidden>
+      </div>
+      <div class="infos"><span id="score"></span><span class="info" id="info">Chargement…</span></div>
       <div id="resultat"></div>
-      <div id="question"></div>
-      <div id="options"></div>
+      <div id="suite"></div>
       <div id="erreur"></div>
-      <p class="aide">Cliquez une carte surlignée pour la jouer, ou une option. Touches : 1 à 9 = option, P = passer, A ou Ctrl+Z = annuler. Survolez une carte pour son texte officiel.</p>
-    </div>
-    <div class="panneau" id="detail"><h2>Carte</h2><div class="vide">Survolez une carte.</div></div>
-    <div class="panneau"><h2>Journal</h2><div id="journal"></div></div>
-  </aside>
-</main>
-<div id="menu"></div>
-<div id="attente">Le bot réfléchit…</div>
+      <div id="aide-bot" class="aide-bot"></div>
+      <div class="pv" id="detail"><p class="vide">Survolez une carte pour la voir en grand, avec son texte.</p></div>
+      <div class="log" id="journal"></div>
+      <div class="sidefoot">
+        <button id="b-annuler" class="small" title="Annuler votre dernier choix (Ctrl+Z ou A)">Annuler mon dernier choix</button>
+        <button id="b-exporter" class="small" title="Télécharger la sauvegarde du match (fichier .json)">Exporter la partie</button>
+      </div>
+    </aside>
+  </main>
+  <div id="menu"></div>
+  <div id="attente">Le bot réfléchit…</div>
 
-<dialog id="d-nouvelle">
-  <form method="dialog" id="f-nouvelle">
-    <h2 style="margin-top:0">Nouvelle partie</h2>
-    <label>Votre deck <select name="deck"></select></label>
-    <label>Deck du bot <select name="bot"></select></label>
-    <label>Niveau du bot <select name="niveau"></select></label>
-    <label>Graine <input name="graine" placeholder="au hasard" size="22"></label>
-    <p class="aide">Même graine + mêmes decks = mêmes mélanges.</p>
-    <button value="annuler" formnovalidate>Fermer</button>
-    <button value="ok" class="principal">Lancer</button>
-  </form>
+  <dialog id="d-zone">
+  <h2 id="d-zone-titre"></h2>
+  <div id="d-zone-cartes" class="cartes"></div>
+  <form method="dialog"><button>Fermer</button></form>
 </dialog>
+<dialog id="d-fin" class="fin">
+    <form method="dialog">
+      <h2 id="d-fin-titre"></h2>
+      <p class="muted" id="d-fin-pv"></p>
+      <p id="d-fin-stats"></p>
+      <p id="d-fin-match" class="fin-match"></p>
+      <div class="btns">
+        <button value="suivante" class="principal" id="d-fin-suivante">Manche suivante</button>
+        <button value="nouveau">Rejouer (nouveau match)</button>
+        <button value="decks">Changer de deck</button>
+        <button value="journal" class="discret">Voir le journal</button>
+        <button value="annuler" class="discret" id="d-fin-annuler">Annuler mon dernier choix</button>
+        <button value="exporter" class="discret">Exporter la partie</button>
+      </div>
+    </form>
+  </dialog>
+<dialog id="d-bug">
+    <form method="dialog" id="f-bug">
+      <h2 style="margin-top:0">Signaler un bug</h2>
+      <p class="aide">Décrivez ce qui ne va pas (règle mal appliquée, choix bizarre du bot, affichage…). La partie en cours est jointe : on pourra la rejouer coup par coup.</p>
+      <textarea id="t-bug" rows="6" cols="50" placeholder="Ex. : au tour 4, Hala a perdu 3 PV alors que l'attaque était bloquée."></textarea>
+      <p id="bug-msg" class="aide"></p>
+      <button value="annuler" formnovalidate>Fermer</button>
+      <button value="ok" class="principal" id="b-bug-envoyer">Enregistrer</button>
+    </form>
+  </dialog>
+<dialog id="d-nouvelle">
+    <form method="dialog" id="f-nouvelle">
+      <h2 style="margin-top:0">Nouveau match</h2>
+      <label>Votre deck <select name="deck"></select></label>
+      <label>Deck du bot <select name="bot"></select></label>
+      <label>Niveau du bot <select name="niveau"></select></label>
+      <label>Manches à gagner <select name="manches"><option value="1">1 (une seule manche)</option><option value="2" selected>2 (au meilleur des 3)</option><option value="3">3 (au meilleur des 5)</option></select></label>
+      <label>Graine <input name="graine" placeholder="au hasard" size="22"></label>
+      <p class="aide">Avant chaque manche, vous choisissez votre équipement et vos 40 cartes parmi les 55. Même graine + mêmes decks = mêmes mélanges.</p>
+      <button value="annuler" formnovalidate>Fermer</button>
+      <button value="ok" class="principal">Lancer</button>
+    </form>
+  </dialog>
 
-<script>
-"use strict";
-let etat = null;
-let occupe = false;
-
-const $ = (id) => document.getElementById(id);
-
-function el(tag, classe, texte) {
-  const e = document.createElement(tag);
-  if (classe) e.className = classe;
-  if (texte !== undefined && texte !== null) e.textContent = texte;
-  return e;
-}
-
-async function api(methode, chemin) {
-  const r = await fetch(chemin, { method: methode });
-  const v = await r.json();
-  if (!r.ok || v.erreur) throw new Error(v.erreur || ("erreur " + r.status));
-  return v;
-}
-
-async function action(methode, chemin) {
-  if (occupe) return;
-  occupe = true;
-  $("erreur").textContent = "";
-  const minuterie = setTimeout(() => { $("attente").style.display = "block"; }, 250);
-  document.querySelectorAll("button").forEach(b => b.disabled = true);
-  try {
-    etat = await api(methode, chemin);
-  } catch (e) {
-    $("erreur").textContent = e.message;
-  } finally {
-    clearTimeout(minuterie);
-    $("attente").style.display = "none";
-    occupe = false;
-    afficher();
-  }
-}
-
-const choisir = (i) => action("POST", "/api/choix?i=" + i);
-const annuler = () => action("POST", "/api/annuler");
-
-// ---------- cartes ----------
-
-function optionsDeCarte(id) {
-  const d = etat && etat.decision;
-  if (!d) return [];
-  return d.options.filter(o => o.carte === id);
-}
-
-function carte(c, petite) {
-  if (!c || c.cache) {
-    const e = el("div", "carte cachee" + (petite ? " petite" : ""), "?");
-    e.title = "Carte cachée";
-    return e;
-  }
-  const e = el("div", "carte " + (c.couleur || "") + (petite ? " petite" : ""));
-  if (c.engage) e.classList.add("engage");
-  if (c.face_cachee) e.classList.add("face-cachee");
-  e.appendChild(el("div", "bande"));
-  if (c.cout !== null && c.cout !== undefined) e.appendChild(el("div", "cout", c.cout + (c.x ? "+X" : "")));
-  e.appendChild(el("div", "nom", c.nom));
-  if (c.genre) e.appendChild(el("div", "genre", c.genre));
-  if (c.face_cachee) e.appendChild(el("div", "fc", "face cachée"));
-  for (const d of c.details || []) e.appendChild(el("div", "det", d));
-  const s = el("div", "stats");
-  s.appendChild(el("span", "pui", c.puissance !== null && c.puissance !== undefined ? c.puissance + " ⚔" : ""));
-  s.appendChild(el("span", "pitch", c.pitch ? "◆" + c.pitch : ""));
-  s.appendChild(el("span", "def", c.defense !== null && c.defense !== undefined ? c.defense + " ⛨" : ""));
-  e.appendChild(s);
-  const opts = optionsDeCarte(c.id);
-  if (opts.length) {
-    e.classList.add("jouable");
-    e.title = opts.map(o => o.texte).join("\n");
-  }
-  e.addEventListener("mouseenter", () => montrer(c.id));
-  e.addEventListener("click", (ev) => cliquer(c.id, ev));
-  return e;
-}
-
-function cliquer(id, ev) {
-  montrer(id);
-  const opts = optionsDeCarte(id);
-  if (opts.length === 1) { choisir(opts[0].i); return; }
-  if (opts.length > 1) ouvrirMenu(opts, ev);
-}
-
-function ouvrirMenu(opts, ev) {
-  const m = $("menu");
-  m.replaceChildren();
-  for (const o of opts) {
-    const b = el("button", null, o.texte);
-    b.addEventListener("click", () => { fermerMenu(); choisir(o.i); });
-    m.appendChild(b);
-  }
-  const f = el("button", null, "Fermer");
-  f.addEventListener("click", fermerMenu);
-  m.appendChild(f);
-  m.style.display = "flex";
-  m.style.left = Math.min(ev.clientX, window.innerWidth - 370) + "px";
-  m.style.top = Math.min(ev.clientY, window.innerHeight - 40 * (opts.length + 1)) + "px";
-  ev.stopPropagation();
-}
-function fermerMenu() { $("menu").style.display = "none"; }
-document.addEventListener("click", (e) => { if (!$("menu").contains(e.target)) fermerMenu(); });
-
-let detailDemande = null;
-async function montrer(id) {
-  if (id === detailDemande) return;
-  detailDemande = id;
-  try {
-    const v = await api("GET", "/api/carte?id=" + id);
-    if (detailDemande !== id) return;
-    const d = $("detail");
-    d.replaceChildren(el("h2", null, "Carte"), el("div", "fiche", v.fiche));
-    if (v.type) d.appendChild(el("div", "type", v.type));
-    d.appendChild(el("div", "texte", v.texte));
-  } catch (e) { /* carte cachée : rien à montrer */ }
-}
-
-// ---------- affichage ----------
-
-function zone(titre, liste, petite) {
-  const z = el("div", "zone");
-  z.appendChild(el("div", "titre", titre));
-  const c = el("div", "cartes");
-  if (!liste || liste.length === 0) c.appendChild(el("span", "vide", "—"));
-  else for (const x of liste) c.appendChild(carte(x, petite));
-  z.appendChild(c);
-  return z;
-}
-
-function joueur(j, estVous, actif) {
-  const b = el("div");
-  const t = el("div", "entete-joueur");
-  const h = el("span", "heros", (estVous ? "Vous — " : "Bot — ") + j.heros);
-  h.addEventListener("mouseenter", () => montrer(j.heros_id));
-  t.appendChild(h);
-  t.appendChild(el("span", "vie", j.vie + " PV"));
-  if (j.marque) t.appendChild(el("span", "marque", "marqué"));
-  const c = (lib, v) => { const s = el("span", "compteur", lib + " "); s.appendChild(el("b", null, v)); return s; };
-  t.appendChild(c("Points d'action", j.points_action));
-  t.appendChild(c("Ressources", j.ressources));
-  t.appendChild(c("Deck", j.deck));
-  if (!estVous) t.appendChild(c("Main", j.main_nombre));
-  b.appendChild(t);
-
-  const r = el("div", "rangees");
-  r.appendChild(zone("Armes et équipement", j.equipement, true));
-  r.appendChild(zone("Arsenal", j.arsenal ? [j.arsenal] : [], true));
-  r.appendChild(zone("Permanents", j.permanents, true));
-  r.appendChild(zone("Pitch", j.pitch, true));
-  b.appendChild(r);
-  if (estVous) b.appendChild(zone("Votre main", j.main, false));
-
-  const det = el("details");
-  det.appendChild(el("summary", null, `Cimetière (${j.cimetiere.length}) · Bannies (${j.bannies.length})`));
-  const r2 = el("div", "rangees");
-  r2.appendChild(zone("Cimetière", j.cimetiere, true));
-  r2.appendChild(zone("Bannies", j.bannies, true));
-  det.appendChild(r2);
-  // garder ouvert d'un affichage à l'autre
-  const cle = "ouvert-" + (estVous ? "vous" : "bot");
-  det.open = sessionStorage.getItem(cle) === "1";
-  det.addEventListener("toggle", () => { try { sessionStorage.setItem(cle, det.open ? "1" : "0"); } catch (e) {} });
-  b.appendChild(det);
-
-  const conteneur = $(estVous ? "j-vous" : "j-bot");
-  conteneur.classList.toggle("actif", actif);
-  conteneur.replaceChildren(b);
-}
-
-function milieu() {
-  const m = $("milieu");
-  m.replaceChildren();
-  const cb = etat.combat;
-  if (cb) {
-    m.appendChild(el("div", "titre", "Chaîne de combat — étape : " + cb.etape));
-    cb.maillons.forEach((l, i) => {
-      const r = el("div", "maillon");
-      const res = el("div", "resume");
-      res.appendChild(el("b", null, "Maillon " + (i + 1)));
-      res.appendChild(el("div", null, (l.par_vous ? "Vous attaquez " : "Le bot attaque ") + l.cible));
-      res.appendChild(el("div", null, l.puissance !== null ? l.puissance + " puissance" : "terminée"));
-      if (l.defenseurs.length) res.appendChild(el("div", null, "défense totale " + l.defense_totale));
-      if (l.touche) res.appendChild(el("div", null, "a touché"));
-      r.appendChild(res);
-      r.appendChild(carte(l.attaque, true));
-      for (const d of l.defenseurs) r.appendChild(carte(d, true));
-      m.appendChild(r);
-    });
-  }
-  if (etat.pile.length) {
-    m.appendChild(el("div", "titre", "Pile (du dessus vers le dessous)"));
-    const ul = el("ul", "pile");
-    for (const p of etat.pile) ul.appendChild(el("li", null, p));
-    m.appendChild(ul);
-  }
-  if (!cb && !etat.pile.length) m.appendChild(el("span", "vide", "Pas de chaîne de combat ni de pile."));
-}
-
-function panneau() {
-  $("resultat").textContent = etat.resultat || "";
-  const d = etat.decision;
-  const o = $("options");
-  o.replaceChildren();
-  if (!d) {
-    $("question").textContent = etat.fini ? "" : "En attente…";
-    return;
-  }
-  $("question").textContent = d.titre;
-  d.options.forEach((x, n) => {
-    const b = el("button", x.passer ? "passer" : null);
-    b.appendChild(el("span", "num", String(n + 1)));
-    b.appendChild(document.createTextNode(" " + x.texte));
-    b.addEventListener("click", () => choisir(x.i));
-    if (x.carte !== null) b.addEventListener("mouseenter", () => montrer(x.carte));
-    o.appendChild(b);
-  });
-}
-
-function journal() {
-  const j = $("journal");
-  const enBas = j.scrollHeight - j.scrollTop - j.clientHeight < 30;
-  j.replaceChildren();
-  for (const l of etat.journal) {
-    j.appendChild(el("div", l.debut ? "debut" : null, l.debut ? `Tour ${l.tour} — ${l.texte}` : "· " + l.texte));
-  }
-  if (enBas) j.scrollTop = j.scrollHeight;
-}
-
-function afficher() {
-  document.querySelectorAll("button").forEach(b => b.disabled = false);
-  if (!etat || etat.aucune_partie) {
-    $("info").textContent = "Aucune partie : cliquez « Nouvelle partie ».";
-    $("b-annuler").disabled = true;
-    return;
-  }
-  const r = etat.reglages;
-  $("info").textContent = `Tour ${etat.tour} (${etat.votre_tour ? "votre tour" : "tour du bot"}) · vous : ${r.deck} · bot ${r.nom_bot} : ${r.deck_bot} · graine ${r.graine}`;
-  $("b-annuler").disabled = etat.annulables === 0;
-  $("b-annuler").textContent = "↶ Annuler" + (etat.annulables ? ` (${etat.annulables})` : "");
-  joueur(etat.bot, false, !etat.votre_tour);
-  milieu();
-  joueur(etat.vous, true, etat.votre_tour);
-  panneau();
-  journal();
-}
-
-// ---------- nouvelle partie ----------
-
-async function preparerDialogue() {
-  const v = await api("GET", "/api/decks");
-  const f = $("f-nouvelle");
-  const remplir = (sel, liste) => { sel.replaceChildren(...liste.map(n => { const o = el("option", null, n); o.value = n; return o; })); };
-  remplir(f.deck, v.decks);
-  remplir(f.bot, v.decks);
-  remplir(f.niveau, [...v.niveaux, "b2-500ms", "b2-1000"]);
-}
-
-$("b-nouvelle").addEventListener("click", () => {
-  const f = $("f-nouvelle");
-  if (etat && etat.reglages) {
-    f.deck.value = etat.reglages.deck;
-    f.bot.value = etat.reglages.deck_bot;
-    f.niveau.value = etat.reglages.niveau;
-  }
-  f.graine.value = "";
-  $("d-nouvelle").showModal();
-});
-$("d-nouvelle").addEventListener("close", () => {
-  if ($("d-nouvelle").returnValue !== "ok") return;
-  const f = $("f-nouvelle");
-  const q = new URLSearchParams({ deck: f.deck.value, bot: f.bot.value, niveau: f.niveau.value, graine: f.graine.value.trim() });
-  action("POST", "/api/nouvelle?" + q.toString());
-});
-$("b-annuler").addEventListener("click", annuler);
-
-document.addEventListener("keydown", (e) => {
-  if ($("d-nouvelle").open || e.target.tagName === "INPUT") return;
-  if ((e.key === "z" && (e.ctrlKey || e.metaKey)) || e.key === "a" || e.key === "A") { e.preventDefault(); annuler(); return; }
-  const d = etat && etat.decision;
-  if (!d) return;
-  if (e.key >= "1" && e.key <= "9") {
-    const n = Number(e.key) - 1;
-    if (n < d.options.length) choisir(d.options[n].i);
-  } else if (e.key === "p" || e.key === "P") {
-    const p = d.options.find(o => o.passer);
-    if (p) choisir(p.i);
-  } else if (e.key === "Escape") fermerMenu();
-});
-
-(async () => {
-  try { await preparerDialogue(); } catch (e) { $("erreur").textContent = e.message; }
-  try { etat = await api("GET", "/api/etat"); } catch (e) { $("erreur").textContent = e.message; }
-  afficher();
-})();
-</script>
+</section>
+<section class="vue" id="v-decks" aria-label="Mes decks"></section>
+<section class="vue" id="v-impression" aria-label="Imprimer"></section>
+<section class="vue" id="v-entrainer" aria-label="Entraîner"></section>
+<section class="vue" id="v-apprendre" aria-label="Apprendre"></section>
+<script src="commun/navigation.js"></script>
+<script src="commun/cartes.js"></script>
+<script src="accueil/accueil.js"></script>
+<script src="partie/finition.js"></script>
+<script src="partie/partie.js"></script>
+<script src="partie/extras.js"></script>
+<script src="decks/editeur.js"></script>
+<script src="decks/decks.js"></script>
+<script src="impression/impression.js"></script>
+<script src="entrainer/entrainer.js"></script>
+<script src="apprendre/lecons.js"></script>
+<script src="apprendre/apprendre.js"></script>
+<script>Arsenal.montrer();</script>
 </body>
 </html>

@@ -1,0 +1,42 @@
+/* Volet « Imprimer » (lot 5). À l'écran : réglages + aperçu des feuilles ;
+   à l'impression : les feuilles seules, à taille réelle. */
+#v-impression { padding: 12px 16px 40px; }
+#v-impression .im-reglages { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin-bottom: 8px; }
+#v-impression select { font: inherit; color: var(--ink); background: rgb(8 10 15 / .6); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; margin-left: 4px; }
+#v-impression .petit { font-size: .85rem; }
+#v-impression .dk-tete { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+#v-impression .dk-tete h1 { font-size: 1.6rem; letter-spacing: .04em; }
+.im-planches { --l: 210mm; --h: 297mm; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.im-planches[data-papier=Letter] { --l: 215.9mm; --h: 279.4mm; }
+.im-feuille { width: var(--l); height: var(--h); background: #fff; display: grid; place-items: center; box-shadow: 0 6px 24px #000; break-after: page; overflow: hidden; }
+.im-grille { display: grid; grid-template-columns: repeat(3, 63mm); grid-auto-rows: 88mm; gap: var(--im-espace, 0mm); position: relative; }
+.im-carte { position: relative; width: 63mm; height: 88mm; overflow: hidden; background: #f2f2f2; color: #222; display: grid; place-items: center; text-align: center; font: 600 11pt/1.2 var(--f-display); padding: 4mm; }
+.im-carte img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Traits de coupe : un trait fin aux coins de chaque carte, à l'extérieur */
+.im-carte::before, .im-carte::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.im-planches:not(.sans-traits) .im-carte::after { box-shadow: inset 0 0 0 .15mm rgb(0 0 0 / .35); }
+@media print {
+  body { background: #fff !important; }
+  html, body { margin: 0; }
+  body > *:not(#v-impression), #v-impression .im-ecran { display: none !important; }
+  #v-impression { display: block !important; padding: 0; }
+  .im-planches { gap: 0; display: block; }
+  .im-feuille { box-shadow: none; margin: 0; }
+  .im-feuille:last-child { break-after: auto; }
+}
+/* Cartes déjà possédées : grisées à l'écran, jamais imprimées (feuilles à part). */
+.im-carte { cursor: pointer; }
+.im-carte.im-possedee { filter: grayscale(1) opacity(.35); }
+.im-carte.im-possedee::before { content: "Déjà possédée"; inset: auto 0 40% 0; z-index: 3; background: rgb(0 0 0 / .75); color: #fff; font: 700 10pt/2 var(--f-body); }
+.im-feuille.im-possedee { opacity: .8; }
+@media print { .im-feuille.im-possedee { display: none !important; } }
+
+/* Outil complet Proxies de Rathe (data/outils/) */
+#v-impression.im-complet .im-simple, #v-impression.im-complet .im-planches, #v-impression.im-complet > p.petit { display: none; }
+#v-impression .im-proxies { height: calc(100vh - 140px); min-height: 480px; border: 1px solid var(--line2); border-radius: 12px; overflow: hidden; }
+#v-impression .im-proxies[hidden] { display: none; }
+#v-impression .im-proxies iframe { width: 100%; height: 100%; border: 0; display: block; background: #0b0e14; }
+#v-impression .im-simple { display: contents; }
+#v-impression .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: rgb(8 10 15 / .6); }
+#v-impression .seg button { border: 0; background: transparent; border-radius: 999px; padding: 4px 12px; cursor: pointer; font-weight: 600; font-size: .88rem; color: var(--muted); }
+#v-impression .seg button[aria-pressed="true"] { background: var(--ink); color: #14110c; }
