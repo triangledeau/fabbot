@@ -16,6 +16,7 @@ pub const NAMES: &[&str] = &[
     "Sizzle",
     "Electrostatic Discharge",
     "Stinging Sprite",
+    "Lightning Surge",
     // NOMS
 ];
 
@@ -138,5 +139,41 @@ pub fn add(db: &mut CardDb) {
         db.add(d);
     }
 
+    // Lightning Surge (bleu, rouge, jaune) — Lightning Action - Attack, coût 0,
+    // défense 2 ; puissance bleu 2, rouge 4, jaune 3.
+    // « If this was played from arsenal, it gets go again. »
+    for (c, p) in [(Color::Blue, 2), (Color::Red, 4), (Color::Yellow, 3)] {
+        let mut d = deck_card(
+            "Lightning Surge",
+            c,
+            LIGHTNING,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(2),
+        );
+        d.self_mod = Some(|g, me| {
+            if joue_depuis_arsenal(g, me) {
+                grant(Keywords::GO_AGAIN)
+            } else {
+                Delta::default()
+            }
+        });
+        db.add(d);
+    }
+
     // CARTES
+}
+
+/// « If this was played from arsenal » : la carte a été jouée depuis l'arsenal
+/// (dernier événement `Played` de cette carte, ce tour).
+fn joue_depuis_arsenal(g: &fab_engine::GameState, me: ObjectId) -> bool {
+    if !matches!(g.obj(me).zone, Zone::Stack | Zone::CombatChain) {
+        return false;
+    }
+    let from = g.turn_events().iter().rev().find_map(|e| match *e {
+        Event::Played { card, from, .. } if card == me => Some(from),
+        _ => None,
+    });
+    from == Some(Zone::Arsenal)
 }

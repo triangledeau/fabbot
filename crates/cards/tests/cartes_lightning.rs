@@ -325,3 +325,44 @@ fn stinging_sprite_puissance_bleu_1_rouge_3_jaune_2() {
         assert_eq!(t.g.power(a), attendu, "puissance selon la couleur");
     }
 }
+
+/// Met une Lightning Surge de couleur `c` dans l'arsenal de P0 et la joue
+/// depuis là.
+fn jouer_surge_depuis_arsenal(t: &mut Partie, c: Option<Color>) -> ObjectId {
+    let id = t.en_main(P0, "Lightning Surge", c);
+    t.g.put_in_arsenal(id);
+    t.g.refresh_priority();
+    passer_jusqua_que(t, |t| t.joueur() == P0 && t.peut(Choice::Play(id)));
+    t.choisir(Choice::Play(id));
+    id
+}
+
+#[test]
+fn lightning_surge_jouee_depuis_l_arsenal_a_go_again() {
+    let mut t = partie_cloud(&[("Lightning Surge", B)]);
+    let a = jouer_surge_depuis_arsenal(&mut t, B);
+    assert!(t.g.keywords(a).has(Keywords::GO_AGAIN));
+}
+
+#[test]
+fn lightning_surge_jouee_depuis_la_main_n_a_pas_go_again() {
+    let mut t = partie_cloud(&[("Lightning Surge", R)]);
+    let a = jouer(&mut t, P0, "Lightning Surge", R);
+    assert!(!t.g.keywords(a).has(Keywords::GO_AGAIN));
+}
+
+#[test]
+fn lightning_surge_puissance_bleu_2_rouge_4_jaune_3_defense_2() {
+    for (c, puissance) in [(B, 2), (R, 4), (Y, 3)] {
+        let mut t = partie_cloud(&[("Lightning Surge", c)]);
+        let a = jouer(&mut t, P0, "Lightning Surge", c);
+        assert_eq!(t.g.power(a), puissance, "puissance selon la couleur");
+    }
+}
+
+#[test]
+fn lightning_surge_jaune_jouee_depuis_l_arsenal_a_go_again() {
+    let mut t = partie_cloud(&[("Lightning Surge", Y)]);
+    let a = jouer_surge_depuis_arsenal(&mut t, Y);
+    assert!(t.g.keywords(a).has(Keywords::GO_AGAIN));
+}
