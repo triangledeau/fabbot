@@ -3,6 +3,7 @@
 
 #![allow(unused_imports)]
 
+use super::generic::when_this_attacks;
 use super::{by_color, deck_card, equipment, grant, power, target_obj, COLORS};
 use fab_engine::card::{CardDb, CardDef, Color, Delta, Keywords, Subtypes, Supertypes, Types};
 use fab_engine::script::{Ask, Ctx, Op, Target, TargetSpec};
@@ -17,6 +18,7 @@ pub const NAMES: &[&str] = &[
     "Electrostatic Discharge",
     "Stinging Sprite",
     "Lightning Surge",
+    "Second Strike",
     // NOMS
 ];
 
@@ -162,7 +164,54 @@ pub fn add(db: &mut CardDb) {
         db.add(d);
     }
 
+    // Second Strike (bleu, rouge, jaune) — Lightning Action - Attack, coût 0,
+    // déf. 2. Puissance : bleu 1 ; rouge 3 ; jaune 2.
+    // « When this attacks, if you've dealt damage this turn, this gets +1{p}
+    //   and **go again**. »
+    // La condition est vérifiée au déclenchement (quand l'attaque est déclarée),
+    // comme le texte le demande.
+    for (c, p) in [(Color::Blue, 1), (Color::Red, 3), (Color::Yellow, 2)] {
+        let mut d = deck_card(
+            "Second Strike",
+            c,
+            LIGHTNING,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(2),
+        );
+        d.triggers = vec![TriggerDef {
+            when: when_this_attacks,
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| {
+                if a_inflige_des_degats(g, c.controller) {
+                    if let Some(s) = c.source {
+                        g.modify(
+                            s,
+                            Delta {
+                                power: 1,
+                                grants: Keywords::GO_AGAIN,
+                                ..Default::default()
+                            },
+                            Until::EndOfTurn,
+                        );
+                    }
+                }
+            })],
+        }];
+        db.add(d);
+    }
+
     // CARTES
+}
+
+/// « If you've dealt damage this turn » : `p` a infligé des dégâts ce tour
+/// (un événement `Damage` n'existe que si des dégâts ont été réellement infligés).
+fn a_inflige_des_degats(g: &GameState, p: fab_engine::PlayerId) -> bool {
+    g.turn_events()
+        .iter()
+        .any(|e| matches!(e, Event::Damage { by, .. } if *by == p))
 }
 
 /// « If this was played from arsenal » : la carte a été jouée depuis l'arsenal

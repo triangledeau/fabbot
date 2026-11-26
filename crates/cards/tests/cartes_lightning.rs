@@ -366,3 +366,60 @@ fn lightning_surge_jaune_jouee_depuis_l_arsenal_a_go_again() {
     let a = jouer_surge_depuis_arsenal(&mut t, Y);
     assert!(t.g.keywords(a).has(Keywords::GO_AGAIN));
 }
+
+/// Partie où P0 joue `nom` de couleur `c` ; le texte « when this attacks »
+/// est résolu dès que la carte est en attaque.
+fn second_strike_attaque(t: &mut Partie, c: Option<Color>) -> ObjectId {
+    let a = jouer(t, P0, "Second Strike", c);
+    passer_jusqua_que(t, |t| {
+        t.g.pending_triggers.is_empty() && t.g.stack.is_empty() && t.g.active_attack() == Some(a)
+    });
+    a
+}
+
+#[test]
+fn second_strike_puissance_bleu_1_rouge_3_jaune_2_defense_2() {
+    for (c, puissance) in [(B, 1), (R, 3), (Y, 2)] {
+        let mut t = partie_cloud(&[("Second Strike", c)]);
+        let a = jouer(&mut t, P0, "Second Strike", c);
+        assert_eq!(t.g.power(a), puissance, "puissance selon la couleur");
+        assert_eq!(t.g.def(a).defense, Some(2), "défense 2");
+    }
+}
+
+#[test]
+fn second_strike_quand_il_attaque_sans_degat_ce_tour_ne_gagne_rien() {
+    let mut t = partie_cloud(&[("Second Strike", R)]);
+    let a = second_strike_attaque(&mut t, R);
+    assert_eq!(
+        t.g.power(a),
+        3,
+        "pas de bonus de puissance sans dégât infligé ce tour"
+    );
+    assert!(!t.g.keywords(a).has(Keywords::GO_AGAIN));
+}
+
+#[test]
+fn second_strike_ayant_inflige_des_degats_ce_tour_gagne_1_p() {
+    let mut t = partie_cloud(&[("Second Strike", R)]);
+    t.g.deal_damage(None, P0, P1, 1, false);
+    let a = second_strike_attaque(&mut t, R);
+    assert_eq!(t.g.power(a), 4, "bonus de puissance : 3 + 1");
+}
+
+#[test]
+fn second_strike_ayant_inflige_des_degats_ce_tour_a_go_again() {
+    let mut t = partie_cloud(&[("Second Strike", Y)]);
+    t.g.deal_damage(None, P0, P1, 1, false);
+    let a = second_strike_attaque(&mut t, Y);
+    assert!(t.g.keywords(a).has(Keywords::GO_AGAIN));
+}
+
+#[test]
+fn second_strike_degats_infliges_par_l_adversaire_ne_comptent_pas() {
+    let mut t = partie_cloud(&[("Second Strike", B)]);
+    t.g.deal_damage(None, P1, P0, 2, false);
+    let a = second_strike_attaque(&mut t, B);
+    assert_eq!(t.g.power(a), 1, "seuls les dégâts de P0 comptent");
+    assert!(!t.g.keywords(a).has(Keywords::GO_AGAIN));
+}
