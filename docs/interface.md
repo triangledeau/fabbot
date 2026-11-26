@@ -16,7 +16,7 @@ principe : vous ne voyez que ce que votre joueur a le droit de voir.
 La fenêtre noire doit rester ouverte pendant la partie ; la fermer arrête
 le jeu. Le serveur n'écoute que sur votre ordinateur.
 
-Les decks, le niveau du bot (B1 par défaut), le nombre de manches à gagner
+Les decks, le niveau du bot (B3 par défaut, le plus fort mesuré), le nombre de manches à gagner
 (2 par défaut : au meilleur des 3) et la graine se choisissent dans la page,
 avec le bouton **Nouveau match**.
 
@@ -237,7 +237,7 @@ remet la liste du deck ; Ctrl+P imprime les planches.
 ### Aide du bot et signalement de bug
 
 Dans l'écran de partie, sous les options : **Conseil** (ou touche C)
-montre le coup que jouerait le bot choisi (B1, B2 ou B3) à votre place ;
+montre le coup que jouerait le bot choisi (B1, B2 ou B3 ; B3 par défaut) à votre place ;
 il ne voit que ce que vous voyez. La barre **Vous** donne vos chances de
 gagner selon l'évaluation apprise de B3 (sans regarder la main du bot :
 moyenne sur des mains tirées au hasard). **Bot contre Bot** fait jouer ce
@@ -411,15 +411,16 @@ Par défaut, vous jouez **Hala** et le bot joue **Dorinthea**. Options :
 | `--deck dromai` | vous jouez Dromai (le bot prend alors Hala) |
 | `--deck arakni` | vous jouez Arakni, Web of Deceit (le bot prend alors Hala) |
 | `--bot hala` | deck du bot : `ira`, `hala`, `dorinthea`, `bravo`, `iyslander`, `florian`, `levia`, `dromai` ou `arakni` (on peut faire un miroir : `--deck hala --bot hala`) |
-| `--niveau b1` | niveau du bot : `b0` (au hasard, par défaut), `b1` (heuristique) `b2` (recherche ISMCTS ; variantes `b2-500ms`, `b2-1000`…) ou `b3` (recherche avec évaluation apprise), voir `docs/bots.md` |
+| `--niveau b1` | niveau du bot : `b0` (au hasard), `b1` (heuristique), `b2` (recherche ISMCTS ; variantes `b2-500ms`, `b2-1000`…) ou `b3` (recherche avec évaluation apprise, par défaut), voir `docs/bots.md` |
 | `--graine 42` | rejouer exactement la même partie (mêmes mélanges) |
 
 Exemple : `cargo run --release -p fab-ui -- --deck dorinthea --graine 42`
 (les deux tirets seuls séparent les options de cargo de celles du jeu).
 
-Par défaut, le bot est **B0 : il choisit au hasard** parmi les coups
-légaux. Il sert à vérifier les règles et les cartes (il essaie tout, même
-les coups absurdes). Avec `--niveau b1`, le bot **B1** joue « normalement »
+Par défaut, le bot est **B3**, le plus fort mesuré (voir `docs/bots.md`).
+Avec `--niveau b0`, il **choisit au hasard** parmi les coups légaux : cela
+sert à vérifier les règles et les cartes (il essaie tout, même les coups
+absurdes). Avec `--niveau b1`, le bot **B1** joue « normalement »
 (il attaque à son tour, défend au vôtre) : plus utile pour voir les cartes
 dans de vraies situations. Il reste faible (voir `docs/bots.md`).
 

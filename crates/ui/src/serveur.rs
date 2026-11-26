@@ -285,7 +285,7 @@ pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mu
             if chemin == "/api/evaluation" {
                 return Reponse::json(json!({ "vous": extras::evaluation(s) }));
             }
-            let niveau = param("niveau").unwrap_or_else(|| "b2".into());
+            let niveau = param("niveau").unwrap_or_else(|| "b3".into());
             match extras::conseil(s, &niveau) {
                 Ok((i, texte)) => {
                     Reponse::json(json!({ "i": i, "texte": texte, "niveau": niveau }))
@@ -297,7 +297,7 @@ pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mu
             let Some(m) = etat.partie.as_mut() else {
                 return Reponse::erreur(400, "aucun match en cours");
             };
-            let niveau = param("niveau").unwrap_or_else(|| "b1".into());
+            let niveau = param("niveau").unwrap_or_else(|| "b3".into());
             let i = match extras::session(m).and_then(|s| extras::conseil(s, &niveau)) {
                 Ok((i, _)) => i,
                 Err(e) => return Reponse::erreur(400, e),

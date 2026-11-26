@@ -76,7 +76,10 @@
 
   // ---------- état ----------
   let MES = [], BOT = [], ARCH_MES = [], HEROS = [];
-  const SEL = Object.assign({ moi: null, bot: "hasard", niveau: "b1", manches: "2" }, lire("arsenal-jouer", {}));
+  // Niveau par défaut : B3, le plus fort mesuré (docs/bots.md). Les choix
+  // enregistrés avant ce changement (marque `n3` absente) repassent une fois à B3.
+  const SEL = Object.assign({ moi: null, bot: "hasard", niveau: "b3", manches: "2" }, lire("arsenal-jouer", {}));
+  if (!SEL.n3) { SEL.niveau = "b3"; SEL.n3 = 1; }
   const sauverSel = () => ecrire("arsenal-jouer", SEL);
   let ARCH_BOT = new Set(lire("arsenal-bot-archives", []));
   const tous = () => [...MES, ...BOT];
@@ -133,7 +136,7 @@
     if (SEL.bot !== "hasard" && !bot.concat(jouablesMes).some((d) => d.id === SEL.bot)) SEL.bot = "hasard";
     s.value = SEL.bot;
     $("dk-s-niveau").value = SEL.niveau;
-    if (!$("dk-s-niveau").value) { SEL.niveau = "b1"; $("dk-s-niveau").value = "b1"; }
+    if (!$("dk-s-niveau").value) { SEL.niveau = "b3"; $("dk-s-niveau").value = "b3"; }
     $("dk-s-manches").value = SEL.manches;
     sauverSel();
     duel();

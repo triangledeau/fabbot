@@ -33,7 +33,7 @@ fn main() {
     let reglages = Reglages {
         deck_bot: valeur("--bot").unwrap_or_else(|| autre.into()),
         deck,
-        niveau: valeur("--niveau").unwrap_or_else(|| "b1".into()),
+        niveau: valeur("--niveau").unwrap_or_else(|| "b3".into()),
         graine: valeur("--graine")
             .and_then(|g| g.parse().ok())
             .unwrap_or_else(graine_horloge),

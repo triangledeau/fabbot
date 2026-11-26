@@ -7,7 +7,7 @@
 (() => {
   const zone = $("aide-bot");
   zone.innerHTML = `<div class="ab-ligne">
-      <label title="Bot qui conseille ou qui joue à votre place">Bot <select id="ab-niveau"><option value="b1">B1</option><option value="b2" selected>B2</option><option value="b3">B3</option></select></label>
+      <label title="Bot qui conseille ou qui joue à votre place">Bot <select id="ab-niveau"><option value="b1">B1</option><option value="b2">B2</option><option value="b3" selected>B3</option></select></label>
       <button id="ab-conseil" title="Le coup que jouerait ce bot à votre place (touche C). Il ne voit que ce que vous voyez.">Conseil</button>
       <button id="ab-auto" aria-pressed="false" title="Bot contre Bot : ce bot joue à votre place jusqu'à la fin de la manche (cliquez à nouveau pour reprendre la main)">▶ Bot contre Bot</button>
     </div>
