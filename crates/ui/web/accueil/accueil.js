@@ -13,7 +13,7 @@
       <h1><img class="logo" src="commun/logo_arsenal.webp" alt="Arsenal" width="1200" height="531"></h1></div>
     <div class="resume" id="a-resume" hidden></div>
     <nav class="tiles3" aria-label="Sections">
-      <a class="ht" style="--c:#c9483c" href="#nouveau-match">
+      <a class="ht" style="--c:#c9483c" href="#decks">
         <div class="pic"><div class="art" id="a-art-jouer"></div><span class="sym" aria-hidden="true">⚔</span></div>
         <div class="txt"><h2>Jouer</h2><ul><li>Affronter le bot</li><li>Match en plusieurs manches</li><li>Équipement et deck avant chaque manche</li></ul></div>
         <div class="foot"><div class="row"><span class="muted">Decks</span><span id="a-decks">…</span></div>

@@ -88,7 +88,7 @@ const Editeur = (() => {
 
   function gabarit() {
     return `<header class="dk-tete">
-      <a class="btn small" href="#decks">← Mes decks</a>
+      <a class="btn small" href="#decks">← Jouer</a>
       <input id="ed-nom" class="ed-nom" aria-label="Nom du deck" spellcheck="false">
       <span id="ed-etat" class="muted"></span>
       <span class="ed-actions">
@@ -180,7 +180,7 @@ const Editeur = (() => {
     const e = document.createElement("div");
     e.className = "ec" + (c.codee ? "" : " nobot") + (c.couleur ? " " + c.couleur : "");
     e.dataset.k = k;
-    e.title = (c.nom_fr ? c.nom_fr + " — " : "") + c.nom + (c.couleur ? " (" + c.couleur + ")" : "") + (c.codee ? "" : "\nPas encore jouable par le bot") + (c.texte ? "\n\n" + c.texte : "");
+    e.title = (c.nom_fr ? c.nom_fr + " — " : "") + c.nom + (c.couleur ? " (" + c.couleur + ")" : "") + (c.codee ? "" : "\nPas encore jouable par le bot") + (c.texte ? "\n\n" + Symboles.texte(c.texte) : "");
     e.innerHTML = `<div class="cadre"><b>${esc(c.nom)}</b><span>${esc(c.type_texte)}</span></div><span class="n"></span>`;
     if (c.image) e.prepend(Images.img(c.image, "normal", e, "a-img"));
     if (c.image) e.classList.add("a-img");
@@ -319,6 +319,13 @@ const Editeur = (() => {
     await collection();
     return COL.cartes.filter((c) => c.heros && ((c.types || []).includes("Young") || !(c.types || []).length)).sort((x, y) => x.nom.localeCompare(y.nom));
   }
+  // « Dupliquer » un deck maison : même liste, enregistrée sous un autre nom.
+  function commeCopie() {
+    if (!ED) return;
+    ED.nomAffiche = (ED.nomAffiche || ED.nom) + "-copie"; ED.nom = ""; ED.propre = false;
+    document.getElementById("ed-nom").value = ED.nomAffiche;
+    etat();
+  }
   const ouvert = () => !!ED && !ED.propre;
-  return { ouvrir, nouveau, herosJeunes, ouvert };
+  return { ouvrir, nouveau, herosJeunes, ouvert, commeCopie };
 })();
