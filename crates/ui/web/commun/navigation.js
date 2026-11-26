@@ -12,8 +12,9 @@ const Arsenal = (() => {
     "decks": "decks",
     "editeur": "decks",
     "impression": "impression",
+    "entrainer": "entrainer",
   };
-  const TITRES = { accueil: "Arsenal — FaB Silver Age", partie: "Arsenal — Partie", decks: "Arsenal — Mes decks", impression: "Arsenal — Imprimer" };
+  const TITRES = { accueil: "Arsenal — FaB Silver Age", partie: "Arsenal — Partie", decks: "Arsenal — Mes decks", impression: "Arsenal — Imprimer", entrainer: "Arsenal — Entraîner" };
   const adresse = () => {
     const a = decodeURIComponent(location.hash.slice(1));
     return ADRESSES[a] ? a : "accueil";

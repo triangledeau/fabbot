@@ -188,7 +188,20 @@ navigateur. **Pas repris** de Proxies de Rathe : choix des versions
 versos, export PDF intégré ; séparateurs et boîtes de deck. Le fichier de
 Proxies de Rathe embarque 600 Ko de données tirées du fichier de LSS : à
 regénérer au lancement depuis `data/cards/sources/` (non versionné) si on
-le reprend en entier. Chaque lot se
+le reprend en entier.
+
+**Lot 8, ce qui a été fait (2026-11-26)** : volet « Entraîner »
+(`#entrainer`, `web/entrainer/`, `crates/ui/src/api_tournoi.rs`) : tournoi
+lancé depuis la page sur les decks choisis (projet et maison), bots et
+sides de A et B, parties par paire, fils, graine ; matrice qui se remplit
+pendant les parties, score, Elo avec intervalle, classement des decks,
+historique dans `sauvegardes/tournois/`, export JSON et CSV ; banc SPRT
+(arrêt dès que le test tranche entre +0 et +X Elo) ; lancement de
+`fab-sim --apprendre-side` / `--apprendre-b3` avec leur sortie. **Pas
+repris** : apprendre sur un deck maison (fab-sim n'apprend que sur les
+decks du projet, et la table apprise est compilée dans le programme).
+
+Chaque lot se
 termine par une pull request fusionnée et peut être pris par n'importe quel
 agent.
 
@@ -202,7 +215,7 @@ agent.
 | 4b. Éditeur de deck | Reprise d'`editeur.js` : collection filtrable, catégories, stats, Ctrl+Z, dupliquer / archiver / supprimer | `web/decks/` | 4a, 1 | 1,5 | ✅ fait (2026-11-26) |
 | 4c. Ajustement avant partie | Fenêtre en piles de l'Arsenal JS à la place de l'écran de side actuel, dernier réglage, plan conseillé par la table apprise | `web/partie/`, `match_web.rs` | 4a, 1 | 0,5 | ✅ fait (2026-11-26) |
 | 5. Impression | Proxies de Rathe, séparateurs et boîtes de deck servis par fab-web, alimentés par la liste d'un deck | `web/impression/` | 0 (4a pour les decks maison) | 1 | ✅ fait en partie (2026-11-26) |
-| 8. Entraîner | Tournoi dans la page (matrice, classement, stats, historique, export), banc SPRT, lancement de `--apprendre-side` / `--apprendre-b3` sur un deck modifié avec progression | `web/entrainer/`, `api_tournoi.rs`, `crates/sim/` | 0 (4a pour les decks maison) | 2 | à faire |
+| 8. Entraîner | Tournoi dans la page (matrice, classement, stats, historique, export), banc SPRT, lancement de `--apprendre-side` / `--apprendre-b3` sur un deck modifié avec progression | `web/entrainer/`, `api_tournoi.rs`, `crates/sim/` | 0 (4a pour les decks maison) | 2 | ✅ fait en partie (2026-11-26) |
 | 9. Extras ANTIGRAV | Signalement de bugs dans la page (enregistrés dans un fichier), conseil du bot et barre d'évaluation, Bot contre Bot | `web/partie/`, `api_bugs.rs` | 0 (2 pour le conseil) | 1 | à faire |
 
 Les numéros 6 et 7 sont gardés pour les chantiers de plus tard (voir

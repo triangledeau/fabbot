@@ -7,9 +7,11 @@
 //!   deck avant chaque manche dans la page web ([`match_web`]) ;
 //! - Arsenal, lot 0 : page en plusieurs fichiers intégrés au programme
 //!   ([`fichiers`]), accueil et navigation par `#` ;
-//! - Arsenal, lot 4a : collection Silver Age et decks maison ([`api_decks`]).
+//! - Arsenal, lot 4a : collection Silver Age et decks maison ([`api_decks`]) ;
+//! - Arsenal, lot 8 : tournoi et apprentissage depuis la page ([`api_tournoi`]).
 
 pub mod api_decks;
+pub mod api_tournoi;
 pub mod fichiers;
 pub mod images;
 pub mod jeu;
