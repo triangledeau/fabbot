@@ -309,3 +309,15 @@ fn une_carte_d_une_autre_classe_est_signalee_mais_une_hybride_a_moitie_suffit() 
     // Generic : pour tout le monde.
     assert_eq!(col.hors_classe("Hala", "Adrenaline Rush"), Some(false));
 }
+
+#[test]
+fn l_ecran_jouer_recoit_les_neuf_decks_du_bot_avec_heros_et_source() {
+    let mut e = etat_serveur();
+    let v = json(&repondre("GET", "/api/decks-projet", &mut e));
+    let d = v["decks"].as_array().unwrap();
+    assert_eq!(d.len(), decks::noms().len());
+    let ira = d.iter().find(|x| x["nom"] == "ira").unwrap();
+    assert_eq!(ira["heros"], "Ira, Crimson Haze");
+    assert_eq!(ira["source"], "Sunday Showdown: Sydney 2nd (Ira)");
+    assert_eq!(ira["jouable"], true);
+}

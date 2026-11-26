@@ -14,6 +14,7 @@
 //! |---|---|
 //! | `GET /api/collection` | la collection Silver Age (cartes, drapeau `codee`) |
 //! | `GET /api/decks-maison` | les decks maison et leur vérification |
+//! | `GET /api/decks-projet` | les decks du bot et leur vérification (écran Jouer) |
 //! | `GET /api/deck-maison?nom=x` | un deck maison : texte, cartes, vérification |
 //! | `POST /api/deck-maison/verifier` (corps : la liste) | vérifie sans enregistrer |
 //! | `POST /api/deck-maison/importer?nom=x` (corps : la liste) | vérifie et enregistre (remplace) |
@@ -589,6 +590,7 @@ pub fn verifier(liste: &Decklist) -> Value {
     let heros = db.find(&liste.hero, None).map(|id| db.get(id));
     json!({
         "titre": liste.title,
+        "source": liste.source,
         "heros": liste.hero,
         "heros_image": heros.and_then(|h| images::champs(h).0),
         "classe": liste.class,
@@ -662,6 +664,11 @@ pub fn repondre(
                     "dossier": decks::dossier_maison(),
                 }),
             )
+        }
+        // Les decks du bot (data/decks/), pour les tuiles de l'écran Jouer.
+        ("GET", "/api/decks-projet") => {
+            let v: Vec<Value> = decks::tous().iter().map(resume).collect();
+            (200, json!({ "decks": v }))
         }
         ("GET", "/api/deck-maison") | ("GET", "/api/deck") => {
             let nom = param("nom").unwrap_or_default();

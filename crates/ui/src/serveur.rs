@@ -23,7 +23,7 @@
 //! | `GET /api/carte-pool?id=7` | texte d'une carte du card-pool (écran de préparation) |
 //! | `GET /api/sauvegarde` | la sauvegarde du match en cours (JSON, [`crate::sauvegarde`]) |
 //! | `POST /api/charger` (corps : une sauvegarde) | reprend le match d'une sauvegarde |
-//! | `/api/collection`, `/api/decks-maison`, `/api/deck-maison…` | decks maison ([`crate::api_decks`]) |
+//! | `/api/collection`, `/api/decks-projet`, `/api/decks-maison`, `/api/deck-maison…` | decks ([`crate::api_decks`]) |
 //! | `/api/tournoi…`, `/api/tache…` | entraîner ([`crate::api_tournoi`]) |
 //! | `/api/apprendre/…` | scènes du didacticiel ([`crate::api_apprendre`]) |
 //! | `/api/conseil`, `/api/evaluation`, `/api/auto`, `/api/bug(s)` | extras de la partie ([`crate::extras`]) |

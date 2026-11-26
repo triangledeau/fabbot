@@ -208,7 +208,9 @@ function remplirDetail(v, c) {
   if (c && c.nom_fr) d.appendChild(el("div", "nom-fr", c.nom_fr));
   d.appendChild(el("div", "fiche", v.fiche));
   if (v.type) d.appendChild(el("div", "type", v.type));
-  d.appendChild(el("div", "texte", v.texte));
+  const t = el("div", "texte");
+  t.innerHTML = Symboles.html(v.texte);
+  d.appendChild(t);
 }
 
 async function montrer(id, c) {
@@ -1006,14 +1008,32 @@ $("f-importer").addEventListener("change", async () => {
     if (!r.ok || v.erreur) throw new Error(v.erreur || ("erreur " + r.status));
     etat = v;
     Film.vu(etat);
-  } catch (e) { $("erreur").textContent = "Import impossible : " + e.message; }
+    if (Arsenal.vue() !== "partie") Arsenal.aller("partie");
+  } catch (e) {
+    $("erreur").textContent = "Import impossible : " + e.message;
+    const ailleurs = document.getElementById("dk-erreur"); // écran Jouer
+    if (ailleurs && Arsenal.vue() !== "partie") ailleurs.textContent = "Import impossible : " + e.message;
+  }
   occupe = false;
   afficher();
 });
 
+// Pour l'écran Jouer (decks/decks.js) : lancer un match, charger une partie.
+window.PartieArsenal = {
+  async lancer(reglages) {
+    const v = await api("POST", "/api/nouvelle?" + new URLSearchParams(reglages).toString());
+    etat = v;
+    Film.vu(etat);
+    Arsenal.aller("partie");
+    afficher();
+  },
+  charger: () => $("f-importer").click(),
+};
+
 document.addEventListener("keydown", (e) => {
   if (Arsenal.vue() !== "partie") return;
   if ($("d-nouvelle").open || $("d-bug").open || e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+  if (e.key === "Escape" && !$("gopts").hidden) { $("gopts").hidden = true; $("b-options").setAttribute("aria-expanded", "false"); $("b-options").focus(); return; }
   if (etat && etat.phase === "preparation") return;
   if ((e.key === "z" && (e.ctrlKey || e.metaKey)) || e.key === "a" || e.key === "A") { e.preventDefault(); annuler(); return; }
   const d = etat && etat.decision;

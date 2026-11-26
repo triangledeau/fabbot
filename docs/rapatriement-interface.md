@@ -59,16 +59,16 @@ contre Bot, signalement de bug, Importer une partie.
 
 | # | Arsenal JS | fabbot aujourd'hui | État |
 |---|---|---|---|
-| J1 | Barre du haut : Accueil, « JOUER », « Choisis ton deck, celui du bot, ou crée le tien », boutons Relier le dossier, + Nouveau deck, Importer une liste, Imprimer un deck (menu : « Imprimer quel deck ? »), Decks archivés (n) | écran « Mes decks » : listes déroulantes et boutons | ❌ |
-| J2 | « MES DECKS » : tuile « ＋ Nouveau deck — choisir un héros Young », puis une tuile par deck maison | liste déroulante | ❌ |
-| J3 | « DECKS DU BOT » : une tuile par deck avec l'illustration du héros, nom, héros · source, pastilles (« réglé pour le bot » / « liste modifiée » / « jouable contre le bot » / « héros pas encore codé » / « n cartes pas encore jouables » / « n hors règles », « 55 / 55 » ou « n / 40 ») | liste de lignes « ira — Dupliquer » | ❌ |
-| J4 | Clic sur une tuile : la choisir (cadre doré) ; double-clic : l'ouvrir dans l'éditeur ; Entrée / Espace au clavier : la choisir | non | ❌ |
-| J5 | **Clic droit sur une tuile, ou bouton ⋯** : menu « ▶ Jouer avec ce deck · ✎ Modifier (la liste du bot) · ⧉ Dupliquer · ⎙ Imprimer (proxies) · ⇩ Exporter la liste · ↺ Revenir à la liste d'origine (si modifiée) · 🗄 Archiver » ; flèches haut/bas dans le menu, Échap pour fermer | « Dupliquer » seulement | ❌ |
-| J6 | Panneau « PARTIE CONTRE LE BOT » : votre héros VS celui du bot (« ? » si au hasard), « Deck du bot » (Au hasard ou un deck), avertissements (deck à 39 cartes, carte non jouable…), « AJUSTER ET LANCER », « Charger une partie (.json) » | fenêtre « Nouveau match » | 🟡 |
-| J7 | Archiver avec « Annuler » dans le message ; écran « Decks archivés » : Désarchiver, Supprimer… (confirmation) | non | ❌ |
-| J8 | Écran « Nouveau deck » : grille des héros Young légaux avec leur image, filtres Tous / Jouables par le bot / par classe, pastille « bot ✓ / ✗ » ; clic = deck créé et ouvert dans l'éditeur | liste déroulante de héros + « Nouveau deck » | 🟡 |
-| J9 | Exporter la liste : fenêtre avec le texte (copier / télécharger) | non | ❌ |
-| J10 | Revenir à la liste d'origine d'un deck du bot modifié (confirmation) | non | ❌ |
+| J1 | Barre du haut : Accueil, « JOUER », « Choisis ton deck, celui du bot, ou crée le tien », boutons Relier le dossier, + Nouveau deck, Importer une liste, Imprimer un deck (menu : « Imprimer quel deck ? »), Decks archivés (n) | écran « Mes decks » : listes déroulantes et boutons | ✅ (sauf « Relier le dossier » : voir J11) |
+| J2 | « MES DECKS » : tuile « ＋ Nouveau deck — choisir un héros Young », puis une tuile par deck maison | liste déroulante | ✅ (tuile « Nouveau deck » compacte tant que la rangée est vide, proposition du document d'ergonomie) |
+| J3 | « DECKS DU BOT » : une tuile par deck avec l'illustration du héros, nom, héros · source, pastilles (« réglé pour le bot » / « liste modifiée » / « jouable contre le bot » / « héros pas encore codé » / « n cartes pas encore jouables » / « n hors règles », « 55 / 55 » ou « n / 40 ») | liste de lignes « ira — Dupliquer » | ✅ (pastilles : réglé pour le bot / jouable / héros pas encore codé / n cartes pas encore jouables / n hors règles, et « n / 55 ») |
+| J4 | Clic sur une tuile : la choisir (cadre doré) ; double-clic : l'ouvrir dans l'éditeur ; Entrée / Espace au clavier : la choisir | non | ✅ |
+| J5 | **Clic droit sur une tuile, ou bouton ⋯** : menu « ▶ Jouer avec ce deck · ✎ Modifier (la liste du bot) · ⧉ Dupliquer · ⎙ Imprimer (proxies) · ⇩ Exporter la liste · ↺ Revenir à la liste d'origine (si modifiée) · 🗄 Archiver » ; flèches haut/bas dans le menu, Échap pour fermer | « Dupliquer » seulement | ✅ ; en plus « Le bot joue ce deck » (document d'ergonomie). Pour un deck du bot, « Modifier » ouvre une copie (voir J10) |
+| J6 | Panneau « PARTIE CONTRE LE BOT » : votre héros VS celui du bot (« ? » si au hasard), « Deck du bot » (Au hasard ou un deck), avertissements (deck à 39 cartes, carte non jouable…), « AJUSTER ET LANCER », « Charger une partie (.json) » | fenêtre « Nouveau match » | ✅ ; en plus Niveau du bot (libellés de joueur), Manches, graine sous « Options avancées » |
+| J7 | Archiver avec « Annuler » dans le message ; écran « Decks archivés » : Désarchiver, Supprimer… (confirmation) | non | ✅ (decks du bot archivés dans le navigateur, decks maison dans `archives/`) |
+| J8 | Écran « Nouveau deck » : grille des héros Young légaux avec leur image, filtres Tous / Jouables par le bot / par classe, pastille « bot ✓ / ✗ » ; clic = deck créé et ouvert dans l'éditeur | liste déroulante de héros + « Nouveau deck » | ✅ |
+| J9 | Exporter la liste : fenêtre avec le texte (copier / télécharger) | non | ✅ (texte du fichier fabbot : Copier, Fichier .txt) |
+| J10 | Revenir à la liste d'origine d'un deck du bot modifié (confirmation) | non | ⛔ les decks du bot sont des fichiers du projet (réglages et table de side appris dessus) : on ne les modifie pas depuis Arsenal, « Modifier » en fait une copie. À rediscuter si Antoine veut modifier les listes du bot |
 | J11 | Relier le dossier fleshandblood (decks en .json) | ⛔ fabbot enregistre déjà sur le disque (`data/decks/maison/`) | ⛔ |
 
 ## 3. Fenêtre « Ajuster et lancer » (avant la partie)

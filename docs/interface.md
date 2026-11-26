@@ -106,21 +106,47 @@ Pour les développeurs : `data/cards/images.tsv` (produit par
 `crates/ui/src/images.rs` ajoute `image` et `nom_fr` au JSON des cartes ;
 `crates/ui/web/commun/cartes.js` construit l'adresse.
 
-### Mes decks (decks maison)
+### L'écran Jouer (choix des decks, decks maison)
 
-Depuis l'accueil, **Mes decks** : collez la liste d'un deck copiée sur
-FaBrary (« Copy deck list », texte) ou au format des fichiers du projet,
-donnez-lui un nom, puis **Vérifier** ou **Importer**. La page dit si le
-deck respecte le format Silver Age (55 cartes au plus, 40 de deck au moins,
-2 exemplaires, cartes bannies, héros « Young »), quelles cartes ne sont pas
-légales et lesquelles le bot ne sait pas encore jouer (pas codées). Le deck
-est enregistré dans `data/decks/maison/<nom>.txt` ; s'il est jouable, il
-apparaît dans la fenêtre **Nouveau match** (« Decks maison »), pour vous
+Depuis l'accueil, le volet **Jouer** (adresse `#decks`) reprend l'écran
+Jouer de l'Arsenal JS :
+
+- **Mes decks** (decks maison, `data/decks/maison/`) et **Decks du bot**
+  (`data/decks/`) en tuiles, avec l'illustration du héros et des pastilles :
+  « réglé pour le bot », « jouable contre le bot », « héros pas encore
+  codé », « n cartes pas encore jouables », « n hors règles », taille du
+  card-pool (« 55 / 55 »).
+- **Clic** sur une tuile : la choisir ; **double-clic** : l'ouvrir dans
+  l'éditeur ; **Entrée / Espace** au clavier : la choisir.
+- **Clic droit** sur une tuile, ou son bouton **⋯** (utile au doigt) : Jouer
+  avec ce deck, Le bot joue ce deck, Modifier, Dupliquer, Imprimer
+  (proxies), Exporter la liste, Archiver. Flèches haut / bas dans le menu,
+  Échap pour le fermer. Un deck du bot ne se modifie pas : « Modifier » en
+  fait une copie (deck maison), l'original et ses réglages ne changent pas.
+- Panneau **Partie contre le bot** : votre héros contre celui du bot (« ? »
+  si au hasard), deck du bot (au hasard, un deck du bot ou un de vos decks
+  jouables), niveau du bot, manches, graine (« Options avancées »), les
+  raisons pour lesquelles un deck n'est pas jouable, **Ajuster et lancer**
+  (ouvre la préparation de la manche) et **Charger une partie (.json)**.
+- Barre du haut : **Nouveau deck** (adresse `#nouveau-deck` : grille des
+  héros Young, filtres Tous / Jouables par le bot / par classe), **Importer
+  une liste** (export texte de FaBrary ou format des fichiers du projet :
+  Vérifier, puis Créer le deck), **Imprimer un deck** (menu « Imprimer quel
+  deck ? »), **Decks archivés** (adresse `#archives` : Désarchiver, et
+  Supprimer… pour un deck maison). Archiver affiche « Annuler » pendant
+  quelques secondes. Les decks du bot archivés sont seulement cachés (dans
+  ce navigateur).
+
+La vérification d'un deck dit s'il respecte le format Silver Age (55 cartes
+au plus, 40 de deck au moins, 2 exemplaires, cartes bannies, héros
+« Young »), quelles cartes ne sont pas légales et lesquelles le bot ne sait
+pas encore jouer (pas codées). Le deck est enregistré dans
+`data/decks/maison/<nom>.txt` ; s'il est jouable, il se choisit pour vous
 comme pour le bot.
 
 **Éditeur de deck** : « Nouveau deck » (choisir un héros Young),
-« Modifier » un deck maison, ou « Dupliquer » un deck du projet (l'original
-ne change pas). À gauche la collection Silver Age (recherche en français ou
+« Modifier » un deck maison, ou « Modifier » / « Dupliquer » un deck du bot
+(copie : l'original ne change pas). À gauche la collection Silver Age (recherche en français ou
 en anglais, filtres pitch, type, « pour ce héros », « jouables par le bot »,
 « dans le deck », tri) ; les cartes que le bot ne sait pas encore jouer sont
 grisées. Clic : +1 ; clic droit : −1 ; Ctrl+Z : annuler. À droite : le
@@ -142,7 +168,7 @@ côtés suffit (réponse du propriétaire, 2026-11-26) ; « Essence of Ice »
 ces talents au héros.
 
 Pour les développeurs : `crates/ui/src/api_decks.rs` (routes
-`/api/collection`, `/api/decks-maison`, `/api/deck-maison`,
+`/api/collection`, `/api/decks-projet`, `/api/decks-maison`, `/api/deck-maison`,
 `/api/deck-maison/verifier`, `/api/deck-maison/importer`),
 `fab_cards::import` (lecture de l'export FaBrary), `fab_cards::decks`
 (decks maison). Page : `crates/ui/web/decks/`.
