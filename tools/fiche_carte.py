@@ -49,7 +49,7 @@ def blocs_codes():
 
 
 def main():
-    nom = sys.argv[1]
+    nom = sys.argv[1].replace(" // ", "||")
     rows = officiel(nom)
     if not rows:
         sys.exit(f"absent du fichier officiel : {nom}")

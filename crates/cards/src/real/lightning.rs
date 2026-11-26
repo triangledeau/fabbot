@@ -13,6 +13,7 @@ use fab_engine::{
 /// Noms des cartes de ce module (pour `docs/cards/STATUS.md`).
 pub const NAMES: &[&str] = &[
     "Cloud Cover",
+    "Sizzle",
     // NOMS
 ];
 
@@ -42,6 +43,37 @@ pub fn add(db: &mut CardDb) {
         d.resolve = vec![Op::Do(|g, c| {
             let n = by_color(g, c, [3, 2, 1]);
             g.prevent_next_time(c.controller, Some(n as i32));
+        })];
+        db.add(d);
+    }
+
+    // Sizzle (rouge, jaune) — Lightning Action, coût 0, déf. 2.
+    // « Your next Lightning or Elemental attack this turn gets +3{p}
+    //   (jaune : +2).
+    //   Go again »
+    // Pas de version bleue : la valeur bleue de by_color n'est jamais utilisée.
+    for c in [Color::Red, Color::Yellow] {
+        let mut d = deck_card(
+            "Sizzle",
+            c,
+            LIGHTNING,
+            Types::ACTION,
+            Some(0),
+            None,
+            Some(2),
+        );
+        d.keywords = Keywords::GO_AGAIN;
+        d.resolve = vec![Op::Do(|g, c| {
+            let n = by_color(g, c, [3, 2, 0]);
+            g.next_attack(
+                c.controller,
+                Some(|g, a| {
+                    g.supertypes(a).has(Supertypes::LIGHTNING)
+                        || g.supertypes(a).has(Supertypes::ELEMENTAL)
+                }),
+                power(n),
+                false,
+            );
         })];
         db.add(d);
     }
