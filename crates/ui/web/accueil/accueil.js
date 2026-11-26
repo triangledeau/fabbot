@@ -1,7 +1,7 @@
 // Accueil Arsenal (volet « accueil », adresse #accueil ; lot 0 du plan de
 // rapatriement). Repris de renderHome() de l'Arsenal JS : logo et trois
 // volets. Jouer mène à l'écran de partie ; Apprendre (didacticiel, puzzles)
-// et Entraîner (tournoi) arrivent plus tard (phases 2 et 3, lot 8).
+// arrive plus tard (phases 2 et 3) ; Entraîner mène au volet du lot 8.
 "use strict";
 (() => {
   const sec = document.getElementById("v-accueil");
@@ -24,11 +24,11 @@
         <div class="txt"><h2>Apprendre</h2><ul><li>Didacticiel : les règles pas à pas</li><li>Puzzles de value</li></ul></div>
         <div class="foot"><div class="row"><span class="muted">Prévu</span><span>à repenser (phases 2 et 3)</span></div></div>
       </div>
-      <div class="ht" style="--c:#ffd84a" aria-disabled="true">
-        <div class="pic"><div class="art"></div><span class="sym" aria-hidden="true">♜</span><span class="badge">BIENTÔT</span></div>
-        <div class="txt"><h2>Entraîner</h2><ul><li>Tournoi des bots</li><li>Entraîner le bot sur un deck</li></ul></div>
-        <div class="foot"><div class="row"><span class="muted">En attendant</span><span class="num">fab-sim --tournoi</span></div></div>
-      </div>
+      <a class="ht" style="--c:#ffd84a" href="#entrainer">
+        <div class="pic"><div class="art"></div><span class="sym" aria-hidden="true">♜</span></div>
+        <div class="txt"><h2>Entraîner</h2><ul><li>Tournoi des bots, matrice des decks</li><li>Banc SPRT</li><li>Apprentissage (side, B3)</li></ul></div>
+        <div class="foot"><div class="row"><span class="muted">Moteur</span><span>fab-sim dans la page</span></div></div>
+      </a>
     </nav>
     <div class="homefoot"><a class="btn small" href="#decks">Mes decks</a><a class="btn small" href="#impression">Imprimer</a><span>Moteur <b>fabbot</b> (Rust)</span><span id="a-textes"></span></div>
   </div></div>`;

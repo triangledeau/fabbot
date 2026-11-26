@@ -138,7 +138,9 @@ pub fn repondre(methode: &str, requete: &str, etat: &mut Etat) -> Reponse {
 pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mut Etat) -> Reponse {
     let (chemin, ps) = parametres(requete);
     let param = |k: &str| ps.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone());
-    if let Some((code, v)) = crate::api_decks::repondre(methode, chemin, &param, corps) {
+    let lot = crate::api_decks::repondre(methode, chemin, &param, corps)
+        .or_else(|| crate::api_tournoi::repondre(methode, chemin, &param));
+    if let Some((code, v)) = lot {
         return if code == 200 {
             Reponse::json(v)
         } else {

@@ -145,6 +145,24 @@ coupe, espace entre les cartes. La page montre les feuilles (9 cartes de
 PDF »). Imprimez à 100 %, sans « ajuster à la page ». Page :
 `crates/ui/web/impression/`.
 
+### Entraîner (tournoi, SPRT, apprentissage)
+
+Depuis l'accueil, **Entraîner**. **Tournoi** : cochez les decks (du projet
+et maison), choisissez le bot et la façon de choisir l'équipement (side)
+de A et de B, le nombre de parties par paire de decks, et lancez. La
+matrice se remplit pendant les parties (score de A en %, ligne = deck de
+A, colonne = deck de B), avec le score total, l'écart d'Elo et son
+intervalle à 95 %, et un classement des decks (utile quand A et B sont le
+même bot). **Banc SPRT** : le tournoi s'arrête dès que le test tranche
+entre « A n'a pas d'avance » et « A a au moins l'avance demandée »
+(5 % d'erreur de chaque côté). Chaque tournoi fini va dans
+`sauvegardes/tournois/` (liste « Historique », bouton Voir), et s'exporte
+en JSON ou en CSV (matrice). **Apprentissage** : lance
+`fab-sim --apprendre-side` ou `--apprendre-b3` (le `fab-sim` compilé à
+côté de `fab-web` : `cargo build --release -p fab-sim`) et montre sa
+sortie ; le fichier réécrit ne sert qu'après avoir recompilé. Page :
+`crates/ui/web/entrainer/`, serveur : `crates/ui/src/api_tournoi.rs`.
+
 ### Tapis de jeu
 
 Chaque joueur a son **tapis**, disposé comme le playmat officiel (repris de

@@ -54,6 +54,9 @@ pub static FICHIERS: &[Fichier] = &[
     // impression des proxies (lot 5)
     fichier!("impression/impression.css", CSS),
     fichier!("impression/impression.js", JS),
+    // entraîner : tournoi, SPRT, apprentissage (lot 8)
+    fichier!("entrainer/entrainer.css", CSS),
+    fichier!("entrainer/entrainer.js", JS),
 ];
 
 /// Le fichier demandé par `chemin` (`/` = `index.html`).

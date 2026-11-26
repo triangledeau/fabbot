@@ -18,7 +18,7 @@ même temps : règles dans `AGENTS.md`, qui fait quoi dans `docs/taches.md`.
 | 5 | Interface web locale + annulation | ✅ (`fab-web`, à essayer par le propriétaire) |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ✅ bots (choix appris, +96 Elo) et page web (écran avant chaque manche) ; à essayer par le propriétaire |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ✅ B3 (3e génération) = B2 + 53 Elo (+34 à +73) ; procédure : `docs/nouveau-deck.md` |
-| 8 | Rapatriement de l'Arsenal JS dans la page web (plan : `docs/rapatriement-arsenal.md`) | 🔄 lots 0 (accueil Arsenal, page en plusieurs fichiers, navigation par #), 1 (images des cartes en VF, noms français), 2 (plateau animé, tapis de jeu), 3 (sauvegarde et reprise), 4a (decks maison, import FaBrary), 4b (éditeur de deck), 4c (ajustement avant la manche) et 5 (impression des proxies, en partie) faits ; avancement lot par lot dans le plan |
+| 8 | Rapatriement de l'Arsenal JS dans la page web (plan : `docs/rapatriement-arsenal.md`) | 🔄 lots 0 (accueil Arsenal, page en plusieurs fichiers, navigation par #), 1 (images des cartes en VF, noms français), 2 (plateau animé, tapis de jeu), 3 (sauvegarde et reprise), 4a (decks maison, import FaBrary), 4b (éditeur de deck), 4c (ajustement avant la manche), 5 (impression des proxies, en partie) et 8 (entraîner : tournoi, SPRT, apprentissage dans la page) faits ; avancement lot par lot dans le plan |
 
 **Branche de départ :** `main` (depuis le 2026-11-26, Claude crée et
 fusionne lui-même la pull request à la fin de chaque tâche ; l'étape 7 est
@@ -315,8 +315,8 @@ est voulu (donner sa liste).
 commence par l'accueil Arsenal ; dire si l'habillage de la partie convient.
 
 **Pour Claude (étape 8) :** suivre `docs/rapatriement-arsenal.md`, lot par
-lot dans l'ordre validé (colonne « Avancement ») ; prochain lot : 8
-(entraîner).
+lot dans l'ordre validé (colonne « Avancement ») ; prochain lot : 9
+(extras).
 
 **Pour Claude :** l'étape 7 est finie ; il n'y a plus d'étape prévue.
 Prochaine tâche proposée (B3 3e génération faite le 2026-11-26 : les
