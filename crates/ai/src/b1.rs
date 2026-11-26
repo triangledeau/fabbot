@@ -97,10 +97,8 @@ impl Agent for HeuristicAgent {
             | DecisionKind::Prevention => d
                 .index_of(Choice::Yes)
                 .or_else(|| d.options.iter().position(|&c| c != Choice::Pass)),
-            DecisionKind::Mode
-            | DecisionKind::TriggerFirst
-            | DecisionKind::TriggerOrder
-            | DecisionKind::PitchOrder => None,
+            DecisionKind::PitchOrder => ordre_du_pitch(&v, d),
+            DecisionKind::Mode | DecisionKind::TriggerFirst | DecisionKind::TriggerOrder => None,
         };
         i.unwrap_or(0)
     }
@@ -122,6 +120,10 @@ fn meilleur(d: &Decision, score: impl Fn(Choice) -> f32) -> Option<usize> {
 /// ou mettre en arsenal) : à peu près les dégâts qu'elle peut faire.
 fn valeur_gardee(v: &Vue, id: fab_engine::ObjectId) -> f32 {
     let c = v.carte(id);
+    if let Some(n) = degats_arcane(c) {
+        // Un sort compte comme une attaque que rien ne bloque.
+        return 3.0 * n as f32;
+    }
     if c.is_attack_card() {
         let ga = if v.mots_cles(id).has(Keywords::GO_AGAIN) {
             1.0
@@ -167,6 +169,9 @@ fn priorite(v: &Vue, d: &Decision) -> Option<usize> {
         match c {
             Choice::Pass => 0.0,
             Choice::Play(id) => {
+                if let Some(s) = score_sort(v, d, id, mon_action) {
+                    return s;
+                }
                 let carte = v.carte(id);
                 let t = carte.types;
                 let ga = v.mots_cles(id).has(Keywords::GO_AGAIN);
@@ -202,6 +207,9 @@ fn priorite(v: &Vue, d: &Decision) -> Option<usize> {
                 }
             }
             Choice::Activate(src, i) => {
+                if let Some(s) = score_renfort(v, d, src, mon_action) {
+                    return s;
+                }
                 let a = &v.carte(src).activated[i as usize];
                 if a.attack {
                     if !mon_action {
@@ -278,7 +286,7 @@ fn combo_prevu(v: &Vue, id: ObjectId) -> (i16, bool) {
 ///   Tiger, vérifié par le moteur) : quand une carte de ma main coûte plus que
 ///   mes ressources.
 fn equipement_d_ira(v: &Vue, d: &Decision, src: ObjectId, mon_action: bool) -> Option<f32> {
-    if !mon_action || std::env::var_os("FAB_SANS_EQUIP_IRA").is_some() {
+    if !mon_action {
         return None;
     }
     let main = v.ma_main();
@@ -410,6 +418,7 @@ fn defendre(v: &Vue, d: &Decision, r: &Reglages) -> Option<usize> {
 
 fn arsenal(v: &Vue, d: &Decision) -> Option<usize> {
     meilleur(d, |c| match c {
+        Choice::Arsenal(id) if glace_du_tour_adverse(v, id) => 100.0,
         Choice::Arsenal(id) => valeur_gardee(v, id),
         _ => -1.0,
     })
@@ -458,5 +467,148 @@ fn cible(v: &Vue, d: &Decision) -> Option<usize> {
         Choice::Target(Target::Player(p)) if p == v.adversaire() => 2.0,
         Choice::Pass => -1.0,
         _ => 0.0,
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Sorts arcaniques (Iyslander) : passer l'arcane barrier adverse.
+// ---------------------------------------------------------------------------
+
+/// Dégâts arcaniques imprimés des cartes « Deal N arcane damage » de nos
+/// decks (textes officiels ; B1 ne lit pas les scripts).
+fn degats_arcane(c: &fab_engine::CardDef) -> Option<i32> {
+    use fab_engine::Color;
+    let col = |r: i32, y: i32, b: i32| match c.color {
+        Some(Color::Red) => r,
+        Some(Color::Yellow) => y,
+        _ => b,
+    };
+    Some(match c.name.as_str() {
+        // Aethersling et Turn to Mindfire n'existent qu'en rouge.
+        "Aethersling" => 4,
+        "Turn to Mindfire" => 5,
+        "Arcane Twining" | "Frosting" => col(3, 2, 1),
+        "Photon Splicing" => col(4, 3, 2),
+        "Ice Bolt" | "Voltic Bolt" | "Timekeeper's Whim" => col(5, 4, 3),
+        _ => return None,
+    })
+}
+
+/// Ressources que je peux réunir sans pitcher les cartes `sauf`.
+fn ressources_sans(v: &Vue, sauf: &[ObjectId]) -> u32 {
+    v.points_de_ressource() as u32
+        + v.ma_main()
+            .iter()
+            .filter(|c| !sauf.contains(c))
+            .map(|&c| v.carte(c).pitch_value() as u32)
+            .sum::<u32>()
+}
+
+/// Dégâts d'un de mes sorts qui passeraient l'arcane barrier adverse, avec
+/// `plus` de bonus en plus de ceux déjà en attente.
+fn passe_la_barriere(v: &Vue, id: ObjectId, plus: i32) -> Option<i32> {
+    let n = degats_arcane(v.carte(id))?;
+    Some(n + v.bonus_arcane_en_attente() + plus - v.barriere_arcane(v.adversaire()) as i32)
+}
+
+/// Les sorts que je peux jouer maintenant (options de la décision).
+fn sorts_jouables<'a>(v: &'a Vue, d: &'a Decision) -> impl Iterator<Item = ObjectId> + 'a {
+    d.options.iter().filter_map(move |&c| match c {
+        Choice::Play(id) if degats_arcane(v.carte(id)).is_some() => Some(id),
+        _ => None,
+    })
+}
+
+/// Score d'un sort arcanique : les dégâts qui passeront la barrière. Un sort
+/// entièrement arrêté attend (défense, pitch, ou renfort plus tard).
+fn score_sort(v: &Vue, d: &Decision, id: ObjectId, mon_action: bool) -> Option<f32> {
+    if !v.mon_tour() && v.zone(id) == fab_engine::Zone::Arsenal && glace_du_tour_adverse(v, id) {
+        // Joué comme un instant au tour adverse : une gelure chez lui.
+        return Some(1.5);
+    }
+    if !mon_action {
+        return None;
+    }
+    if v.carte(id).name == "Stir the Aetherwinds" {
+        // « If it has an arcane damage effect, instead it deals that much
+        // arcane damage plus 3 » (3, 2, 1 selon la couleur).
+        let n = match v.carte(id).color {
+            Some(fab_engine::Color::Red) => 3,
+            Some(fab_engine::Color::Yellow) => 2,
+            _ => 1,
+        };
+        let ok = sorts_jouables(v, d).filter(|&s| s != id).any(|s| {
+            let avant = passe_la_barriere(v, s, 0).unwrap_or(0);
+            avant <= 0 && avant + n > 0 && ressources_sans(v, &[s, id]) >= v.cout(s) + v.cout(id)
+        });
+        return Some(if ok { 29.0 } else { -0.5 });
+    }
+    let passe = passe_la_barriere(v, id, 0)?;
+    Some(if passe > 0 {
+        1.0 + passe as f32 - 0.1 * v.cout(id) as f32
+    } else {
+        -0.5
+    })
+}
+
+/// Renforts avant un sort : Crucible of Aetherweave ({r} : +1), amp 1 en
+/// défaussant Arcane Twining / Photon Splicing, Stir the Aetherwinds. Joués
+/// juste avant un sort quand ils lui font passer la barrière (ou, pour le
+/// Crucible, ajoutent un dégât), et s'il reste de quoi payer le sort.
+fn score_renfort(v: &Vue, d: &Decision, src: ObjectId, mon_action: bool) -> Option<f32> {
+    let nom = v.carte(src).name.as_str();
+    let est_amp = matches!(nom, "Arcane Twining" | "Photon Splicing")
+        && v.zone(src) == fab_engine::Zone::Hand;
+    if nom != "Crucible of Aetherweave" && !est_amp {
+        return None;
+    }
+    if !mon_action {
+        return Some(-1.0);
+    }
+    let ok = sorts_jouables(v, d).filter(|&s| s != src).any(|s| {
+        let Some(avant) = passe_la_barriere(v, s, 0) else {
+            return false;
+        };
+        let reste = ressources_sans(v, &[s, src]);
+        if nom == "Crucible of Aetherweave" {
+            avant + 1 > 0 && reste > v.cout(s)
+        } else {
+            // Amp : une carte en moins, seulement si elle fait passer le sort.
+            avant <= 0 && avant + 1 > 0 && reste >= v.cout(s)
+        }
+    });
+    Some(if ok { 30.0 } else { -1.0 })
+}
+
+/// Iyslander : « If it's not your turn, you may play blue non-attack action
+/// cards from your arsenal as though they were instants » et « Whenever you
+/// play an Ice card during an opponent's turn, create a Frostbite token under
+/// their control » : une carte Ice bleue non-attaque à garder en arsenal.
+fn glace_du_tour_adverse(v: &Vue, id: ObjectId) -> bool {
+    let c = v.carte(id);
+    v.carte(v.mon_heros()).name == "Iyslander"
+        && c.color == Some(fab_engine::Color::Blue)
+        && c.supertypes.has(fab_engine::Supertypes::ICE)
+        && c.is_action()
+        && !c.is_attack_card()
+}
+
+/// Pitch stacking : l'ordre des cartes pitchées sous le deck. La première
+/// choisie sera piochée la première ; on alterne une carte qui paie (bleue)
+/// et une carte à jouer, pour que chaque future main ait un sort et de quoi
+/// le payer.
+fn ordre_du_pitch(v: &Vue, d: &Decision) -> Option<usize> {
+    let restantes = d.options.len();
+    meilleur(d, |c| match c {
+        Choice::PitchToBottom(id) => {
+            let p = v.carte(id).pitch_value() as f32;
+            // Nombre impair de cartes restantes : une carte à jouer ; pair : une qui paie.
+            if restantes % 2 == 1 {
+                valeur_gardee(v, id) - p
+            } else {
+                p
+            }
+        }
+        _ => -1.0,
     })
 }
