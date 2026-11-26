@@ -679,7 +679,7 @@ fn un_match_recharge_apres_une_manche_finie_garde_le_score() {
     let (r, _) = sauver_et_recharger(&mut e);
     assert_eq!(affiche(&r), affiche(&v), "manche finie");
     let v = json(&repondre("POST", "/api/manche-suivante", &mut e));
-    let v = preparer_avec_la_proposition(&mut e, v);
+    preparer_avec_la_proposition(&mut e, v);
     let v = json(&repondre("POST", "/api/choix?i=0", &mut e));
     let (r, _) = sauver_et_recharger(&mut e);
     assert_eq!(affiche(&r), affiche(&v), "deuxième manche");
