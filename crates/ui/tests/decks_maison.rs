@@ -221,15 +221,25 @@ fn archiver_restaurer_puis_supprimer_un_deck_maison() {
     let _a = NettoyerArchive(nom);
     let mut e = etat_serveur();
     assert_eq!(importer(&mut e, nom, &export_fabrary("hala")).code, 200);
-    let post = |e: &mut Etat, quoi: &str| repondre("POST", &format!("/api/deck-maison/{quoi}?nom={nom}"), e).code;
+    let post = |e: &mut Etat, quoi: &str| {
+        repondre("POST", &format!("/api/deck-maison/{quoi}?nom={nom}"), e).code
+    };
     // Un deck pas archivé ne se supprime pas.
     assert_eq!(post(&mut e, "supprimer"), 400);
     assert_eq!(post(&mut e, "archiver"), 200);
     let l = json(&repondre("GET", "/api/decks-maison", &mut e));
-    assert!(!l["decks"].as_array().unwrap().iter().any(|d| d["nom"] == nom));
+    assert!(!l["decks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|d| d["nom"] == nom));
     assert!(l["archives"].as_array().unwrap().iter().any(|d| d == nom));
     let d = json(&repondre("GET", "/api/decks", &mut e));
-    assert!(!d["decks_maison"].as_array().unwrap().iter().any(|x| x == nom));
+    assert!(!d["decks_maison"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|x| x == nom));
     assert_eq!(post(&mut e, "restaurer"), 200);
     assert!(decks::dossier_maison().join(format!("{nom}.txt")).exists());
     assert_eq!(post(&mut e, "archiver"), 200);
@@ -259,5 +269,8 @@ fn la_collection_donne_l_emplacement_des_equipements_et_les_heros() {
     assert_eq!(trouve("Helm of Unity")["emplacement"], "Head");
     assert_eq!(trouve("Hala")["heros"], true);
     assert!(trouve("Hala")["emplacement"].is_null());
-    assert!(c.iter().filter(|x| x["couleur"] != "").all(|x| x["emplacement"].is_null()));
+    assert!(c
+        .iter()
+        .filter(|x| x["couleur"] != "")
+        .all(|x| x["emplacement"].is_null()));
 }

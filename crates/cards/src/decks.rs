@@ -165,14 +165,20 @@ fn deplacer(de: PathBuf, vers: PathBuf) -> Result<(), String> {
 pub fn archiver_maison(nom: &str) -> Result<(), String> {
     verifier_nom_maison(nom)?;
     let d = dossier_maison();
-    deplacer(d.join(format!("{nom}.txt")), d.join("archives").join(format!("{nom}.txt")))
+    deplacer(
+        d.join(format!("{nom}.txt")),
+        d.join("archives").join(format!("{nom}.txt")),
+    )
 }
 
 /// Ressort un deck maison des archives.
 pub fn restaurer_maison(nom: &str) -> Result<(), String> {
     verifier_nom_maison(nom)?;
     let d = dossier_maison();
-    deplacer(d.join("archives").join(format!("{nom}.txt")), d.join(format!("{nom}.txt")))
+    deplacer(
+        d.join("archives").join(format!("{nom}.txt")),
+        d.join(format!("{nom}.txt")),
+    )
 }
 
 /// Supprime pour de bon un deck maison archivé (on archive d'abord : une

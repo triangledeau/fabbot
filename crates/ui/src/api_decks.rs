@@ -65,14 +65,39 @@ pub struct CarteCollection {
 
 /// Classes de Flesh and Blood (données des cartes, pour les filtres).
 const CLASSES: [&str; 18] = [
-    "Adjudicator", "Assassin", "Bard", "Brute", "Generic", "Guardian", "Illusionist",
-    "Mechanologist", "Merchant", "Necromancer", "Ninja", "Pirate", "Ranger", "Runeblade",
-    "Shapeshifter", "Thief", "Warrior", "Wizard",
+    "Adjudicator",
+    "Assassin",
+    "Bard",
+    "Brute",
+    "Generic",
+    "Guardian",
+    "Illusionist",
+    "Mechanologist",
+    "Merchant",
+    "Necromancer",
+    "Ninja",
+    "Pirate",
+    "Ranger",
+    "Runeblade",
+    "Shapeshifter",
+    "Thief",
+    "Warrior",
+    "Wizard",
 ];
 /// Talents (données des cartes, pour les filtres).
 const TALENTS: [&str; 12] = [
-    "Chaos", "Draconic", "Earth", "Elemental", "Ice", "Light", "Lightning", "Mystic",
-    "Revered", "Reviled", "Royal", "Shadow",
+    "Chaos",
+    "Draconic",
+    "Earth",
+    "Elemental",
+    "Ice",
+    "Light",
+    "Lightning",
+    "Mystic",
+    "Revered",
+    "Reviled",
+    "Royal",
+    "Shadow",
 ];
 
 /// La collection et d'où elle vient.
@@ -178,11 +203,22 @@ fn depuis_fabcube(v: &Value, db: &CardDb) -> (Vec<CarteCollection>, HashSet<Cle>
             image,
             nom_fr,
             codee,
-            classes: types.iter().filter(|t| CLASSES.contains(&t.as_str())).cloned().collect(),
-            talents: types.iter().filter(|t| TALENTS.contains(&t.as_str())).cloned().collect(),
+            classes: types
+                .iter()
+                .filter(|t| CLASSES.contains(&t.as_str()))
+                .cloned()
+                .collect(),
+            talents: types
+                .iter()
+                .filter(|t| TALENTS.contains(&t.as_str()))
+                .cloned()
+                .collect(),
             heros: types.iter().any(|t| t == "Hero"),
             mots_cles: liste("card_keywords"),
-            texte: c["functional_text_plain"].as_str().unwrap_or("").to_string(),
+            texte: c["functional_text_plain"]
+                .as_str()
+                .unwrap_or("")
+                .to_string(),
             types,
         });
     }
