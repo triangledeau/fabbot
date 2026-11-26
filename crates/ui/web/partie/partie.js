@@ -937,10 +937,10 @@ async function preparerDialogue() {
   const f = $("f-nouvelle");
   const options = (liste) => liste.map(n => { const o = el("option", null, n); o.value = n; return o; });
   // Decks du projet, puis decks maison jouables (lot 4a, volet « Mes decks »).
-  const remplir = (sel) => {
+  const remplir = (sel, liste) => {
     const garde = sel.value;
-    sel.replaceChildren(...options(v.decks));
-    if ((v.decks_maison || []).length) {
+    sel.replaceChildren(...options(liste || v.decks));
+    if (!liste && (v.decks_maison || []).length) {
       const g = el("optgroup");
       g.label = "Decks maison";
       g.append(...options(v.decks_maison));
