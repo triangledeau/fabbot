@@ -108,7 +108,7 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 .carte .pastilles { position: absolute; left: 3px; right: 3px; bottom: 3px; display: flex; flex-wrap: wrap; gap: 2px; justify-content: flex-end; z-index: 2; }
 .carte .pastilles span { font: 600 10px/1.1 var(--f-num); background: rgb(8 10 15 / .88); color: #fff; border: 1px solid var(--brass); border-radius: 999px; padding: 1px 5px; }
 .carte .pastilles .pui { color: var(--dmg); } .carte .pastilles .def { color: #9cc0f0; }
-#detail .grande { margin: 0 auto 8px; width: min(100%, 220px); aspect-ratio: .716; border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px #000; background: #1b2029; }
+#detail .grande { flex: none; margin: 0 auto 8px; width: min(100%, 220px); aspect-ratio: .716; border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px #000; background: #1b2029; }
 #detail .grande:not(:has(img)) { display: none; }
 #detail .grande img { width: 100%; height: 100%; object-fit: cover; display: block; }
 #detail .nom-fr { font: 800 1rem/1.2 var(--f-display); color: var(--brass); }
@@ -436,3 +436,8 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 #v-partie #preparation .btn.primary { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); box-shadow: 0 0 20px rgb(255 224 138 / .3); }
 #v-partie #preparation .btn.primary:disabled { opacity: .45; box-shadow: none; }
 #preparation .ah h2 .btn { font-family: var(--f-body); letter-spacing: 0; text-transform: none; }
+
+/* Jetons identiques regroupés (plus de 3) : une carte et le nombre réel */
+.perms > .carte.pile-perm { position: relative; overflow: visible; box-shadow: 3px 3px 0 -1px #0b0e14, 4px 4px 0 -1px var(--line), 6px 6px 0 -2px #0b0e14, 7px 7px 0 -2px var(--line); }
+.perms > .carte .nb-perm { position: absolute; z-index: 3; left: -6px; top: -6px; min-width: 24px; height: 22px; padding: 0 6px; border-radius: 11px; display: grid; place-items: center; font: 700 .8rem/1 var(--f-num); background: var(--brass, #ffd84a); color: #14110c; box-shadow: 0 2px 6px rgb(0 0 0 / .6); pointer-events: none; }
+.perms > .carte.pile-perm + .carte { margin-left: calc(var(--H) * -.2); }

@@ -275,7 +275,8 @@ jambes, et bras collé au torse), arme, **héros** (PV gravés dessus) avec
 l'**arsenal** dessous, seconde arme ou off-hand avec les **permanents**
 dessous, **pitch** collé au deck, puis cimetière, deck et banni. Le tapis du
 bot est le même, tourné à 180° (vu d'en face). Cliquez le cimetière ou le
-banni pour voir toutes leurs cartes. Ressources et points d'action sont à
+banni pour voir toutes leurs cartes. Plus de 3 permanents identiques
+(jetons Runechant…) n'en montrent qu'un, avec le nombre réel. Ressources et points d'action sont à
 côté du tapis ; votre main dessous.
 
 ### Plateau animé
@@ -290,9 +291,12 @@ choix, puis les réponses du bot) au lieu de sauter directement au résultat :
   affiche « Bloqué » ;
 - un **bandeau** annonce « Votre tour » / « Tour du bot » et chaque étape du
   combat ; le pitch envoie des étincelles vers les ressources ;
-- **tirer une carte** surlignée : une chaîne de laiton la relie à la zone
-  visée ; lâchez-la sur la chaîne de combat (jouer, défendre), sur votre
-  pitch ou sur votre arsenal. Le clic marche toujours.
+- **tirer une carte** surlignée : elle suit le pointeur et penche selon le
+  geste ; une chaîne de laiton la relie à la zone visée. Lâchez-la sur votre
+  pitch ou votre arsenal, ou n'importe où hors de la main (au-dessus ou à
+  gauche) pour la jouer : la carte et la zone s'éclairent quand elle est en
+  position. Lâchée ailleurs, elle revient dans la main. Le clic marche
+  toujours.
 
 Dans le panneau de droite : **Animations** (tout couper) et **Pause avant
 les dégâts** (le film s'arrête avant chaque coup porté ; « Continuer » ou
