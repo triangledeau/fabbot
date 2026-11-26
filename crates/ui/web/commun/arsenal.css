@@ -39,6 +39,6 @@ h1, h2, h3 { font-family: var(--f-display); font-weight: 800; text-wrap: balance
 
 /* Volets : un seul visible à la fois, choisi par le # de l'adresse (commun/navigation.js) */
 .vue { display: none; }
-html[data-vue="accueil"] #v-accueil, html[data-vue="partie"] #v-partie, html[data-vue="decks"] #v-decks { display: block; }
+html[data-vue="accueil"] #v-accueil, html[data-vue="partie"] #v-partie, html[data-vue="decks"] #v-decks, html[data-vue="impression"] #v-impression { display: block; }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

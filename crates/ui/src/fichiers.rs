@@ -51,6 +51,9 @@ pub static FICHIERS: &[Fichier] = &[
     fichier!("decks/decks.js", JS),
     // éditeur de deck (lot 4b, d'après editeur.js de l'Arsenal JS)
     fichier!("decks/editeur.js", JS),
+    // impression des proxies (lot 5)
+    fichier!("impression/impression.css", CSS),
+    fichier!("impression/impression.js", JS),
 ];
 
 /// Le fichier demandé par `chemin` (`/` = `index.html`).
