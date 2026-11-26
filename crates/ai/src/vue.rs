@@ -45,6 +45,23 @@ impl<'a> Vue<'a> {
         self.moi.opponent()
     }
 
+    /// Cet objet (une arme) a-t-il été aiguisé ce tour (sharpen, public) ?
+    pub fn aiguise_ce_tour(&self, id: ObjectId) -> bool {
+        self.g.sharpened_this_turn(id)
+    }
+
+    /// Cette arme a-t-elle déjà attaqué ce tour (activations publiques) ?
+    pub fn a_attaque_ce_tour(&self, id: ObjectId) -> bool {
+        self.g.obj(id).activations.iter().any(|&n| n > 0)
+    }
+
+    /// La définition de la dernière attaque de la chaîne de combat, si elle
+    /// est ouverte (public ; « the last attack this combat chain »).
+    pub fn derniere_attaque(&self) -> Option<&'a CardDef> {
+        let l = self.g.combat.links.last()?;
+        Some(self.g.db.get(l.card))
+    }
+
     /// La carte est-elle visible pour moi ? (même règle que `fab-ui`)
     pub fn visible(&self, id: ObjectId) -> bool {
         let o = self.g.obj(id);

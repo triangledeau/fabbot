@@ -20,7 +20,9 @@
 use crate::vue::Vue;
 use crate::Agent;
 use fab_engine::state::CombatStep;
-use fab_engine::{Choice, Decision, DecisionKind, GameState, Keywords, Subtypes, Target, Types};
+use fab_engine::{
+    Choice, Decision, DecisionKind, GameState, Keywords, ObjectId, Subtypes, Target, Types,
+};
 
 /// Réglages de B1 (pour pouvoir comparer des variantes au simulateur).
 #[derive(Clone, Copy, Debug)]
@@ -82,6 +84,13 @@ impl Agent for HeuristicAgent {
                 Choice::Number(n) => n as f32,
                 _ => -1.0,
             }),
+            // Une zone où créer un token (Frost Spike : un Frostbite) : chez
+            // l'adversaire, le token le gêne.
+            DecisionKind::Effect if d.options.iter().any(|c| matches!(c, Choice::Zone(..))) => d
+                .options
+                .iter()
+                .position(|c| matches!(c, Choice::Zone(p, _) if *p == v.adversaire()))
+                .or(Some(0)),
             DecisionKind::OptionalCost
             | DecisionKind::Replacement
             | DecisionKind::Effect
@@ -162,8 +171,10 @@ fn priorite(v: &Vue, d: &Decision) -> Option<usize> {
                 let t = carte.types;
                 let ga = v.mots_cles(id).has(Keywords::GO_AGAIN);
                 if t.has(Types::ACTION) && mon_action {
+                    let (bonus, ga_combo) = combo_prevu(v, id);
+                    let ga = ga || ga_combo;
                     let base = if carte.is_attack_card() {
-                        v.puissance(id).max(0) as f32
+                        (v.puissance(id) + bonus).max(0) as f32
                     } else {
                         // Action non-attaque : souvent un bonus pour la
                         // prochaine attaque, à jouer avant elle.
@@ -196,9 +207,13 @@ fn priorite(v: &Vue, d: &Decision) -> Option<usize> {
                     if !mon_action {
                         return -1.0;
                     }
-                    let ga = a.go_again || v.mots_cles(src).has(Keywords::GO_AGAIN);
+                    let ga = a.go_again
+                        || v.mots_cles(src).has(Keywords::GO_AGAIN)
+                        || go_again_d_arme_prevu(v, src);
                     v.puissance(src).max(0) as f32 + if ga { 10.0 } else { 0.0 }
                         - 0.1 * v.cout_activation(src, i) as f32
+                } else if let Some(s) = equipement_d_ira(v, d, src, mon_action) {
+                    s
                 } else if mon_action && !a.from_hand && activation_sans_perte(v, src) {
                     0.8
                 } else {
@@ -209,6 +224,94 @@ fn priorite(v: &Vue, d: &Decision) -> Option<usize> {
         }
     };
     meilleur(d, score)
+}
+
+/// Le go again que l'attaque d'une arme recevra, quand il n'est pas écrit
+/// sur l'arme mais donné à son attaque-proxy (B1 lit les mots-clés de
+/// l'arme). Seul cas dans nos decks : Zenith Blade, « If this has been
+/// sharpened this turn, its first attack this turn gets go again ».
+fn go_again_d_arme_prevu(v: &Vue, arme: ObjectId) -> bool {
+    v.carte(arme).name == "Zenith Blade" && v.aiguise_ce_tour(arme) && !v.a_attaque_ce_tour(arme)
+}
+
+/// Ce qu'un combo ajoutera à une carte d'attaque de ma main si je la joue
+/// maintenant : (puissance en plus, go again). Le moteur ne l'applique que sur
+/// la pile ou la chaîne, et B1 ne lit pas le texte : liste des combos de nos
+/// decks (Ira), d'après « the last attack this combat chain ».
+fn combo_prevu(v: &Vue, id: ObjectId) -> (i16, bool) {
+    // Scar for a Scar : « When this is played, if you have less {h} than an
+    // opposing hero, it gets go again. »
+    if v.carte(id).name == "Scar for a Scar" {
+        return (0, v.vie(v.moi()) < v.vie(v.adversaire()));
+    }
+    let Some(derniere) = v.derniere_attaque() else {
+        return (0, false);
+    };
+    match v.carte(id).name.as_str() {
+        // « If Edge of Autumn was the last attack … this gets go again. »
+        "Seek Vengeance" if derniere.name == "Edge of Autumn" => (0, true),
+        // « If Crouching Tiger was the last attack … +1{p} and go again. »
+        "Pouncing Qi" if derniere.name == "Crouching Tiger" => (1, true),
+        // « If Crouching Tiger was the last attack … +4{p}. »
+        "Qi Unleashed" if derniere.name == "Crouching Tiger" => (4, false),
+        // « if a red attack action card was the last attack … go again »
+        "Aspect of Tiger: Body"
+            if derniere.color == Some(fab_engine::Color::Red)
+                && derniere.is_action()
+                && derniere.is_attack_card() =>
+        {
+            (0, true)
+        }
+        _ => (0, false),
+    }
+}
+
+/// Les équipements d'Ira (« Destroy this ») : B1 ne lit pas leur texte et
+/// n'active pas d'équipement qui se détruit. Règles d'usage, d'après les
+/// textes officiels :
+/// - Pouncing Paws, « Create a Crouching Tiger in your banished zone. You may
+///   play it this turn » : quand un combo du Tigre (Pouncing Qi, Qi Unleashed)
+///   est en main ;
+/// - Tearing Shuko, « The next Crouching Tiger you play this turn gets +2{p} » :
+///   juste avant de jouer un Crouching Tiger ;
+/// - Blood Scent, « Gain {r} » (seulement après une attaque de Crouching
+///   Tiger, vérifié par le moteur) : quand une carte de ma main coûte plus que
+///   mes ressources.
+fn equipement_d_ira(v: &Vue, d: &Decision, src: ObjectId, mon_action: bool) -> Option<f32> {
+    if !mon_action || std::env::var_os("FAB_SANS_EQUIP_IRA").is_some() {
+        return None;
+    }
+    let main = v.ma_main();
+    let tigre_jouable = d
+        .options
+        .iter()
+        .any(|o| matches!(o, Choice::Play(c) if v.carte(*c).name == "Crouching Tiger"));
+    Some(match v.carte(src).name.as_str() {
+        "Pouncing Paws" => {
+            let combo = main
+                .iter()
+                .any(|&c| matches!(v.carte(c).name.as_str(), "Pouncing Qi" | "Qi Unleashed"));
+            if combo && !tigre_jouable {
+                10.5
+            } else {
+                -1.0
+            }
+        }
+        "Tearing Shuko" if tigre_jouable => 10.6,
+        "Blood Scent" => {
+            let r = v.points_de_ressource() as u32;
+            if main
+                .iter()
+                .any(|&c| v.carte(c).is_action() && v.cout(c) > r)
+            {
+                0.9
+            } else {
+                -1.0
+            }
+        }
+        "Tearing Shuko" => -1.0,
+        _ => return None,
+    })
 }
 
 /// Une capacité non-attaque qui ne coûte ni une carte de la main ni un
