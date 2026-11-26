@@ -37,6 +37,34 @@ pub fn decks_jouables() -> Vec<String> {
     fab_cards::decks::noms()
 }
 
+/// Nom à afficher de chaque deck jouable (projet et maison) : le héros de
+/// sa liste (« Ira, Crimson Haze »), à la place du nom court du fichier
+/// (`ira`). Un deck maison garde son nom s'il diffère du héros.
+pub fn noms_affiches() -> serde_json::Map<String, serde_json::Value> {
+    let mut m = serde_json::Map::new();
+    let maison: Vec<String> = fab_cards::decks::maison()
+        .into_iter()
+        .map(|d| d.nom)
+        .collect();
+    for nom in fab_cards::decks::noms()
+        .into_iter()
+        .chain(maison.iter().cloned())
+    {
+        let affiche = match fab_cards::decks::liste(&nom) {
+            Ok(l)
+                if maison.contains(&nom)
+                    && !l.hero.to_lowercase().starts_with(&nom.to_lowercase()) =>
+            {
+                format!("{nom} ({})", l.hero)
+            }
+            Ok(l) => l.hero,
+            Err(_) => nom.clone(),
+        };
+        m.insert(nom, serde_json::Value::String(affiche));
+    }
+    m
+}
+
 /// Charge le card-pool d'un deck jouable par son nom court.
 pub fn charger_pool(db: &CardDb, nom: &str) -> Result<CardPool, String> {
     fab_cards::decks::charger_pool(db, nom)

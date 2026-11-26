@@ -42,3 +42,17 @@ h1, h2, h3 { font-family: var(--f-display); font-weight: 800; text-wrap: balance
 html[data-vue="accueil"] #v-accueil, html[data-vue="partie"] #v-partie, html[data-vue="decks"] #v-decks, html[data-vue="impression"] #v-impression, html[data-vue="entrainer"] #v-entrainer { display: block; }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* Focus clavier visible partout (WCAG 2.4.7) : contour laiton sur tout ce
+   qui se manipule au clavier, pas seulement les .btn. */
+:where(a, button, select, input, textarea, summary, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible { outline: 2px solid var(--glow); outline-offset: 2px; }
+
+/* Symboles des textes de cartes (commun/cartes.js, Symboles.html) */
+.sym { display: inline-flex; align-items: center; justify-content: center; vertical-align: -0.15em; width: 1.05em; height: 1.05em; margin: 0 .08em; line-height: 1; font-size: .95em; }
+.sym svg { width: 100%; height: 100%; }
+.sym-r { color: var(--red); }
+.sym-p { color: var(--brass); }
+.sym-d { color: #c9d2de; }
+.sym-h { color: var(--dmg); }
+.sym-i, .sym-c { width: auto; padding: 0 .25em; border: 1px solid var(--line); border-radius: 4px; font: 700 .72em/1.2 var(--f-num); color: var(--ink); }
+.sym-t { color: var(--ink); font-weight: 700; }

@@ -156,7 +156,8 @@ fn fiche_d_une_carte_visible_mais_pas_d_une_carte_cachee() {
     let main = s.g.player(PlayerId::P0).hand.clone();
     let v = s.carte(main[0].0, None);
     assert!(v["erreur"].is_null(), "{v}");
-    assert!(v["fiche"]
+    // La page ne montre pas les numéros internes du moteur (« [34] »).
+    assert!(!v["fiche"]
         .as_str()
         .unwrap()
         .contains(&format!("[{}]", main[0].0)));
