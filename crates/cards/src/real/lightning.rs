@@ -24,6 +24,7 @@ pub const NAMES: &[&str] = &[
     "Visionary of Orbits",
     "Harness Lightning",
     "Static Shock",
+    "Path of Same Ends",
     // NOMS
 ];
 
@@ -370,6 +371,69 @@ pub fn add(db: &mut CardDb) {
                     }
                 }
             })],
+        }];
+        db.add(d);
+    }
+
+    // Path of Same Ends (bleu, rouge, jaune) — Lightning Runeblade Action - Attack,
+    // coût 0, déf. 2. Puissance : bleu 1 ; rouge 3 ; jaune 2.
+    // « When this attacks a hero, deal 1 arcane damage to them. If damage is dealt
+    //   this way, this gets **go again**.
+    //   **Instant** -- {r}: This gets **go again**. »
+    // « them » = le héros attaqué (événement `Attack`, cible sans objet).
+    for (c, p) in [(Color::Blue, 1), (Color::Red, 3), (Color::Yellow, 2)] {
+        let mut d = deck_card(
+            "Path of Same Ends",
+            c,
+            LIGHTNING_RB,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(2),
+        );
+        d.arcane_damage = true;
+        d.triggers = vec![TriggerDef {
+            when: super::assassin::when_this_attacks_a_hero,
+            anywhere: false,
+            targets: vec![],
+            script: vec![
+                Op::Do(|g, c| {
+                    g.last_damage = 0;
+                    if let Some(Event::Attack { target, .. }) = c.event {
+                        g.deal_damage_to(
+                            c.source_id(),
+                            c.controller,
+                            Target::Player(target),
+                            1,
+                            true,
+                        );
+                    }
+                }),
+                // `last_damage` est lu à l'instruction suivante.
+                Op::Do(|g, c| {
+                    if g.last_damage > 0 {
+                        if let Some(s) = c.source {
+                            g.modify(s, grant(Keywords::GO_AGAIN), Until::EndOfTurn);
+                        }
+                    }
+                }),
+            ],
+        }];
+        // TODO(règles) : test de la capacité Instant non écrit : dans le harnais,
+        // P0 n'a pas de fenêtre de priorité où la capacité est proposée après la
+        // déclaration (Defend, puis fin de chaîne). À vérifier (CR 7 / priorité).
+        // La condition ci-dessous limite l'usage à la chaîne de combat.
+        d.activated = vec![ActivatedDef {
+            label: "{r} : go again",
+            speed: Speed::Instant,
+            cost: 1,
+            condition: Some(|g, _, me| g.obj(me).zone == Zone::CombatChain),
+            script: vec![Op::Do(|g, c| {
+                if let Some(s) = c.source {
+                    g.modify(s, grant(Keywords::GO_AGAIN), Until::EndOfTurn);
+                }
+            })],
+            ..Default::default()
         }];
         db.add(d);
     }

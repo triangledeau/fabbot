@@ -731,3 +731,75 @@ fn static_shock_lui_meme_n_est_pas_une_carte_lightning() {
         "la carte jouée ne compte pas pour son propre Lightning Flow"
     );
 }
+
+// Path of Same Ends
+
+/// Partie où P0 a `main0` en main et P1 n'a rien.
+fn path_partie(main0: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie([HEROS, HEROS], main0, RIEN, RIEN, RIEN, &[], &[])
+}
+
+/// Joue Path of Same Ends et attend que ses déclenchements soient résolus.
+fn path_attaque(t: &mut Partie, c: Option<Color>) -> ObjectId {
+    let a = jouer(t, P0, "Path of Same Ends", c);
+    passer_jusqua_que(t, |t| {
+        t.g.pending_triggers.is_empty() && t.g.stack.is_empty() && t.g.active_attack() == Some(a)
+    });
+    a
+}
+
+/// Paie les pitchs avec la carte de remplissage « Essai Rempart ».
+fn payer_avec_rempart(t: &mut Partie) {
+    while !t.g.is_over() && t.g.pending_decision().is_some() && t.kind() == DecisionKind::Pitch {
+        let opts = t.options();
+        let c = opts
+            .iter()
+            .copied()
+            .find(|c| matches!(c, Choice::Pitch(o) if t.g.def(*o).name == "Essai Rempart"))
+            .unwrap_or(opts[0]);
+        t.choisir(c);
+    }
+}
+
+#[test]
+fn path_of_same_ends_puissance_et_defense_selon_la_couleur() {
+    for (c, puissance) in [(B, 1), (R, 3), (Y, 2)] {
+        let mut t = path_partie(&[("Path of Same Ends", c)]);
+        let a = jouer(&mut t, P0, "Path of Same Ends", c);
+        assert_eq!(t.g.power(a), puissance, "puissance selon la couleur");
+        assert_eq!(t.g.def(a).defense, Some(2), "défense 2");
+    }
+}
+
+#[test]
+fn path_of_same_ends_quand_il_attaque_un_heros_inflige_1_degat_arcanique() {
+    let mut t = path_partie(&[("Path of Same Ends", R)]);
+    path_attaque(&mut t, R);
+    assert!(arcanique_1_a(&t, P1), "1 dégât arcanique au héros attaqué");
+    assert_eq!(
+        t.vie(P1),
+        19,
+        "1 arcanique ; l'attaque n'est pas encore résolue"
+    );
+}
+
+#[test]
+fn path_of_same_ends_si_des_degats_sont_infliges_il_gagne_go_again() {
+    let mut t = path_partie(&[("Path of Same Ends", B)]);
+    let a = path_attaque(&mut t, B);
+    assert!(
+        t.g.keywords(a).has(Keywords::GO_AGAIN),
+        "go again après dégâts"
+    );
+}
+
+#[test]
+fn path_of_same_ends_sans_degats_infliges_il_n_a_pas_go_again() {
+    let mut t = path_partie(&[("Path of Same Ends", B)]);
+    t.g.prevent_next(P1, 5, false, None);
+    let a = path_attaque(&mut t, B);
+    assert!(
+        !t.g.keywords(a).has(Keywords::GO_AGAIN),
+        "tout prévenu, aucun dégât : pas de go again"
+    );
+}
