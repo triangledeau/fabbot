@@ -54,3 +54,8 @@ const Symboles = (() => {
   });
   return { html, texte };
 })();
+
+// Vrai dos de carte (image locale dans data/outils/, voir arsenal.css).
+fetch("/api/outils").then((r) => r.json()).then((o) => {
+  if (o && o.dos) document.documentElement.classList.add("vrai-dos");
+}).catch(() => { /* serveur sans cette route : dos dessiné */ });

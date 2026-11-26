@@ -25,7 +25,9 @@ async function action(methode, chemin) {
   occupe = true;
   $("erreur").textContent = "";
   const minuterie = setTimeout(() => { $("attente").style.display = "block"; }, 250);
-  document.querySelectorAll("button").forEach(b => b.disabled = true);
+  // Seulement les boutons de l'écran de partie (afficher() les réactive) :
+  // désactiver ceux de toute la page laissait Entraîner, Decks… grisés.
+  document.querySelectorAll("#v-partie button").forEach(b => b.disabled = true);
   let nouveau = null;
   try {
     nouveau = await api(methode, chemin);

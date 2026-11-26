@@ -97,6 +97,24 @@ pub fn chemin_proxies() -> std::path::PathBuf {
         .join("../../data/outils/proxies-de-rathe.html")
 }
 
+/// Le vrai dos de carte, s'il a été posé dans `data/outils/` sous le nom
+/// `dos-de-carte.webp`, `.png` ou `.jpg` (image de LSS : hors du dépôt
+/// public). Renvoie le contenu et son type.
+pub fn dos_de_carte() -> Option<(Vec<u8>, &'static str)> {
+    let dossier = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/outils");
+    [
+        ("webp", "image/webp"),
+        ("png", "image/png"),
+        ("jpg", "image/jpeg"),
+    ]
+    .iter()
+    .find_map(|(ext, t)| {
+        std::fs::read(dossier.join(format!("dos-de-carte.{ext}")))
+            .ok()
+            .map(|c| (c, *t))
+    })
+}
+
 /// Le contenu de l'outil prêt à être intégré à Arsenal : le mode intégré
 /// (`window.ARSENAL_IMPRESSION`) est posé s'il ne l'est pas déjà.
 pub fn outil_proxies() -> Option<Vec<u8>> {
