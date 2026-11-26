@@ -47,4 +47,5 @@ didacticiel des règles, repensé. Choix du propriétaire (2026-11-26) : public
 | 2. Lire une carte | 4 leçons (cartes montrées avec leur image, sans scène) |
 | 3. Le tapis et les zones | 4 leçons, 1 scène (arsenal) |
 | 4. Le déroulement d'un tour | 3 leçons, 1 scène (un seul point d'action) |
-| 5 à 13 | à écrire |
+| 5. Payer : coût et pitch | 3 leçons, 1 scène (payer de deux façons) |
+| 6 à 13 | à écrire |

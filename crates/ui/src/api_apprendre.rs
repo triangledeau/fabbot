@@ -31,6 +31,7 @@ use std::sync::{Arc, Mutex};
 pub type Resultat = (u16, Value);
 
 const R: Option<Color> = Some(Color::Red);
+const Y: Option<Color> = Some(Color::Yellow);
 const B: Option<Color> = Some(Color::Blue);
 
 /// Une carte de deck : nom anglais exact et couleur.
@@ -105,6 +106,36 @@ pub static SCENES: &[Scene] = &[
                     ("Brutal Assault", R),
                     ("Brutal Assault", R),
                     ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                ],
+                suite: &[],
+                arene: &[],
+            },
+            Cote {
+                heros: "Bravo, Flattering Showman",
+                main: &[
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                    ("Brutal Assault", B),
+                ],
+                suite: &[],
+                arene: &[],
+            },
+        ],
+        eleve_commence: true,
+        script: &[],
+    },
+    // Chapitre 5, « Payer » : plusieurs façons de payer un coût de 3.
+    Scene {
+        id: "payer",
+        joueurs: [
+            Cote {
+                heros: "Dorinthea",
+                main: &[
+                    ("Raging Onslaught", R),
+                    ("Brutal Assault", R),
+                    ("Brutal Assault", Y),
                     ("Brutal Assault", B),
                 ],
                 suite: &[],
@@ -280,7 +311,7 @@ pub fn repondre(
             let nom = param("nom").unwrap_or_default();
             let couleur = match param("couleur").as_deref() {
                 Some("rouge") => R,
-                Some("jaune") => Some(Color::Yellow),
+                Some("jaune") => Y,
                 Some("bleu") => B,
                 _ => None,
             };
@@ -393,7 +424,7 @@ mod tests {
                 let (nom, couleur) = (champs[1], champs[3]);
                 let c = match couleur {
                     "rouge" => R,
-                    "jaune" => Some(Color::Yellow),
+                    "jaune" => Y,
                     "bleu" => B,
                     _ => None,
                 };
@@ -433,5 +464,31 @@ mod tests {
             .iter()
             .any(|o| o["action"] == "jouer");
         assert!(!plus_d_action, "plus aucune carte ne se joue : {v}");
+    }
+
+    /// Scène « payer » : jaune + rouge (2 + 1) paient le coût de 3 de
+    /// Raging Onslaught ; il ne reste rien (CR 1.14.2d).
+    #[test]
+    fn scene_payer_avec_deux_cartes() {
+        let sc = SCENES.iter().find(|s| s.id == "payer").unwrap();
+        let mut s = lancer(sc).unwrap();
+        for mot in [
+            "Jouer Raging Onslaught",
+            "Pitcher Brutal Assault (jaune)",
+            "Pitcher Brutal Assault (rouge)",
+        ] {
+            let v = s.etat();
+            let i = v["decision"]["options"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|o| o["texte"].as_str().unwrap().contains(mot))
+                .map(|o| o["i"].as_u64().unwrap() as usize)
+                .unwrap_or_else(|| panic!("option « {mot} » absente : {v}"));
+            s.choisir(i).unwrap();
+        }
+        let v = s.etat();
+        assert_eq!(v["bot"]["vie"].as_i64().unwrap(), 20 - 7);
+        assert_eq!(v["vous"]["pitch"].as_array().unwrap().len(), 2);
     }
 }

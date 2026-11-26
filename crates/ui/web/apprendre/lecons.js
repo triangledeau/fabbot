@@ -197,7 +197,46 @@ const LECONS = [
       },
     ],
   },
-  { no: 5, titre: "Payer : coût et pitch", lecons: [] },
+  {
+    no: 5, titre: "Payer : coût et pitch",
+    lecons: [
+      {
+        id: "5-1", titre: "Payer en pitchant",
+        etapes: [
+          { texte: "Pour jouer une carte, tu paies son <b>coût</b> en <b>ressources</b>. Une carte d'action coûte en plus 1 point d'action.", cr: ["2.2.1", "1.13.3", "5.1.6b", "5.1.6c"] },
+          { texte: "Pour avoir des ressources, tu <b>pitches</b> des cartes de ta main : tu les poses dans ta zone de pitch et tu gagnes autant de ressources que leur pitch. Tu les pitches une par une, jusqu'à avoir assez.", cr: ["1.14.2d", "1.14.3"] },
+          { scene: "payer",
+            consigne: "Joue <b>Raging Onslaught</b> (coût 3). Pour payer, essaie cette fois la carte <b>jaune</b> (pitch 2) puis la <b>rouge</b> (pitch 1). Tu peux recommencer pour essayer la bleue seule (pitch 3).",
+            reussi: (e) => e.bot.vie < e.debut.bot.vie,
+            bravo: (e) => e.vous.pitch.length >= 2 ? "2 + 1 = 3 : le coût est payé avec deux cartes. Tu gardes la bleue en main." : "3 : la bleue paie le coût à elle seule. Tu gardes la jaune et la rouge en main." },
+          { texte: "Tu ne peux pitcher une carte que si tu as besoin de ses ressources pour payer, et une carte sans pitch ne peut pas être pitchée.", cr: ["1.14.3a", "1.14.3b"] },
+          { quiz: "Tu veux jouer une carte de coût 2. Tu pitches une carte bleue (pitch 3). Que deviennent les ressources ?", choix: ["2 paient le coût, 1 te reste jusqu'à la fin du tour", "Les 3 sont dépensées", "Le paiement est refusé : il faut l'appoint exact"], bonne: 0,
+            pourquoi: "Le coût est retiré de tes ressources ; le reste est gardé pour ce tour, puis perdu en fin de tour.", cr: ["1.14.2", "4.4.3e"] },
+          { quiz: "Peux-tu pitcher une carte « pour rien », sans avoir de coût à payer ?", choix: ["Non", "Oui, à tout moment"], bonne: 0,
+            pourquoi: "On ne pitche que pour payer un coût qui demande ces ressources, ou si un effet l'ordonne.", cr: ["1.14.3b"] },
+        ],
+      },
+      {
+        id: "5-2", titre: "Une carte, trois usages",
+        etapes: [
+          { texte: "Chaque carte de ta main peut servir de trois façons : la <b>jouer</b> (attaquer, par exemple), la <b>pitcher</b> pour payer une autre carte, ou <b>défendre</b> avec, pendant le tour adverse.", cr: ["5.1.1a", "1.14.3", "7.3.2a"] },
+          { texte: "Défendre avec une carte n'est pas la jouer : on ne paie pas son coût.", cr: ["7.3.2"] },
+          { texte: "Toute la difficulté du jeu est là : une carte pitchée ne défendra pas, une carte gardée pour défendre ne paiera pas. Le chapitre 7 revient sur la défense." },
+          { quiz: "Tu défends avec une carte de coût 3. Combien de ressources paies-tu ?", choix: ["0", "3"], bonne: 0,
+            pourquoi: "Déclarer une carte en défense n'est pas la jouer : son coût n'est pas payé.", cr: ["7.3.2"] },
+        ],
+      },
+      {
+        id: "5-3", titre: "Les cartes pitchées reviennent",
+        etapes: [
+          { texte: "À la fin du tour, les cartes de ta zone de pitch vont <b>sous ton deck</b>. Si tu en as plusieurs, tu choisis leur ordre, et ton adversaire ne le connaît pas.", cr: ["4.4.3c", "8.5.15c"] },
+          { texte: "Une carte pitchée n'est donc pas perdue : elle reviendra quand tu auras pioché tout le reste de ton deck. Une carte qui va au cimetière n'en sort que si un effet le permet." },
+          { quiz: "Qui voit l'ordre dans lequel tu ranges tes cartes pitchées sous ton deck ?", choix: ["Personne d'autre que toi", "Ton adversaire aussi"], bonne: 0,
+            pourquoi: "Cet ordre est une information cachée.", cr: ["4.4.3c"] },
+        ],
+      },
+    ],
+  },
   { no: 6, titre: "Attaquer : la chaîne de combat", lecons: [] },
   { no: 7, titre: "Défendre", lecons: [] },
   { no: 8, titre: "Réactions, instants et priorité", lecons: [] },
