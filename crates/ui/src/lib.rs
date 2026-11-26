@@ -14,45 +14,20 @@ pub mod vue;
 pub mod web;
 
 use fab_ai::side::SideAppris;
-use fab_cards::decklist::Decklist;
 use fab_cards::real;
 use fab_engine::{CardDb, CardPool, FormatConfig, GameSetup, GameState, Loadout, PlayerId};
 use fab_match::{InfoSide, Side};
 use std::sync::Arc;
 
-/// Les decks jouables dans l'interface : (nom court, fichier de `data/decks/`).
-pub const DECKS: &[(&str, &str)] = &[
-    ("ira", "01_ira.txt"),
-    ("hala", "02_hala.txt"),
-    ("dorinthea", "03_dorinthea.txt"),
-    ("bravo", "04_bravo.txt"),
-    ("iyslander", "05_iyslander.txt"),
-    ("florian", "06_florian.txt"),
-    ("levia", "07_levia.txt"),
-    ("dromai", "08_dromai.txt"),
-    ("arakni", "09_arakni.txt"),
-];
+/// Les decks jouables (noms courts), dans l'ordre des fichiers de
+/// `data/decks/` (voir `fab_cards::decks`).
+pub fn decks_jouables() -> Vec<String> {
+    fab_cards::decks::noms()
+}
 
 /// Charge le card-pool d'un deck jouable par son nom court.
 pub fn charger_pool(db: &CardDb, nom: &str) -> Result<CardPool, String> {
-    let fichier = DECKS
-        .iter()
-        .find(|(n, _)| n.eq_ignore_ascii_case(nom))
-        .map(|(_, f)| *f)
-        .ok_or_else(|| {
-            let noms: Vec<&str> = DECKS.iter().map(|(n, _)| *n).collect();
-            format!(
-                "deck inconnu : {nom} (decks jouables : {})",
-                noms.join(", ")
-            )
-        })?;
-    let chemin = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../data/decks")
-        .join(fichier);
-    let texte = std::fs::read_to_string(&chemin)
-        .map_err(|e| format!("lecture de {}: {e}", chemin.display()))?;
-    let liste = Decklist::parse(&texte).map_err(|e| format!("{fichier} : {e:?}"))?;
-    real::card_pool(db, &liste)
+    fab_cards::decks::charger_pool(db, nom)
 }
 
 /// Charge un deck jouable avec le choix « dans l'ordre de la liste »

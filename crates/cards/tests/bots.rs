@@ -199,21 +199,11 @@ fn b1_joue_des_parties_completes_avec_les_9_decks_sans_erreur() {
     // cachée ferait paniquer le test. `play_out` vérifie aussi la cohérence
     // de l'état après chaque décision.
     let db = Arc::new(real::build());
-    let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/decks");
-    let mut fichiers: Vec<_> = std::fs::read_dir(&dir)
-        .unwrap()
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| {
-            p.extension().is_some_and(|x| x == "txt")
-                && p.file_name()
-                    .unwrap()
-                    .to_string_lossy()
-                    .starts_with(|c: char| c.is_ascii_digit())
-        })
+    let fichiers: Vec<_> = fab_cards::decks::tous()
+        .into_iter()
+        .map(|d| d.fichier)
         .collect();
-    fichiers.sort();
-    assert_eq!(fichiers.len(), 9);
+    assert!(fichiers.len() >= 9);
     let decks: Vec<_> = fichiers
         .iter()
         .map(|f| {

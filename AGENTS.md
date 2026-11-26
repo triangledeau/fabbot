@@ -110,7 +110,7 @@ suivante, et rappelle au propriétaire de **changer de conversation**
   pour les cartes codées `python3 tools/check_coded_cards.py`.
 - Vraies cartes : `crates/cards/src/real/` (texte officiel en commentaire
   au-dessus de chaque carte).
-- Les 9 decks sont dans `data/decks/` ; `cargo run -p fab-cards --bin deck-stats`.
+- Les decks sont dans `data/decks/` (9 au départ) ; `cargo run -p fab-cards --bin deck-stats`.
 - En Silver Age il n'y a pas de sideboard séparé : avant chaque manche, on choisit
   équipement + deck de 40 dans un card-pool de 55 (CR 4.1).
 - **Chaque carte** suit le cycle : `NotCoded` → `Coded` → `Tested` → `Validated`.
@@ -133,6 +133,11 @@ suivante, et rappelle au propriétaire de **changer de conversation**
   `--bots b1 b0` : bots des deux joueurs).
 - Classement Elo des bots : `cargo run --release -p fab-sim -- --tournoi --bots b1 b0 --games 1000`
   (81 paires de decks ; voir `docs/bots.md`). Les bots lisent la partie via `fab_ai::vue::Vue`.
+- Bot B3 (recherche de B2 + évaluation apprise par auto-jeu) : `fab_ai::b3`, poids
+  `data/b3/evaluation.txt`, `fab-sim --apprendre-b3` (voir `docs/bots.md`).
+- Ajouter un deck : `docs/nouveau-deck.md` ; liste unique des decks `fab_cards::decks`
+  (fichiers `data/decks/NN_nom.txt`, decks en cours dans `data/decks/en_cours/`) ;
+  `cargo run -p fab-cards --bin verifier-deck -- <fichier>`.
 - Phase de side (équipement + 40 cartes avant chaque partie) : `fab_match::preparer_manche`,
   trait `Side` ; table apprise `data/side/b1.txt` (`fab-sim --apprendre-side`, à refaire
   quand un deck ou B1 change) ; `--side appris liste` pour comparer.

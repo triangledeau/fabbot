@@ -17,10 +17,10 @@ même temps : règles dans `AGENTS.md`, qui fait quoi dans `docs/taches.md`.
 | 4 | Bots B1 (heuristique) et B2 (ISMCTS) + classement Elo | ✅ B0 = 0, B1 = +511, B2 = +785 |
 | 5 | Interface web locale + annulation | ✅ (`fab-web`, à essayer par le propriétaire) |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ✅ bots (choix appris, +96 Elo) et page web (écran avant chaque manche) ; à essayer par le propriétaire |
-| 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ⏳ |
+| 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ✅ B3 = B2 + 26 Elo (−1 à +53) ; procédure : `docs/nouveau-deck.md` |
 
 **Branche de départ :** `main` (depuis le 2026-11-26, Claude crée et
-fusionne lui-même la pull request à la fin de chaque tâche ; l'étape 6 est
+fusionne lui-même la pull request à la fin de chaque tâche ; l'étape 7 est
 fusionnée).
 
 **Jouer dans le navigateur :** double-cliquer sur **`Jouer.bat`** (mise à
@@ -41,7 +41,17 @@ pour le bot qui cherche (une fraction de seconde par décision ; `b2-1000` ou
 **Bots et Elo :** `docs/bots.md` (règles de B1, tournoi, résultats).
 Tournoi : `cargo run --release -p fab-sim -- --tournoi --bots b1 b0 --games 1000 --check`.
 
-**Chiffres actuels :** 782 tests au vert. **B2 contre B1 : 83,9 % sur les
+**Étape 7 :** **B3** = la recherche de B2 avec une estimation **apprise**
+par auto-jeu (poids lisibles dans `data/b3/evaluation.txt`, appris sur
+des parties de B3 contre B3) : **B3 contre B2 : 53,7 % sur 648 parties
+(+26 Elo, intervalle −1 à +53), 0 erreur** ; `--niveau b3` dans
+`fab-ui`, menu « niveau » de la page web. Gain modeste : détail et pistes
+dans `docs/bots.md`. **Ajouter un deck** : `docs/nouveau-deck.md` (liste
+dans `data/decks/en_cours/`, `verifier-deck`, cartes, puis le fichier passe
+dans `data/decks/` et il est pris en compte partout ; tables des bots à
+refaire).
+
+**Chiffres actuels :** 794 tests au vert. **B2 contre B1 : 83,9 % sur les
 81 paires des 9 decks (1 620 parties, 0 erreur) → +287 Elo** ; B2 contre
 B0 : 98,8 %. Classement commun : **B0 = 0, B1 = +511, B2 = +796**. B2
 imagine la main adverse dans le **card-pool de 55** (pas les 40 choisies).
@@ -285,9 +295,15 @@ les cartes.
 (`Jouer.bat`) et essayer l'écran de choix avant chaque manche ; dire ce
 qui gêne. Relire `data/side/b1.txt`.
 
-**Pour Claude :** **étape 7**, bot B3 (évaluation apprise par auto-jeu) et
-procédure « nouveau deck » (ajouter un 10e deck : liste, cartes, tests,
-`--apprendre-side`). Pistes pour la phase de side : apprendre avec B2
+**Pour le propriétaire (étape 7) :** essayer B3 (`--niveau b3`, ou le
+menu de la page web) ; relire `docs/nouveau-deck.md` et dire si un 10e deck
+est voulu (donner sa liste).
+
+**Pour Claude :** l'étape 7 est finie ; il n'y a plus d'étape prévue.
+Prochaine tâche proposée : **améliorer B3** (3e génération d'auto-jeu,
+caractéristiques sur le contenu de la main, mesure sur plus de parties), ou
+**un 10e deck** si le propriétaire en donne la liste (suivre
+`docs/nouveau-deck.md`). Pistes pour la phase de side : apprendre avec B2
 plutôt que B1, tenir compte du premier joueur et de l'arène adverse
 (variables croisées), refaire l'apprentissage contre l'adversaire qui
 utilise lui-même la table. Pistes d'amélioration de B2, à mesurer plus tard : une estimation qui compte le

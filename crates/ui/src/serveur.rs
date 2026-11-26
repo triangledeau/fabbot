@@ -19,10 +19,10 @@
 //! | `POST /api/manche-suivante` | préparer la manche suivante |
 //! | `GET /api/carte-pool?id=7` | texte d'une carte du card-pool (écran de préparation) |
 
+use crate::decks_jouables;
 use crate::match_web::{Etape, MatchWeb};
 use crate::textes::Textes;
 use crate::web::Reglages;
-use crate::DECKS;
 use fab_ai::BOTS;
 use serde_json::{json, Value};
 use std::io::{self, BufRead, BufReader, Read, Write};
@@ -125,7 +125,7 @@ pub fn repondre(methode: &str, requete: &str, etat: &mut Etat) -> Reponse {
             corps: PAGE.to_string(),
         },
         ("GET", "/api/decks") => Reponse::json(json!({
-            "decks": DECKS.iter().map(|(n, _)| *n).collect::<Vec<_>>(),
+            "decks": decks_jouables(),
             "niveaux": BOTS,
             "textes": etat.textes.is_some(),
         })),
