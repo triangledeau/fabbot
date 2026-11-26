@@ -1,0 +1,177 @@
+//! Arsenal, lot 4a : collection Silver Age et decks maison (import d'une
+//! liste FaBrary, vérification, partie avec un deck maison).
+
+use fab_cards::decklist::Decklist;
+use fab_cards::decks;
+use fab_ui::serveur::{repondre, repondre_avec_corps, Etat};
+use fab_ui::web::Reglages;
+use serde_json::Value;
+
+fn etat_serveur() -> Etat {
+    Etat {
+        partie: None,
+        textes: None,
+        depart: Reglages {
+            deck: "hala".into(),
+            deck_bot: "dorinthea".into(),
+            niveau: "b0".into(),
+            graine: 1,
+            manches: 1,
+        },
+        sauvegarde: None,
+    }
+}
+
+fn json(r: &fab_ui::serveur::Reponse) -> Value {
+    serde_json::from_str(r.texte()).unwrap()
+}
+
+/// Un deck du projet réécrit comme l'export texte de FaBrary.
+fn export_fabrary(nom: &str) -> String {
+    let l = decks::liste(nom).unwrap();
+    let mut t = format!("Name: {nom} maison\nHero: {}\nFormat: Silver Age\n\nArena cards\n", l.hero);
+    for e in &l.arena {
+        t.push_str(&format!("{}x {}\n", e.count, e.name));
+    }
+    t.push_str("\nDeck cards\n");
+    for e in &l.deck {
+        t.push_str(&format!("{}x {} ({})\n", e.count, e.name, e.color));
+    }
+    t.push_str("\nMade with ❤️ at https://fabrary.net\n");
+    t
+}
+
+/// Supprime le deck maison à la fin du test, même en cas d'échec.
+struct Nettoyer(&'static str);
+impl Drop for Nettoyer {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(decks::dossier_maison().join(format!("{}.txt", self.0)));
+    }
+}
+
+fn importer(e: &mut Etat, nom: &str, texte: &str) -> fab_ui::serveur::Reponse {
+    repondre_avec_corps(
+        "POST",
+        &format!("/api/deck-maison/importer?nom={nom}"),
+        texte.as_bytes(),
+        e,
+    )
+}
+
+#[test]
+fn un_deck_fabrary_importe_est_enregistre_jouable_et_se_joue() {
+    let nom = "test-import-hala";
+    let _n = Nettoyer(nom);
+    let mut e = etat_serveur();
+    let r = importer(&mut e, nom, &export_fabrary("hala"));
+    assert_eq!(r.code, 200, "{}", r.texte());
+    let v = json(&r);
+    assert_eq!(v["jouable"], true, "{v}");
+    assert_eq!(v["heros"], "Hala");
+    assert_eq!(v["arene"].as_u64().unwrap() + v["deck"].as_u64().unwrap(), 55);
+    // Le fichier écrit est la même liste que le deck du projet.
+    let ecrit = Decklist::parse(
+        &std::fs::read_to_string(decks::dossier_maison().join(format!("{nom}.txt"))).unwrap(),
+    )
+    .unwrap();
+    let projet = decks::liste("hala").unwrap();
+    assert_eq!(ecrit.arena, projet.arena);
+    assert_eq!(ecrit.deck, projet.deck);
+    // Proposé dans la page, et jouable contre le bot.
+    let d = json(&repondre("GET", "/api/decks", &mut e));
+    assert!(d["decks_maison"].as_array().unwrap().iter().any(|x| x == nom));
+    let r = repondre(
+        "POST",
+        &format!("/api/nouvelle?deck={nom}&bot=dorinthea&niveau=b0&graine=3&manches=1"),
+        &mut e,
+    );
+    assert_eq!(r.code, 200, "{}", r.texte());
+    assert_eq!(json(&r)["reglages"]["deck"], nom);
+    // Relu par la route du deck.
+    let v = json(&repondre("GET", &format!("/api/deck-maison?nom={nom}"), &mut e));
+    assert_eq!(v["jouable"], true);
+    assert!(v["texte"].as_str().unwrap().contains("Hero: Hala"));
+    let l = json(&repondre("GET", "/api/decks-maison", &mut e));
+    assert!(l["decks"].as_array().unwrap().iter().any(|d| d["nom"] == nom));
+}
+
+#[test]
+fn un_deck_avec_une_carte_non_codee_est_garde_mais_pas_jouable() {
+    let nom = "test-import-non-codee";
+    let _n = Nettoyer(nom);
+    let mut e = etat_serveur();
+    // Une vraie carte Silver Age que le bot ne sait pas encore jouer.
+    let texte = export_fabrary("hala").replace(
+        "Deck cards\n",
+        "Deck cards\n2x Command and Conquer (red)\n",
+    );
+    let v = json(&importer(&mut e, nom, &texte));
+    assert_eq!(v["jouable"], false, "{v}");
+    let nc: Vec<&str> = v["non_codees"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| x.as_str().unwrap())
+        .collect();
+    assert_eq!(nc, ["Command and Conquer (rouge)"]);
+    let d = json(&repondre("GET", "/api/decks", &mut e));
+    assert!(!d["decks_maison"].as_array().unwrap().iter().any(|x| x == nom));
+    assert!(decks::dossier_maison().join(format!("{nom}.txt")).exists());
+}
+
+#[test]
+fn verifier_signale_le_format_sans_rien_enregistrer() {
+    let mut e = etat_serveur();
+    let texte = export_fabrary("hala").replace(
+        "2x Edict of Steel (red)",
+        "3x Edict of Steel (red)",
+    );
+    let r = repondre_avec_corps("POST", "/api/deck-maison/verifier", texte.as_bytes(), &mut e);
+    let v = json(&r);
+    assert_eq!(v["jouable"], false);
+    assert!(
+        v["problemes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|p| p.as_str().unwrap().contains("3 copies")),
+        "{v}"
+    );
+}
+
+#[test]
+fn un_nom_invalide_ou_deja_pris_est_refuse() {
+    let mut e = etat_serveur();
+    let t = export_fabrary("hala");
+    for nom in ["", "Avec%20Espace", "hala", "accent%C3%A9"] {
+        let r = importer(&mut e, nom, &t);
+        assert_eq!(r.code, 400, "{nom} : {}", r.texte());
+    }
+    // Liste illisible : refusée, rien d'écrit.
+    let r = importer(&mut e, "test-illisible", "Hero: Personne\n1x Rien\n");
+    assert_eq!(r.code, 400);
+    assert!(!decks::dossier_maison().join("test-illisible.txt").exists());
+}
+
+#[test]
+fn la_collection_contient_les_cartes_des_neuf_decks_marquees_codees() {
+    let mut e = etat_serveur();
+    let v = json(&repondre("GET", "/api/collection", &mut e));
+    let cartes = v["cartes"].as_array().unwrap();
+    assert!(["fabcube", "codees"].contains(&v["source"].as_str().unwrap()));
+    for d in decks::tous() {
+        let l = decks::liste(&d.nom).unwrap();
+        for e in &l.deck {
+            let coul = match e.color {
+                fab_cards::decklist::Color::Red => "rouge",
+                fab_cards::decklist::Color::Yellow => "jaune",
+                fab_cards::decklist::Color::Blue => "bleu",
+            };
+            let c = cartes
+                .iter()
+                .find(|c| c["nom"] == e.name.as_str() && c["couleur"] == coul)
+                .unwrap_or_else(|| panic!("{} : {} ({coul}) absente", d.nom, e.name));
+            assert_eq!(c["codee"], true, "{}", e.name);
+        }
+    }
+}

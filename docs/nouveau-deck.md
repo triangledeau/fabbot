@@ -7,6 +7,13 @@ conversations : `docs/suivi.md` dit où on en est.
 
 Exemple utilisé ci-dessous : un deck Kayo, fichier `10_kayo.txt`.
 
+**Juste jouer un deck dont toutes les cartes sont déjà codées ?** Pas
+besoin de cette procédure : volet « Mes decks » de `fab-web` (import de la
+liste FaBrary, voir `docs/interface.md`). Le deck va dans
+`data/decks/maison/` et se joue tout de suite contre le bot. La page sert
+aussi de premier contrôle d'une nouvelle liste : elle donne les cartes pas
+encore codées.
+
 ## 1. La liste (propriétaire, puis Claude)
 
 Le propriétaire fournit la liste (copie d'un site de decks, ou texte libre).

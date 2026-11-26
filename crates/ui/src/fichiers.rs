@@ -46,6 +46,9 @@ pub static FICHIERS: &[Fichier] = &[
     // partie : plateau animé (lot 2, d'après finition.js de l'Arsenal JS)
     fichier!("partie/finition.css", CSS),
     fichier!("partie/finition.js", JS),
+    // decks maison : import FaBrary et vérification (lot 4a)
+    fichier!("decks/decks.css", CSS),
+    fichier!("decks/decks.js", JS),
 ];
 
 /// Le fichier demandé par `chemin` (`/` = `index.html`).

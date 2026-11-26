@@ -21,6 +21,7 @@
 //! | `GET /api/carte-pool?id=7` | texte d'une carte du card-pool (écran de préparation) |
 //! | `GET /api/sauvegarde` | la sauvegarde du match en cours (JSON, [`crate::sauvegarde`]) |
 //! | `POST /api/charger` (corps : une sauvegarde) | reprend le match d'une sauvegarde |
+//! | `/api/collection`, `/api/decks-maison`, `/api/deck-maison…` | decks maison ([`crate::api_decks`]) |
 //!
 //! Après chaque requête `POST` réussie, le match est écrit dans le fichier
 //! de sauvegarde ([`Etat::sauvegarde`]), s'il y en a un.
@@ -132,13 +133,25 @@ pub fn repondre(methode: &str, requete: &str, etat: &mut Etat) -> Reponse {
     repondre_avec_corps(methode, requete, &[], etat)
 }
 
-/// Traite une requête ; `corps` ne sert qu'à `POST /api/charger`.
+/// Traite une requête ; `corps` sert à `POST /api/charger` et aux routes
+/// des decks maison.
 pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mut Etat) -> Reponse {
     let (chemin, ps) = parametres(requete);
     let param = |k: &str| ps.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone());
+    if let Some((code, v)) = crate::api_decks::repondre(methode, chemin, &param, corps) {
+        return if code == 200 {
+            Reponse::json(v)
+        } else {
+            Reponse {
+                code,
+                ..Reponse::json(v)
+            }
+        };
+    }
     match (methode, chemin) {
         ("GET", "/api/decks") => Reponse::json(json!({
             "decks": decks_jouables(),
+            "decks_maison": crate::api_decks::maison_jouables(),
             "niveaux": BOTS,
             "textes": etat.textes.is_some(),
         })),
