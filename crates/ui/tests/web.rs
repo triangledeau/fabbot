@@ -746,13 +746,19 @@ fn chaque_arme_et_equipement_dit_son_emplacement_sur_le_tapis() {
         let mut vus = Vec::new();
         for c in eq {
             let e = c["emplacement"].as_str().unwrap();
-            assert!(["arme", "tete", "torse", "bras", "jambes"].contains(&e), "{e}");
+            assert!(
+                ["arme", "tete", "torse", "bras", "jambes"].contains(&e),
+                "{e}"
+            );
             if e != "arme" {
                 assert!(!vus.contains(&e), "{qui} : deux cartes en {e}");
                 vus.push(e);
             }
         }
-        assert!(eq.iter().any(|c| c["emplacement"] == "arme"), "{qui} : pas d'arme");
+        assert!(
+            eq.iter().any(|c| c["emplacement"] == "arme"),
+            "{qui} : pas d'arme"
+        );
     }
     // Hors armes et équipement, pas d'emplacement.
     for c in v["vous"]["main"].as_array().unwrap() {
