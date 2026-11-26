@@ -92,6 +92,11 @@ Le deck est alors lu **partout** par `fab_cards::decks` (la seule liste des
 decks) : simulateur, tournois, interface texte (`--deck kayo`), page web
 (menu des decks), tests. Mettre à jour le tableau de `data/decks/README.md`.
 
+**Images des cartes** (page web) : relancer `python3 tools/images_cartes.py`
+(il lit le fichier officiel de `bash tools/fetch_cards.sh`) et committer
+`data/cards/images.tsv` ; sinon le test `chaque_carte_des_neuf_decks_a_une_image`
+échoue et les nouvelles cartes s'affichent avec leur cadre dessiné.
+
 Vérifications :
 
 ```bash

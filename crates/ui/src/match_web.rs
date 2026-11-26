@@ -95,9 +95,12 @@ fn nom_zone(z: Zone) -> &'static str {
 /// Une carte du card-pool (pas encore un objet de partie).
 fn carte_pool(db: &CardDb, c: CardId) -> Value {
     let d = db.get(c);
+    let (image, nom_fr) = crate::images::champs(d);
     json!({
         "carte_id": c.0,
         "nom": d.name,
+        "nom_fr": nom_fr,
+        "image": image,
         "couleur": nom_couleur(d.color),
         "genre": genre_de(d),
         "cout": d.cost,

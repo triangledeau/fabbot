@@ -18,7 +18,7 @@ même temps : règles dans `AGENTS.md`, qui fait quoi dans `docs/taches.md`.
 | 5 | Interface web locale + annulation | ✅ (`fab-web`, à essayer par le propriétaire) |
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ✅ bots (choix appris, +96 Elo) et page web (écran avant chaque manche) ; à essayer par le propriétaire |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ✅ B3 (3e génération) = B2 + 53 Elo (+34 à +73) ; procédure : `docs/nouveau-deck.md` |
-| 8 | Rapatriement de l'Arsenal JS dans la page web (plan : `docs/rapatriement-arsenal.md`) | 🔄 lot 0 (accueil Arsenal, page en plusieurs fichiers, navigation par #) fait ; avancement lot par lot dans le plan |
+| 8 | Rapatriement de l'Arsenal JS dans la page web (plan : `docs/rapatriement-arsenal.md`) | 🔄 lots 0 (accueil Arsenal, page en plusieurs fichiers, navigation par #) et 1 (images des cartes en VF, noms français) faits ; avancement lot par lot dans le plan |
 
 **Branche de départ :** `main` (depuis le 2026-11-26, Claude crée et
 fusionne lui-même la pull request à la fin de chaque tâche ; l'étape 7 est
@@ -306,8 +306,8 @@ est voulu (donner sa liste).
 commence par l'accueil Arsenal ; dire si l'habillage de la partie convient.
 
 **Pour Claude (étape 8) :** suivre `docs/rapatriement-arsenal.md`, lot par
-lot dans l'ordre validé (colonne « Avancement ») ; prochain lot : 1
-(images des cartes).
+lot dans l'ordre validé (colonne « Avancement ») ; prochain lot : 2
+(plateau animé).
 
 **Pour Claude :** l'étape 7 est finie ; il n'y a plus d'étape prévue.
 Prochaine tâche proposée (B3 3e génération faite le 2026-11-26 : les
