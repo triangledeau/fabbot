@@ -208,3 +208,22 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 @media (max-width: 1250px) { .aire, .aire.o { grid-template-columns: minmax(0, 1fr); } .aire.o .arena, .aire.o .etat-joueur { grid-column: 1; grid-row: auto; } .aire.o .etat-joueur { align-items: flex-start; text-align: left; } }
 .z .carte .pastilles { flex-direction: column; align-items: flex-end; flex-wrap: nowrap; }
 .z .carte .pastilles span { font-size: 8px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 1px 4px; }
+
+/* ---------- Ajustement avant la manche (lot 4c) ---------- */
+.seg-sources { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+#v-partie .seg-sources button { border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+#v-partie .seg-sources button[aria-pressed=true] { background: var(--ink); color: var(--primary-ink, #14110c); border-color: var(--ink); }
+.rangee-zones { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.piles { --cw: 96px; display: flex; flex-wrap: wrap; gap: 12px 10px; align-items: flex-start; margin-top: 8px; }
+.pile-cartes { position: relative; width: var(--cw); height: calc(var(--cw) / .716 + var(--cw) * .2 * (var(--t) - 1)); cursor: pointer; outline-offset: 3px; }
+.pile-cartes .ex { position: absolute; left: 0; top: calc(var(--cw) * .2 * var(--i)); width: var(--cw); height: calc(var(--cw) / .716); border-radius: 6px; overflow: hidden; background: #1b2029; border: 1px solid var(--bord); box-shadow: 0 2px 6px #000; transition: filter .15s, transform .15s; }
+.pile-cartes .ex img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pile-cartes .ex .nm { position: absolute; left: 4px; right: 4px; top: 6px; font: 700 11px/1.15 var(--f-display); }
+.pile-cartes .ex.a-img .nm { display: none; }
+.pile-cartes .ex.c-rouge { border-top: 3px solid var(--rouge); } .pile-cartes .ex.c-jaune { border-top: 3px solid var(--jaune); } .pile-cartes .ex.c-bleu { border-top: 3px solid var(--bleu); }
+.pile-cartes .ex.off { filter: grayscale(1) brightness(.4); }
+.pile-cartes:hover .ex:not(.off) { transform: translateY(-2px); }
+.pile-cartes .q { position: absolute; right: -4px; bottom: -6px; z-index: 5; font: 700 12px/1 var(--f-num); background: var(--brass); color: #14110c; border-radius: 999px; padding: 3px 7px; }
+.pile-cartes.eteinte .q { background: #5a5f6a; color: #fff; }
+.pile-cartes.secoue { animation: pilesecoue .3s; }
+@keyframes pilesecoue { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }

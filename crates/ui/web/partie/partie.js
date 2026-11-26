@@ -178,6 +178,90 @@ async function montrerPool(id, c) {
 let choixArene = null;   // ensemble des positions choisies
 let choixDeck = null;    // quantité par carte distincte
 let etapeVue = null;
+let sourceReglage = "proposition";
+
+// ---------- ajustement avant la manche (lot 4c, d'après openAdjust de
+// l'Arsenal JS) : départ au choix (dernier réglage gardé par le navigateur,
+// plan conseillé par la table apprise, proposition du serveur), cartes en
+// piles : clic = un exemplaire de plus au deck, clic droit = un de moins.
+
+// Dernier réglage de ce matchup (vos decks contre ce deck du bot).
+const cleReglage = () => `arsenal-reglage:${etat.reglages.deck}>${etat.reglages.deck_bot}`;
+const signature = (p) => p.arene.map(c => c.nom).join("|") + "#" + p.deck.map(c => c.nom + c.couleur).join("|");
+function lireReglage(p) {
+  try {
+    const r = JSON.parse(localStorage.getItem(cleReglage()) || "null");
+    return r && r.sig === signature(p) ? r : null;
+  } catch (e) { return null; }
+}
+function garderReglage(p) {
+  try { localStorage.setItem(cleReglage(), JSON.stringify({ sig: signature(p), arene: [...choixArene], deck: choixDeck, quand: Date.now() })); } catch (e) {}
+}
+function sources(p) {
+  const d = lireReglage(p);
+  return [
+    ["dernier", "Dernier réglage", d ? { arene: d.arene, deck: d.deck } : null, d ? "Votre dernier réglage contre ce deck (" + new Date(d.quand).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) + ")" : "Pas encore de réglage gardé contre ce deck"],
+    ["conseil", "Plan conseillé", p.conseil, "Choix de la table apprise des bots pour votre card-pool contre ce héros"],
+    ["proposition", "Proposition", { arene: p.arene.filter(c => c.propose).map(c => c.i), deck: p.deck.map(c => c.propose) }, "Ordre de la liste, ou votre choix de la manche précédente"],
+  ];
+}
+function appliquer(p, nom) {
+  const src = sources(p).find(x => x[0] === nom && x[2]);
+  if (!src) return false;
+  sourceReglage = nom;
+  if (p.etape === "arene") choixArene = new Set(src[2].arene);
+  else choixDeck = src[2].deck.slice();
+  return true;
+}
+function barreSources(p) {
+  const g = el("div", "seg-sources");
+  g.setAttribute("role", "group");
+  g.setAttribute("aria-label", "Point de départ");
+  g.appendChild(el("span", "aide", "Départ :"));
+  for (const [nom, lib, val, aide] of sources(p)) {
+    const b = el("button", null, lib);
+    b.title = aide;
+    b.disabled = !val;
+    b.setAttribute("aria-pressed", String(sourceReglage === nom));
+    b.addEventListener("click", () => { appliquer(p, nom); preparation(); });
+    g.appendChild(b);
+  }
+  return g;
+}
+
+// Une pile : les exemplaires d'une carte, ceux hors du deck grisés.
+function pile(c, k) {
+  const t = c.max, n = choixDeck[k];
+  const e = el("div", "pile-cartes" + (n ? "" : " eteinte"));
+  e.tabIndex = 0;
+  e.setAttribute("role", "button");
+  e.style.setProperty("--t", t);
+  e.title = `${c.nom_fr || c.nom}${c.couleur ? " (" + c.couleur + ")" : ""} : ${n} au deck sur ${t}\nClic : un de plus · clic droit : un de moins`;
+  for (let i = 0; i < t; i++) {
+    const x = el("div", "ex" + (i >= n ? " off" : ""));
+    x.style.setProperty("--i", i);
+    if (c.image) { x.classList.add("a-img"); x.appendChild(Images.img(c.image, "normal", x, "a-img")); }
+    x.appendChild(el("span", "nm", c.nom_fr || c.nom));
+    x.classList.add("c-" + (c.couleur || "n"));
+    e.appendChild(x);
+  }
+  if (t > 1 || !n) e.appendChild(el("span", "q", `${n}/${t}`));
+  const changer = (d) => {
+    const v = choixDeck[k] + d;
+    if (v < 0 || v > t) { e.classList.remove("secoue"); void e.offsetWidth; e.classList.add("secoue"); return; }
+    choixDeck[k] = v; sourceReglage = "modifie"; preparation();
+    const f = document.querySelector(`#preparation .pile-cartes[data-k="${k}"]`); if (f) f.focus({ preventScroll: true });
+  };
+  e.dataset.k = k;
+  e.addEventListener("click", () => changer(+1));
+  e.addEventListener("contextmenu", (ev) => { ev.preventDefault(); changer(-1); });
+  e.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" || ev.key === " " || ev.key === "+") { ev.preventDefault(); changer(+1); }
+    else if (ev.key === "Delete" || ev.key === "Backspace" || ev.key === "-") { ev.preventDefault(); changer(-1); }
+  });
+  e.addEventListener("mouseenter", () => montrerPool(c.carte_id, c));
+  return e;
+}
 
 function preparation() {
   const p = etat.preparation;
@@ -186,6 +270,8 @@ function preparation() {
     etapeVue = cle;
     choixArene = new Set(p.arene.filter(c => c.propose).map(c => c.i));
     choixDeck = p.deck.map(c => c.propose);
+    sourceReglage = "proposition";
+    if (p.etape === "arene" || p.etape === "deck") appliquer(p, "dernier");
   }
   const s = $("preparation");
   s.replaceChildren();
@@ -211,12 +297,13 @@ function preparation() {
     const b = el("div", "bloc");
     const barre = el("div", "barre");
     const v = el("button", "principal", "Valider l'équipement");
-    v.addEventListener("click", () => action("POST", "/api/arene?cartes=" + [...choixArene].join(",")));
-    barre.appendChild(v);
-    barre.appendChild(el("span", "aide", "Une carte par zone (deux mains pour les armes). Le bot choisit le sien sans voir le vôtre ; vous le verrez ensuite."));
+    v.addEventListener("click", () => { garderReglage(p); action("POST", "/api/arene?cartes=" + [...choixArene].join(",")); });
+    barre.append(v, barreSources(p));
     b.appendChild(barre);
+    b.appendChild(el("p", "aide", "Une carte par zone (deux mains pour les armes). Le bot choisit le sien sans voir le vôtre ; vous le verrez ensuite."));
     const zones = [];
     for (const c of p.arene) if (!zones.includes(c.zone)) zones.push(c.zone);
+    const rang = el("div", "rangee-zones");
     for (const z of zones) {
       const cartes = p.arene.filter(c => c.zone === z);
       const zz = el("div", "zone");
@@ -233,13 +320,15 @@ function preparation() {
             if (z !== "Armes") for (const o of cartes) choixArene.delete(o.i);
             choixArene.add(c.i);
           }
+          sourceReglage = "modifie";
           preparation();
         });
         r.appendChild(e);
       }
       zz.appendChild(r);
-      b.appendChild(zz);
+      rang.appendChild(zz);
     }
+    b.appendChild(rang);
     s.appendChild(b);
   } else if (p.etape === "deck") {
     const ab = el("div", "bloc");
@@ -247,33 +336,22 @@ function preparation() {
     s.appendChild(ab);
     const b = el("div", "bloc");
     const total = choixDeck.reduce((a, n) => a + n, 0);
+    const hors = p.deck.reduce((a, c, k) => a + c.max - choixDeck[k], 0);
     const barre = el("div", "barre");
-    const t = el("span", total === p.taille_deck ? "ok" : "ko", `${total} / ${p.taille_deck} cartes`);
+    const t = el("span", total === p.taille_deck ? "ok" : "ko", `${total} / ${p.taille_deck}`);
     t.id = "total";
+    const m = el("span", "aide", total === p.taille_deck ? "prêt" : total < p.taille_deck ? `il en manque ${p.taille_deck - total}` : `${total - p.taille_deck} de trop`);
     const v = el("button", "principal", "Valider le deck");
     v.disabled = total !== p.taille_deck;
-    v.addEventListener("click", () => action("POST", "/api/deck?n=" + choixDeck.join(",")));
-    const r0 = el("button", null, "Revenir à la proposition");
-    r0.addEventListener("click", () => { choixDeck = p.deck.map(c => c.propose); preparation(); });
-    barre.append(t, v, r0, el("span", "aide", "Choisissez exactement 40 cartes parmi celles de votre card-pool."));
+    v.addEventListener("click", () => { garderReglage(p); action("POST", "/api/deck?n=" + choixDeck.join(",")); });
+    barre.append(t, m, v, barreSources(p), el("span", "aide", `${hors} exemplaire(s) hors du deck (side) · clic : un de plus · clic droit : un de moins`));
     b.appendChild(barre);
-    const r = el("div", "cartes");
-    p.deck.forEach((c, k) => {
-      const box = el("div", "carte-deck");
-      const e = carte(c, true);
-      if (choixDeck[k] === 0) e.classList.add("non-choisie");
-      box.appendChild(e);
-      const q = el("div", "qte");
-      const moins = el("button", null, "−");
-      moins.disabled = choixDeck[k] === 0;
-      moins.addEventListener("click", () => { choixDeck[k]--; preparation(); });
-      const plus = el("button", null, "+");
-      plus.disabled = choixDeck[k] >= c.max;
-      plus.addEventListener("click", () => { choixDeck[k]++; preparation(); });
-      q.append(moins, el("b", null, `${choixDeck[k]}/${c.max}`), plus);
-      box.appendChild(q);
-      r.appendChild(box);
+    const r = el("div", "piles");
+    const ordre = p.deck.map((c, k) => k).sort((x, y) => {
+      const a = p.deck[x], c = p.deck[y];
+      return ((a.cout ?? 99) - (c.cout ?? 99)) || ((a.pitch ?? 9) - (c.pitch ?? 9)) || a.nom.localeCompare(c.nom);
     });
+    for (const k of ordre) r.appendChild(pile(p.deck[k], k));
     b.appendChild(r);
     s.appendChild(b);
   }
