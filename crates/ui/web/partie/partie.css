@@ -468,3 +468,6 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 
 /* La carte qui pose la question, en tête de la question */
 .ruban .prompt .src-ruban, .ruban .prompt .src-ruban.img { float: left; width: 40px; height: 56px; min-height: 0; margin: 0 8px 2px 0; border-radius: 4px; box-shadow: 0 0 0 1px var(--brass), 0 3px 8px #000; cursor: help; }
+/* Centrage exact du nombre dans le médaillon, quelle que soit la police :
+   la boîte du texte est rognée à la hauteur des chiffres (capitale → ligne de base). */
+.z .pv b { display: block; line-height: 1; text-box: trim-both cap alphabetic; }
