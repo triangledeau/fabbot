@@ -135,6 +135,16 @@ Pour les développeurs : `crates/ui/src/api_decks.rs` (routes
 `fab_cards::import` (lecture de l'export FaBrary), `fab_cards::decks`
 (decks maison). Page : `crates/ui/web/decks/`.
 
+### Imprimer des proxies
+
+Depuis l'accueil, **Imprimer** : choisissez un deck (du projet ou maison),
+le papier (A4 ou Letter), avec ou sans héros et équipement, traits de
+coupe, espace entre les cartes. La page montre les feuilles (9 cartes de
+63 × 88 mm par page, images officielles en VF quand elles existent) ;
+**Imprimer…** ouvre l'impression du navigateur (ou « Enregistrer en
+PDF »). Imprimez à 100 %, sans « ajuster à la page ». Page :
+`crates/ui/web/impression/`.
+
 ### Tapis de jeu
 
 Chaque joueur a son **tapis**, disposé comme le playmat officiel (repris de

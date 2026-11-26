@@ -11,8 +11,9 @@ const Arsenal = (() => {
     "nouveau-match": "partie",
     "decks": "decks",
     "editeur": "decks",
+    "impression": "impression",
   };
-  const TITRES = { accueil: "Arsenal — FaB Silver Age", partie: "Arsenal — Partie", decks: "Arsenal — Mes decks" };
+  const TITRES = { accueil: "Arsenal — FaB Silver Age", partie: "Arsenal — Partie", decks: "Arsenal — Mes decks", impression: "Arsenal — Imprimer" };
   const adresse = () => {
     const a = decodeURIComponent(location.hash.slice(1));
     return ADRESSES[a] ? a : "accueil";

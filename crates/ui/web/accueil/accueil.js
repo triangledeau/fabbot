@@ -30,7 +30,7 @@
         <div class="foot"><div class="row"><span class="muted">En attendant</span><span class="num">fab-sim --tournoi</span></div></div>
       </div>
     </nav>
-    <div class="homefoot"><a class="btn small" href="#decks">Mes decks</a><span>Moteur <b>fabbot</b> (Rust)</span><span id="a-textes"></span></div>
+    <div class="homefoot"><a class="btn small" href="#decks">Mes decks</a><a class="btn small" href="#impression">Imprimer</a><span>Moteur <b>fabbot</b> (Rust)</span><span id="a-textes"></span></div>
   </div></div>`;
 
   // Match en cours (le serveur en lance un au démarrage) : on propose de le reprendre.
