@@ -146,7 +146,18 @@ appeler le bot (`Session::rejouer`, `crates/ui/src/sauvegarde.rs`).
 Sauvegarde automatique après chaque choix dans `sauvegardes/en-cours.json`,
 reprise au lancement (`--nouvelle-partie` pour l'éviter), boutons
 Exporter / Importer dans l'en-tête de la partie, bandeau « reprendre » de
-l'accueil (lot 0). Chaque lot se
+l'accueil (lot 0).
+
+**Lot 4a, ce qui a été fait (2026-11-26)** : collection Silver Age
+(`GET /api/collection` : cartes légales d'après la base communautaire,
+drapeau `codee` = jouable par le bot ; cartes codées trop récentes pour la
+base ajoutées ; sans la base, cartes codées seules). Decks maison dans
+`data/decks/maison/` (ignorés par Git), lus à l'exécution, jouables dans
+`fab-web` (pas dans le tournoi). Import de l'export texte FaBrary
+(`fab_cards::import`), vérification (format, légalité, héros Young, cartes
+codées, équipement de départ possible), volet « Mes decks » (`#decks`,
+`web/decks/`). Le lot 4b (éditeur) part de `GET /api/collection` et
+`GET /api/deck-maison?nom=` (liste détaillée). Chaque lot se
 termine par une pull request fusionnée et peut être pris par n'importe quel
 agent.
 
@@ -156,7 +167,7 @@ agent.
 | 1. Images | Script qui associe chaque carte codée à son image (VF bord noir d'abord), nom français, champ `image` dans l'API, cadre dessiné en secours | `tools/`, `data/cards/`, `crates/ui/src/vue.rs` | rien | 1 | ✅ fait (2026-11-26) |
 | 2. Plateau animé | Reprise de `finition.js` : vols de cartes, glisser-déposer avec chaîne de laiton, impacts, PV qui défilent, bandeau des étapes, pause « Continuer ». Côté serveur : identifiants suivis et événements envoyés à la page | `crates/ui/web/partie/`, `crates/ui/src/web.rs` | 0, 1 | 3 | ✅ fait (2026-11-26), compléments possibles ci-dessous |
 | 3. Sauvegarde | Partie sauvegardée (graine + choix), reprise depuis l'accueil, export / import du journal .json | `crates/ui/src/`, `web/accueil/` | 0 | 1 | ✅ fait (2026-11-26) |
-| 4a. Decks en données | Pool Silver Age avec drapeau « jouable par le bot » (carte codée dans fab-cards), légalité, decks maison dans `data/decks/maison/`, chargement à l'exécution, import d'une liste FaBrary | `crates/cards/` (lecture des decks), `api_decks.rs` | 0 | 1 | à faire |
+| 4a. Decks en données | Pool Silver Age avec drapeau « jouable par le bot » (carte codée dans fab-cards), légalité, decks maison dans `data/decks/maison/`, chargement à l'exécution, import d'une liste FaBrary | `crates/cards/` (lecture des decks), `api_decks.rs` | 0 | 1 | ✅ fait (2026-11-26) |
 | 4b. Éditeur de deck | Reprise d'`editeur.js` : collection filtrable, catégories, stats, Ctrl+Z, dupliquer / archiver / supprimer | `web/decks/` | 4a, 1 | 1,5 | à faire |
 | 4c. Ajustement avant partie | Fenêtre en piles de l'Arsenal JS à la place de l'écran de side actuel, dernier réglage, plan conseillé par la table apprise | `web/partie/`, `match_web.rs` | 4a, 1 | 0,5 | à faire |
 | 5. Impression | Proxies de Rathe, séparateurs et boîtes de deck servis par fab-web, alimentés par la liste d'un deck | `web/impression/` | 0 (4a pour les decks maison) | 1 | à faire |

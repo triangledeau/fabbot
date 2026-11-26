@@ -6,13 +6,14 @@
 <title>Arsenal — FaB Silver Age</title>
 <!-- Page servie par fab-web (crates/ui/src/serveur.rs, fichiers intégrés au
      programme). Un dossier par volet : commun/ (charte, navigation),
-     accueil/, partie/. Plan : docs/rapatriement-arsenal.md. -->
+     accueil/, partie/, decks/. Plan : docs/rapatriement-arsenal.md. -->
 <link rel="icon" href="commun/logo_arsenal.webp">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Sofia+Sans+Semi+Condensed:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <link rel="stylesheet" href="commun/arsenal.css">
 <link rel="stylesheet" href="accueil/accueil.css">
 <link rel="stylesheet" href="partie/partie.css">
 <link rel="stylesheet" href="partie/finition.css">
+<link rel="stylesheet" href="decks/decks.css">
 </head>
 <body>
 <section class="vue" id="v-accueil" aria-label="Accueil"></section>
@@ -77,11 +78,13 @@
   </dialog>
 
 </section>
+<section class="vue" id="v-decks" aria-label="Mes decks"></section>
 <script src="commun/navigation.js"></script>
 <script src="commun/cartes.js"></script>
 <script src="accueil/accueil.js"></script>
 <script src="partie/finition.js"></script>
 <script src="partie/partie.js"></script>
+<script src="decks/decks.js"></script>
 <script>Arsenal.montrer();</script>
 </body>
 </html>

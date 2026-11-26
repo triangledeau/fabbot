@@ -194,6 +194,31 @@ impl Decklist {
         Ok(d)
     }
 
+    /// La liste au format des fichiers de `data/decks/` (relue à l'identique
+    /// par [`Decklist::parse`]).
+    pub fn to_text(&self) -> String {
+        let mut t = String::new();
+        if !self.title.is_empty() {
+            t.push_str(&format!("# {}\n", self.title));
+        }
+        t.push_str(&format!("Hero: {}\n", self.hero));
+        if !self.class.is_empty() {
+            t.push_str(&format!("Class: {}\n", self.class));
+        }
+        if !self.source.is_empty() {
+            t.push_str(&format!("Source: {}\n", self.source));
+        }
+        t.push_str("\nArena:\n");
+        for e in &self.arena {
+            t.push_str(&format!("{} {} [{}]\n", e.count, e.name, e.slot));
+        }
+        t.push_str("\nDeck:\n");
+        for e in &self.deck {
+            t.push_str(&format!("{} {} ({})\n", e.count, e.name, e.color));
+        }
+        t
+    }
+
     pub fn arena_count(&self) -> u32 {
         self.arena.iter().map(|e| e.count as u32).sum()
     }
@@ -286,6 +311,16 @@ mod tests {
             .check(&format())
             .iter()
             .any(|p| p.contains("il en faut 40")));
+    }
+
+    #[test]
+    fn une_liste_ecrite_puis_relue_est_identique() {
+        let d = Decklist::parse(EXEMPLE).unwrap();
+        assert_eq!(Decklist::parse(&d.to_text()).unwrap(), d);
+        for f in crate::decks::tous() {
+            let d = Decklist::parse(&std::fs::read_to_string(&f.fichier).unwrap()).unwrap();
+            assert_eq!(Decklist::parse(&d.to_text()).unwrap(), d, "{}", f.nom);
+        }
     }
 
     #[test]

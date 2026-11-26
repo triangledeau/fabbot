@@ -30,7 +30,7 @@
         <div class="foot"><div class="row"><span class="muted">En attendant</span><span class="num">fab-sim --tournoi</span></div></div>
       </div>
     </nav>
-    <div class="homefoot"><span>Moteur <b>fabbot</b> (Rust)</span><span id="a-textes"></span></div>
+    <div class="homefoot"><a class="btn small" href="#decks">Mes decks</a><span>Moteur <b>fabbot</b> (Rust)</span><span id="a-textes"></span></div>
   </div></div>`;
 
   // Match en cours (le serveur en lance un au démarrage) : on propose de le reprendre.
@@ -40,7 +40,8 @@
         fetch("/api/decks").then((r) => r.json()),
         fetch("/api/etat").then((r) => r.json()),
       ]);
-      document.getElementById("a-decks").innerHTML = `<b class="num">${d.decks.length}</b> jouables`;
+      const nm = (d.decks_maison || []).length;
+      document.getElementById("a-decks").innerHTML = `<b class="num">${d.decks.length}</b> jouables` + (nm ? ` + <b class="num">${nm}</b> maison` : "");
       document.getElementById("a-bots").textContent = d.niveaux.map((n) => n.toUpperCase()).join(" · ");
       document.getElementById("a-textes").textContent = d.textes ? "Textes officiels des cartes chargés" : "Textes officiels absents (tools/fetch_cards.sh)";
       const r = document.getElementById("a-resume");

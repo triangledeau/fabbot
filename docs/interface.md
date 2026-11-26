@@ -94,6 +94,27 @@ Pour les développeurs : `data/cards/images.tsv` (produit par
 `crates/ui/src/images.rs` ajoute `image` et `nom_fr` au JSON des cartes ;
 `crates/ui/web/commun/cartes.js` construit l'adresse.
 
+### Mes decks (decks maison)
+
+Depuis l'accueil, **Mes decks** : collez la liste d'un deck copiée sur
+FaBrary (« Copy deck list », texte) ou au format des fichiers du projet,
+donnez-lui un nom, puis **Vérifier** ou **Importer**. La page dit si le
+deck respecte le format Silver Age (55 cartes au plus, 40 de deck au moins,
+2 exemplaires, cartes bannies, héros « Young »), quelles cartes ne sont pas
+légales et lesquelles le bot ne sait pas encore jouer (pas codées). Le deck
+est enregistré dans `data/decks/maison/<nom>.txt` ; s'il est jouable, il
+apparaît dans la fenêtre **Nouveau match** (« Decks maison »), pour vous
+comme pour le bot.
+
+La légalité vient de la base communautaire (`bash tools/fetch_cards.sh`) ;
+sans elle, seuls le format et les cartes codées sont vérifiés.
+
+Pour les développeurs : `crates/ui/src/api_decks.rs` (routes
+`/api/collection`, `/api/decks-maison`, `/api/deck-maison`,
+`/api/deck-maison/verifier`, `/api/deck-maison/importer`),
+`fab_cards::import` (lecture de l'export FaBrary), `fab_cards::decks`
+(decks maison). Page : `crates/ui/web/decks/`.
+
 ### Tapis de jeu
 
 Chaque joueur a son **tapis**, disposé comme le playmat officiel (repris de

@@ -9,7 +9,9 @@ const Arsenal = (() => {
     "accueil": "accueil",
     "partie": "partie",
     "nouveau-match": "partie",
+    "decks": "decks",
   };
+  const TITRES = { accueil: "Arsenal — FaB Silver Age", partie: "Arsenal — Partie", decks: "Arsenal — Mes decks" };
   const adresse = () => {
     const a = decodeURIComponent(location.hash.slice(1));
     return ADRESSES[a] ? a : "accueil";
@@ -19,7 +21,7 @@ const Arsenal = (() => {
     const a = adresse(), v = ADRESSES[a];
     const change = v !== document.documentElement.dataset.vue;
     document.documentElement.dataset.vue = v;
-    document.title = v === "accueil" ? "Arsenal — FaB Silver Age" : "Arsenal — Partie";
+    document.title = TITRES[v] || TITRES.accueil;
     if (change) {
       window.scrollTo(0, 0);
       const t = document.querySelector("#v-" + v + " h1");

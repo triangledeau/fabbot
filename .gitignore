@@ -8,3 +8,5 @@ Thumbs.db
 /docs/rules/sources/
 /data/cards/sources/
 /sauvegardes/
+/data/decks/maison/*
+!/data/decks/maison/README.md

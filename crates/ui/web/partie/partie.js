@@ -550,13 +550,26 @@ function suite() {
 async function preparerDialogue() {
   const v = await api("GET", "/api/decks");
   const f = $("f-nouvelle");
-  const remplir = (sel, liste) => { sel.replaceChildren(...liste.map(n => { const o = el("option", null, n); o.value = n; return o; })); };
-  remplir(f.deck, v.decks);
-  remplir(f.bot, v.decks);
+  const options = (liste) => liste.map(n => { const o = el("option", null, n); o.value = n; return o; });
+  // Decks du projet, puis decks maison jouables (lot 4a, volet « Mes decks »).
+  const remplir = (sel) => {
+    const garde = sel.value;
+    sel.replaceChildren(...options(v.decks));
+    if ((v.decks_maison || []).length) {
+      const g = el("optgroup");
+      g.label = "Decks maison";
+      g.append(...options(v.decks_maison));
+      sel.appendChild(g);
+    }
+    if (garde) sel.value = garde;
+  };
+  remplir(f.deck);
+  remplir(f.bot);
   remplir(f.niveau, [...v.niveaux, "b2-500ms", "b2-1000"]);
 }
 
-function ouvrirNouveau() {
+async function ouvrirNouveau() {
+  try { await preparerDialogue(); } catch (e) { /* on garde la liste déjà là */ }
   const f = $("f-nouvelle");
   if (etat && etat.reglages) {
     f.deck.value = etat.reglages.deck;
