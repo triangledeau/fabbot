@@ -237,8 +237,81 @@ const LECONS = [
       },
     ],
   },
-  { no: 6, titre: "Attaquer : la chaîne de combat", lecons: [] },
-  { no: 7, titre: "Défendre", lecons: [] },
+  {
+    no: 6, titre: "Attaquer : la chaîne de combat",
+    lecons: [
+      {
+        id: "6-1", titre: "Les étapes du combat",
+        etapes: [
+          { texte: "Quand tu joues une attaque, elle va d'abord sur la <b>pile</b>, comme toute carte jouée. Quand elle se résout, le <b>combat</b> commence : l'attaque devient un <b>maillon</b> de la <b>chaîne de combat</b>.", cr: ["5.1.2", "7.0.2", "7.0.3", "7.2.2"] },
+          { texte: "Un maillon passe par des étapes, dans l'ordre : <b>Couche</b> (Layer), <b>Attaque</b>, <b>Défense</b>, <b>Réaction</b>, <b>Dégâts</b>, <b>Résolution</b>. Puis vient la <b>Fermeture</b> (Close) quand le combat se termine.", cr: ["7.0.1", "7.7.1"] },
+          { texte: "<b>Attaque</b> : l'attaque est posée sur la chaîne, les effets « quand elle attaque » se déclenchent. <b>Défense</b> : le défenseur choisit ses cartes de défense. <b>Réaction</b> : chacun peut jouer des réactions.", cr: ["7.2.2", "7.2.3", "7.3.2", "7.4.1"] },
+          { texte: "<b>Dégâts</b> : si la puissance dépasse la défense totale, l'attaque <b>touche</b> et inflige la différence. <b>Résolution</b> : le maillon est terminé ; si l'attaque a go again, son joueur gagne 1 point d'action.", cr: ["7.5.2", "7.6.2"] },
+          { quiz: "Dans quel ordre viennent ces étapes ?", choix: ["Défense, puis Réaction, puis Dégâts", "Réaction, puis Défense, puis Dégâts", "Dégâts, puis Défense, puis Réaction"], bonne: 0,
+            pourquoi: "Couche, Attaque, Défense, Réaction, Dégâts, Résolution, puis Fermeture.", cr: ["7.0.1"] },
+        ],
+      },
+      {
+        id: "6-2", titre: "Qui joue quoi pendant un combat",
+        etapes: [
+          { texte: "Pendant un combat, on ne joue pas de carte d'action, sauf une nouvelle attaque à l'étape de <b>Résolution</b>. Une carte <b>Instant</b>, elle, se joue dès qu'on a la priorité.", cr: ["7.0.1a", "7.6.3a", "8.1.1b"] },
+          { texte: "À l'étape de <b>Réaction</b>, l'attaquant peut jouer des <b>Attack Reactions</b> (réactions d'attaque) et le défenseur des <b>Defense Reactions</b> (réactions de défense).", cr: ["7.4.2a", "7.4.2b", "8.1.2a", "8.1.3a"] },
+          { quiz: "Ton adversaire t'attaque. Peux-tu jouer une Attack Reaction ?", choix: ["Non, seul l'attaquant le peut", "Oui, à l'étape de Réaction"], bonne: 0,
+            pourquoi: "Une Attack Reaction ne se joue que par le joueur qui contrôle l'attaque, à l'étape de Réaction.", cr: ["8.1.2a"] },
+        ],
+      },
+      {
+        id: "6-3", titre: "Enchaîner les attaques",
+        etapes: [
+          { texte: "À l'étape de Résolution, une attaque avec <b>go again</b> te rend 1 point d'action. Tu peux alors jouer une autre attaque : elle forme un nouveau maillon sur la même chaîne de combat.", cr: ["7.6.2", "7.6.3a"] },
+          { texte: "Quand tout le monde passe à l'étape de Résolution sans rien jouer, la chaîne se <b>ferme</b> : le combat est fini et les cartes de la chaîne vont au cimetière.", cr: ["7.7.2a", "7.7.6"] },
+          { scene: "go-again",
+            consigne: "Tu joues Ira, un héros Ninja. Joue <b>Bittering Thorns</b> (go again), puis, quand il touche, joue <b>Brutal Assault</b> rouge. Paie avec la jaune puis la bleue.",
+            reussi: (e) => e.debut.bot.vie - e.bot.vie >= 10,
+            bravo: (e) => `Deux attaques dans le même tour : ${e.debut.bot.vie - e.bot.vie} PV en tout. Bittering Thorns a rendu un point d'action (go again). La seconde attaque a eu +1 grâce à Bittering Thorns (« When this hits, your next attack this turn gets +1 ») et +1 grâce à la capacité d'Ira (« Your second attack each turn gets +1 »).` },
+          { quiz: "Ton attaque n'a pas go again et tu n'as plus de point d'action. Peux-tu jouer une nouvelle attaque à l'étape de Résolution ?", choix: ["Non", "Oui"], bonne: 0,
+            pourquoi: "Une attaque d'action coûte toujours 1 point d'action ; sans go again, tu n'en récupères pas.", cr: ["8.1.1c", "7.6.2"] },
+        ],
+      },
+    ],
+  },
+  {
+    no: 7, titre: "Défendre",
+    lecons: [
+      {
+        id: "7-1", titre: "Bloquer une attaque",
+        etapes: [
+          { texte: "Quand ton héros est attaqué, à l'étape de Défense, tu peux déclarer autant de cartes de ta <b>main</b> que tu veux comme défense (et ton équipement, voir chapitre 9).", cr: ["7.3.2a"] },
+          { texte: "Défendre n'est pas jouer : tu ne paies rien. Une carte sans valeur de défense ne peut pas défendre.", cr: ["7.3.2", "7.3.2b"] },
+          { texte: "Les défenses s'additionnent. Les dégâts sont égaux à la puissance moins la défense totale. Si la défense est égale ou plus grande, l'attaque ne touche pas.", cr: ["7.5.2"] },
+          { scene: "defendre",
+            consigne: "Ton adversaire attaque avec <b>Raging Onslaught</b> (puissance 7). Tes cartes ont 3 de défense chacune. Choisis avec combien de cartes tu défends, puis termine ta déclaration.",
+            reussi: (e) => e.vous.cimetiere.length > 0 || e.vous.vie < e.debut.vous.vie,
+            bravo: (e) => { const n = e.vous.cimetiere.length, p = e.debut.vous.vie - e.vous.vie; const d = 3 * n; return n === 0 ? `Sans défense, l'attaque touche pour 7 : tu perds ${p} PV.` : d >= 7 ? `Ta défense totale (${d}) atteint ou dépasse la puissance (7) : l'attaque ne touche pas, tu ne perds aucun PV. Mais ${n} cartes ont quitté ta main.` : `Tu as défendu avec ${n} carte${n > 1 ? "s" : ""} (défense ${d}) : 7 − ${d} = ${7 - d}. Tu perds ${p} PV.`; } },
+          { quiz: "Une attaque de puissance 6 est défendue par deux cartes de défense 3. Combien de dégâts ?", choix: ["0", "3", "6"], bonne: 0,
+            pourquoi: "6 − (3 + 3) = 0 : la défense n'est pas dépassée, l'attaque ne touche pas.", cr: ["7.5.2"] },
+        ],
+      },
+      {
+        id: "7-2", titre: "Défendre ou garder ses cartes",
+        etapes: [
+          { texte: "À la fin d'un tour, seul le joueur du tour repioche (sauf au premier tour). Une carte que tu utilises pour défendre pendant le tour adverse ne sera donc pas remplacée avant la fin de <b>ton</b> tour.", cr: ["4.4.3f"] },
+          { texte: "Défendre protège tes PV, mais te laisse moins de cartes pour attaquer et payer à ton tour. Chaque défense est un choix." },
+          { quiz: "Tu as 4 cartes, intellect 4. Pendant le tour adverse (pas le premier), tu défends avec 2 cartes. Combien de cartes as-tu au début de ton tour ?", choix: ["2", "4"], bonne: 0,
+            pourquoi: "Ton adversaire repioche à la fin de son tour, pas toi : tu commences ton tour avec 2 cartes.", cr: ["4.4.3f"] },
+        ],
+      },
+      {
+        id: "7-3", titre: "Les réactions de défense",
+        etapes: [
+          { cartes: [["Steelblade Shunt", "rouge"]], texte: "Une <b>Defense Reaction</b> ne se déclare pas à l'étape de Défense : elle se <b>joue</b> (on paie son coût) à l'étape de Réaction, par le joueur dont le héros est attaqué.", cr: ["7.3.2a", "8.1.3a", "7.4.2b"] },
+          { texte: "Quand elle se résout, elle devient une carte de défense de l'attaque en cours, et sa défense s'ajoute.", cr: ["8.1.3b", "7.4.2d"] },
+          { quiz: "Pour défendre avec une Defense Reaction, paie-t-on son coût ?", choix: ["Oui, car elle est jouée", "Non, comme une carte déclarée en défense"], bonne: 0,
+            pourquoi: "Une Defense Reaction est jouée à l'étape de Réaction : son coût est payé. Seules les cartes déclarées à l'étape de Défense ne coûtent rien.", cr: ["8.1.3a", "7.3.2"] },
+        ],
+      },
+    ],
+  },
   { no: 8, titre: "Réactions, instants et priorité", lecons: [] },
   { no: 9, titre: "Armes et équipements", lecons: [] },
   { no: 10, titre: "Les effets", lecons: [] },
