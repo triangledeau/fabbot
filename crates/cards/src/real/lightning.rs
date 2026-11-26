@@ -21,6 +21,7 @@ pub const NAMES: &[&str] = &[
     "Second Strike",
     "Rush of Power",
     "Visionary of Orbits",
+    "Harness Lightning",
     // NOMS
 ];
 
@@ -310,7 +311,42 @@ pub fn add(db: &mut CardDb) {
     }];
     db.add(d);
 
+    // Harness Lightning (rouge, jaune) — Elemental Runeblade Action, coût 0,
+    // déf. 2. Pas de puissance.
+    // « **Lightning Flow** - If you've played a Lightning card this turn,
+    //   deal 3 arcane damage to target hero. » (rouge : 3 ; jaune : 2)
+    // La carte elle-même n'est pas une carte Lightning : seule une autre carte
+    // Lightning jouée ce tour compte.
+    for c in [Color::Red, Color::Yellow] {
+        let mut d = deck_card(
+            "Harness Lightning",
+            c,
+            ELEMENTAL_RB,
+            Types::ACTION,
+            Some(0),
+            None,
+            Some(2),
+        );
+        d.targets = vec![super::wizard::TARGET_HERO];
+        d.arcane_damage = true;
+        d.resolve = vec![Op::Do(|g, c| {
+            if a_joue_une_carte_lightning(g, c.controller) {
+                if let Some(t) = c.target(0) {
+                    let n = by_color(g, c, [3, 2, 0]);
+                    g.deal_damage_to(c.source_id(), c.controller, t, n as i32, true);
+                }
+            }
+        })];
+        db.add(d);
+    }
+
     // CARTES
+}
+
+/// « If you've played a Lightning card this turn » : `p` a joué ce tour une
+/// carte de supertype Lightning.
+fn a_joue_une_carte_lightning(g: &GameState, p: fab_engine::PlayerId) -> bool {
+    g.played_def_this_turn(p, |d| d.supertypes.has(Supertypes::LIGHTNING))
 }
 
 /// « If you've dealt damage this turn » : `p` a infligé des dégâts ce tour

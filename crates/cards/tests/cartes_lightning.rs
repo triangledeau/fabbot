@@ -610,3 +610,62 @@ fn visionary_of_orbits_sans_instant_au_cimetiere_ne_pose_pas_de_question() {
     resoudre(&mut t);
     assert_eq!(t.vie(P1), 20 - 7, "touche : 7 de dégâts, sans question");
 }
+
+fn harness_partie(main0: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie([HEROS, HEROS], main0, RIEN, RIEN, RIEN, &[], &[])
+}
+
+#[test]
+fn harness_lightning_lightning_flow_sans_autre_carte_lightning_jouee_ne_fait_rien() {
+    let mut t = harness_partie(&[("Harness Lightning", R)]);
+    jouer(&mut t, P0, "Harness Lightning", R);
+    cibler_heros(&mut t, P1);
+    resoudre(&mut t);
+    assert_eq!(t.vie(P1), 20, "aucune carte Lightning jouée ce tour");
+}
+
+#[test]
+fn harness_lightning_lightning_flow_rouge_avec_carte_lightning_jouee_inflige_3_arcanique() {
+    let mut t = harness_partie(&[("Cloud Cover", B), ("Harness Lightning", R)]);
+    jouer(&mut t, P0, "Cloud Cover", B);
+    resoudre(&mut t);
+    jouer(&mut t, P0, "Harness Lightning", R);
+    cibler_heros(&mut t, P1);
+    resoudre(&mut t);
+    assert_eq!(t.vie(P1), 17, "3 dégâts arcaniques au héros visé");
+    assert!(
+        t.g.turn_events().iter().any(|e| matches!(
+            e,
+            fab_engine::Event::Damage { target, amount: 3, arcane: true, .. } if *target == P1
+        )),
+        "les dégâts sont arcaniques"
+    );
+}
+
+#[test]
+fn harness_lightning_lightning_flow_jaune_avec_carte_lightning_jouee_inflige_2_arcanique() {
+    let mut t = harness_partie(&[("Cloud Cover", Y), ("Harness Lightning", Y)]);
+    jouer(&mut t, P0, "Cloud Cover", Y);
+    resoudre(&mut t);
+    jouer(&mut t, P0, "Harness Lightning", Y);
+    cibler_heros(&mut t, P1);
+    resoudre(&mut t);
+    assert_eq!(t.vie(P1), 18, "2 dégâts arcaniques au héros visé");
+}
+
+#[test]
+fn harness_lightning_cible_un_heros_et_seulement_un_heros() {
+    let mut t = harness_partie(&[("Cloud Cover", B), ("Harness Lightning", R)]);
+    jouer(&mut t, P0, "Cloud Cover", B);
+    resoudre(&mut t);
+    jouer(&mut t, P0, "Harness Lightning", R);
+    passer_jusqua_que(&mut t, |t| t.kind() == DecisionKind::Target);
+    assert!(
+        t.peut(Choice::Target(Target::Player(P0))),
+        "héros de P0 proposé"
+    );
+    assert!(
+        t.peut(Choice::Target(Target::Player(P1))),
+        "héros de P1 proposé"
+    );
+}
