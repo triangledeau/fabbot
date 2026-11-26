@@ -87,3 +87,33 @@ pub fn type_pour(chemin: &str) -> Option<&'static str> {
         _ => return None,
     })
 }
+
+/// L'outil « Proxies de Rathe » (impression complète), s'il a été copié dans
+/// `data/outils/proxies-de-rathe.html`. Il n'est pas dans le dépôt : il
+/// embarque une base de cartes (éditions, liens d'images) qu'on ne publie
+/// pas (dépôt public). Voir `data/outils/README.md`.
+pub fn chemin_proxies() -> std::path::PathBuf {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/outils/proxies-de-rathe.html")
+}
+
+/// Le contenu de l'outil prêt à être intégré à Arsenal : le mode intégré
+/// (`window.ARSENAL_IMPRESSION`) est posé s'il ne l'est pas déjà.
+pub fn outil_proxies() -> Option<Vec<u8>> {
+    std::fs::read_to_string(chemin_proxies())
+        .ok()
+        .map(|t| mode_integre(&t).into_bytes())
+}
+
+/// Pose `window.ARSENAL_IMPRESSION=1` au début de la page de l'outil (comme
+/// le faisait build.py de l'Arsenal JS), sauf s'il y est déjà.
+pub fn mode_integre(t: &str) -> String {
+    if t.contains("window.ARSENAL_IMPRESSION=1") {
+        return t.to_string();
+    }
+    let marque = "<script>window.ARSENAL_IMPRESSION=1;</script>";
+    match t.find("<head>") {
+        Some(i) => format!("{}{marque}{}", &t[..i + 6], &t[i + 6..]),
+        None => format!("{marque}{t}"),
+    }
+}

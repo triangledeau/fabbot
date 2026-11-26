@@ -222,6 +222,18 @@ coupe, espace entre les cartes. La page montre les feuilles (9 cartes de
 PDF »). Imprimez à 100 %, sans « ajuster à la page ». Page :
 `crates/ui/web/impression/`.
 
+Trois portées, comme dans l'Arsenal JS : **Deck + side** (toute la
+réserve), **Deck seul** (les 40 premières cartes de deck du fichier, plus
+héros et équipement), **Avec les envies** (la réserve et la liste d'envies
+de l'éditeur).
+
+**Outil complet « Proxies de Rathe »** : si le fichier
+`data/outils/proxies-de-rathe.html` est présent (il n'est pas dans le dépôt
+public, voir `data/outils/README.md`), Imprimer l'affiche à la place de
+l'outil simple, avec le deck choisi déjà chargé : versions et langue des
+cartes, fond perdu, liseré, recto verso, export PDF… « Recharger la liste »
+remet la liste du deck ; Ctrl+P imprime les planches.
+
 ### Aide du bot et signalement de bug
 
 Dans l'écran de partie, sous les options : **Conseil** (ou touche C)
