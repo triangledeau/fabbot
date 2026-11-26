@@ -43,3 +43,6 @@
 .ht .foot .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
 .homefoot { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; color: var(--muted); font-size: .85rem; text-align: center; }
 @media (max-width: 900px) { .tiles3 { grid-template-columns: minmax(0, 360px); } }
+.ht .pic .vs[hidden], .ht .pic .art[hidden] { display: none; }
+.ht .pbar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: rgb(255 255 255 / .08); }
+.ht .pbar i { display: block; height: 100%; width: 0; background: var(--brass); transition: width .4s; }

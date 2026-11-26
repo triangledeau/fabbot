@@ -20,15 +20,37 @@
   // Parties jouées en même temps : par défaut, tous les cœurs de l'ordinateur sauf un.
   const FILS = Math.max(1, (navigator.hardwareConcurrency || 4) - 1);
   let noms = {}; // nom court du deck → nom du héros (/api/decks)
+  let portraits = {}; // nom court d'un deck du bot → image du héros (/api/decks-projet)
+  const ava = (n) => portraits[n] ? `<i class="en-ava" style="--art:${esc(Images.fond(portraits[n]))}"></i>` : "";
   const nomDeck = (n) => noms[n] || n;
   const court = (n) => nomDeck(n).split(",")[0];
   const sides = (choisi) => SIDES.map(([v, l]) => `<option value="${v}"${v === choisi ? " selected" : ""}>${l}</option>`).join("");
 
   sec.innerHTML = `<header class="dk-tete">
       <a class="btn small home-btn" href="#accueil">${Arsenal.HOME_SVG}Accueil</a>
-      <h1>Entraîner</h1>
-      <span class="muted">Faire jouer les bots entre eux et mesurer leur force</span>
+      <a class="btn small" id="en-retour" href="#entrainer" hidden>← Entraîner</a>
+      <h1 id="en-titre">Entraîner</h1>
+      <span class="muted" id="en-sous-titre">Faire jouer les bots entre eux et mesurer leur force</span>
     </header>
+    <nav class="tiles3 en-hub" id="en-hub" aria-label="Entraîner">
+      <a class="ht" style="--c:#ffd84a" href="#tournoi">
+        <div class="pic"><div class="art" id="en-art-1"></div><div class="art" id="en-art-2" hidden></div><span class="vs" id="en-vs" hidden>VS</span><span class="badge">TOURNOI</span></div>
+        <div class="txt"><h2>Tournoi des bots</h2><p>Chaque deck affronte tous les autres. Matrice des victoires, Elo et classement en direct ; historique des tournois.</p></div>
+        <div class="foot"><div class="row"><span class="muted">Dernier tournoi</span><span id="en-hub-tournoi">…</span></div>
+          <div class="pbar"><i id="en-hub-barre"></i></div></div>
+      </a>
+      <a class="ht" style="--c:#63c98b" href="#apprentissage-bots">
+        <div class="pic"><div class="art" id="en-art-3"></div><span class="badge">APPRENTISSAGE</span></div>
+        <div class="txt"><h2>Faire apprendre les bots</h2><p>Parties en série entre bots pour apprendre les plans de side et l'évaluation de B3.</p></div>
+        <div class="foot"><div class="row"><span class="muted">Calcul</span><span id="en-hub-tache">sur cet ordinateur</span></div></div>
+      </a>
+      <div class="ht" style="--c:#9a6bd1" aria-disabled="true">
+        <div class="pic"><div class="art"></div><span class="badge">BIENTÔT</span></div>
+        <div class="txt"><h2>Entraîner le bot sur un deck</h2><p>Régler le bot sur un deck créé ou modifié dans l'éditeur, en arrière-plan.</p></div>
+        <div class="foot"><div class="row"><span class="muted">État</span><span>pas encore disponible</span></div></div>
+      </div>
+    </nav>
+    <div id="en-v-tournoi">
     <div class="en-grille">
       <section class="en-bloc" aria-labelledby="en-t1">
         <h2 id="en-t1">Tournoi</h2>
@@ -67,7 +89,8 @@
       </section>
     </div>
     <section class="en-bloc en-resultat" id="en-resultat" hidden aria-live="polite"></section>
-    <section class="en-bloc" aria-labelledby="en-t3">
+    </div>
+    <section class="en-bloc" id="en-v-appr" aria-labelledby="en-t3">
       <h2 id="en-t3">Apprentissage</h2>
       <p class="muted petit">Les bots rejouent beaucoup de parties entre eux pour apprendre : soit leurs plans de side (quelles cartes mettre dans les 40 contre chaque héros), soit l'évaluation des positions de B3. Compter plusieurs heures. Le résultat ne sert qu'au prochain lancement du jeu après une mise à jour.</p>
       <p class="muted petit" title="fab-sim --apprendre-side écrit data/side/b1.txt ; fab-sim --apprendre-b3 écrit data/b3/evaluation.txt. Un seul agent à la fois doit refaire data/side/b1.txt (docs/taches.md).">Fichiers modifiés : survolez ici pour le détail technique.</p>
@@ -95,7 +118,7 @@
     }
     const coches = new Set([...document.querySelectorAll("#en-liste-decks input:checked")].map((i) => i.value));
     const premier = !document.querySelector("#en-liste-decks input");
-    const ligne = (n, maison) => `<label class="en-puce${maison ? " maison" : ""}"><input type="checkbox" value="${esc(n)}"${(premier ? !maison : coches.has(n)) ? " checked" : ""}><span>${esc(nomDeck(n))}${maison ? " <small>maison</small>" : ""}</span></label>`;
+    const ligne = (n, maison) => `<label class="en-puce${maison ? " maison" : ""}"><input type="checkbox" value="${esc(n)}"${(premier ? !maison : coches.has(n)) ? " checked" : ""}><span>${ava(n)}${esc(nomDeck(n))}${maison ? " <small>maison</small>" : ""}</span></label>`;
     $("en-liste-decks").innerHTML = d.decks.map((n) => ligne(n, false)).join("") + (d.decks_maison || []).map((n) => ligne(n, true)).join("");
     compter();
   }
@@ -279,8 +302,54 @@
     }, 1000);
   }
 
+  // Sous-pages, comme dans l'Arsenal JS : #entrainer (trois volets),
+  // #tournoi, #apprentissage-bots.
+  const SOUS = {
+    "entrainer": ["Entraîner", "Faire jouer les bots entre eux et mesurer leur force"],
+    "tournoi": ["Tournoi des bots", "Chaque deck affronte tous les autres"],
+    "apprentissage-bots": ["Faire apprendre les bots", "Plans de side et évaluation de B3"],
+  };
+  function sousPage(a) {
+    if (!SOUS[a]) a = "entrainer";
+    $("en-hub").hidden = a !== "entrainer";
+    $("en-v-tournoi").hidden = a !== "tournoi";
+    $("en-v-appr").hidden = a !== "apprentissage-bots";
+    $("en-retour").hidden = a === "entrainer";
+    [$("en-titre").textContent, $("en-sous-titre").textContent] = SOUS[a];
+  }
+  async function chargerPortraits() {
+    if (Object.keys(portraits).length) return;
+    try {
+      const p = await fetch("/api/decks-projet").then((r) => r.json());
+      for (const d of p.decks || []) if (d.heros_image) portraits[d.nom] = d.heros_image;
+    } catch (e) { /* sans portraits */ }
+    const poser = (id, n) => { const el = $(id); if (!el || !portraits[n]) return; el.style.setProperty("--art", Images.fond(portraits[n])); el.classList.add("illu"); el.hidden = false; };
+    const pris = (...l) => l.find((n) => portraits[n]) || Object.keys(portraits)[0];
+    const g = pris("grindstone", "bravo"), d = pris("iyslander", "kano");
+    poser("en-art-1", g);
+    if (d && d !== g) { poser("en-art-2", d); $("en-art-1").classList.add("split1"); $("en-art-2").classList.add("split2"); $("en-vs").hidden = false; }
+    poser("en-art-3", pris("dromai", "ira"));
+  }
+  function resumeHub(v, h) {
+    const t = $("en-hub-tournoi"), barre = $("en-hub-barre");
+    if (v && v.en_cours) { t.innerHTML = `en cours, <span class="num">${v.fait} / ${v.total}</span>`; barre.style.width = (v.total ? (100 * v.fait) / v.total : 0).toFixed(1) + "%"; return; }
+    const d = h && (h.tournois || [])[0];
+    if (!d) { t.textContent = "aucun"; barre.style.width = "0"; return; }
+    t.innerHTML = `${esc(new Date(d.date * 1000).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }))}, <span class="num">${d.fait}</span> parties${d.arret ? " (arrêté)" : ""}`;
+    barre.style.width = "100%";
+  }
+
   document.addEventListener("arsenal:vue", async (ev) => {
     if (ev.detail.vue !== "entrainer") return;
+    sousPage(ev.detail.adresse);
+    try {
+      await chargerPortraits();
+      if (ev.detail.adresse === "entrainer") {
+        const [v, h, t] = await Promise.all(["/api/tournoi", "/api/tournois", "/api/tache"].map((u) => fetch(u).then((r) => r.json())));
+        resumeHub(v, h);
+        if (t && t.en_cours) $("en-hub-tache").textContent = "apprentissage en cours";
+      }
+    } catch (e) { /* le volet reste affiché sans résumé */ }
     try {
       await remplir();
       historique();

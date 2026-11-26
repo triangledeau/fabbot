@@ -15,6 +15,8 @@ const Arsenal = (() => {
     "nouveau-deck": "decks",
     "impression": "impression",
     "entrainer": "entrainer",
+    "tournoi": "entrainer",
+    "apprentissage-bots": "entrainer",
     "apprendre": "apprendre",
   };
   const TITRES = { accueil: "Arsenal — FaB Silver Age", partie: "Arsenal — Partie", decks: "Arsenal — Jouer", impression: "Arsenal — Imprimer", entrainer: "Arsenal — Entraîner" };

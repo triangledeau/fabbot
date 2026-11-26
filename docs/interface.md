@@ -78,11 +78,14 @@ fin d'une manche la fait reprendre (le résultat n'est plus compté).
 
 La page s'ouvre sur l'**accueil Arsenal** (logo, trois volets) :
 
-- **Jouer** : ouvre la fenêtre « Nouveau match » (decks, niveau du bot,
-  manches, graine), puis l'écran de partie ;
-- **Apprendre** (didacticiel, puzzles) et **Entraîner** (tournoi des bots)
-  sont marqués « Bientôt » : ils arrivent avec les lots suivants du plan
-  `docs/rapatriement-arsenal.md` ;
+- chaque volet porte le portrait d'un héros des decks du bot (images
+  chargées en ligne) ;
+- **Jouer** : l'écran Jouer (choix des decks, éditeur, impression) ; en
+  bas, le nombre de decks (dont les vôtres) et les niveaux du bot ;
+- **Apprendre** : le didacticiel ;
+- **Entraîner** : trois volets (tournoi des bots, apprentissage des bots,
+  entraîner le bot sur un deck « bientôt ») ; en bas, le dernier tournoi
+  (ou celui en cours) avec sa barre d'avancement ;
 - le bandeau **Match en cours** (au-dessus des volets) donne le score et
   propose **Reprendre** ou **Nouveau match**.
 
@@ -233,7 +236,10 @@ enregistre votre texte avec la sauvegarde du match dans
 
 ### Entraîner (tournoi, SPRT, apprentissage)
 
-Depuis l'accueil, **Entraîner**. **Tournoi** : cochez les decks (du projet
+Depuis l'accueil, **Entraîner** : trois volets, **Tournoi des bots**
+(adresse `#tournoi`), **Faire apprendre les bots** (`#apprentissage-bots`)
+et « Entraîner le bot sur un deck » (bientôt). « ← Entraîner » revient aux
+volets. **Tournoi** : cochez les decks (du projet
 et maison), choisissez le bot et la façon de choisir l'équipement (side)
 de A et de B, le nombre de parties par paire de decks, et lancez. La
 matrice se remplit pendant les parties (score de A en %, ligne = deck de
