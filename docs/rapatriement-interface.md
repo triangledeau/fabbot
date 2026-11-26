@@ -120,7 +120,7 @@ contre Bot, signalement de bug, Importer une partie.
 
 | # | Arsenal JS | fabbot aujourd'hui | État |
 |---|---|---|---|
-| I1 | Outil « Proxies de Rathe » complet : liste Fabrary ou libre, tokens liés, exemplaires, **Deck + side / Deck seul / Avec les envies**, langue (français si disponible), version par défaut, éviter les foils, choix de la version carte par carte, taille, fond perdu, liseré, rognage, page, export PDF | deck, papier, héros, équipement, traits de coupe, espace, Imprimer | 🟡 |
+| I1 | Outil « Proxies de Rathe » complet : liste Fabrary ou libre, tokens liés, exemplaires, **Deck + side / Deck seul / Avec les envies**, langue (français si disponible), version par défaut, éviter les foils, choix de la version carte par carte, taille, fond perdu, liseré, rognage, page, export PDF | ✅ l'outil lui-même, intégré dans Imprimer avec le deck chargé et les trois portées, s'il est copié dans `data/outils/` (pas dans le dépôt public : il embarque une base de cartes) ; sinon l'outil simple, avec les trois portées | ✅ |
 
 ## 7. Entraîner et Tournoi
 

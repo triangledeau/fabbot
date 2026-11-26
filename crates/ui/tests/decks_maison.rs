@@ -334,3 +334,23 @@ fn la_collection_ne_propose_pas_les_cotes_d_une_carte_double_comme_cartes_a_part
         );
     }
 }
+
+#[test]
+fn l_outil_proxies_de_rathe_est_signale_seulement_s_il_est_copie_dans_data_outils() {
+    let mut e = etat_serveur();
+    let present = fab_ui::fichiers::chemin_proxies().is_file();
+    let v = json(&repondre("GET", "/api/outils", &mut e));
+    assert_eq!(v["proxies"], present);
+    let r = repondre("GET", "/outils/proxies-de-rathe.html", &mut e);
+    assert_eq!(r.code, if present { 200 } else { 404 });
+}
+
+#[test]
+fn l_outil_proxies_de_rathe_recoit_le_mode_integre_une_seule_fois() {
+    let t = "<!doctype html><html><head><title>P</title></head></html>";
+    let a = fab_ui::fichiers::mode_integre(t);
+    assert!(a.starts_with(
+        "<!doctype html><html><head><script>window.ARSENAL_IMPRESSION=1;</script><title>"
+    ));
+    assert_eq!(fab_ui::fichiers::mode_integre(&a), a);
+}

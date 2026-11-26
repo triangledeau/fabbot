@@ -8,6 +8,8 @@
 //! |---|---|
 //! | `GET /` | la page Arsenal (accueil et partie, navigation par `#`) |
 //! | `GET /commun/arsenal.css`… | les autres fichiers de la page ([`crate::fichiers`]) |
+//! | `GET /api/outils` | outils locaux présents (`proxies` : Proxies de Rathe, [`crate::fichiers::chemin_proxies`]) |
+//! | `GET /outils/proxies-de-rathe.html` | l'outil d'impression complet, s'il est dans `data/outils/` |
 //! | `GET /api/etat` | l'état vu par l'humain (JSON) |
 //! | `GET /api/decks` | decks et niveaux de bot proposés |
 //! | `GET /api/carte?id=12` | fiche et texte officiel de la carte `[12]` |
@@ -380,6 +382,17 @@ pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mu
                 Err(e) => Reponse::erreur(400, e),
             }
         }
+        ("GET", "/api/outils") => {
+            Reponse::json(json!({ "proxies": fichiers::chemin_proxies().is_file() }))
+        }
+        ("GET", "/outils/proxies-de-rathe.html") => match fichiers::outil_proxies() {
+            Some(corps) => Reponse {
+                code: 200,
+                type_contenu: "text/html; charset=utf-8",
+                corps,
+            },
+            None => Reponse::erreur(404, "outil absent : data/outils/proxies-de-rathe.html"),
+        },
         ("GET", c) if !c.starts_with("/api/") && fichiers::trouver(c).is_some() => {
             let f = fichiers::trouver(c).expect("vérifié juste avant");
             Reponse {
