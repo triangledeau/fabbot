@@ -1150,3 +1150,58 @@ fn helm_of_might_and_magic_spellvoid_ne_previent_qu_une_seule_fois() {
     passer_jusqua_que(&mut t, |t| t.g.stack.is_empty() && t.g.tasks.is_empty());
     assert_eq!(t.vie(P0), 15, "le heaume détruit ne prévient plus");
 }
+
+// Sigil of Voltaris (bleu) — Lightning Runeblade Instant - Aura, coût 0.
+// « When this enters or leaves the arena, deal 1 arcane damage to target hero.
+//   At the beginning of your action phase, destroy this. »
+
+#[test]
+fn sigil_of_voltaris_en_entrant_inflige_1_degat_arcanique_au_heros_cible() {
+    let mut t = partie_cloud(&[("Sigil of Voltaris", B)]);
+    let s = jouer(&mut t, P0, "Sigil of Voltaris", B);
+    cibler_heros(&mut t, P1);
+    resoudre(&mut t);
+    assert!(arcanique_1_a(&t, P1), "1 dégât arcanique à P1");
+    assert_eq!(t.vie(P1), 19);
+    assert_eq!(t.g.obj(s).zone, Zone::Permanent, "reste dans l'arène");
+}
+
+#[test]
+fn sigil_of_voltaris_au_debut_de_votre_phase_d_action_est_detruit() {
+    let mut t = partie_cloud(&[("Sigil of Voltaris", B)]);
+    let s = jouer(&mut t, P0, "Sigil of Voltaris", B);
+    cibler_heros(&mut t, P1);
+    resoudre(&mut t);
+    assert_eq!(t.g.obj(s).zone, Zone::Permanent);
+    while t.g.turn < 3 {
+        t.finir_le_tour();
+    }
+    passer_jusqua_que(&mut t, |t| t.g.obj(s).zone == Zone::Graveyard);
+    assert_eq!(t.g.obj(s).zone, Zone::Graveyard, "détruite");
+}
+
+#[test]
+fn sigil_of_voltaris_en_quittant_l_arene_inflige_1_degat_arcanique_au_heros_cible() {
+    let mut t = partie_cloud(&[("Sigil of Voltaris", B)]);
+    let s = jouer(&mut t, P0, "Sigil of Voltaris", B);
+    cibler_heros(&mut t, P1);
+    resoudre(&mut t);
+    assert_eq!(t.vie(P1), 19);
+    while t.g.turn < 3 {
+        t.finir_le_tour();
+    }
+    passer_jusqua_que(&mut t, |t| t.g.obj(s).zone == Zone::Graveyard);
+    cibler_heros(&mut t, P1);
+    resoudre(&mut t);
+    assert_eq!(t.vie(P1), 18, "second dégât en quittant l'arène");
+}
+
+#[test]
+fn sigil_of_voltaris_la_cible_peut_etre_son_propre_heros() {
+    let mut t = partie_cloud(&[("Sigil of Voltaris", B)]);
+    jouer(&mut t, P0, "Sigil of Voltaris", B);
+    let avant = t.vie(P0);
+    cibler_heros(&mut t, P0);
+    resoudre(&mut t);
+    assert_eq!(t.vie(P0), avant - 1, "cas limite : héros quelconque");
+}

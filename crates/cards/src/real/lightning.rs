@@ -28,6 +28,7 @@ pub const NAMES: &[&str] = &[
     "Twinkle Toes",
     "Star Fall",
     "Helm of Might and Magic",
+    "Sigil of Voltaris",
     // NOMS
 ];
 
@@ -517,6 +518,46 @@ pub fn add(db: &mut CardDb) {
     );
     d.keywords = Keywords::BLADE_BREAK;
     d.spellvoid = 1;
+    db.add(d);
+
+    // Sigil of Voltaris (bleu) — Lightning Runeblade Instant - Aura, coût 0,
+    // sans déf. (carte d'arène : pas de défense).
+    // « When this enters or leaves the arena, deal 1 arcane damage to target hero.
+    //   At the beginning of your action phase, destroy this. »
+    let mut d = deck_card(
+        "Sigil of Voltaris",
+        Color::Blue,
+        LIGHTNING_RB,
+        Types::INSTANT,
+        Some(0),
+        None,
+        None,
+    );
+    d.subtypes = Subtypes::AURA;
+    d.arcane_damage = true;
+    d.triggers = vec![
+        TriggerDef {
+            when: |g, me, e| match *e {
+                Event::EnterArena { card } => card == me && g.obj(me).zone == Zone::Permanent,
+                Event::LeaveArena { card, .. } => card == me,
+                _ => false,
+            },
+            // « leaves the arena » : la carte est alors au cimetière.
+            anywhere: true,
+            targets: vec![super::wizard::TARGET_HERO],
+            script: vec![Op::Do(|g, c| {
+                if let Some(t) = c.target(0) {
+                    g.deal_damage_to(c.source_id(), c.controller, t, 1, true);
+                }
+            })],
+        },
+        TriggerDef {
+            when: |g, me, e| matches!(*e, Event::BeginActionPhase(p) if p == g.obj(me).controller),
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| destroy_source(g, c))],
+        },
+    ];
     db.add(d);
 
     // CARTES
