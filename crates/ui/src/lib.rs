@@ -11,6 +11,7 @@
 //! - Arsenal, lot 8 : tournoi et apprentissage depuis la page ([`api_tournoi`]) ;
 //! - Arsenal, lot 9 : conseil du bot, évaluation, Bot contre Bot, signalement de bug ([`extras`]).
 
+pub mod api_apprendre;
 pub mod api_decks;
 pub mod api_tournoi;
 pub mod extras;

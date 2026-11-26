@@ -1,0 +1,161 @@
+// Didacticiel « Apprendre » : le contenu des leçons (phase 2 du plan de
+// rapatriement, docs/didacticiel.md). Public : débutant complet.
+//
+// Chaque phrase de règle cite sa source, au format CR x.y.z : les
+// Comprehensive Rules officielles (rules.fabtcg.com, copie locale dans
+// docs/rules/sources/, non versionnée). Rien n'est écrit de mémoire.
+//
+// Une leçon est une suite d'étapes :
+//   { texte: "…", cr: ["4.5.3a"] }                       explication
+//   { scene: "attaquer", consigne: "…", reussi: (e) => …, bravo: "…" }
+//                                                         scène jouée sur le moteur
+//   { quiz: "…", choix: ["…", "…"], bonne: 0, pourquoi: "…", cr: [...] }
+// Dans une scène, `e` est l'état renvoyé par /api/apprendre/etat (le même
+// que celui de l'écran de partie) ; `e.debut` est l'état au lancement.
+"use strict";
+const LECONS = [
+  {
+    no: 1, titre: "Le but du jeu",
+    lecons: [
+      {
+        id: "1-1", titre: "Ton héros et ses points de vie",
+        etapes: [
+          { texte: "Chaque joueur joue un <b>héros</b>. C'est une carte posée devant lui pendant toute la partie.", cr: ["1.1.2", "4.1.2"] },
+          { texte: "Le héros a des <b>points de vie</b> (PV, <i>life</i>). Le nombre est en général imprimé en bas à droite de la carte du héros.", cr: ["2.5.1", "2.5.2"] },
+          { texte: "<b>Tu perds la partie quand les PV de ton héros tombent à 0.</b> Tu gagnes quand ton adversaire a perdu.", cr: ["4.5.3a", "4.5.2a"] },
+          { texte: "Si les deux héros tombent à 0 au même moment, la partie est nulle.", cr: ["4.5.4a"] },
+          { quiz: "Quand perds-tu la partie ?", choix: ["Quand les PV de mon héros tombent à 0", "Quand je n'ai plus de cartes en main", "Quand mon adversaire a plus de PV que moi à la fin du tour"], bonne: 0,
+            pourquoi: "On perd quand les PV de son héros sont réduits à 0. Une main vide ne fait pas perdre.", cr: ["4.5.3a"] },
+        ],
+      },
+      {
+        id: "1-2", titre: "Faire perdre des PV : attaquer",
+        etapes: [
+          { texte: "Pour faire baisser les PV adverses, on <b>attaque</b>. Une carte d'attaque a une <b>puissance</b> : le nombre imprimé en général en bas à gauche de la carte.", cr: ["2.9.1", "2.9.2"] },
+          { texte: "Si personne ne se défend, l'attaque touche le héros adverse et lui inflige autant de dégâts que sa puissance. Il perd autant de PV.", cr: ["7.5.2"] },
+          { scene: "attaquer",
+            consigne: "C'est ton tour. Joue <b>Raging Onslaught</b> (la carte rouge) pour attaquer. Le jeu te demandera ensuite de payer son coût : choisis une carte bleue (le paiement est expliqué au chapitre 5). Quand il n'y a rien d'autre à faire, le jeu passe tout seul. Le journal, en bas à gauche, raconte ce qui s'est passé.",
+            reussi: (e) => e.bot.vie < e.debut.bot.vie,
+            bravo: (e) => `L'adversaire ne s'est pas défendu : il perd ${e.debut.bot.vie - e.bot.vie} PV, la puissance de Raging Onslaught rouge. Il lui reste ${e.bot.vie} PV.` },
+          { quiz: "Une attaque de puissance 5 n'est pas défendue. Combien de PV perd le héros adverse ?", choix: ["5", "0", "Cela dépend de ses PV"], bonne: 0,
+            pourquoi: "Sans défense, les dégâts sont égaux à la puissance de l'attaque.", cr: ["7.5.2"] },
+        ],
+      },
+      {
+        id: "1-3", titre: "Ta main et l'intellect",
+        etapes: [
+          { texte: "Le héros a aussi un <b>intellect</b> : le nombre de cartes que tu as en main après avoir pioché.", cr: ["2.4.1"] },
+          { texte: "Au début de la partie, chaque joueur pioche jusqu'à avoir autant de cartes en main que l'intellect de son héros.", cr: ["4.1.10"] },
+          { texte: "À la fin de <b>ton</b> tour, tu repioches jusqu'à ton intellect. Ton adversaire ne repioche pas à la fin de ton tour, sauf au tout premier tour de la partie.", cr: ["4.4.3f"] },
+          { quiz: "Ton héros a 4 d'intellect. À la fin de ton tour, il te reste 1 carte en main. Combien en pioches-tu ?", choix: ["3", "4", "1"], bonne: 0,
+            pourquoi: "Tu pioches jusqu'à avoir 4 cartes en main : 4 − 1 = 3 cartes.", cr: ["4.4.3f"] },
+        ],
+      },
+    ],
+  },
+  { no: 2, titre: "Lire une carte", lecons: [] },
+  { no: 3, titre: "Le tapis et les zones", lecons: [] },
+  { no: 4, titre: "Le déroulement d'un tour", lecons: [] },
+  { no: 5, titre: "Payer : coût et pitch", lecons: [] },
+  { no: 6, titre: "Attaquer : la chaîne de combat", lecons: [] },
+  { no: 7, titre: "Défendre", lecons: [] },
+  { no: 8, titre: "Réactions, instants et priorité", lecons: [] },
+  { no: 9, titre: "Armes et équipements", lecons: [] },
+  { no: 10, titre: "Les effets", lecons: [] },
+  { no: 11, titre: "Les mots-clés", lecons: [] },
+  { no: 12, titre: "Arcane, prévention, jetons, cas limites", lecons: [] },
+  { no: 13, titre: "Le format Silver Age", lecons: [] },
+];
+
+// Les sections des Comprehensive Rules (titres officiels, en anglais) : le
+// sommaire montre, pour chacune, les leçons qui la citent. Une section sans
+// leçon n'est pas encore expliquée : c'est la mesure de l'exhaustivité.
+const CR_SECTIONS = [
+  ["1.0", "General"],
+  ["1.1", "Players"],
+  ["1.2", "Objects"],
+  ["1.3", "Cards"],
+  ["1.4", "Attacks"],
+  ["1.5", "Macros"],
+  ["1.6", "Layers"],
+  ["1.7", "Abilities"],
+  ["1.8", "Effects"],
+  ["1.9", "Events"],
+  ["1.10", "Game State"],
+  ["1.11", "Priority"],
+  ["1.12", "Numbers and Symbols"],
+  ["1.13", "Assets"],
+  ["1.14", "Costs"],
+  ["1.15", "Counters"],
+  ["2.0", "General"],
+  ["2.1", "Color"],
+  ["2.2", "Cost"],
+  ["2.3", "Defense"],
+  ["2.4", "Intellect"],
+  ["2.5", "Life"],
+  ["2.6", "Metatype"],
+  ["2.7", "Name"],
+  ["2.8", "Pitch"],
+  ["2.9", "Power"],
+  ["2.10", "Subtypes"],
+  ["2.11", "Supertypes"],
+  ["2.12", "Text Box"],
+  ["2.13", "Traits"],
+  ["2.14", "Type Box"],
+  ["2.15", "Types"],
+  ["3.0", "General"],
+  ["3.1", "Arena"],
+  ["3.2", "Arms"],
+  ["3.3", "Arsenal"],
+  ["3.4", "Banished"],
+  ["3.5", "Chest"],
+  ["3.6", "Combat Chain"],
+  ["3.7", "Deck"],
+  ["3.8", "Graveyard"],
+  ["3.9", "Hand"],
+  ["3.10", "Head"],
+  ["3.11", "Hero"],
+  ["3.12", "Legs"],
+  ["3.13", "Permanent"],
+  ["3.14", "Pitch"],
+  ["3.15", "Stack"],
+  ["3.16", "Weapon"],
+  ["4.0", "General"],
+  ["4.1", "Starting a Game"],
+  ["4.2", "Start Phase"],
+  ["4.3", "Action Phase"],
+  ["4.4", "End Phase"],
+  ["4.5", "Ending a Game"],
+  ["5.0", "General"],
+  ["5.1", "Playing Cards"],
+  ["5.2", "Activated Abilities"],
+  ["5.3", "Resolution Abilities & Resolving Layers"],
+  ["5.4", "Static Abilities"],
+  ["6.0", "General"],
+  ["6.1", "Discrete Effects"],
+  ["6.2", "Continuous Effects"],
+  ["6.3", "Continuous Effect Interactions"],
+  ["6.4", "Replacement Effects"],
+  ["6.5", "Replacement Effect Interactions"],
+  ["6.6", "Triggered Effects"],
+  ["7.0", "General"],
+  ["7.1", "Layer Step"],
+  ["7.2", "Attack Step"],
+  ["7.3", "Defend Step"],
+  ["7.4", "Reaction Step"],
+  ["7.5", "Damage Step"],
+  ["7.6", "Resolution Step"],
+  ["7.7", "Close Step"],
+  ["8.0", "General"],
+  ["8.1", "Type Keywords"],
+  ["8.2", "Subtype Keywords"],
+  ["8.3", "Ability Keywords"],
+  ["8.4", "Label Keywords"],
+  ["8.5", "Effect Keywords"],
+  ["8.6", "Token Keywords"],
+  ["9.0", "General"],
+  ["9.1", "Double-Faced Cards"],
+  ["9.2", "Split-Cards"],
+  ["9.3", "Marked"],
+  ["9.4", "Living Legend"],
+];

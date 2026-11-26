@@ -251,6 +251,9 @@ Ensuite, deux chantiers à repenser plutôt qu'à rapatrier tels quels :
   réduites, bot « apprenti ») avec une nouvelle conception, à valider sur
   maquette. Il touchera le cœur du moteur (`crates/engine/`) : à annoncer
   comme « un seul agent à la fois », drapeaux de règles inactifs par défaut.
+  **Choix du 2026-11-26** : scènes en règles complètes plutôt que règles
+  réduites (pas de changement du moteur), public débutant complet. En cours :
+  voir `docs/didacticiel.md`.
 - **Phase 3 : puzzles remaniés (lot 6).** Les 15 positions et le solveur de
   l'Arsenal JS servent de point de départ, revérifiés avec les cartes de
   fabbot.
