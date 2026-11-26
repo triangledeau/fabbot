@@ -12,6 +12,8 @@
 //! | `GET /api/decks` | decks et niveaux de bot proposés |
 //! | `GET /api/carte?id=12` | fiche et texte officiel de la carte `[12]` |
 //! | `POST /api/choix?i=3` | choisir l'option 3 (à partir de 0) |
+//! | `POST /api/choix-cartes?cartes=12,15&passer=1` | plusieurs choix d'un coup (défense préparée…), annulés ensemble |
+//! | `POST /api/abandon` | oublier le match en cours (et sa sauvegarde automatique) |
 //! | `POST /api/annuler` | annuler le dernier choix |
 //! | `POST /api/nouvelle?deck=hala&bot=dorinthea&niveau=b1&graine=42&manches=2` | nouveau match (`manches` : manches à gagner) |
 //! | `POST /api/premier?qui=vous` | qui commence la manche (`vous` ou `bot`, CR 4.1.3) |
@@ -202,6 +204,30 @@ pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mu
                 Err(e) => Reponse::erreur(400, e),
             }
         }
+        ("POST", "/api/choix-cartes") => {
+            let cartes: Result<Vec<u32>, _> = param("cartes")
+                .unwrap_or_default()
+                .split(',')
+                .filter(|x| !x.is_empty())
+                .map(|x| x.parse::<u32>())
+                .collect();
+            let Ok(cartes) = cartes else {
+                return Reponse::erreur(400, "paramètre cartes invalide");
+            };
+            let passer = param("passer").is_some_and(|v| v == "1");
+            let Some(m) = etat.partie.as_mut() else {
+                return Reponse::erreur(400, "aucune partie en cours");
+            };
+            let Some(s) = m.session.as_mut().filter(|_| m.etape == Etape::Partie) else {
+                return Reponse::erreur(400, "la manche n'a pas commencé");
+            };
+            let r = s.choisir_cartes(&cartes, passer);
+            m.apres_coup();
+            match r {
+                Ok(()) => Reponse::json(m.etat()),
+                Err(e) => Reponse::erreur(400, e),
+            }
+        }
         ("POST", "/api/annuler") => {
             let Some(m) = etat.partie.as_mut() else {
                 return Reponse::erreur(400, "aucune partie en cours");
@@ -308,6 +334,19 @@ pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mu
                 }
                 Err(e) => Reponse::erreur(400, e),
             }
+        }
+        ("POST", "/api/abandon") => {
+            // « Abandonner et revenir au choix des decks » (Arsenal JS) : le
+            // match est oublié, sa sauvegarde automatique aussi.
+            etat.partie = None;
+            if let Some(f) = &etat.sauvegarde {
+                if f.exists() {
+                    if let Err(e) = std::fs::remove_file(f) {
+                        return Reponse::erreur(500, format!("sauvegarde non effacée : {e}"));
+                    }
+                }
+            }
+            Reponse::json(json!({ "aucune_partie": true }))
         }
         ("POST", "/api/nouvelle") => {
             let graine = match param("graine").filter(|g| !g.trim().is_empty()) {

@@ -23,42 +23,46 @@
 <section class="vue" id="v-accueil" aria-label="Accueil"></section>
 <section class="vue" id="v-partie" aria-label="Partie">
   <div id="fx" aria-hidden="true"></div>
-  <header>
-    <a class="btn small home-btn" href="#accueil" title="Retour à l'accueil (le match continue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Accueil</a>
-    <h1><img class="logo" src="commun/logo_arsenal.webp" alt="Arsenal" width="1200" height="531"></h1>
-    <span class="info" id="info">Chargement…</span>
-    <button id="b-annuler" title="Annuler votre dernier choix (touche A ou Ctrl+Z)">↶ Annuler</button>
-    <span id="score"></span>
-    <button id="b-exporter" title="Télécharger la sauvegarde du match (fichier .json)">Exporter</button>
-    <button id="b-importer" title="Reprendre un match depuis un fichier de sauvegarde">Importer</button>
-    <input type="file" id="f-importer" accept=".json,application/json" hidden>
-    <button id="b-bug" title="Décrire un problème : il est enregistré avec la partie, pour la rejouer">Signaler un bug</button>
-    <button id="b-nouvelle">Nouveau match</button>
-  </header>
-  <main>
+  <main class="jeu">
     <section id="preparation"></section>
-    <section class="plateau" id="plateau">
+    <!-- Tapis (disposition de l'Arsenal JS) : le bot en haut, vous en bas, la
+         chaîne et la pile au milieu, le ruban d'invite au-dessus de vos zones. -->
+    <section class="plateau mat" id="plateau">
+      <div class="matart o" id="art-bot" aria-hidden="true"></div>
+      <div class="matart m" id="art-vous" aria-hidden="true"></div>
       <div class="joueur" id="j-bot"></div>
       <div class="milieu" id="milieu"></div>
+      <div class="pilebox" id="pile" data-a="pile"></div>
+      <div class="ruban" id="ruban" aria-live="polite"><div class="prompt" id="question"></div><div class="btns" id="options"></div></div>
       <div class="joueur" id="j-vous"></div>
     </section>
-    <aside>
-      <div class="panneau">
-        <h2>Votre choix</h2>
-        <div id="resultat"></div>
-        <div id="suite"></div>
-        <div id="question"></div>
-        <div id="options"></div>
-        <div id="erreur"></div>
-        <div id="aide-bot" class="aide-bot"></div>
-        <div class="reglages-fx">
+    <aside class="cote">
+      <div class="gh">
+        <a class="btn small home-btn" href="#accueil" title="Retour à l'accueil (le match est sauvegardé : vous le reprenez depuis l'accueil)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Accueil</a>
+        <span class="sp"></span>
+        <button id="b-options" class="small" aria-expanded="false" aria-controls="gopts">Options</button>
+        <div class="gopts" id="gopts" hidden>
           <label title="Cartes qui volent, impacts, PV qui défilent, bandeaux"><input type="checkbox" id="o-anim"> Animations</label>
           <label title="Le film des coups s'arrête avant les dégâts : cliquez « Continuer » (ou Espace)"><input type="checkbox" id="o-pause"> Pause avant les dégâts</label>
+          <button id="b-nouvelle" class="small">Nouveau match</button>
+          <button id="b-importer" class="small" title="Reprendre un match depuis un fichier de sauvegarde">Importer une partie</button>
+          <button id="b-bug" class="small" title="Décrire un problème : il est enregistré avec la partie, pour la rejouer">Signaler un bug</button>
+          <button id="b-abandon" class="small" title="Le match est oublié ; vous revenez au choix des decks">Abandonner et revenir au choix des decks</button>
+          <p class="aide">Touches : 1 à 9 = bouton du ruban, P = passer, A ou Ctrl+Z = annuler, C = conseil. Survolez une carte pour son texte officiel.</p>
         </div>
-        <p class="aide">Cliquez une carte surlignée pour la jouer, ou tirez-la : sur la chaîne pour la jouer ou défendre, sur votre pitch ou votre arsenal. Ou cliquez une option. Touches : 1 à 9 = option, P = passer, A ou Ctrl+Z = annuler. Survolez une carte pour son texte officiel.</p>
+        <input type="file" id="f-importer" accept=".json,application/json" hidden>
       </div>
-      <div class="panneau" id="detail"><h2>Carte</h2><div class="vide">Survolez une carte.</div></div>
-      <div class="panneau"><h2>Journal</h2><div id="journal"></div></div>
+      <div class="infos"><span id="score"></span><span class="info" id="info">Chargement…</span></div>
+      <div id="resultat"></div>
+      <div id="suite"></div>
+      <div id="erreur"></div>
+      <div id="aide-bot" class="aide-bot"></div>
+      <div class="pv" id="detail"><p class="vide">Survolez une carte pour la voir en grand, avec son texte.</p></div>
+      <div class="log" id="journal"></div>
+      <div class="sidefoot">
+        <button id="b-annuler" class="small" title="Annuler votre dernier choix (Ctrl+Z ou A)">Annuler mon dernier choix</button>
+        <button id="b-exporter" class="small" title="Télécharger la sauvegarde du match (fichier .json)">Exporter la partie</button>
+      </div>
     </aside>
   </main>
   <div id="menu"></div>
@@ -69,6 +73,22 @@
   <div id="d-zone-cartes" class="cartes"></div>
   <form method="dialog"><button>Fermer</button></form>
 </dialog>
+<dialog id="d-fin" class="fin">
+    <form method="dialog">
+      <h2 id="d-fin-titre"></h2>
+      <p class="muted" id="d-fin-pv"></p>
+      <p id="d-fin-stats"></p>
+      <p id="d-fin-match" class="fin-match"></p>
+      <div class="btns">
+        <button value="suivante" class="principal" id="d-fin-suivante">Manche suivante</button>
+        <button value="nouveau">Rejouer (nouveau match)</button>
+        <button value="decks">Changer de deck</button>
+        <button value="journal" class="discret">Voir le journal</button>
+        <button value="annuler" class="discret" id="d-fin-annuler">Annuler mon dernier choix</button>
+        <button value="exporter" class="discret">Exporter la partie</button>
+      </div>
+    </form>
+  </dialog>
 <dialog id="d-bug">
     <form method="dialog" id="f-bug">
       <h2 style="margin-top:0">Signaler un bug</h2>

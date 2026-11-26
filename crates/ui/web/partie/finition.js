@@ -290,7 +290,7 @@ const FX = (() => {
     t.el.style.pointerEvents = "";
     const o = z ? t.depots.get(z) : null;
     t.el.classList.remove("tiree");
-    if (o) { t.el.style.transform = ""; choisir(o.i); }
+    if (o) { t.el.style.transform = ""; deposerOption(o); }
     else { t.el.style.transition = "transform .25s ease-out"; t.el.style.transform = ""; setTimeout(() => { t.el.style.transition = ""; }, 260); }
   }
   window.addEventListener("pointerup", lacher); window.addEventListener("pointercancel", lacher);
@@ -365,7 +365,7 @@ const Film = (() => {
           if (degats && ReglagesFx.pause && !sauter) await continuer();
           etat = Object.assign({}, nouveau, image.plateau, { decision: null, fini: false, resultat: null, manche_suivante: false });
           afficher();
-          document.querySelectorAll("#v-partie header button, #options button").forEach((b) => { b.disabled = true; });
+          document.querySelectorAll("#v-partie aside button, #options button").forEach((b) => { b.disabled = true; });
           const d = FX.evenements(ev);
           if (!sauter) await attendre(Math.max(420, d));
         }
