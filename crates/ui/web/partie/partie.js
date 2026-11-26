@@ -234,18 +234,22 @@ async function montrerPool(id, c) {
   } catch (e) { /* rien à montrer */ }
 }
 
-// ---------- préparation d'une manche (phase de side) ----------
+// ---------- préparation d'une manche : fenêtre d'ajustement ----------
+// D'après openAdjust / renderAdjust de l'Arsenal JS : en-tête (« Hala
+// contre Ira », tiré au sort, Retirer au sort, Ce que joue le bot, départ),
+// le deck en piles (clic : un exemplaire de plus, clic droit : un de moins),
+// l'équipement une rangée par zone, et au pied le compteur, le rythme, le
+// niveau du bot et « Lancer la partie ». Les étapes restent celles du
+// moteur (CR 4.1.3 à 4.1.6) : qui commence, puis l'équipement (présenté),
+// puis le deck ; le deck se règle dès l'ouverture et reste réglé d'une
+// étape à l'autre. Les cartes s'ajustent pour que tout tienne sans défiler.
 
-// Choix en cours de l'humain (gardé tant que l'étape ne change pas).
+// Choix en cours de l'humain.
 let choixArene = null;   // ensemble des positions choisies
 let choixDeck = null;    // quantité par carte distincte
-let etapeVue = null;
+let etapeVue = null, mancheVue = null;
 let sourceReglage = "proposition";
-
-// ---------- ajustement avant la manche (lot 4c, d'après openAdjust de
-// l'Arsenal JS) : départ au choix (dernier réglage gardé par le navigateur,
-// plan conseillé par la table apprise, proposition du serveur), cartes en
-// piles : clic = un exemplaire de plus au deck, clic droit = un de moins.
+let infoBot = null;      // { nom, html } : « Ce que joue le bot »
 
 // Dernier réglage de ce matchup (vos decks contre ce deck du bot).
 const cleReglage = () => `arsenal-reglage:${etat.reglages.deck}>${etat.reglages.deck_bot}`;
@@ -267,21 +271,27 @@ function sources(p) {
     ["proposition", "Proposition", { arene: p.arene.filter(c => c.propose).map(c => c.i), deck: p.deck.map(c => c.propose) }, "Ordre de la liste, ou votre choix de la manche précédente"],
   ];
 }
+// L'équipement ne change plus une fois validé (étape « deck »).
 function appliquer(p, nom) {
   const src = sources(p).find(x => x[0] === nom && x[2]);
   if (!src) return false;
   sourceReglage = nom;
-  if (p.etape === "arene") choixArene = new Set(src[2].arene);
-  else choixDeck = src[2].deck.slice();
+  if (p.etape !== "deck") choixArene = new Set(src[2].arene);
+  choixDeck = src[2].deck.slice();
   return true;
 }
+const libelleSource = (p) => {
+  if (sourceReglage === "modifie") return "Réglage modifié";
+  const s = sources(p).find(x => x[0] === sourceReglage);
+  return s ? s[3] : "";
+};
 function barreSources(p) {
-  const g = el("div", "seg-sources");
+  const g = el("div", "seg seg-sources");
   g.setAttribute("role", "group");
   g.setAttribute("aria-label", "Point de départ");
-  g.appendChild(el("span", "aide", "Départ :"));
   for (const [nom, lib, val, aide] of sources(p)) {
     const b = el("button", null, lib);
+    b.type = "button";
     b.title = aide;
     b.disabled = !val;
     b.setAttribute("aria-pressed", String(sourceReglage === nom));
@@ -291,16 +301,29 @@ function barreSources(p) {
   return g;
 }
 
+// Petit message dans la fenêtre (« Aucun exemplaire au deck. »…)
+let minPrepToast = null;
+function prepToast(m) {
+  const s = $("preparation");
+  for (const t of s.querySelectorAll(".toast")) t.remove();
+  const t = el("div", "toast", m);
+  t.setAttribute("role", "status");
+  s.appendChild(t);
+  clearTimeout(minPrepToast); minPrepToast = setTimeout(() => t.remove(), 3000);
+}
+
 // Une pile : les exemplaires d'une carte, ceux hors du deck grisés.
-function pile(c, k) {
+function pile(c, k, arrive) {
   const t = c.max, n = choixDeck[k];
-  const e = el("div", "pile-cartes" + (n ? "" : " eteinte"));
+  const e = el("div", "pile-cartes" + (n ? "" : " eteinte") + (arrive ? " arrive" : ""));
   e.tabIndex = 0;
   e.setAttribute("role", "button");
   e.style.setProperty("--t", t);
-  e.title = `${c.nom_fr || c.nom}${c.couleur ? " (" + c.couleur + ")" : ""} : ${n} au deck sur ${t}\nClic : un de plus · clic droit : un de moins`;
+  const nom = `${c.nom_fr || c.nom}${c.couleur ? " (" + c.couleur + ")" : ""}`;
+  e.setAttribute("aria-label", `${nom} : ${n} au deck sur ${t}`);
+  e.title = `${nom} : ${n} au deck${t - n ? `, ${t - n} désactivé${t - n > 1 ? "s" : ""}` : ""}\nClic : un de plus · clic droit : un de moins`;
   for (let i = 0; i < t; i++) {
-    const x = el("div", "ex" + (i >= n ? " off" : ""));
+    const x = el("div", "ex" + (i < t - n ? " off" : ""));
     x.style.setProperty("--i", i);
     if (c.image) { x.classList.add("a-img"); x.appendChild(Images.img(c.image, "normal", x, "a-img")); }
     x.appendChild(el("span", "nm", c.nom_fr || c.nom));
@@ -310,8 +333,12 @@ function pile(c, k) {
   if (t > 1 || !n) e.appendChild(el("span", "q", `${n}/${t}`));
   const changer = (d) => {
     const v = choixDeck[k] + d;
-    if (v < 0 || v > t) { e.classList.remove("secoue"); void e.offsetWidth; e.classList.add("secoue"); return; }
-    choixDeck[k] = v; sourceReglage = "modifie"; preparation();
+    if (v < 0 || v > t) {
+      e.classList.remove("secoue"); void e.offsetWidth; e.classList.add("secoue");
+      prepToast(d > 0 ? "Tous les exemplaires sont déjà au deck. Clic droit pour en désactiver un." : "Aucun exemplaire au deck.");
+      return;
+    }
+    choixDeck[k] = v; sourceReglage = "modifie"; preparation(k);
     const f = document.querySelector(`#preparation .pile-cartes[data-k="${k}"]`); if (f) f.focus({ preventScroll: true });
   };
   e.dataset.k = k;
@@ -325,99 +352,242 @@ function pile(c, k) {
   return e;
 }
 
-function preparation() {
+// Une carte d'équipement (choisie : cadre doré).
+function carteEquipement(c, choisie, cliquable, quand) {
+  const b = el("button", "eqc" + (c.image ? " a-img" : ""));
+  b.type = "button";
+  b.setAttribute("aria-pressed", String(choisie));
+  b.title = c.nom_fr || c.nom;
+  b.disabled = !cliquable;
+  if (c.image) b.appendChild(Images.img(c.image, "normal", b, "a-img"));
+  b.appendChild(el("span", "nmf", c.nom_fr || c.nom));
+  if (cliquable) b.addEventListener("click", quand);
+  if (c.carte_id !== undefined) b.addEventListener("mouseenter", () => montrerPool(c.carte_id, c));
+  return b;
+}
+
+// Le deck du bot : héros, armes et équipements de son card-pool (pas son side).
+async function chargerInfoBot() {
+  const nom = etat.reglages.deck_bot;
+  if (infoBot && infoBot.nom === nom) return;
+  infoBot = { nom, html: "…" };
+  try {
+    const v = await api("GET", "/api/deck?nom=" + encodeURIComponent(nom));
+    const par = {};
+    for (const a of v.liste.arene) (par[a.emplacement || "?"] = par[a.emplacement || "?"] || []).push(a.nom);
+    const NOMS = { Weapon: "Arme", Head: "Tête", Chest: "Torse", Arms: "Bras", Legs: "Jambes", "Off-Hand": "Main gauche" };
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    infoBot.html = `<div><b>${esc(v.heros)}</b>${v.classe ? " · " + esc(v.classe) : ""}${v.source ? `<div class="muted">${esc(v.source)}</div>` : ""}</div>`
+      + Object.entries(par).map(([z, l]) => `<div><span class="muted">${esc(NOMS[z] || z)} :</span> ${l.map(esc).join(", ")}</div>`).join("")
+      + `<div class="muted">${v.arene} cartes d'arène, ${v.deck} cartes de deck. Le bot choisit son équipement et ses 40 cartes sans voir les vôtres ; son choix n'est pas montré avant la présentation de l'équipement.</div>`;
+  } catch (e) { infoBot.html = "Deck du bot illisible."; }
+  const p = document.querySelector("#preparation .abp");
+  if (p) p.innerHTML = infoBot.html;
+}
+
+// Refaire le match (manche 1, rien de joué) avec d'autres réglages.
+async function refaire(change) {
+  const r = etat.reglages;
+  const q = Object.assign({ deck: r.deck, bot: r.deck_bot, niveau: r.niveau, manches: String(etat.match.manches), graine: r.graine }, change);
+  await action("POST", "/api/nouvelle?" + new URLSearchParams(q).toString());
+}
+async function retirerAuSort() {
+  try {
+    const p = await api("GET", "/api/decks-projet");
+    let arch = [];
+    try { arch = JSON.parse(localStorage.getItem("arsenal-bot-archives") || "[]"); } catch (e) {}
+    const L = p.decks.map(d => d.nom).filter(n => n !== etat.reglages.deck_bot && !arch.includes(n));
+    if (!L.length) return;
+    await refaire({ bot: L[Math.floor(Math.random() * L.length)] });
+    botAuHasard.add(etat.reglages.graine + ">" + etat.reglages.deck_bot);
+    preparation();
+  } catch (e) { $("erreur").textContent = e.message; }
+}
+const botAuHasard = new Set(); // matchs lancés avec « Deck du bot : Au hasard »
+
+const NIVEAUX_BOT = [
+  ["b0", "Niveau 0 (hasard)"], ["b1", "Niveau 1 (règles fixes)"], ["b2", "Niveau 2 (réfléchit)"],
+  ["b3", "Niveau 3 (évaluation apprise)"], ["b2-500ms", "Niveau 2, ½ s par décision"], ["b2-1000", "Niveau 2, 1 000 essais"],
+];
+
+function preparation(bouge) {
   const p = etat.preparation;
-  const cle = etat.match.jouees + "-" + p.etape;
-  if (cle !== etapeVue) {
-    etapeVue = cle;
+  const m = etat.match;
+  if (mancheVue !== m.jouees + "|" + etat.reglages.graine + "|" + etat.reglages.deck_bot) {
+    mancheVue = m.jouees + "|" + etat.reglages.graine + "|" + etat.reglages.deck_bot;
+    etapeVue = null;
     choixArene = new Set(p.arene.filter(c => c.propose).map(c => c.i));
     choixDeck = p.deck.map(c => c.propose);
     sourceReglage = "proposition";
-    if (p.etape === "arene" || p.etape === "deck") appliquer(p, "dernier");
+    appliquer(p, "dernier");
   }
+  etapeVue = p.etape;
+  chargerInfoBot();
   const s = $("preparation");
   s.replaceChildren();
-  const manche = etat.match.jouees + 1;
-  const tete = el("div", "bloc");
-  tete.appendChild(el("h2", null, `Manche ${manche} — vous (${p.heros}) contre le bot (${p.heros_bot})`));
-  const prem = p.premier ? (p.premier === "vous" ? "Vous commencez." : "Le bot commence.") : "";
-  tete.appendChild(el("div", null, (p.choisit_premier === "vous" ? "Vous choisissez qui commence. " : "Le bot choisit qui commence. ") + prem));
-  s.appendChild(tete);
+  const premiere = m.jouees === 0;
+  const hasard = botAuHasard.has(etat.reglages.graine + ">" + etat.reglages.deck_bot);
 
-  if (p.etape === "premier") {
-    const b = el("div", "bloc");
-    b.appendChild(el("div", null, "Qui commence la manche ? (CR 4.1.3 : choisi avant l'équipement et le deck)"));
-    const l = el("div", "barre");
-    const b1 = el("button", "principal", "Je commence");
-    b1.addEventListener("click", () => action("POST", "/api/premier?qui=vous"));
-    const b2 = el("button", null, "Le bot commence");
-    b2.addEventListener("click", () => action("POST", "/api/premier?qui=bot"));
-    l.append(b1, b2);
-    b.appendChild(l);
-    s.appendChild(b);
-  } else if (p.etape === "arene") {
-    const b = el("div", "bloc");
-    const barre = el("div", "barre");
-    const v = el("button", "principal", "Valider l'équipement");
-    v.addEventListener("click", () => { garderReglage(p); action("POST", "/api/arene?cartes=" + [...choixArene].join(",")); });
-    barre.append(v, barreSources(p));
-    b.appendChild(barre);
-    b.appendChild(el("p", "aide", "Une carte par zone (deux mains pour les armes). Le bot choisit le sien sans voir le vôtre ; vous le verrez ensuite."));
-    const zones = [];
-    for (const c of p.arene) if (!zones.includes(c.zone)) zones.push(c.zone);
-    const rang = el("div", "rangee-zones");
-    for (const z of zones) {
-      const cartes = p.arene.filter(c => c.zone === z);
-      const zz = el("div", "zone");
-      zz.appendChild(el("div", "titre", z));
-      const r = el("div", "cartes");
-      for (const c of cartes) {
-        const e = carte(c, true);
-        e.classList.add(choixArene.has(c.i) ? "choisie" : "non-choisie");
-        e.style.cursor = "pointer";
-        e.addEventListener("click", () => {
-          if (choixArene.has(c.i)) choixArene.delete(c.i);
-          else {
-            // Hors armes : une seule carte par zone.
-            if (z !== "Armes") for (const o of cartes) choixArene.delete(o.i);
-            choixArene.add(c.i);
-          }
-          sourceReglage = "modifie";
-          preparation();
-        });
-        r.appendChild(e);
-      }
-      zz.appendChild(r);
-      rang.appendChild(zz);
-    }
-    b.appendChild(rang);
-    s.appendChild(b);
-  } else if (p.etape === "deck") {
-    const ab = el("div", "bloc");
-    ab.appendChild(zone("Équipement du bot (présenté, CR 4.1.5)", p.arene_bot, true));
-    s.appendChild(ab);
-    const b = el("div", "bloc");
-    const total = choixDeck.reduce((a, n) => a + n, 0);
-    const hors = p.deck.reduce((a, c, k) => a + c.max - choixDeck[k], 0);
-    const barre = el("div", "barre");
-    const t = el("span", total === p.taille_deck ? "ok" : "ko", `${total} / ${p.taille_deck}`);
-    t.id = "total";
-    const m = el("span", "aide", total === p.taille_deck ? "prêt" : total < p.taille_deck ? `il en manque ${p.taille_deck - total}` : `${total - p.taille_deck} de trop`);
-    const v = el("button", "principal", "Valider le deck");
-    v.disabled = total !== p.taille_deck;
-    v.addEventListener("click", () => { garderReglage(p); action("POST", "/api/deck?n=" + choixDeck.join(",")); });
-    barre.append(t, m, v, barreSources(p), el("span", "aide", `${hors} exemplaire(s) hors du deck (side) · clic : un de plus · clic droit : un de moins`));
-    b.appendChild(barre);
-    const r = el("div", "piles");
-    const ordre = p.deck.map((c, k) => k).sort((x, y) => {
-      const a = p.deck[x], c = p.deck[y];
-      return ((a.cout ?? 99) - (c.cout ?? 99)) || ((a.pitch ?? 9) - (c.pitch ?? 9)) || a.nom.localeCompare(c.nom);
-    });
-    for (const k of ordre) r.appendChild(pile(p.deck[k], k));
-    b.appendChild(r);
-    s.appendChild(b);
+  // En-tête
+  const ah = el("header", "ah");
+  const att = el("div", "att");
+  const h = el("h2");
+  h.append(document.createTextNode(p.heros + " "), el("span", "vs muted", "contre"), document.createTextNode(" " + p.heros_bot));
+  if (hasard) h.appendChild(el("span", "pill", "tiré au sort"));
+  if (hasard && premiere) {
+    const b = el("button", "btn small quiet", "Retirer au sort");
+    b.type = "button";
+    b.title = "Tirer un autre deck du bot";
+    b.addEventListener("click", retirerAuSort);
+    h.appendChild(b);
   }
+  att.appendChild(h);
+  const src = el("div", "asrc");
+  src.append(document.createTextNode(`Manche ${m.jouees + 1} · Départ : `), el("b", null, libelleSource(p)));
+  const prem = p.premier ? (p.premier === "vous" ? " · Vous commencez." : " · Le bot commence.") : (p.choisit_premier === "vous" ? "" : " · Le bot choisit qui commence.");
+  src.appendChild(document.createTextNode(prem));
+  att.appendChild(src);
+  ah.append(att, el("span", "sp"));
+  const det = el("details", "abot");
+  det.appendChild(el("summary", null, "Ce que joue le bot"));
+  const abp = el("div", "abp");
+  abp.innerHTML = infoBot ? infoBot.html : "…";
+  det.appendChild(abp);
+  ah.append(det, barreSources(p));
+  s.appendChild(ah);
+
+  // Corps
+  const body = el("div", "abody");
+  if (p.etape === "premier") {
+    const q = el("div", "aquestion");
+    q.appendChild(el("span", null, "Qui commence la manche ? (CR 4.1.3 : choisi avant l'équipement et le deck)"));
+    const b1 = el("button", "btn primary", "Je commence");
+    b1.addEventListener("click", () => action("POST", "/api/premier?qui=vous"));
+    const b2 = el("button", "btn", "Le bot commence");
+    b2.addEventListener("click", () => action("POST", "/api/premier?qui=bot"));
+    q.append(b1, b2);
+    body.appendChild(q);
+  }
+  const total = choixDeck.reduce((a, n) => a + n, 0);
+  const hors = p.deck.reduce((a, c, k) => a + c.max - choixDeck[k], 0);
+  const T = p.taille_deck;
+  const zd = el("section", "zone deck");
+  const h3 = el("h3");
+  h3.append(document.createTextNode("Deck "), el("b", null, `${total} / ${T}`));
+  h3.appendChild(el("span", "m " + (total === T ? "ok" : total < T ? "manque" : "trop"), total === T ? "prêt" : total < T ? `manque ${T - total}` : `${total - T} de trop`));
+  if (hors) h3.appendChild(el("span", "m muted", `${hors} exemplaire${hors > 1 ? "s" : ""} désactivé${hors > 1 ? "s" : ""} (side)`));
+  zd.appendChild(h3);
+  const r = el("div", "stks");
+  const ordre = p.deck.map((c, k) => k).sort((x, y) => {
+    const a = p.deck[x], c = p.deck[y];
+    return ((a.cout ?? 99) - (c.cout ?? 99)) || ((a.pitch ?? 9) - (c.pitch ?? 9)) || a.nom.localeCompare(c.nom);
+  });
+  for (const k of ordre) r.appendChild(pile(p.deck[k], k, bouge === k));
+  zd.appendChild(r);
+  body.appendChild(zd);
+
+  const ze = el("section", "zone eqz");
+  ze.appendChild(el("h3", null, p.etape === "deck" ? "Votre équipement (validé)" : "Équipement et armes"));
+  const rang = el("div", "eqrow");
+  const zones = [];
+  for (const c of p.arene) if (!zones.includes(c.zone)) zones.push(c.zone);
+  for (const z of zones) {
+    const cartes = p.arene.filter(c => c.zone === z);
+    const slot = el("div", "eqslot");
+    slot.appendChild(el("span", null, z));
+    const o = el("div", "opts");
+    for (const c of cartes) {
+      o.appendChild(carteEquipement(c, choixArene.has(c.i), p.etape !== "deck", () => {
+        if (choixArene.has(c.i)) choixArene.delete(c.i);
+        else {
+          if (z !== "Armes") for (const x of cartes) choixArene.delete(x.i); // une carte par zone, deux mains pour les armes
+          choixArene.add(c.i);
+        }
+        sourceReglage = "modifie";
+        preparation();
+      }));
+    }
+    slot.appendChild(o);
+    rang.appendChild(slot);
+  }
+  ze.appendChild(rang);
+  if (p.etape === "deck" && p.arene_bot) {
+    const sb = el("div", "eqslot bot");
+    sb.appendChild(el("span", null, "Équipement du bot (présenté, CR 4.1.5)"));
+    const o = el("div", "opts");
+    for (const c of p.arene_bot) o.appendChild(carteEquipement(c, true, false));
+    sb.appendChild(o);
+    rang.appendChild(sb);
+  } else if (p.etape !== "deck") ze.appendChild(el("p", "aide", "Une carte par zone (deux mains pour les armes). Le bot choisit le sien sans voir le vôtre ; vous le verrez avant de valider le deck."));
+  body.appendChild(ze);
+  s.appendChild(body);
+
+  // Pied
+  const af = el("footer", "af");
+  const cpt = el("div", "acount");
+  cpt.append(document.createTextNode(`${total} / ${T}`), el("small", total === T ? "ok" : "muted", total === T ? "prêt à jouer" : total < T ? `active encore ${T - total} exemplaire${T - total > 1 ? "s" : ""}` : `désactive ${total - T} exemplaire${total - T > 1 ? "s" : ""}`));
+  const aide = el("span", "muted ahelp");
+  aide.innerHTML = "<kbd>clic gauche</kbd> active un exemplaire · <kbd>clic droit</kbd> le désactive";
+  af.append(cpt, aide, el("span", "sp"));
+  const rythme = el("div", "aopt");
+  rythme.appendChild(el("span", null, "Rythme"));
+  const seg = el("div", "seg");
+  seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Rythme des animations");
+  for (const [v, lib, t] of [[false, "Normal", "animations au rythme normal"], [true, "Rapide", "animations accélérées"]]) {
+    const b = el("button", null, lib);
+    b.type = "button"; b.title = t;
+    b.setAttribute("aria-pressed", String(ReglagesFx.rapide === v));
+    b.addEventListener("click", () => { ReglagesFx.regler("rapide", v); preparation(); });
+    seg.appendChild(b);
+  }
+  rythme.appendChild(seg);
+  const niv = el("label", "aopt");
+  niv.appendChild(el("span", null, "Bot"));
+  const sn = el("select");
+  for (const [v, l] of NIVEAUX_BOT) { const o = el("option", null, l); o.value = v; sn.appendChild(o); }
+  if (!NIVEAUX_BOT.some(x => x[0] === etat.reglages.niveau)) { const o = el("option", null, etat.reglages.niveau); o.value = etat.reglages.niveau; sn.appendChild(o); }
+  sn.value = etat.reglages.niveau;
+  sn.disabled = !premiere;
+  sn.title = premiere ? "Niveau du bot pour tout le match" : "Le niveau se choisit avant la première manche";
+  sn.addEventListener("change", () => refaire({ niveau: sn.value }));
+  niv.appendChild(sn);
+  const retour = el("button", "btn", "Retour");
+  retour.type = "button";
+  retour.title = "Revenir à l'écran Jouer (le match est gardé : Reprendre depuis l'accueil)";
+  retour.addEventListener("click", () => Arsenal.aller("decks"));
+  let go;
+  if (p.etape === "deck") {
+    go = el("button", "btn primary big", "Lancer la partie");
+    go.disabled = total !== T;
+    go.title = total === T ? "" : `Le deck doit compter ${T} cartes`;
+    go.addEventListener("click", () => { garderReglage(p); action("POST", "/api/deck?n=" + choixDeck.join(",")); });
+  } else {
+    go = el("button", "btn primary big", "Valider l'équipement");
+    go.disabled = p.etape !== "arene";
+    go.title = p.etape === "arene" ? "L'équipement est présenté au bot ; le deck reste réglable ensuite" : "Choisissez d'abord qui commence";
+    go.addEventListener("click", () => { garderReglage(p); action("POST", "/api/arene?cartes=" + [...choixArene].join(",")); });
+  }
+  go.id = "prep-go";
+  af.append(rythme, niv, retour, go);
+  s.appendChild(af);
+  if (bouge === undefined) requestAnimationFrame(ajusterTaille);
 }
+
+// Pas de défilement et pas de place perdue : la plus grande largeur de carte
+// (46 à 150 px) qui laisse tout tenir dans la fenêtre (dichotomie).
+let essaisTaille = 0;
+function ajusterTaille() {
+  const b = document.querySelector("#preparation .abody");
+  if (!b) return;
+  if (!b.clientHeight) { if (++essaisTaille < 40) setTimeout(ajusterTaille, 50); return; } // volet pas encore affiché
+  essaisTaille = 0;
+  const essai = (cw) => { b.style.setProperty("--cwf", cw + "px"); b.style.setProperty("--ewf", Math.round(cw * 0.8) + "px"); return b.scrollHeight <= b.clientHeight + 1; };
+  let lo = 46, hi = 150;
+  if (!essai(lo)) return;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (essai(mid)) lo = mid; else hi = mid; }
+  essai(lo);
+}
+window.addEventListener("resize", () => { if (etat && etat.phase === "preparation") ajusterTaille(); });
 
 // ---------- affichage ----------
 
@@ -857,7 +1027,8 @@ function afficher() {
   $("plateau").style.display = prep ? "none" : "grid";
   if (prep) {
     const r = etat.reglages;
-    $("info").textContent = `Préparation de la manche ${m.jouees + 1} · vous : ${r.deck} · bot ${r.niveau} : ${r.deck_bot}`;
+    $("info").textContent = `Préparation de la manche ${m.jouees + 1}`;
+    $("journal").replaceChildren(); // le journal d'une autre partie n'a rien à faire ici
     $("b-annuler").disabled = true;
     $("resultat").textContent = "";
     $("suite").replaceChildren();
@@ -1020,8 +1191,9 @@ $("f-importer").addEventListener("change", async () => {
 
 // Pour l'écran Jouer (decks/decks.js) : lancer un match, charger une partie.
 window.PartieArsenal = {
-  async lancer(reglages) {
+  async lancer(reglages, auHasard) {
     const v = await api("POST", "/api/nouvelle?" + new URLSearchParams(reglages).toString());
+    if (auHasard) botAuHasard.add(v.reglages.graine + ">" + v.reglages.deck_bot);
     etat = v;
     Film.vu(etat);
     Arsenal.aller("partie");

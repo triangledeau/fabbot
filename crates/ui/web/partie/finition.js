@@ -16,13 +16,23 @@
 const ReglagesFx = (() => {
   const lire = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v === "1"; } catch (e) { return d; } };
   const ecrire = (k, v) => { try { localStorage.setItem(k, v ? "1" : "0"); } catch (e) { /* stockage indisponible */ } };
-  const r = { anim: lire("arsenal-anim", true), pause: lire("arsenal-pause", false) };
+  // rapide : « Rythme » de la fenêtre d'ajustement (le film des coups va plus vite)
+  const CASES = [["o-anim", "anim", "arsenal-anim"], ["o-pause", "pause", "arsenal-pause"], ["o-rapide", "rapide", "arsenal-rapide"]];
+  const r = { anim: lire("arsenal-anim", true), pause: lire("arsenal-pause", false), rapide: lire("arsenal-rapide", false) };
+  r.regler = (k, v) => {
+    r[k] = v;
+    const x = CASES.find((c) => c[1] === k);
+    if (!x) return;
+    ecrire(x[2], v);
+    const c = document.getElementById(x[0]);
+    if (c) c.checked = v;
+  };
   document.addEventListener("DOMContentLoaded", () => {
-    for (const [id, k, cle] of [["o-anim", "anim", "arsenal-anim"], ["o-pause", "pause", "arsenal-pause"]]) {
+    for (const [id, k] of CASES) {
       const c = document.getElementById(id);
       if (!c) continue;
       c.checked = r[k];
-      c.addEventListener("change", () => { r[k] = c.checked; ecrire(cle, c.checked); });
+      c.addEventListener("change", () => r.regler(k, c.checked));
     }
   });
   return r;
@@ -367,7 +377,7 @@ const Film = (() => {
           afficher();
           document.querySelectorAll("#v-partie aside button, #options button").forEach((b) => { b.disabled = true; });
           const d = FX.evenements(ev);
-          if (!sauter) await attendre(Math.max(420, d));
+          if (!sauter) await attendre(ReglagesFx.rapide ? Math.max(200, d * 0.5) : Math.max(420, d));
         }
       } finally { reprendre = null; bouton(false); plateauFilm(false); }
     },
