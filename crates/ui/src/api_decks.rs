@@ -62,6 +62,9 @@ pub struct CarteCollection {
     /// Texte de la carte (base communautaire), pour la recherche.
     pub texte: String,
     pub heros: bool,
+    /// PV et intellect d'un héros (en-tête de l'éditeur).
+    pub pv: Option<u8>,
+    pub intellect: Option<u8>,
 }
 
 /// Classes de Flesh and Blood (données des cartes, pour les filtres).
@@ -215,6 +218,8 @@ fn depuis_fabcube(v: &Value, db: &CardDb) -> (Vec<CarteCollection>, HashSet<Cle>
                 .cloned()
                 .collect(),
             heros: types.iter().any(|t| t == "Hero"),
+            pv: nombre(&c["health"]),
+            intellect: nombre(&c["intelligence"]),
             mots_cles: liste("card_keywords"),
             texte: c["functional_text_plain"]
                 .as_str()
@@ -271,6 +276,8 @@ fn cartes_codees(
             mots_cles: Vec::new(),
             texte: String::new(),
             heros: d.types.has(Types::HERO),
+            pv: d.life,
+            intellect: d.intellect,
         });
     }
     out
@@ -385,6 +392,8 @@ impl Collection {
                     "mots_cles": c.mots_cles,
                     "texte": c.texte,
                     "heros": c.heros,
+                    "pv": c.pv,
+                    "intellect": c.intellect,
                     "emplacement": emplacement_collection(c),
                 })
             })
