@@ -73,7 +73,7 @@ et ses 40 cartes avec une **table apprise** par simulation
 (`data/side/b1.txt`, une entrée par paire de héros, lisible ; méthode et
 mesures : `docs/bots.md`, « La phase de side »). **B1 avec la table contre
 B1 avec le choix « liste » : 63,5 % sur 324 000 parties (+96 Elo, 0
-erreur).** B2_SUIVI Les tournois du simulateur utilisent la table par
+erreur).** **B2 avec la table contre B2 « liste » : 62,0 % sur 1 620 parties (+85 Elo, intervalle +68 à +103).** Les tournois du simulateur utilisent la table par
 défaut (`--side liste liste` pour l'ancien choix).
 
 **Choix « liste »** (`real::default_loadout`, ancien choix provisoire,

@@ -178,7 +178,7 @@ est mal notée même si elle est bonne entre les mains d'un humain.
 | B1 `appris` contre B1 `general` (λ = 5 000) | 324 000 | 51,8 % | +12 (+11 à +14) |
 | B1 `appris` contre B1 `general` (λ = 1 000, retenu) | 324 000 | 52,0 % | +14 (+13 à +15) |
 | B1 `appris` contre B1 `general` (λ = 250) | 324 000 | 52,0 % | +14 (+13 à +15) |
-B2_LIGNE
+| B2 `appris` contre B2 `liste` | 1 620 | **62,0 %** | **+85** (+68 à +103) |
 
 0 erreur. Le gain vient surtout de l'équipement (ex. Florian : Nebula Blade
 plutôt qu'Annals of Sutcliffe, −12,8 points estimés pour Annals ; Ira : Blade
