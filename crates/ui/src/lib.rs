@@ -8,10 +8,12 @@
 //! - Arsenal, lot 0 : page en plusieurs fichiers intégrés au programme
 //!   ([`fichiers`]), accueil et navigation par `#` ;
 //! - Arsenal, lot 4a : collection Silver Age et decks maison ([`api_decks`]) ;
-//! - Arsenal, lot 8 : tournoi et apprentissage depuis la page ([`api_tournoi`]).
+//! - Arsenal, lot 8 : tournoi et apprentissage depuis la page ([`api_tournoi`]) ;
+//! - Arsenal, lot 9 : conseil du bot, évaluation, Bot contre Bot, signalement de bug ([`extras`]).
 
 pub mod api_decks;
 pub mod api_tournoi;
+pub mod extras;
 pub mod fichiers;
 pub mod images;
 pub mod jeu;

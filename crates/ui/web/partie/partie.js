@@ -577,6 +577,7 @@ function afficher() {
     $("info").textContent = "Aucun match : cliquez « Nouveau match » (ou « Importer » une sauvegarde).";
     $("b-annuler").disabled = true;
     $("b-exporter").disabled = true;
+    document.dispatchEvent(new CustomEvent("arsenal:etat"));
     return;
   }
   const m = etat.match;
@@ -593,6 +594,7 @@ function afficher() {
     $("question").textContent = "Choisissez votre équipement et votre deck (à gauche).";
     $("options").replaceChildren();
     preparation();
+    document.dispatchEvent(new CustomEvent("arsenal:etat"));
     return;
   }
   const r = etat.reglages;
@@ -607,6 +609,8 @@ function afficher() {
   suite();
   journal();
   FX.apres(etat);
+  // Lot 9 (partie/extras.js) : conseil du bot, barre d'évaluation.
+  document.dispatchEvent(new CustomEvent("arsenal:etat"));
 }
 
 function suite() {
@@ -706,7 +710,7 @@ $("f-importer").addEventListener("change", async () => {
 
 document.addEventListener("keydown", (e) => {
   if (Arsenal.vue() !== "partie") return;
-  if ($("d-nouvelle").open || e.target.tagName === "INPUT") return;
+  if ($("d-nouvelle").open || $("d-bug").open || e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
   if (etat && etat.phase === "preparation") return;
   if ((e.key === "z" && (e.ctrlKey || e.metaKey)) || e.key === "a" || e.key === "A") { e.preventDefault(); annuler(); return; }
   const d = etat && etat.decision;

@@ -150,6 +150,18 @@ coupe, espace entre les cartes. La page montre les feuilles (9 cartes de
 PDF »). Imprimez à 100 %, sans « ajuster à la page ». Page :
 `crates/ui/web/impression/`.
 
+### Aide du bot et signalement de bug
+
+Dans l'écran de partie, sous les options : **Conseil** (ou touche C)
+montre le coup que jouerait le bot choisi (B1, B2 ou B3) à votre place ;
+il ne voit que ce que vous voyez. La barre **Vous** donne vos chances de
+gagner selon l'évaluation apprise de B3 (sans regarder la main du bot :
+moyenne sur des mains tirées au hasard). **Bot contre Bot** fait jouer ce
+bot à votre place jusqu'à la fin de la manche (re-cliquez pour reprendre
+la main ; « Annuler » marche toujours). **Signaler un bug** (en haut)
+enregistre votre texte avec la sauvegarde du match dans
+`sauvegardes/bugs/` : on rejoue la partie coup par coup.
+
 ### Entraîner (tournoi, SPRT, apprentissage)
 
 Depuis l'accueil, **Entraîner**. **Tournoi** : cochez les decks (du projet

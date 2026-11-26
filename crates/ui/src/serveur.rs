@@ -22,11 +22,14 @@
 //! | `GET /api/sauvegarde` | la sauvegarde du match en cours (JSON, [`crate::sauvegarde`]) |
 //! | `POST /api/charger` (corps : une sauvegarde) | reprend le match d'une sauvegarde |
 //! | `/api/collection`, `/api/decks-maison`, `/api/deck-maison…` | decks maison ([`crate::api_decks`]) |
+//! | `/api/tournoi…`, `/api/tache…` | entraîner ([`crate::api_tournoi`]) |
+//! | `/api/conseil`, `/api/evaluation`, `/api/auto`, `/api/bug(s)` | extras de la partie ([`crate::extras`]) |
 //!
 //! Après chaque requête `POST` réussie, le match est écrit dans le fichier
 //! de sauvegarde ([`Etat::sauvegarde`]), s'il y en a un.
 
 use crate::decks_jouables;
+use crate::extras;
 use crate::fichiers;
 use crate::match_web::{Etape, MatchWeb};
 use crate::sauvegarde;
@@ -239,6 +242,52 @@ pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mu
                 Err(e) => Reponse::erreur(400, e),
             }
         }
+        ("GET", "/api/conseil") | ("GET", "/api/evaluation") => {
+            let Some(m) = etat.partie.as_ref() else {
+                return Reponse::erreur(400, "aucun match en cours");
+            };
+            let s = match extras::session(m) {
+                Ok(s) => s,
+                Err(e) => return Reponse::erreur(400, e),
+            };
+            if chemin == "/api/evaluation" {
+                return Reponse::json(json!({ "vous": extras::evaluation(s) }));
+            }
+            let niveau = param("niveau").unwrap_or_else(|| "b2".into());
+            match extras::conseil(s, &niveau) {
+                Ok((i, texte)) => {
+                    Reponse::json(json!({ "i": i, "texte": texte, "niveau": niveau }))
+                }
+                Err(e) => Reponse::erreur(400, e),
+            }
+        }
+        ("POST", "/api/auto") => {
+            let Some(m) = etat.partie.as_mut() else {
+                return Reponse::erreur(400, "aucun match en cours");
+            };
+            let niveau = param("niveau").unwrap_or_else(|| "b1".into());
+            let i = match extras::session(m).and_then(|s| extras::conseil(s, &niveau)) {
+                Ok((i, _)) => i,
+                Err(e) => return Reponse::erreur(400, e),
+            };
+            let r = m.session.as_mut().map(|s| s.choisir(i));
+            m.apres_coup();
+            match r {
+                Some(Ok(())) => Reponse::json(m.etat()),
+                Some(Err(e)) => Reponse::erreur(400, e),
+                None => Reponse::erreur(400, "la manche n'a pas commencé"),
+            }
+        }
+        ("POST", "/api/bug") => {
+            match extras::signaler(&String::from_utf8_lossy(corps), etat.partie.as_ref()) {
+                Ok(nom) => Reponse::json(json!({ "nom": nom, "dossier": extras::dossier_bugs() })),
+                Err(e) => Reponse::erreur(400, e),
+            }
+        }
+        ("GET", "/api/bugs") => Reponse::json(json!({
+            "bugs": extras::bugs(),
+            "dossier": extras::dossier_bugs(),
+        })),
         ("GET", "/api/sauvegarde") => match &etat.partie {
             Some(m) => Reponse::json(sauvegarde::exporter(m)),
             None => Reponse::erreur(400, "aucun match en cours"),

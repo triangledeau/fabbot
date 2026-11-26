@@ -201,6 +201,15 @@ historique dans `sauvegardes/tournois/`, export JSON et CSV ; banc SPRT
 repris** : apprendre sur un deck maison (fab-sim n'apprend que sur les
 decks du projet, et la table apprise est compilée dans le programme).
 
+**Lot 9, ce qui a été fait (2026-11-26)** : dans l'écran de partie
+(`web/partie/extras.js`, `crates/ui/src/extras.rs`) : conseil du bot
+(B1, B2 ou B3 ; touche C ; l'option conseillée est entourée), barre
+d'évaluation (chances de gagner selon l'évaluation apprise de B3, moyenne
+sur 24 mondes tirés pour l'information cachée), Bot contre Bot (le bot
+choisi joue à votre place jusqu'à la fin de la manche, annulable),
+signalement de bug enregistré avec la sauvegarde du match dans
+`sauvegardes/bugs/`.
+
 Chaque lot se
 termine par une pull request fusionnée et peut être pris par n'importe quel
 agent.
@@ -216,7 +225,7 @@ agent.
 | 4c. Ajustement avant partie | Fenêtre en piles de l'Arsenal JS à la place de l'écran de side actuel, dernier réglage, plan conseillé par la table apprise | `web/partie/`, `match_web.rs` | 4a, 1 | 0,5 | ✅ fait (2026-11-26) |
 | 5. Impression | Proxies de Rathe, séparateurs et boîtes de deck servis par fab-web, alimentés par la liste d'un deck | `web/impression/` | 0 (4a pour les decks maison) | 1 | ✅ fait en partie (2026-11-26) |
 | 8. Entraîner | Tournoi dans la page (matrice, classement, stats, historique, export), banc SPRT, lancement de `--apprendre-side` / `--apprendre-b3` sur un deck modifié avec progression | `web/entrainer/`, `api_tournoi.rs`, `crates/sim/` | 0 (4a pour les decks maison) | 2 | ✅ fait en partie (2026-11-26) |
-| 9. Extras ANTIGRAV | Signalement de bugs dans la page (enregistrés dans un fichier), conseil du bot et barre d'évaluation, Bot contre Bot | `web/partie/`, `api_bugs.rs` | 0 (2 pour le conseil) | 1 | à faire |
+| 9. Extras ANTIGRAV | Signalement de bugs dans la page (enregistrés dans un fichier), conseil du bot et barre d'évaluation, Bot contre Bot | `web/partie/`, `api_bugs.rs` | 0 (2 pour le conseil) | 1 | ✅ fait (2026-11-26) |
 
 Les numéros 6 et 7 sont gardés pour les chantiers de plus tard (voir
 « Ordre conseillé »).
