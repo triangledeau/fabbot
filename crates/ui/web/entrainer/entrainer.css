@@ -48,7 +48,8 @@
 /* Toutes les colonnes de la même largeur, quelle que soit la longueur du nom du deck. */
 .en-matrice thead th:not(:first-child), .en-matrice td { width: 4.8rem; min-width: 4.8rem; max-width: 4.8rem; overflow: hidden; text-overflow: ellipsis; }
 /* --s : score de A entre 0 et 1 ; rouge sous 50 %, vert au-dessus. */
-.en-matrice td.sc { background: color-mix(in srgb, var(--good) calc(max(0, var(--s) - .5) * 160%), color-mix(in srgb, var(--red) calc(max(0, .5 - var(--s)) * 160%), rgb(239 229 207 / .06))); }
+/* Échelle à trois paliers : 0 % rouge, 50 % jaune, 100 % vert (texte sombre, lisible sur les trois). */
+.en-matrice td.sc { color: #14110c; font-weight: 700; background: color-mix(in srgb, var(--good) calc(max(0, var(--s) - .5) * 200%), color-mix(in srgb, var(--red) calc(max(0, .5 - var(--s)) * 200%), var(--yellow))); }
 .en-matrice td.vide { color: var(--muted); }
 .en-matrice tr.moy th, .en-matrice tr.moy td { border-top: 2px solid var(--line); }
 .en-messages { color: var(--muted); font-size: .85rem; margin: 10px 0 0; padding-left: 18px; }
