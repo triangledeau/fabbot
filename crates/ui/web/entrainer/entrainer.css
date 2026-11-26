@@ -45,6 +45,8 @@
 .en-matrice th { font-weight: 600; font-size: .8rem; color: var(--muted); padding: 3px 6px; text-align: right; white-space: nowrap; }
 .en-matrice thead th { text-align: center; }
 .en-matrice td { text-align: center; padding: 4px 6px; min-width: 2.6em; border: 1px solid rgb(8 10 15 / .8); }
+/* Toutes les colonnes de la même largeur, quelle que soit la longueur du nom du deck. */
+.en-matrice thead th:not(:first-child), .en-matrice td { width: 4.8rem; min-width: 4.8rem; max-width: 4.8rem; overflow: hidden; text-overflow: ellipsis; }
 /* --s : score de A entre 0 et 1 ; rouge sous 50 %, vert au-dessus. */
 .en-matrice td.sc { background: color-mix(in srgb, var(--good) calc(max(0, var(--s) - .5) * 160%), color-mix(in srgb, var(--red) calc(max(0, .5 - var(--s)) * 160%), rgb(239 229 207 / .06))); }
 .en-matrice td.vide { color: var(--muted); }
