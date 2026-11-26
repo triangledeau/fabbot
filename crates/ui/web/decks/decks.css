@@ -20,3 +20,63 @@
 #v-decks .dk-resultat { min-height: 1.5em; }
 #v-decks .dk-ok { color: var(--good, #63c98b); font-weight: 700; }
 #v-decks .dk-ko { color: var(--dmg, #ff8a78); font-weight: 700; }
+#v-decks .dk-deck { flex-wrap: wrap; }
+#v-decks .dk-deck > div:nth-child(2) { flex: 1; min-width: 0; }
+#v-decks .dk-deck.compact { align-items: center; padding: 5px 8px; }
+#v-decks .dk-deck.compact b { flex: 1; }
+#v-decks .dk-actions { display: flex; gap: 6px; align-self: center; }
+#v-decks .dk-h2b { margin-top: 16px; }
+#v-decks select { font: inherit; color: var(--ink); background: rgb(8 10 15 / .6); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; }
+#v-decks details summary { cursor: pointer; margin-top: 12px; color: var(--muted); }
+
+/* ---------- Éditeur (lot 4b) ---------- */
+#ed-vue .ed-nom { font: 800 1.3rem/1.2 var(--f-display); letter-spacing: .03em; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 4px 8px; min-width: 0; flex: 0 1 340px; }
+#ed-vue .ed-nom:hover, #ed-vue .ed-nom:focus { border-color: var(--line); }
+#ed-vue .ed-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+#ed-vue .ed-corps { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 14px; align-items: start; }
+@media (max-width: 1000px) { #ed-vue .ed-corps { grid-template-columns: minmax(0, 1fr); } }
+#ed-vue .ed-col, #ed-vue .ed-deck { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; min-width: 0; }
+#ed-vue .ed-deck { position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow: auto; }
+#ed-vue .ed-filtres { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 8px; }
+#ed-vue .ed-filtres input[type=search] { flex: 1 1 260px; }
+#ed-vue .grp { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+#ed-vue .grp > span:first-child { font: 600 .62rem/1 var(--f-display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+#ed-vue .tg { font: 600 .8rem/1 var(--f-body); color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; cursor: pointer; }
+#ed-vue .tg[aria-pressed=true] { color: var(--primary-ink, #14110c); background: var(--ink); border-color: var(--ink); }
+#ed-vue .tg.pip-rouge { border-color: var(--red, #e0574a); } #ed-vue .tg.pip-jaune { border-color: var(--yellow, #e6b422); } #ed-vue .tg.pip-bleu { border-color: var(--blue, #4f8fe0); }
+#ed-vue .ed-grille { --cw: 150px; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--cw), 1fr)); gap: 8px; margin: 8px 0; }
+#ed-vue .ec { position: relative; aspect-ratio: .716; border-radius: 8px; overflow: hidden; cursor: pointer; background: #1b2029; border: 1px solid var(--line); user-select: none; transition: transform .12s; }
+#ed-vue .ec:hover { transform: translateY(-2px); border-color: var(--ink); }
+#ed-vue .ec img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+#ed-vue .ec .cadre { padding: 8px; display: flex; flex-direction: column; gap: 4px; font-size: .8rem; }
+#ed-vue .ec.a-img .cadre { display: none; }
+#ed-vue .ec.rouge { box-shadow: inset 0 3px 0 var(--red, #e0574a); } #ed-vue .ec.jaune { box-shadow: inset 0 3px 0 var(--yellow, #e6b422); } #ed-vue .ec.bleu { box-shadow: inset 0 3px 0 var(--blue, #4f8fe0); }
+#ed-vue .ec.nobot img { filter: grayscale(.85) brightness(.7); }
+#ed-vue .ec.nobot::after { content: "pas codée"; position: absolute; left: 6px; top: 6px; font: 600 .62rem/1 var(--f-body); background: rgb(8 10 15 / .85); border-radius: 999px; padding: 3px 6px; color: var(--muted); }
+#ed-vue .ec .n { position: absolute; right: 6px; bottom: 6px; font: 700 1rem/1 var(--f-num); background: var(--brass, #ffd84a); color: #14110c; border-radius: 999px; padding: 3px 8px; }
+#ed-vue .ec .n:empty { display: none; }
+#ed-vue .ec.max { outline: 2px solid var(--brass, #ffd84a); outline-offset: -2px; }
+#ed-vue .ec.secoue { animation: edsecoue .35s; }
+@keyframes edsecoue { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+#ed-vue .ed-heros { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+#ed-vue .ed-heros b { font: 800 1.05rem/1.2 var(--f-display); }
+#ed-vue .ed-compteurs { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .9rem; }
+#ed-vue .ed-compteurs .ko { color: var(--dmg, #ff8a78); }
+#ed-vue .pitchs { display: flex; width: 100%; height: 14px; border-radius: 999px; overflow: hidden; }
+#ed-vue .pitchs i { font: 600 .65rem/14px var(--f-num); text-align: center; color: #14110c; font-style: normal; }
+#ed-vue .pip-rouge { background: var(--red, #e0574a); } #ed-vue .pip-jaune { background: var(--yellow, #e6b422); } #ed-vue .pip-bleu { background: var(--blue, #4f8fe0); } #ed-vue .pip-n { background: #5a5f6a; }
+#ed-vue .ed-courbe { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; height: 80px; margin: 12px 0 6px; align-items: end; }
+#ed-vue .ed-courbe div { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+#ed-vue .ed-courbe i { width: 100%; background: linear-gradient(var(--brass, #ffd84a), #b48a1e); border-radius: 4px 4px 0 0; min-height: 2px; }
+#ed-vue .ed-courbe span { font-size: .7rem; color: var(--muted); }
+#ed-vue .ed-courbe b { position: absolute; top: 0; font-size: .7rem; }
+#ed-vue h3 { font: 600 .7rem/1.2 var(--f-display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 12px 0 4px; }
+#ed-vue .rw { display: grid; grid-template-columns: 6px minmax(0, 1fr) auto 24px 24px 24px; gap: 6px; align-items: center; padding: 2px 0; border-bottom: 1px solid rgb(239 229 207 / .08); font-size: .88rem; }
+#ed-vue .rw > i { width: 6px; height: 18px; border-radius: 3px; }
+#ed-vue .rw .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#ed-vue .rw.nobot .nm { color: var(--muted); font-style: italic; }
+#ed-vue .rw.eclair { animation: edeclair 1s; }
+@keyframes edeclair { from { background: rgb(255 216 74 / .3); } }
+#ed-vue .rw b { text-align: center; }
+#ed-vue .op { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; padding: 0; }
+#ed-vue kbd { font: 600 .7rem/1 var(--f-num); border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px; }

@@ -10,6 +10,7 @@ const Arsenal = (() => {
     "partie": "partie",
     "nouveau-match": "partie",
     "decks": "decks",
+    "editeur": "decks",
   };
   const TITRES = { accueil: "Arsenal — FaB Silver Age", partie: "Arsenal — Partie", decks: "Arsenal — Mes decks" };
   const adresse = () => {

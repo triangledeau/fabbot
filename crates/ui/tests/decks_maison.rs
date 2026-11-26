@@ -198,3 +198,79 @@ fn la_collection_contient_les_cartes_des_neuf_decks_marquees_codees() {
         }
     }
 }
+
+// ---------- lot 4b : éditeur ----------
+
+#[test]
+fn un_deck_du_projet_se_lit_pour_etre_duplique() {
+    let mut e = etat_serveur();
+    let v = json(&repondre("GET", "/api/deck?nom=hala", &mut e));
+    assert_eq!(v["maison"], false);
+    assert_eq!(v["heros"], "Hala");
+    let l = decks::liste("hala").unwrap();
+    assert_eq!(v["liste"]["arene"].as_array().unwrap().len(), l.arena.len());
+    assert_eq!(v["liste"]["deck"].as_array().unwrap().len(), l.deck.len());
+    // Un nom approché ne suffit pas ici (on édite un deck précis).
+    assert_eq!(repondre("GET", "/api/deck?nom=hal", &mut e).code, 404);
+}
+
+#[test]
+fn archiver_restaurer_puis_supprimer_un_deck_maison() {
+    let nom = "test-archives";
+    let _n = Nettoyer(nom);
+    let _a = NettoyerArchive(nom);
+    let mut e = etat_serveur();
+    assert_eq!(importer(&mut e, nom, &export_fabrary("hala")).code, 200);
+    let post = |e: &mut Etat, quoi: &str| {
+        repondre("POST", &format!("/api/deck-maison/{quoi}?nom={nom}"), e).code
+    };
+    // Un deck pas archivé ne se supprime pas.
+    assert_eq!(post(&mut e, "supprimer"), 400);
+    assert_eq!(post(&mut e, "archiver"), 200);
+    let l = json(&repondre("GET", "/api/decks-maison", &mut e));
+    assert!(!l["decks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|d| d["nom"] == nom));
+    assert!(l["archives"].as_array().unwrap().iter().any(|d| d == nom));
+    let d = json(&repondre("GET", "/api/decks", &mut e));
+    assert!(!d["decks_maison"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|x| x == nom));
+    assert_eq!(post(&mut e, "restaurer"), 200);
+    assert!(decks::dossier_maison().join(format!("{nom}.txt")).exists());
+    assert_eq!(post(&mut e, "archiver"), 200);
+    assert_eq!(post(&mut e, "supprimer"), 200);
+    let l = json(&repondre("GET", "/api/decks-maison", &mut e));
+    assert!(!l["archives"].as_array().unwrap().iter().any(|d| d == nom));
+}
+
+struct NettoyerArchive(&'static str);
+impl Drop for NettoyerArchive {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(
+            decks::dossier_maison()
+                .join("archives")
+                .join(format!("{}.txt", self.0)),
+        );
+    }
+}
+
+#[test]
+fn la_collection_donne_l_emplacement_des_equipements_et_les_heros() {
+    let mut e = etat_serveur();
+    let v = json(&repondre("GET", "/api/collection", &mut e));
+    let c = v["cartes"].as_array().unwrap();
+    let trouve = |n: &str| c.iter().find(|x| x["nom"] == n).unwrap().clone();
+    assert_eq!(trouve("Zenith Blade")["emplacement"], "Weapon");
+    assert_eq!(trouve("Helm of Unity")["emplacement"], "Head");
+    assert_eq!(trouve("Hala")["heros"], true);
+    assert!(trouve("Hala")["emplacement"].is_null());
+    assert!(c
+        .iter()
+        .filter(|x| x["couleur"] != "")
+        .all(|x| x["emplacement"].is_null()));
+}

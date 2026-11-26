@@ -157,7 +157,19 @@ base ajoutées ; sans la base, cartes codées seules). Decks maison dans
 (`fab_cards::import`), vérification (format, légalité, héros Young, cartes
 codées, équipement de départ possible), volet « Mes decks » (`#decks`,
 `web/decks/`). Le lot 4b (éditeur) part de `GET /api/collection` et
-`GET /api/deck-maison?nom=` (liste détaillée). Chaque lot se
+`GET /api/deck-maison?nom=` (liste détaillée).
+
+**Lot 4b, ce qui a été fait (2026-11-26)** : éditeur (`web/decks/editeur.js`,
+adresse `#editeur`) : collection filtrable (recherche, pitch, type, pour ce
+héros, jouables par le bot, dans le deck, tri), cartes non codées grisées,
+compteurs (55 / 40), pitch, courbe de coût, vérification serveur à chaque
+changement, Ctrl+Z, enregistrer, copier la liste. Gestion : nouveau deck
+(héros Young), dupliquer un deck du projet, archiver / restaurer, supprimer
+un deck archivé. Serveur : `GET /api/deck`, routes `archiver`,
+`restaurer`, `supprimer` ; la collection donne classes, talents, mots-clés,
+texte et emplacement. **Pas repris** : catégories Side et Envies (en Silver
+Age le side est le reste des 55, choisi avant chaque manche : lot 4c),
+glisser-déposer, menu clic droit, aperçu agrandi. Chaque lot se
 termine par une pull request fusionnée et peut être pris par n'importe quel
 agent.
 
@@ -168,7 +180,7 @@ agent.
 | 2. Plateau animé | Reprise de `finition.js` : vols de cartes, glisser-déposer avec chaîne de laiton, impacts, PV qui défilent, bandeau des étapes, pause « Continuer ». Côté serveur : identifiants suivis et événements envoyés à la page | `crates/ui/web/partie/`, `crates/ui/src/web.rs` | 0, 1 | 3 | ✅ fait (2026-11-26), compléments possibles ci-dessous |
 | 3. Sauvegarde | Partie sauvegardée (graine + choix), reprise depuis l'accueil, export / import du journal .json | `crates/ui/src/`, `web/accueil/` | 0 | 1 | ✅ fait (2026-11-26) |
 | 4a. Decks en données | Pool Silver Age avec drapeau « jouable par le bot » (carte codée dans fab-cards), légalité, decks maison dans `data/decks/maison/`, chargement à l'exécution, import d'une liste FaBrary | `crates/cards/` (lecture des decks), `api_decks.rs` | 0 | 1 | ✅ fait (2026-11-26) |
-| 4b. Éditeur de deck | Reprise d'`editeur.js` : collection filtrable, catégories, stats, Ctrl+Z, dupliquer / archiver / supprimer | `web/decks/` | 4a, 1 | 1,5 | à faire |
+| 4b. Éditeur de deck | Reprise d'`editeur.js` : collection filtrable, catégories, stats, Ctrl+Z, dupliquer / archiver / supprimer | `web/decks/` | 4a, 1 | 1,5 | ✅ fait (2026-11-26) |
 | 4c. Ajustement avant partie | Fenêtre en piles de l'Arsenal JS à la place de l'écran de side actuel, dernier réglage, plan conseillé par la table apprise | `web/partie/`, `match_web.rs` | 4a, 1 | 0,5 | à faire |
 | 5. Impression | Proxies de Rathe, séparateurs et boîtes de deck servis par fab-web, alimentés par la liste d'un deck | `web/impression/` | 0 (4a pour les decks maison) | 1 | à faire |
 | 8. Entraîner | Tournoi dans la page (matrice, classement, stats, historique, export), banc SPRT, lancement de `--apprendre-side` / `--apprendre-b3` sur un deck modifié avec progression | `web/entrainer/`, `api_tournoi.rs`, `crates/sim/` | 0 (4a pour les decks maison) | 2 | à faire |

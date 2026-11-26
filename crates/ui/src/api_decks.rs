@@ -16,7 +16,11 @@
 //! | `GET /api/decks-maison` | les decks maison et leur vérification |
 //! | `GET /api/deck-maison?nom=x` | un deck maison : texte, cartes, vérification |
 //! | `POST /api/deck-maison/verifier` (corps : la liste) | vérifie sans enregistrer |
-//! | `POST /api/deck-maison/importer?nom=x` (corps : la liste) | vérifie et enregistre |
+//! | `POST /api/deck-maison/importer?nom=x` (corps : la liste) | vérifie et enregistre (remplace) |
+//! | `GET /api/deck?nom=x` | un deck du projet ou maison (pour le dupliquer ou l'éditer) |
+//! | `POST /api/deck-maison/archiver?nom=x` | range le deck dans `archives/` |
+//! | `POST /api/deck-maison/restaurer?nom=x` | le ressort des archives |
+//! | `POST /api/deck-maison/supprimer?nom=x` | supprime un deck **archivé** |
 //!
 //! Aucune règle ici : la vérification du format est celle de
 //! [`Decklist::check`], les cartes jouables sont celles du moteur.
@@ -49,7 +53,52 @@ pub struct CarteCollection {
     pub nom_fr: Option<String>,
     /// Carte codée dans `fab-cards` : le bot sait la jouer.
     pub codee: bool,
+    /// Classes et talents lus dans les types (pour le filtre « pour ce
+    /// héros » de l'éditeur ; ce n'est pas une vérification de règle).
+    pub classes: Vec<String>,
+    pub talents: Vec<String>,
+    pub mots_cles: Vec<String>,
+    /// Texte de la carte (base communautaire), pour la recherche.
+    pub texte: String,
+    pub heros: bool,
 }
+
+/// Classes de Flesh and Blood (données des cartes, pour les filtres).
+const CLASSES: [&str; 18] = [
+    "Adjudicator",
+    "Assassin",
+    "Bard",
+    "Brute",
+    "Generic",
+    "Guardian",
+    "Illusionist",
+    "Mechanologist",
+    "Merchant",
+    "Necromancer",
+    "Ninja",
+    "Pirate",
+    "Ranger",
+    "Runeblade",
+    "Shapeshifter",
+    "Thief",
+    "Warrior",
+    "Wizard",
+];
+/// Talents (données des cartes, pour les filtres).
+const TALENTS: [&str; 12] = [
+    "Chaos",
+    "Draconic",
+    "Earth",
+    "Elemental",
+    "Ice",
+    "Light",
+    "Lightning",
+    "Mystic",
+    "Revered",
+    "Reviled",
+    "Royal",
+    "Shadow",
+];
 
 /// La collection et d'où elle vient.
 pub struct Collection {
@@ -112,12 +161,17 @@ fn depuis_fabcube(v: &Value, db: &CardDb) -> (Vec<CarteCollection>, HashSet<Cle>
             illegales.insert((nom.to_string(), couleur));
             continue;
         }
-        let types: Vec<String> = c["types"]
-            .as_array()
-            .into_iter()
-            .flatten()
-            .filter_map(|t| t.as_str().map(String::from))
-            .collect();
+        let liste = |k: &str| -> Vec<String> {
+            c[k].as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|t| t.as_str().map(String::from))
+                .collect()
+        };
+        let types = liste("types");
+        if types.iter().any(|t| t == "Token") {
+            continue;
+        }
         let codee = db.find(nom, couleur).is_some();
         let (image, nom_fr) = match images::image_par_nom(nom, couleur) {
             Some(i) => (
@@ -142,7 +196,6 @@ fn depuis_fabcube(v: &Value, db: &CardDb) -> (Vec<CarteCollection>, HashSet<Cle>
             nom: nom.to_string(),
             couleur,
             type_texte: c["type_text"].as_str().unwrap_or("").to_string(),
-            types,
             pitch: nombre(&c["pitch"]),
             cout: nombre(&c["cost"]),
             puissance: nombre(&c["power"]),
@@ -150,6 +203,23 @@ fn depuis_fabcube(v: &Value, db: &CardDb) -> (Vec<CarteCollection>, HashSet<Cle>
             image,
             nom_fr,
             codee,
+            classes: types
+                .iter()
+                .filter(|t| CLASSES.contains(&t.as_str()))
+                .cloned()
+                .collect(),
+            talents: types
+                .iter()
+                .filter(|t| TALENTS.contains(&t.as_str()))
+                .cloned()
+                .collect(),
+            heros: types.iter().any(|t| t == "Hero"),
+            mots_cles: liste("card_keywords"),
+            texte: c["functional_text_plain"]
+                .as_str()
+                .unwrap_or("")
+                .to_string(),
+            types,
         });
     }
     // Une impression légale l'emporte (même nom et couleur).
@@ -187,6 +257,11 @@ fn cartes_codees(
             image: image.map(String::from),
             nom_fr: nom_fr.map(String::from),
             codee: true,
+            classes: Vec::new(),
+            talents: Vec::new(),
+            mots_cles: Vec::new(),
+            texte: String::new(),
+            heros: d.types.has(Types::HERO),
         });
     }
     out
@@ -252,6 +327,12 @@ impl Collection {
                     "defense": c.defense,
                     "image": c.image,
                     "codee": c.codee,
+                    "classes": c.classes,
+                    "talents": c.talents,
+                    "mots_cles": c.mots_cles,
+                    "texte": c.texte,
+                    "heros": c.heros,
+                    "emplacement": emplacement_collection(c),
                 })
             })
             .collect();
@@ -307,6 +388,31 @@ fn emplacement_code(db: &CardDb, nom: &str) -> Option<String> {
         }
         .to_string(),
     )
+}
+
+/// Emplacement d'arène d'une carte de la collection (`null` : carte de deck
+/// ou héros).
+fn emplacement_collection(c: &CarteCollection) -> Option<String> {
+    // Une carte colorée est une carte de deck (ex. les équipements « Evo »,
+    // de type Action).
+    if c.heros || c.couleur.is_some() {
+        return None;
+    }
+    if c.types.is_empty() {
+        return emplacement_code(db(), &c.nom);
+    }
+    let a = |t: &str| c.types.iter().any(|x| x == t);
+    if a("Weapon") {
+        return Some("Weapon".into());
+    }
+    if !a("Equipment") {
+        return None;
+    }
+    ["Head", "Chest", "Arms", "Legs", "Off-Hand", "Quiver"]
+        .into_iter()
+        .find(|e| a(e))
+        .map(String::from)
+        .or(Some("Equipment".into()))
 }
 
 /// Classe une carte sans couleur d'une liste importée : la base de cartes
@@ -489,18 +595,28 @@ pub fn repondre(
             let v: Vec<Value> = decks::maison().iter().map(resume).collect();
             (
                 200,
-                json!({ "decks": v, "dossier": decks::dossier_maison() }),
+                json!({
+                    "decks": v,
+                    "archives": decks::archives_maison(),
+                    "dossier": decks::dossier_maison(),
+                }),
             )
         }
-        ("GET", "/api/deck-maison") => {
+        ("GET", "/api/deck-maison") | ("GET", "/api/deck") => {
             let nom = param("nom").unwrap_or_default();
-            match decks::maison().into_iter().find(|d| d.nom == nom) {
-                None => erreur(404, format!("deck maison inconnu : {nom}")),
+            let trouve = if chemin == "/api/deck" {
+                decks::trouver(&nom).ok().filter(|d| d.nom == nom)
+            } else {
+                decks::maison().into_iter().find(|d| d.nom == nom)
+            };
+            match trouve {
+                None => erreur(404, format!("deck inconnu : {nom}")),
                 Some(d) => match lire_deck(&d) {
                     Err(e) => erreur(400, e),
                     Ok((texte, l)) => {
                         let mut v = verifier(&l);
                         v["nom"] = json!(d.nom);
+                        v["maison"] = json!(d.maison);
                         v["texte"] = json!(texte);
                         v["liste"] = json!({
                             "arene": l.arena.iter().map(|e| json!({"n": e.count, "nom": e.name, "emplacement": e.slot})).collect::<Vec<_>>(),
@@ -539,6 +655,20 @@ pub fn repondre(
                     v["remarques"] = json!(remarques);
                     (200, v)
                 }
+            }
+        }
+        ("POST", "/api/deck-maison/archiver")
+        | ("POST", "/api/deck-maison/restaurer")
+        | ("POST", "/api/deck-maison/supprimer") => {
+            let nom = param("nom").unwrap_or_default();
+            let r = match chemin {
+                "/api/deck-maison/archiver" => decks::archiver_maison(&nom),
+                "/api/deck-maison/restaurer" => decks::restaurer_maison(&nom),
+                _ => decks::supprimer_archive_maison(&nom),
+            };
+            match r {
+                Ok(()) => (200, json!({ "ok": true, "nom": nom })),
+                Err(e) => erreur(400, e),
             }
         }
         _ => return None,

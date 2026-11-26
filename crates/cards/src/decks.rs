@@ -130,6 +130,65 @@ pub fn enregistrer_maison(nom: &str, liste: &Decklist) -> Result<DeckDuProjet, S
     })
 }
 
+/// Les decks maison archivés (`data/decks/maison/archives/`) : ni listés ni
+/// jouables, mais gardés.
+pub fn archives_maison() -> Vec<String> {
+    let Ok(lecture) = std::fs::read_dir(dossier_maison().join("archives")) else {
+        return Vec::new();
+    };
+    let mut v: Vec<String> = lecture
+        .filter_map(|e| e.ok())
+        .filter_map(|e| {
+            let f = e.file_name().to_string_lossy().into_owned();
+            f.strip_suffix(".txt").map(String::from)
+        })
+        .filter(|n| verifier_nom_maison(n).is_ok())
+        .collect();
+    v.sort();
+    v
+}
+
+fn deplacer(de: PathBuf, vers: PathBuf) -> Result<(), String> {
+    if !de.is_file() {
+        return Err(format!("introuvable : {}", de.display()));
+    }
+    if vers.exists() {
+        return Err(format!("existe déjà : {}", vers.display()));
+    }
+    if let Some(p) = vers.parent() {
+        std::fs::create_dir_all(p).map_err(|e| format!("création de {} : {e}", p.display()))?;
+    }
+    std::fs::rename(&de, &vers).map_err(|e| format!("déplacement de {} : {e}", de.display()))
+}
+
+/// Range un deck maison dans `archives/` (il n'est plus proposé).
+pub fn archiver_maison(nom: &str) -> Result<(), String> {
+    verifier_nom_maison(nom)?;
+    let d = dossier_maison();
+    deplacer(
+        d.join(format!("{nom}.txt")),
+        d.join("archives").join(format!("{nom}.txt")),
+    )
+}
+
+/// Ressort un deck maison des archives.
+pub fn restaurer_maison(nom: &str) -> Result<(), String> {
+    verifier_nom_maison(nom)?;
+    let d = dossier_maison();
+    deplacer(
+        d.join("archives").join(format!("{nom}.txt")),
+        d.join(format!("{nom}.txt")),
+    )
+}
+
+/// Supprime pour de bon un deck maison archivé (on archive d'abord : une
+/// fausse manœuvre ne perd rien).
+pub fn supprimer_archive_maison(nom: &str) -> Result<(), String> {
+    verifier_nom_maison(nom)?;
+    let f = dossier_maison().join("archives").join(format!("{nom}.txt"));
+    std::fs::remove_file(&f).map_err(|e| format!("suppression de {} : {e}", f.display()))
+}
+
 /// Le deck de ce nom court (sans tenir compte des majuscules), ou le seul
 /// dont le nom commence ainsi (`dori` → `dorinthea`). Un deck maison est
 /// trouvé par son nom exact.
