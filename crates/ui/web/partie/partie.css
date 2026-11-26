@@ -461,8 +461,8 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 #preparation .ah h2 .btn { font-family: var(--f-body); letter-spacing: 0; text-transform: none; }
 
 /* Jetons identiques regroupés (plus de 3) : une carte et le nombre réel */
-.perms > .carte.pile-perm { position: relative; overflow: visible; box-shadow: 3px 3px 0 -1px #0b0e14, 4px 4px 0 -1px var(--line), 6px 6px 0 -2px #0b0e14, 7px 7px 0 -2px var(--line); }
-.perms > .carte .nb-perm { position: absolute; z-index: 3; left: -6px; top: -6px; min-width: 24px; height: 22px; padding: 0 6px; border-radius: 11px; display: grid; place-items: center; font: 700 .8rem/1 var(--f-num); background: var(--brass, #ffd84a); color: #14110c; box-shadow: 0 2px 6px rgb(0 0 0 / .6); pointer-events: none; }
+.z .perms > .carte.pile-perm, .z .perms > .carte.img.pile-perm { position: relative; overflow: visible; box-shadow: 3px 3px 0 -1px #0b0e14, 4px 4px 0 -1px var(--line), 6px 6px 0 -2px #0b0e14, 7px 7px 0 -2px var(--line); }
+.perms > .carte .nb-perm, .perms > .carte.img > .nb-perm { position: absolute; z-index: 8; left: -8px; top: -8px; min-width: 30px; height: 26px; padding: 0 7px; border-radius: 13px; display: grid; place-items: center; font: 800 1rem/1 var(--f-num); border: 2px solid #14110c; background: var(--brass, #ffd84a); color: #14110c; box-shadow: 0 2px 6px rgb(0 0 0 / .6); pointer-events: none; }
 .perms > .carte.pile-perm + .carte { margin-left: calc(var(--H) * -.2); }
 
 
