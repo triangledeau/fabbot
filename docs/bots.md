@@ -36,6 +36,16 @@ complètes sur les 9 decks prouvent qu'aucune lecture interdite n'a lieu.
 - **Pitch** : la carte qui paie le reste au plus juste, en gardant les
   cartes les plus fortes.
 - **Arsenal** : la carte d'attaque la plus forte.
+- **Cible d'une attaque** (CR 1.4.5) : le héros adverse, sauf si l'attaque
+  peut détruire un allié adverse (un dragon de Dromai…) dont 2 attaques
+  feraient plus de dégâts qu'elle (2 × puissance de l'allié > puissance de
+  l'attaque) ; jamais un allié si l'attaque peut tuer le héros. Réglage
+  `tours_d_allie` (2). Mesure du 2026-11-26 (tournoi B1 contre B1,
+  1 000 parties par paire) : avant, B1 n'attaquait **jamais** un dragon
+  (0 sur ≈ 7 000 occasions) ; Dromai contre Ira passe de 90 % à 81 %, les
+  autres matchups de Dromai bougent de 1 point au plus (moyenne de Dromai
+  87 % → 86 %). Avec 1 ou 3 au lieu de 2 : 86 % et 85 %. B0, B2 et B3
+  attaquaient déjà les dragons (61 %, 38 %, 45 % des occasions).
 - **Capacités activées** (hors attaques d'arme) : seulement celles du
   héros, des armes et des permanents. Pas « Destroy this » sur un
   équipement, ni « Banish this from your hand ».

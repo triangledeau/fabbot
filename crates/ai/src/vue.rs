@@ -137,6 +137,18 @@ impl<'a> Vue<'a> {
         self.g.combat.step
     }
 
+    /// La carte (ou l'allié) en haut de la pile, si c'est moi qui la joue :
+    /// l'attaque dont je choisis la cible (CR 1.4.5).
+    pub fn ma_carte_sur_la_pile(&self) -> Option<ObjectId> {
+        let l = self.g.stack.last()?;
+        (l.controller == self.moi).then_some(l.object.id)
+    }
+
+    /// Vie restante d'un objet vivant visible (allié, CR 2.5.3a).
+    pub fn vie_objet(&self, id: ObjectId) -> Option<i32> {
+        self.g.life_total(self.voir(id))
+    }
+
     /// Le maillon actif (de l'étape d'attaque à l'étape des dégâts).
     pub fn maillon(&self) -> Option<Maillon> {
         let l = self.g.active_link()?;
