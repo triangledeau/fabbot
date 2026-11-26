@@ -133,9 +133,10 @@ numéro d'objet, ancres `data-a`), frappe et impact, « Bloqué », PV qui
 défilent, bandeaux de tour et d'étape, étincelles du pitch, glisser-déposer
 avec chaîne de laiton (zones `data-depot`), pause « Continuer » avant les
 dégâts, bouton « Passer l'animation », réglages gardés dans le navigateur.
-**Pas repris** (à faire si le propriétaire le souhaite) : le plateau en
-« tapis d'arène » de l'Arsenal JS (disposition des zones comme un playmat),
-l'inclinaison des cartes au survol, le bandeau « CRUSH », les temps de
+Le plateau en tapis (zones disposées comme un playmat, bot tourné à 180°)
+a été ajouté juste après, à la demande du propriétaire (champ `emplacement`
+des armes et équipements). **Pas repris** (à faire si le propriétaire le
+souhaite) : l'art des héros en fond de tapis, l'inclinaison des cartes au survol, le bandeau « CRUSH », les temps de
 lecture minimum de la pile.
 
 **Lot 3, ce qui a été fait (2026-11-26)** : sauvegarde = réglages + choix

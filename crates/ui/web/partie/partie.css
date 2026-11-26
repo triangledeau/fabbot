@@ -136,3 +136,75 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 #detail .grande img { width: 100%; height: 100%; object-fit: cover; display: block; }
 #detail .nom-fr { font: 800 1rem/1.2 var(--f-display); color: var(--brass); }
 .ava { --s: 40px; width: var(--s); height: var(--s); border-radius: 50%; flex: none; background-color: #0b0e14; background-image: var(--art); background-size: 175% auto; background-position: 50% 21%; border: 2px solid var(--accent); cursor: pointer; }
+
+/* ---------- Tapis (disposition de l'Arsenal JS) ----------
+   H = héros, armes, arsenal, permanents ; S = équipement, pitch, deck,
+   cimetière, banni (3 S empilées = héros + arsenal). Format 63 × 88 mm. */
+#v-partie {
+  --g: 7px;
+  --H: clamp(84px, 13.5vh, 150px);
+  --S: calc((2 * var(--H) - var(--g)) / 3);
+  --W: calc(var(--H) * .716); --SW: calc(var(--S) * .716);
+}
+.joueur { padding: 8px 10px; }
+.aire { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 18px; align-items: start; }
+.aire.o { grid-template-columns: minmax(0, 1fr) auto; }
+.aire.o .arena { grid-column: 2; grid-row: 1; }
+.aire.o .etat-joueur { grid-column: 1; grid-row: 1; align-items: flex-end; text-align: right; }
+.aire .main-vous { grid-column: 1 / -1; }
+.arena { display: flex; gap: var(--g); height: calc(2 * var(--H) + var(--g)); --c: var(--accent); }
+.arena.o { flex-direction: row-reverse; --c: var(--danger); }
+.col { display: flex; flex-direction: column; justify-content: space-between; align-items: center; gap: var(--g); flex: none; }
+.arena.o .col { flex-direction: column-reverse; }
+.col.large { width: var(--W); } .col.etroite { width: var(--SW); }
+.col.bras { justify-content: center; }
+.col.bras, .col.pitchcol { width: calc(var(--SW) * 1.45); }
+.arena.m .col.bras, .arena.o .col.pitchcol { align-items: flex-start; }
+.arena.o .col.bras, .arena.m .col.pitchcol { align-items: flex-end; }
+.col .espace { height: var(--S); flex: none; }
+.z { position: relative; flex: none; display: grid; place-items: center; border: 1px solid rgb(239 229 207 / .18); border-radius: 8px; background: rgb(6 8 12 / .42); padding: 0; color: inherit; font: inherit; }
+#v-partie button.z { border-radius: 8px; padding: 0; background: rgb(6 8 12 / .42); }
+.z.big { --zh: var(--H); height: var(--H); width: var(--W); }
+.z.sm { --zh: var(--S); height: var(--S); width: var(--SW); }
+.z::after { content: attr(data-l); position: absolute; left: 50%; translate: -50% 0; bottom: -7px; font: 600 .5rem/1 var(--f-display); letter-spacing: .12em; text-transform: uppercase; color: var(--doux); background: var(--tapis); padding: 1px 5px; border-radius: 4px; white-space: nowrap; pointer-events: none; z-index: 3; }
+.arena.o .z::after { bottom: auto; top: -7px; }
+.z.vide::before { content: attr(data-l); font: 600 .55rem/1.2 var(--f-display); letter-spacing: .1em; text-transform: uppercase; color: rgb(239 229 207 / .3); text-align: center; padding: 3px; }
+.z.vide::after { display: none; }
+.z > .n { position: absolute; right: 3px; top: 3px; z-index: 3; font: 600 11px/1 var(--f-num); background: rgb(8 10 15 / .88); border: 1px solid var(--line); border-radius: 999px; padding: 2px 5px; }
+.z.heros { border: 2px solid var(--c); box-shadow: 0 0 18px color-mix(in srgb, var(--c) 45%, transparent); }
+.arena.actif .z.heros { animation: herosactif 2.4s ease-in-out infinite; }
+@keyframes herosactif { 50% { box-shadow: 0 0 30px 4px color-mix(in srgb, var(--c) 65%, transparent); } }
+.z.heros.touche { animation: herostouche .5s both; }
+.z .pv { position: absolute; left: 50%; translate: -50% 0; bottom: 8%; z-index: 3; font: 700 calc(var(--H) * .2)/1 var(--f-num); color: #fff; background: rgb(8 10 15 / .85); border: 2px solid var(--danger); border-radius: 999px; padding: 2px 10px; text-shadow: 0 1px 2px #000; }
+.z .marque { position: absolute; top: 4px; left: 4px; z-index: 3; }
+/* Une carte posée dans une zone en prend la taille */
+.z .carte, .z .carte.petite, .z .carte.img, .z .carte.img.petite, .z .carte.cachee { width: calc(var(--zh) * .716 - 4px); height: calc(var(--zh) - 4px); min-height: 0; padding: 4px; font-size: 10px; overflow: hidden; }
+.z .carte.img, .z .carte.img.petite { padding: 0; }
+.z .carte .stats { font-size: 10px; }
+.z .carte .det { display: none; }
+.z .carte.img .det { display: block; }
+.z .carte.engage { transform: rotate(8deg); }
+.z .dos { width: calc(var(--zh) * .716 - 4px); height: calc(var(--zh) - 4px); border-radius: 5px; background: radial-gradient(circle at 50% 50%, #7a2318 0 18%, #2a0f0c 19% 30%, #14100e 31%); border: 1px solid #3a2f22; }
+/* Pitch en éventail, collé au deck */
+.z.sm.pitch { width: auto; min-width: var(--SW); display: flex; justify-content: flex-end; }
+.arena.o .z.sm.pitch { justify-content: flex-start; }
+.eventail { display: flex; }
+.z.pitch .eventail > .carte + .carte { margin-left: calc(var(--SW) * (.45 / var(--k, 1)) - var(--SW)); }
+/* Permanents (auras, objets, alliés) en paquet dans leur zone */
+.perms { display: flex; justify-content: center; }
+.perms > .carte { width: calc(var(--H) * .6) !important; height: calc(var(--H) * .84) !important; }
+.perms > .carte + .carte { margin-left: calc(var(--H) * -.42); }
+/* À côté du tapis : compteurs, main du bot */
+.etat-joueur { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-top: 4px; }
+.etat-joueur .qui { font: 800 15px/1.2 var(--f-display); letter-spacing: .03em; }
+.etat-joueur .compteur b { font: 600 20px/1 var(--f-num); color: var(--brass); }
+.main-bot .lib, .main-vous .lib { display: block; font: 600 10px/1.2 var(--f-display); text-transform: uppercase; letter-spacing: .14em; color: var(--doux); margin: 2px 0 4px; }
+.dos-main { --zh: calc(var(--S) * .8); }
+.dos-main .dos { width: calc(var(--zh) * .716); height: var(--zh); border-radius: 5px; background: radial-gradient(circle at 50% 50%, #7a2318 0 18%, #2a0f0c 19% 30%, #14100e 31%); border: 1px solid #3a2f22; box-shadow: var(--shadow); }
+.dos-main .dos + .dos { margin-left: calc(var(--zh) * -.45); }
+.aire.o .dos-main { justify-content: flex-end; }
+#d-zone { max-width: 900px; }
+#d-zone .cartes { max-height: 70vh; overflow: auto; margin: 10px 0; }
+@media (max-width: 1250px) { .aire, .aire.o { grid-template-columns: minmax(0, 1fr); } .aire.o .arena, .aire.o .etat-joueur { grid-column: 1; grid-row: auto; } .aire.o .etat-joueur { align-items: flex-start; text-align: left; } }
+.z .carte .pastilles { flex-direction: column; align-items: flex-end; flex-wrap: nowrap; }
+.z .carte .pastilles span { font-size: 8px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 1px 4px; }

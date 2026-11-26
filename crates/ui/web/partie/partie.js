@@ -105,7 +105,7 @@ function imageDeCarte(e, c) {
   if (c.defense_imprimee !== undefined && c.defense !== null && c.defense !== c.defense_imprimee) p.push(el("span", "def", c.defense + " ⛨"));
   for (const d of c.details || []) p.push(el("span", null, d));
   if (c.face_cachee) p.push(el("span", null, "face cachée"));
-  if (p.length) { const b = el("div", "pastilles"); b.append(...p); e.appendChild(b); }
+  if (p.length) { const b = el("div", "pastilles"); b.append(...p); e.appendChild(b); e.title += "\n" + p.map(x => x.textContent).join(" · "); }
 }
 
 function cliquer(id, ev) {
@@ -293,56 +293,139 @@ function zone(titre, liste, petite, ancre, depot) {
   return z;
 }
 
+// ---------- tapis (disposition de l'Arsenal JS, maquette-tapis-zones) ----------
+// Zones placées comme sur le tapis officiel. Vous, de gauche à droite :
+// équipement (tête, torse, jambes ; bras collé au torse), arme, héros
+// (arsenal dessous), seconde arme ou off-hand (permanents dessous), pitch
+// collé au deck, puis cimetière / deck / banni. Le bot : rotation à 180°
+// (même tapis, vu d'en face). Affichage seulement : aucune règle ici.
+
+// Une zone imprimée sur le tapis : contour fin, nom gravé sur le bord
+// (dans la zone quand elle est vide).
+function zoneTapis(lib, taille, contenu, o = {}) {
+  const z = el(o.bouton ? "button" : "div", "z " + taille);
+  if (o.bouton) z.type = "button";
+  z.dataset.l = lib;
+  if (o.ancre) z.dataset.a = o.ancre;
+  if (o.depot) z.dataset.depot = o.depot;
+  if (o.classe) z.classList.add(...o.classe.split(" "));
+  const vide = !contenu || (Array.isArray(contenu) && !contenu.length);
+  if (vide) z.classList.add("vide");
+  else for (const c of [].concat(contenu)) z.appendChild(c);
+  if (o.n !== undefined) z.appendChild(el("span", "n", String(o.n)));
+  if (o.titre) z.title = o.titre;
+  if (o.clic) z.addEventListener("click", o.clic);
+  return z;
+}
+
+function colonne(classe, ...zones) {
+  const c = el("div", "col " + classe);
+  c.append(...zones);
+  return c;
+}
+
+// Liste complète d'une zone (cimetière, bannies) dans une fenêtre.
+function voirZone(titre, liste) {
+  const d = $("d-zone");
+  $("d-zone-titre").textContent = titre + " (" + liste.length + ")";
+  const c = $("d-zone-cartes");
+  c.replaceChildren();
+  if (!liste.length) c.appendChild(el("span", "vide", "Aucune carte."));
+  for (const x of liste) c.appendChild(carte(x, false));
+  if (!d.open) d.showModal();
+}
+
 function joueur(j, estVous, actif) {
   const qui = estVous ? "vous" : "bot";
-  const b = el("div");
+  const b = el("div", "aire " + (estVous ? "m" : "o"));
   b.dataset.o = qui;
-  const t = el("div", "entete-joueur");
-  if (j.heros_image) {
-    const a = el("span", "ava");
-    a.style.setProperty("--art", Images.fond(j.heros_image));
-    a.dataset.a = "heros-" + qui;
-    a.addEventListener("mouseenter", () => montrer(j.heros_id, { image: j.heros_image }));
-    t.appendChild(a);
+  const z = zoneTapis;
+
+  // Armes et équipement à leur emplacement (seconde arme ou off-hand à droite du héros).
+  const eq = { tete: null, torse: null, bras: null, jambes: null };
+  const armes = [];
+  for (const c of j.equipement) {
+    if (c.emplacement && c.emplacement !== "arme" && !eq[c.emplacement]) eq[c.emplacement] = c;
+    else armes.push(c);
   }
-  const h = el("span", "heros", (estVous ? "Vous — " : "Bot — ") + j.heros);
-  h.addEventListener("mouseenter", () => montrer(j.heros_id, { image: j.heros_image }));
-  t.appendChild(h);
-  const vie = el("span", "vie");
+  const k = (c) => (c ? carte(c, true) : null);
+  const seconde = armes[1];
+  const libSeconde = seconde && seconde.genre !== "arme" ? "Off-hand" : "Arme";
+
+  // Héros : la carte du héros, avec les PV gravés dessus.
+  const hc = carte({ id: j.heros_id, nom: j.heros, image: j.heros_image, couleur: "", details: [] }, false);
+  const vie = el("span", "pv");
   const nv = el("b", null, String(FX.vieAffichee(qui, j.vie)));
   nv.dataset.vie = qui;
-  vie.append(nv, " PV");
+  vie.appendChild(nv);
+  vie.title = "Points de vie";
   vie.dataset.a = "vie-" + qui;
-  t.appendChild(vie);
-  if (j.marque) t.appendChild(el("span", "marque", "marqué"));
-  const c = (lib, v, a) => { const s = el("span", "compteur", lib + " "); s.appendChild(el("b", null, v)); if (a) s.dataset.a = a + "-" + qui; return s; };
-  t.appendChild(c("Points d'action", j.points_action));
-  t.appendChild(c("Ressources", j.ressources, "res"));
-  t.appendChild(c("Deck", j.deck, "deck"));
-  if (!estVous) t.appendChild(c("Main", j.main_nombre, "main"));
-  b.appendChild(t);
+  const heros = [hc, vie];
+  if (j.marque) heros.push(el("span", "marque", "marqué"));
 
-  const r = el("div", "rangees");
-  r.appendChild(zone("Armes et équipement", j.equipement, true));
-  r.appendChild(zone("Arsenal", j.arsenal ? [j.arsenal] : [], true, "arsenal-" + qui, estVous ? "arsenal" : null));
-  r.appendChild(zone("Permanents", j.permanents, true));
-  r.appendChild(zone("Pitch", j.pitch, true, "pitch-" + qui, estVous ? "pitch" : null));
-  b.appendChild(r);
-  if (estVous) b.appendChild(zone("Votre main", j.main, false, "main-vous"));
+  const ars = j.arsenal ? [carte(j.arsenal, true)] : null;
+  const pitch = j.pitch.length ? (() => {
+    const f = el("div", "eventail");
+    f.style.setProperty("--k", Math.max(1, j.pitch.length - 1));
+    for (const c of j.pitch) f.appendChild(carte(c, true));
+    return [f];
+  })() : null;
+  const perms = j.permanents.length ? (() => {
+    const f = el("div", "perms");
+    for (const c of j.permanents) f.appendChild(carte(c, true));
+    return [f];
+  })() : null;
+  const dos = () => { const d = el("div", "dos"); d.setAttribute("aria-hidden", "true"); return d; };
+  const haut = (liste) => (liste.length ? [carte(liste[liste.length - 1], true)] : null);
 
-  const det = el("details");
-  const resume = el("summary", null, `Cimetière (${j.cimetiere.length}) · Bannies (${j.bannies.length})`);
-  resume.dataset.a = "cimetiere-" + qui;
-  det.appendChild(resume);
-  const r2 = el("div", "rangees");
-  r2.appendChild(zone("Cimetière", j.cimetiere, true));
-  r2.appendChild(zone("Bannies", j.bannies, true));
-  det.appendChild(r2);
-  // garder ouvert d'un affichage à l'autre
-  const cle = "ouvert-" + (estVous ? "vous" : "bot");
-  det.open = sessionStorage.getItem(cle) === "1";
-  det.addEventListener("toggle", () => { try { sessionStorage.setItem(cle, det.open ? "1" : "0"); } catch (e) {} });
-  b.appendChild(det);
+  const tapis = el("section", "arena " + (estVous ? "m" : "o") + (actif ? " actif" : ""));
+  tapis.setAttribute("aria-label", estVous ? "Votre tapis" : "Tapis du bot");
+  tapis.append(
+    colonne("etroite", z("Tête", "sm", k(eq.tete)), z("Torse", "sm", k(eq.torse)), z("Jambes", "sm", k(eq.jambes))),
+    colonne("bras", z("Bras", "sm", k(eq.bras))),
+    colonne("large", z("Arme", "big", k(armes[0]))),
+    colonne("large",
+      z("Héros", "big", heros, { ancre: "heros-" + qui, classe: "heros" }),
+      z("Arsenal", "big", ars, { ancre: "arsenal-" + qui, depot: estVous ? "arsenal" : null })),
+    colonne("large",
+      z(libSeconde, "big", seconde ? [carte(seconde, true)] : null),
+      z(j.permanents.length ? `Permanents (${j.permanents.length})` : "Permanents", "big", perms)),
+    colonne("pitchcol", el("span", "espace"),
+      z("Pitch", "sm", pitch, { ancre: "pitch-" + qui, depot: estVous ? "pitch" : null, classe: "pitch" }),
+      el("span", "espace")),
+    colonne("etroite",
+      z("Cimetière", "sm", haut(j.cimetiere), { ancre: "cimetiere-" + qui, bouton: true, n: j.cimetiere.length, titre: "Voir le cimetière", clic: () => voirZone((estVous ? "Votre cimetière" : "Cimetière du bot"), j.cimetiere) }),
+      z("Deck", "sm", j.deck ? [dos()] : null, { ancre: "deck-" + qui, n: j.deck }),
+      z("Banni", "sm", haut(j.bannies), { bouton: true, n: j.bannies.length, titre: "Voir les cartes bannies", clic: () => voirZone((estVous ? "Vos cartes bannies" : "Cartes bannies du bot"), j.bannies) })),
+  );
+  b.appendChild(tapis);
+
+  // À côté du tapis : ressources, points d'action, main du bot.
+  const et = el("div", "etat-joueur");
+  const c = (lib, v, a) => { const s = el("span", "compteur"); s.append(el("b", null, String(v)), " " + lib); if (a) s.dataset.a = a + "-" + qui; return s; };
+  et.appendChild(el("span", "qui", (estVous ? "Vous — " : "Bot — ") + j.heros));
+  et.appendChild(c("ressource" + (j.ressources > 1 ? "s" : ""), j.ressources, "res"));
+  et.appendChild(c("point" + (j.points_action > 1 ? "s" : "") + " d'action", j.points_action));
+  if (!estVous) {
+    const m = el("div", "main-bot");
+    m.dataset.a = "main-bot";
+    m.appendChild(el("span", "lib", `Main (${j.main_nombre})`));
+    const f = el("div", "eventail dos-main");
+    for (let i = 0; i < j.main_nombre; i++) f.appendChild(dos());
+    m.appendChild(f);
+    et.appendChild(m);
+  }
+  b.appendChild(et);
+  if (estVous) {
+    const m = el("div", "main-vous");
+    m.dataset.a = "main-vous";
+    m.appendChild(el("span", "lib", `Votre main (${j.main.length})`));
+    const cs = el("div", "cartes");
+    if (!j.main.length) cs.appendChild(el("span", "vide", "Main vide"));
+    for (const x of j.main) cs.appendChild(carte(x, false));
+    m.appendChild(cs);
+    b.appendChild(m);
+  }
 
   const conteneur = $(estVous ? "j-vous" : "j-bot");
   conteneur.classList.toggle("actif", actif);

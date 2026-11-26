@@ -94,6 +94,17 @@ Pour les développeurs : `data/cards/images.tsv` (produit par
 `crates/ui/src/images.rs` ajoute `image` et `nom_fr` au JSON des cartes ;
 `crates/ui/web/commun/cartes.js` construit l'adresse.
 
+### Tapis de jeu
+
+Chaque joueur a son **tapis**, disposé comme le playmat officiel (repris de
+l'Arsenal JS). De gauche à droite, pour vous : équipement (tête, torse,
+jambes, et bras collé au torse), arme, **héros** (PV gravés dessus) avec
+l'**arsenal** dessous, seconde arme ou off-hand avec les **permanents**
+dessous, **pitch** collé au deck, puis cimetière, deck et banni. Le tapis du
+bot est le même, tourné à 180° (vu d'en face). Cliquez le cimetière ou le
+banni pour voir toutes leurs cartes. Ressources et points d'action sont à
+côté du tapis ; votre main dessous.
+
 ### Plateau animé
 
 Après chacun de vos choix, la page **rejoue les coups** un par un (votre
