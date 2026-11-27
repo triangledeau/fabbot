@@ -31,7 +31,7 @@
           <div class="pbar" id="a-tournoi-barre"><i></i></div></div>
       </a>
     </nav>
-    <div class="homefoot"><a class="btn small" href="#decks">Mes decks</a><a class="btn small" href="#impression">Imprimer</a><span>Moteur <b>fabbot</b></span><span id="a-textes"></span></div>
+    <div class="homefoot"><span>Moteur <b>fabbot</b></span><span id="a-textes"></span></div>
   </div></div>`;
 
   // Match en cours (le serveur en lance un au démarrage) : on propose de le reprendre.

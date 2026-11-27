@@ -336,6 +336,8 @@ Ira 70 %, Hala 47 %, Iyslander 41 %. Poids de B3 de 4e génération essayés,
 moins bons (−22 Elo), non retenus. Réponse du propriétaire : AB3 contre
 Iyslander est réaliste.
 
+**Feuille de route vers un bot top 8 (2026-11-27)** : `docs/feuille-de-route-top8.md` (10 decks connus seulement, calcul sur la Surface ; première étape : mesurer avec des puzzles exacts et le regret contre un bot lent).
+
 **Pour Claude :** l'étape 7 est finie ; il n'y a plus d'étape prévue.
 Prochaine tâche proposée (B3 3e génération faite le 2026-11-26 : les
 gains diminuent, pistes dans `docs/bots.md`) : **améliorer B2/B3 avec
