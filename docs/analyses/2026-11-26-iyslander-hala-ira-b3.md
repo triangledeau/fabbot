@@ -1,8 +1,9 @@
 # Iyslander, Hala et Ira avec B3 : analyse (2026-11-26)
 
-Agent : Claude, branche `claude/project-thread-j807fx`. Analyse seulement :
-aucun changement des bots n'est appliqué (variantes mesurées dans
-`2026-11-26-experiences-b1.patch`, à côté de ce fichier).
+Agent : Claude, branche `claude/project-thread-j807fx`. Les variantes de
+l'analyse sont dans `2026-11-26-experiences-b1.patch`, à côté de ce fichier.
+Les correctifs ont ensuite été appliqués avec l'accord du propriétaire :
+voir « Correctifs appliqués » à la fin.
 
 ## En bref
 
@@ -92,7 +93,7 @@ carte Ice en main ; B3 la joue 0,04 fois et la pitche 0,75 fois.
   protège le héros de Dromai), non mesuré à part.
 - Sans le matchup Dromai : Iyslander 24 %, Hala 48 %, Ira 63 %.
 
-## Correctifs proposés (en attente de l'accord du propriétaire)
+## Correctifs proposés (appliqués le 2026-11-27, voir plus bas)
 
 1. B1 voit le go again de Zenith Blade aiguisée (`FAB_B1_EXP=zenith` du
    patch) ; confirmer par un tournoi B3 complet.
@@ -114,3 +115,68 @@ cargo run --release -p fab-sim --bin analyse -- iyslander --bots b3 b3 --games 1
 SIDE_ADVERSE=liste cargo run --release -p fab-sim --bin analyse -- iyslander --bots b1 b1 --games 400 --seed 11
 git apply docs/analyses/2026-11-26-experiences-b1.patch   # variantes, puis FAB_B1_EXP=zenith …
 ```
+
+## Correctifs appliqués (2026-11-27)
+
+Demandés par le propriétaire, avec trois précisions : AB3 contre Iyslander
+est réaliste (tout le monde le prend contre un mage qui fait souvent 3
+dégâts d'arcane d'une source) ; Ira domine la méta et devrait être plus
+haut ; Iyslander doit privilégier des séquences à gros dégâts que AB3 ne
+peut pas prévenir entièrement, construites par pitch stacking, en créant
+des gelures pendant le tour adverse. Règles de B1 : `docs/bots.md`.
+Tests : `crates/cards/tests/bot_b1_go_again.rs`, `bot_b1_sorts.rs`.
+
+| correctif | mesure | avant | après |
+|---|---|---|---|
+| Hala : go again de Zenith Blade aiguisée | B1, 3 600 parties | 42,0 % | 45,6 % |
+| Ira : go again des combos (Seek Vengeance, Pouncing Qi…) | B1, 3 600 parties | 72,7 % | 72,8 % |
+| Ira : Scar for a Scar (go again si moins de vie) | B1, 3 600 parties | 72,8 % | 74,4 % |
+| Ira : Pouncing Paws, Tearing Shuko, Blood Scent | B1, 3 600 parties | 74,4 % | 76,7 % |
+| Ira : go again (Zenith des adversaires compris) | B3, 108 parties | 56,5 % | 66,7 % |
+| Iyslander : sorts qui passent l'arcane barrier, renforts (Crucible, amp, Stir) | B1, 3 600 parties | 29,8 % | 49,2 % |
+| Iyslander : + gelures au tour adverse (carte Ice bleue en arsenal) | B1, 3 600 parties | 49,2 % | 50,4 % |
+| Iyslander : + pitch stacking | B1, 3 600 parties | 49,2 % | 49,5 % |
+| Iyslander : tout ensemble | B1, 3 600 parties (graine 11 / 12) | 29,8 % | 51,4 % / 51,7 % |
+| Iyslander : tout ensemble | B3, 108 parties | 23,1 % | 42,6 % |
+| Table de side réapprise contre la table (`--side-adverse appris`) | B1, Iyslander | 51,4 % | 51,4 % |
+| Poids de B3, 4e génération | B3 contre B3 3e gén., 1 296 parties | — | 46,9 % (−22 Elo) : **non retenue** |
+
+Le pitch stacking n'apporte presque rien (+0,3 à +0,9 point) : en 40
+cartes, le deck est rarement épuisé avant la fin de la partie, donc les
+cartes remises sous le deck reviennent peu. Les gelures au tour adverse
+apportent +1 à +2 points.
+
+### Tournoi B3 contre B3 après les correctifs
+
+Même commande que plus haut (`--games 20 --check --seed 7`, 0 erreur,
+36 min). Moyenne de chaque deck, avant → après :
+
+| deck | avant | après |
+|---|---|---|
+| Ira | 60 | **70** |
+| Dromai | 81 | 70 |
+| Dorinthea | 61 | 69 |
+| Florian | 69 | 68 |
+| Bravo | 70 | 63 |
+| Hala | 42 | **47** |
+| Iyslander | 21 | **41** |
+| Arakni | 27 | 20 |
+| Levia | 15 | 11 |
+
+Matrice complète :
+
+| deck | ira | hala | dorinthea | bravo | iyslander | florian | levia | dromai | arakni | moy. |
+|---|---|---|---|---|---|---|---|---|---|---|
+| ira | 60 | 80 | 90 | 40 | 60 | 40 | 100 | 60 | 100 | 70 |
+| dromai | 65 | 95 | 100 | 5 | 75 | 50 | 100 | 40 | 100 | 70 |
+| dorinthea | 30 | 90 | 60 | 95 | 90 | 60 | 100 | 0 | 95 | 69 |
+| florian | 60 | 85 | 60 | 45 | 100 | 55 | 100 | 20 | 90 | 68 |
+| bravo | 75 | 50 | 5 | 60 | 55 | 45 | 90 | 95 | 95 | 63 |
+| hala | 30 | 60 | 35 | 25 | 65 | 10 | 100 | 0 | 95 | 47 |
+| iyslander | 45 | 30 | 35 | 40 | 25 | 5 | 75 | 20 | 90 | 41 |
+| arakni | 10 | 15 | 0 | 0 | 25 | 5 | 80 | 0 | 48 | 20 |
+| levia | 10 | 0 | 0 | 0 | 25 | 0 | 40 | 0 | 25 | 11 |
+
+Incertitude : ± 7 points sur la moyenne d'un deck (180 parties). Ira est
+maintenant à égalité en tête, comme dans la méta réelle selon le
+propriétaire. Arakni et Levia perdent un peu : leurs adversaires jouent mieux.

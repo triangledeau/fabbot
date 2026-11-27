@@ -24,7 +24,8 @@
 //!
 //! `--apprendre-side` : apprend la table `data/side/b1.txt` (B1 contre B1,
 //! `--games` parties par paire de decks avec un choix au hasard contre le
-//! choix « liste » ; voir `fab_ai::side`).
+//! choix « liste », ou contre la table actuelle avec `--side-adverse appris` ;
+//! voir `fab_ai::side`).
 //!
 //! `--apprendre-b3` : apprend les poids de l'évaluation de B3
 //! (`data/b3/evaluation.txt`, ou `--sortie fichier`) sur `--games` parties
@@ -267,7 +268,19 @@ fn main() {
         return;
     }
     if args.iter().any(|a| a == "--apprendre-side") {
-        apprendre_side(games, threads, seed0);
+        // `--side-adverse appris` : l'adversaire choisit avec la table actuelle
+        // (par défaut : le choix « liste »).
+        let adverse = args
+            .iter()
+            .position(|a| a == "--side-adverse")
+            .and_then(|i| args.get(i + 1))
+            .map(String::as_str)
+            .unwrap_or("liste");
+        assert!(
+            adverse == "liste" || adverse == "appris",
+            "--side-adverse : liste ou appris"
+        );
+        apprendre_side(games, threads, seed0, adverse);
         return;
     }
     if args.iter().any(|a| a == "--tournoi") {
@@ -551,10 +564,13 @@ fn table_side(db: &CardDb, sides: [&str; 2]) -> Option<Arc<TableSide>> {
 
 /// `--apprendre-side` : pour chaque paire (deck A, deck B), `games` parties
 /// B1 contre B1 où A tire son équipement et ses 40 cartes au hasard et B
-/// garde le choix « liste ». Régression du score de A sur ses choix, puis
-/// écriture de `data/side/b1.txt` (voir `fab_ai::side`).
-fn apprendre_side(games: u64, threads: u64, seed0: u64) {
+/// garde le choix « liste » (ou, avec `adverse` = « appris », le choix de la
+/// table actuelle). Régression du score de A sur ses choix, puis écriture de
+/// `data/side/b1.txt` (voir `fab_ai::side`).
+fn apprendre_side(games: u64, threads: u64, seed0: u64, adverse: &str) {
     let db = Arc::new(real::build());
+    let table = table_side(&db, [adverse, adverse]);
+    let table = &table;
     let decks: Vec<(String, CardPool)> =
         tous_les_decks().iter().map(|n| lire_deck(&db, n)).collect();
     let opts: Vec<Options> = decks.iter().map(|(_, p)| Options::new(&db, p)).collect();
@@ -594,12 +610,12 @@ fn apprendre_side(games: u64, threads: u64, seed0: u64) {
                             .wrapping_mul(1_000_003)
                             .wrapping_add(job);
                         let mut pools = [&decks[da].1, &decks[db_].1];
-                        let mut sd = ["hasard", "liste"];
+                        let mut sd = ["hasard", adverse];
                         if a_place == 1 {
                             pools.swap(0, 1);
                             sd.swap(0, 1);
                         }
-                        let depart = Depart::Pools(pools, sd, &None);
+                        let depart = Depart::Pools(pools, sd, table);
                         match jouer(&db, depart, ["b1", "b1"], chooser, seed, false) {
                             Ok((g, Some(m), _)) => {
                                 let a = PlayerId(a_place as u8);
@@ -641,7 +657,7 @@ fn apprendre_side(games: u64, threads: u64, seed0: u64) {
          # Produit par : cargo run --release -p fab-sim -- --apprendre-side\n",
     );
     texte.push_str(&format!(
-        "# {games} parties par paire de decks (B1 contre B1, choix au hasard contre le choix « liste »).\n\
+        "# {games} parties par paire de decks (B1 contre B1, choix au hasard contre le choix « {adverse} »).\n\
          # Entre crochets : écart estimé de chances de gagner par exemplaire (points de %),\n\
          # par rapport à la meilleure option de la zone ou à la moins bonne carte gardée.\n",
     ));

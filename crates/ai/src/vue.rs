@@ -45,6 +45,67 @@ impl<'a> Vue<'a> {
         self.moi.opponent()
     }
 
+    /// Mon héros (public).
+    pub fn mon_heros(&self) -> ObjectId {
+        self.g.player(self.moi).hero
+    }
+
+    /// Arcane barrier totale de `p` (héros, armes, équipements, permanents :
+    /// public, CR 8.3.8), plafonnée par ce qu'il peut payer au plus : ses
+    /// points de ressource plus 3 par carte en main (la main est cachée).
+    pub fn barriere_arcane(&self, p: PlayerId) -> u32 {
+        let ps = self.g.player(p);
+        let total: u32 = std::iter::once(ps.hero)
+            .chain(ps.weapons.iter().copied())
+            .chain(ps.equipment())
+            .chain(
+                self.g
+                    .permanents
+                    .iter()
+                    .copied()
+                    .filter(|&o| self.g.obj(o).controller == p),
+            )
+            .map(|o| self.g.prevention_values(o).0 as u32)
+            .sum();
+        total.min(ps.resource_points as u32 + 3 * ps.hand.len() as u32)
+    }
+
+    /// Dégâts arcaniques en plus que ma prochaine carte à dégâts arcaniques
+    /// infligera (amp, Crucible of Aetherweave, Stir the Aetherwinds : effets
+    /// publics, pas encore liés à une carte).
+    pub fn bonus_arcane_en_attente(&self) -> i32 {
+        use fab_engine::replace::ReplaceKind;
+        self.g
+            .replacements
+            .iter()
+            .filter(|r| {
+                r.controller == self.moi
+                    && r.kind == ReplaceKind::Damage
+                    && r.data.is_none()
+                    && r.value > 0
+                    && (r.bind.is_some() || r.uses == Some(1))
+            })
+            .map(|r| r.value)
+            .sum()
+    }
+
+    /// Cet objet (une arme) a-t-il été aiguisé ce tour (sharpen, public) ?
+    pub fn aiguise_ce_tour(&self, id: ObjectId) -> bool {
+        self.g.sharpened_this_turn(id)
+    }
+
+    /// Cette arme a-t-elle déjà attaqué ce tour (activations publiques) ?
+    pub fn a_attaque_ce_tour(&self, id: ObjectId) -> bool {
+        self.g.obj(id).activations.iter().any(|&n| n > 0)
+    }
+
+    /// La définition de la dernière attaque de la chaîne de combat, si elle
+    /// est ouverte (public ; « the last attack this combat chain »).
+    pub fn derniere_attaque(&self) -> Option<&'a CardDef> {
+        let l = self.g.combat.links.last()?;
+        Some(self.g.db.get(l.card))
+    }
+
     /// La carte est-elle visible pour moi ? (même règle que `fab-ui`)
     pub fn visible(&self, id: ObjectId) -> bool {
         let o = self.g.obj(id);
