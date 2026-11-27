@@ -11,7 +11,6 @@ retire en finissant.
 |---|---|---|---|---|
 | 2026-11-26 | Claude | `claude/project-thread-0p5cpk` | Didacticiel « Apprendre » des règles (phase 2 du rapatriement) | `crates/ui/web/apprendre/` (nouveau), `crates/ui/src/api_apprendre.rs` (nouveau), quelques lignes dans `serveur.rs`, `index.html`, `accueil.js` |
 | 2026-11-26 | Claude | `claude/vigilant-fermat-iq5cjs` | B2/B3 : estimation qui comprend le blood debt et les cartes bannies (Levia), mesurée contre B2 | `crates/ai/src/b2.rs`, `b3.rs` (recherche seulement), `docs/bots.md` |
-| 2026-11-27 | Claude | `claude/project-thread-lip8f5` | Niveau « réfléchi » (chantier 4) : recherche sur plusieurs threads, temps selon la complexité, jauge de réflexion et bouton « Joue maintenant » | `crates/ai/src/reflechi.rs` (nouveau), quelques lignes de `b2.rs` (méthodes publiques autour de `choose`, sans toucher l'estimation), `crates/ai/src/lib.rs`, `crates/ui/src/web.rs`, `serveur.rs` (2 routes), `crates/ui/web/partie/` |
 | 2026-11-27 | Claude | `claude/project-thread-bptq9c` | Épreuves A (puzzles exacts du tour) et B (regret contre une recherche longue) : chantier 1 de la feuille de route | `crates/ai/src/tour_exact.rs` (nouveau), `crates/sim/src/bin/epreuve_*.rs` et `commun/` (nouveaux), `crates/cards/tests/tour_exact.rs`, une ligne de `crates/ai/src/lib.rs`, `crates/sim/Cargo.toml`, `tools/nuit/travaux.txt`, `docs/epreuves.md` (nouveau) |
 
 ## Découpage conseillé des prochaines tâches

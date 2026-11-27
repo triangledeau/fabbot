@@ -7,7 +7,9 @@
 //! - B0 [`RandomAgent`] : aléatoire, sert de référence et de testeur de règles ;
 //! - B1 [`HeuristicAgent`] : heuristique simple, sans recherche ;
 //! - B2 [`IsmctsAgent`] : recherche ISMCTS (mondes imaginés + parties simulées par B1) ;
-//! - B3 (même recherche que B2, [`b3`]) : estimation apprise par auto-jeu.
+//! - B3 (même recherche que B2, [`b3`]) : estimation apprise par auto-jeu ;
+//! - niveau réfléchi ([`reflechi`]) : la recherche de B3 sur tous les cœurs,
+//!   jusqu'à quelques minutes par décision selon la complexité.
 
 use fab_engine::{Decision, GameState, Rng};
 
@@ -16,6 +18,7 @@ pub mod b2;
 pub mod b3;
 pub mod determinisation;
 pub mod elo;
+pub mod reflechi;
 pub mod side;
 pub mod tour_exact;
 pub mod vue;
@@ -33,12 +36,22 @@ pub const BOTS: [&str; 4] = ["b0", "b1", "b2", "b3"];
 /// (1000 itérations par décision), `b2-500ms` (une demi-seconde par
 /// décision), `b2-200t4` (parties simulées arrêtées après 4 tours),
 /// `b2-200a` (parties simulées par B0).
+///
+/// Niveau réfléchi (voir [`reflechi::ReglagesReflechi::depuis_nom`]) :
+/// `reflechi` (2 minutes au plus par décision), `reflechi-30s`,
+/// `reflechi-5m`. Il n'est pas dans [`BOTS`] : trop lent pour les tournois.
 pub fn creer_agent(nom: &str, graine: u64) -> Option<Box<dyn Agent + Send>> {
     // B3 avec un autre fichier de poids : `b3:chemin` ou `b3-300t2:chemin`.
     let (nom, fichier) = match nom.split_once(':') {
         Some((n, f)) => (n.to_lowercase(), Some(f)),
         None => (nom.to_lowercase(), None),
     };
+    if let Some(r) = reflechi::ReglagesReflechi::depuis_nom(&nom) {
+        if fichier.is_some() {
+            return None;
+        }
+        return Some(Box::new(reflechi::ReflechiAgent::new(graine, r)));
+    }
     let mut reglages = match nom.as_str() {
         "b0" => return Some(Box::new(RandomAgent::new(graine))),
         "b1" => return Some(Box::new(HeuristicAgent::new())),
@@ -75,6 +88,12 @@ pub trait Agent {
     /// droit (pas la main adverse ni l'ordre du deck) : les bots heuristiques
     /// ne lisent `state` qu'à travers une [`vue::Vue`].
     fn choose(&mut self, state: &GameState, decision: &Decision) -> usize;
+
+    /// Le suivi de la réflexion (jauge de la page, « Joue maintenant ») ;
+    /// seul le niveau réfléchi en a un.
+    fn suivi(&self) -> Option<std::sync::Arc<reflechi::Suivi>> {
+        None
+    }
 }
 
 /// B0 : choisit uniformément parmi les options légales.

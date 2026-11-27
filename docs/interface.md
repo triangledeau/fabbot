@@ -396,6 +396,19 @@ bord pointillé = carte face cachée (que vous seul voyez).
   désélectionner.
 - **Annuler mon dernier choix** revient avant votre dernier choix (et avant
   les réponses du bot qui ont suivi), autant de fois que voulu.
+- **Niveau réfléchi** (`reflechi`, `reflechi-30s`, `reflechi-5m` dans
+  « Niveau du bot ») : la recherche de B3 sur tous les cœurs, de rien à
+  2 minutes par décision (30 s, 5 min) selon le nombre d'options et le genre
+  de décision ([`fab_ai::reflechi`](../crates/ai/src/reflechi.rs)). Pendant
+  qu'il réfléchit, le ruban montre une **jauge** (temps écoulé sur le temps
+  prévu), en petit l'**option qu'il préfère pour l'instant** avec ses chances
+  estimées (une carte cachée n'est pas nommée : « pitcher une carte
+  cachée ») et le bouton **Joue maintenant** (il joue le meilleur coup trouvé).
+  « Annuler » pendant sa réflexion l'arrête. Côté serveur, le bot réfléchit
+  dans un fil à part (`Session::poursuivre`) ; routes `GET /api/reflexion`
+  (avancement, `film_no` qui change quand il a joué) et
+  `POST /api/joue-maintenant`. Dans l'interface texte, le niveau marche
+  aussi, mais sans jauge (on attend).
 - **Fin de partie** : une fenêtre donne le vainqueur, les PV, les dégâts
   infligés et subis, vos défenses ; puis Manche suivante, Rejouer, Changer de
   deck, Voir le journal, Annuler, Exporter.
