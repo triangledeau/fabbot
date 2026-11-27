@@ -11,7 +11,6 @@ retire en finissant.
 |---|---|---|---|---|
 | 2026-11-26 | Claude | `claude/project-thread-0p5cpk` | Didacticiel « Apprendre » des règles (phase 2 du rapatriement) | `crates/ui/web/apprendre/` (nouveau), `crates/ui/src/api_apprendre.rs` (nouveau), quelques lignes dans `serveur.rs`, `index.html`, `accueil.js` |
 | 2026-11-26 | Claude | `claude/vigilant-fermat-iq5cjs` | B2/B3 : estimation qui comprend le blood debt et les cartes bannies (Levia), mesurée contre B2 | `crates/ai/src/b2.rs`, `b3.rs` (recherche seulement), `docs/bots.md` |
-| 2026-11-27 | Claude | `claude/project-thread-9bjzi4` | Fonds d'écran d'Arsenal : illustrations de lieux tirées au hasard | `crates/ui/web/commun/` (nouveau `fonds.js`, `arsenal.css`), `index.html`, `accueil/accueil.css`, `crates/ui/src/fichiers.rs`, `docs/interface.md` |
 
 ## Découpage conseillé des prochaines tâches
 
