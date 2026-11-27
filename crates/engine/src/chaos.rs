@@ -245,6 +245,9 @@ impl GameState {
             weapon: None,
             combat_chain: false,
             at_attack: true,
+            if_fused: false,
+            if_go_again: false,
+            remaining: 1,
         });
     }
 

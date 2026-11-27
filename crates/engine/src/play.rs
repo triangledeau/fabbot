@@ -385,8 +385,22 @@ impl GameState {
             ..Default::default()
         };
         let except = if a.from_hand { Some(src) } else { None };
-        self.targets_available(&a.targets, &ctx)
-            && self.activation_cost(src, i) <= self.available_resources(p, except)
+        let spare = self
+            .available_resources(p, except)
+            .saturating_sub(self.activation_cost(src, i));
+        if self.activation_cost(src, i) > self.available_resources(p, except) {
+            return false;
+        }
+        // CR 5.1.3a : avec un X, il suffit qu'une valeur de X payable ait des cibles.
+        let max_x = if a.x_per > 0 {
+            (spare / a.x_per as u32).min(20) as u8
+        } else {
+            0
+        };
+        (0..=max_x).any(|x| {
+            let ctx = Ctx { x, ..ctx.clone() };
+            self.targets_available(&a.targets, &ctx)
+        })
     }
 
     /// Limite d'activation d'une capacité « Once per Turn » ce tour (CR 5.2.3) :
@@ -546,6 +560,7 @@ impl GameState {
                 activations: [0; 4],
                 life_delta: 0,
                 life_counters: 0,
+                fused: false,
             });
             let proxy = ObjectId(self.objects.len() as u32 - 1);
             // Numéro de cette attaque parmi celles de l'arme ce tour.
@@ -641,12 +656,22 @@ impl GameState {
             }
             // CR 5.1.3a
             Task::PlayX => {
-                if kind == LayerKind::Card && def.x_cost {
+                let activated_x = match kind {
+                    LayerKind::Activated(i) => def.activated[i as usize].x_per,
+                    _ => 0,
+                };
+                if (kind == LayerKind::Card && def.x_cost) || activated_x > 0 {
                     let spare = self
                         .available_resources(p, None)
                         .saturating_sub(self.layer_cost(p));
                     // Coût « XX » (CR 2.1) : chaque unité de X coûte 2.
-                    let per_x = if def.x_twice { 2 } else { 1 };
+                    let per_x = if activated_x > 0 {
+                        activated_x as u32
+                    } else if def.x_twice {
+                        2
+                    } else {
+                        1
+                    };
                     let options = (0..=(spare / per_x).min(20) as u8)
                         .map(Choice::Number)
                         .collect();
@@ -801,10 +826,13 @@ impl GameState {
                 let per_x = if def.x_twice { 2 } else { 1 };
                 c + l.ctx.x as u32 * per_x
             }
-            LayerKind::Activated(i) => match l.ctx.source_id() {
-                Some(src) if self.obj(src).card == l.card => self.activation_cost(src, i),
-                _ => def.activated[i as usize].cost as u32,
-            },
+            LayerKind::Activated(i) => {
+                let base = match l.ctx.source_id() {
+                    Some(src) if self.obj(src).card == l.card => self.activation_cost(src, i),
+                    _ => def.activated[i as usize].cost as u32,
+                };
+                base + l.ctx.x as u32 * def.activated[i as usize].x_per as u32
+            }
             LayerKind::Trigger(_) | LayerKind::Granted(_) | LayerKind::Rule(_) => 0,
         }
     }

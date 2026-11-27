@@ -248,6 +248,33 @@ impl GameState {
                 });
             }
         }
+        // Capacités différées à usage unique (CR 6.6.2) : une fois déclenchée,
+        // elle disparaît.
+        let mut k = 0;
+        while k < self.delayed_triggers.len() {
+            let dt = self.delayed_triggers[k];
+            let trig = &self.db.get(dt.card).granted[dt.index as usize];
+            if dt.turn == self.turn && (trig.when)(self, dt.source.id, &ev) {
+                self.delayed_triggers.remove(k);
+                self.pending_triggers.push(Layer {
+                    kind: LayerKind::Granted(dt.index),
+                    object: dt.source,
+                    card: dt.card,
+                    controller: dt.player,
+                    target: None,
+                    origin: Zone::Stack,
+                    ctx: Box::new(Ctx {
+                        controller: dt.player,
+                        card: dt.card,
+                        source: Some(dt.source),
+                        event: Some(ev),
+                        ..Default::default()
+                    }),
+                });
+            } else {
+                k += 1;
+            }
+        }
     }
 
     /// Événements de ce tour (CR : « this turn »).
