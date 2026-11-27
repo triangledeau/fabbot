@@ -947,7 +947,13 @@ fn jouer_en_pitchant(t: &mut Partie, p: PlayerId, nom: &str, couleur: Option<Col
     passer_jusqua_que(t, |t| t.joueur() == p && t.peut(Choice::Play(c)));
     t.choisir(Choice::Play(c));
     while t.g.pending_decision().is_some() && t.kind() == DecisionKind::Pitch {
-        let o = t.options()[0];
+        // On pitche de préférence une carte bleue (les rouges servent à attaquer).
+        let opts = t.options();
+        let o = opts
+            .iter()
+            .copied()
+            .find(|c| matches!(c, Choice::Pitch(id) if t.g.def(*id).color == Some(Color::Blue)))
+            .unwrap_or(opts[0]);
         t.choisir(o);
     }
     c
@@ -1894,14 +1900,82 @@ fn shock_sans_go_again() {
     assert!(!t.g.db.get(pile).keywords.has(Keywords::GO_AGAIN));
 }
 
+/// Attaque de P0 avec « Essai Frappe » (rouge, 4 de puissance), sans défense.
+fn attaquer_sans_defense(t: &mut Partie) {
+    jouer(t, P0, "Essai Frappe", R);
+    while t.kind() == DecisionKind::Pitch {
+        let o = t.options()[0];
+        t.choisir(o);
+    }
+    resoudre_attaque(t);
+}
+
 #[test]
-fn burn_up_shock_fusionnee_resout_shock_d_abord_une_seule_fois() {
-    // Cas limite (CR 5.3.4d) : la carte fusionnée se résout d'abord par le
-    // côté droit (Shock) : 1 seul dégât à la cible.
+fn burn_up_la_prochaine_attaque_qui_touche_un_heros_inflige_4_degats_arcanes() {
+    // « The next time an attack you control hits a hero this turn, deal 4
+    // arcane damage to them. » : 4 de puissance + 4 arcanes.
+    let mut t = partie_cloud(&[(BURN_UP_SHOCK, R), ("Essai Frappe", R)]);
+    jouer_burn_up_shock(&mut t, 0);
+    resoudre(&mut t);
+    assert_eq!(t.vie(P1), 20, "rien avant la touche");
+    attaquer_sans_defense(&mut t);
+    assert_eq!(t.vie(P1), 12, "20 - 4 (attaque) - 4 (arcane)");
+}
+
+#[test]
+fn burn_up_ne_se_declenche_qu_une_seule_fois() {
+    // « The next time » : après la première touche, l'effet est consommé.
+    let mut t = partie_cloud(&[(BURN_UP_SHOCK, R), ("Essai Frappe", R)]);
+    jouer_burn_up_shock(&mut t, 0);
+    resoudre(&mut t);
+    assert_eq!(t.g.delayed_triggers.len(), 1, "en attente");
+    attaquer_sans_defense(&mut t);
+    assert_eq!(t.vie(P1), 12);
+    assert!(t.g.delayed_triggers.is_empty(), "consommé par la touche");
+}
+
+#[test]
+fn burn_up_ne_fait_rien_si_aucune_attaque_ne_touche_ce_tour() {
+    // Cas limite : sans attaque, aucun dégât ; l'effet ne dure pas au tour suivant.
+    let mut t = partie_cloud(&[(BURN_UP_SHOCK, R), ("Essai Frappe", R)]);
+    jouer_burn_up_shock(&mut t, 0);
+    resoudre(&mut t);
+    t.finir_le_tour();
+    assert_eq!(t.vie(P1), 20);
+    assert!(t.g.delayed_triggers.is_empty(), "l'effet a expiré");
+}
+
+#[test]
+fn burn_up_ne_se_declenche_pas_sur_l_attaque_de_l_adversaire() {
+    // « an attack you control » : une attaque adverse qui touche ne le déclenche pas.
+    let mut t = partie_cloud(&[(BURN_UP_SHOCK, R)]);
+    jouer_burn_up_shock(&mut t, 0);
+    resoudre(&mut t);
+    t.g.deal_damage(None, P0, P1, 4, false);
+    assert_eq!(t.vie(P0), 20);
+    assert_eq!(t.vie(P1), 16, "dégâts non liés à une attaque de P0");
+    assert_eq!(t.g.delayed_triggers.len(), 1, "toujours en attente");
+}
+
+#[test]
+fn burn_up_shock_fusionnee_fait_les_deux_effets_shock_d_abord() {
+    // Meld (CR 5.3.4d, 8.3.38) : le côté droit (Shock : 1 arcane à la cible)
+    // se résout d'abord, puis le gauche (Burn Up : différé 4 arcanes).
+    let mut t = partie_cloud(&[(BURN_UP_SHOCK, R), ("Essai Frappe", R)]);
+    jouer_burn_up_shock(&mut t, 2);
+    resoudre(&mut t);
+    assert_eq!(t.vie(P1), 19, "Shock : 1 arcane");
+    attaquer_sans_defense(&mut t);
+    assert_eq!(t.vie(P1), 11, "19 - 4 (attaque) - 4 (Burn Up)");
+}
+
+#[test]
+fn burn_up_fusionnee_a_go_again() {
+    // Côté Burn Up : go again, CR 5.3.5 (la carte fusionnée l'a aussi).
     let mut t = partie_cloud(&[(BURN_UP_SHOCK, R)]);
     jouer_burn_up_shock(&mut t, 2);
     resoudre(&mut t);
-    assert_eq!(t.vie(P1), 19, "un seul dégât de Shock");
+    assert_eq!(t.g.player(P0).action_points, 1, "go again");
 }
 
 // ---------------------------------------------------------------------------

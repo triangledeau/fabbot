@@ -325,6 +325,23 @@ pub struct GrantedTrigger {
     pub until: Until,
 }
 
+/// Une capacité déclenchée différée à usage unique (CR 6.6.2 ; « The next
+/// time an attack you control hits a hero this turn, … ») : créée par la
+/// résolution d'une carte, elle se déclenche une seule fois, puis disparaît ;
+/// sinon elle disparaît à la fin du tour `turn`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DelayedTrigger {
+    /// Le joueur qui contrôle la capacité.
+    pub player: PlayerId,
+    /// La carte qui l'a créée (source des dégâts éventuels).
+    pub source: ObjRef,
+    /// La définition qui porte le script, dans `CardDef::granted`.
+    pub card: CardId,
+    pub index: u8,
+    /// Le tour où elle est valable.
+    pub turn: u32,
+}
+
 /// Effet d'un tour sur les attaques d'une arme (CR 5.2.3, 5.1.6).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WeaponEffectKind {
@@ -514,6 +531,8 @@ pub struct GameState {
     pub play_permissions: Vec<PlayPermission>,
     /// Capacités déclenchées accordées par des effets.
     pub granted_triggers: Vec<GrantedTrigger>,
+    /// Capacités différées à usage unique (« the next time … this turn »).
+    pub delayed_triggers: Vec<DelayedTrigger>,
     /// Objets aiguisés ce tour (sharpen, CR 8.5.58) : leurs compteurs +1{p}
     /// sont retirés au début de la phase de fin.
     pub sharpened: Vec<ObjRef>,

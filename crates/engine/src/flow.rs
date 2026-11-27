@@ -1355,6 +1355,7 @@ impl GameState {
         self.no_power_gain.retain(|&(_, t)| t > turn);
         self.granted_triggers
             .retain(|x| !x.until.ends_at_end_of(turn));
+        self.delayed_triggers.retain(|x| x.turn > turn);
         self.sharpened.clear();
         self.turn_log.clear();
         for o in &mut self.objects {

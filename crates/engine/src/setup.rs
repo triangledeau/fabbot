@@ -174,6 +174,7 @@ impl GameState {
             weapon_effects: Vec::new(),
             play_permissions: Vec::new(),
             granted_triggers: Vec::new(),
+            delayed_triggers: Vec::new(),
             sharpened: Vec::new(),
             cost_reductions: Vec::new(),
             instant_permissions: Vec::new(),

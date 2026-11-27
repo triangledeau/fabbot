@@ -674,6 +674,20 @@ impl GameState {
         }
     }
 
+    /// Capacité différée à usage unique (CR 6.6.2) : « The next time … this
+    /// turn, … ». Le script est `CardDef::granted[index]` de la carte `card` ;
+    /// sa condition `when` reçoit l'objet `source`. Elle se déclenche une seule
+    /// fois ce tour, avec l'événement dans le contexte.
+    pub fn add_delayed_trigger(&mut self, p: PlayerId, source: ObjRef, card: CardId, index: u8) {
+        self.delayed_triggers.push(crate::state::DelayedTrigger {
+            player: p,
+            source,
+            card,
+            index,
+            turn: self.turn,
+        });
+    }
+
     /// Un objet « gets » +N / go again… (CR 8.5.8, 8.5.9).
     pub fn modify(&mut self, target: ObjRef, delta: Delta, until: Until) {
         if self.is_current(target) {

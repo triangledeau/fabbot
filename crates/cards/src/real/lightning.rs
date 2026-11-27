@@ -770,11 +770,10 @@ pub fn add(db: &mut CardDb) {
     //   **Go again** ».
     // Shock : Lightning Instant, « **Meld**{br}Deal 1 arcane damage to any
     //   target. ».
-    // TODO(règles) : Burn Up, « The next time an attack you control hits a hero
-    // this turn, deal 4 arcane damage to them » non codé : il faut un
-    // déclencheur différé (prochain coup de n'importe quelle attaque, pas seulement
-    // la prochaine attaque) ; `next_attack` ne gère que des deltas (moteur, hors
-    // périmètre). Go again et Shock sont codés.
+    // Burn Up : capacité différée à usage unique (CR 6.6.2) créée à la résolution ;
+    // elle se déclenche à la prochaine touche d'un héros par une attaque que le
+    // joueur contrôle ce tour (une touche « par effet », comme celle d'une dague,
+    // n'est pas une attaque). Fusionnée : Shock puis Burn Up (CR 5.3.4d, 8.3.38).
     {
         let base = db.len() as u16;
         let split = Split {
@@ -783,6 +782,11 @@ pub fn add(db: &mut CardDb) {
             right: CardId(base + 2),
             melded: Some(CardId(base + 3)),
         };
+        let burn_up: Vec<Op> = vec![Op::Do(|g, c| {
+            if let Some(src) = c.source {
+                g.add_delayed_trigger(c.controller, src, c.card, 0);
+            }
+        })];
         let side = |name: &str, types: Types, supertypes: Supertypes| CardDef {
             name: name.into(),
             color: Some(Color::Red),
@@ -806,6 +810,9 @@ pub fn add(db: &mut CardDb) {
         assert_eq!(db.add(whole), split.whole);
         let mut left = side("Burn Up", Types::ACTION, Supertypes::RUNEBLADE);
         left.keywords = Keywords::GO_AGAIN;
+        left.arcane_damage = true;
+        left.resolve = burn_up.clone();
+        left.granted = vec![burn_up_trigger()];
         assert_eq!(db.add(left), split.left);
         let mut right = side("Shock", Types::INSTANT, Supertypes::LIGHTNING);
         right.arcane_damage = true;
@@ -813,7 +820,8 @@ pub fn add(db: &mut CardDb) {
         right.resolve = vec![Op::Do(|g, c| arcane_to_target(g, c, 1))];
         assert_eq!(db.add(right), split.right);
         // Fusionnée : coût = deux fois le coût de base (0), CR 8.3.38b. Première
-        // résolution : le côté droit (Shock), CR 5.3.4d.
+        // résolution : le côté droit (Shock), CR 5.3.4d ; la seconde : le côté
+        // gauche (Burn Up, `left.resolve`), sans nouveau choix de cible.
         let mut melded = side(
             "Burn Up // Shock",
             Types::ACTION | Types::INSTANT,
@@ -1004,4 +1012,23 @@ fn joue_depuis_arsenal(g: &fab_engine::GameState, me: ObjectId) -> bool {
         _ => None,
     });
     from == Some(Zone::Arsenal)
+}
+
+/// Burn Up : « The next time an attack you control hits a hero this turn, deal
+/// 4 arcane damage to them. » La condition lit la touche (CR 7.5.5) ; la cible
+/// est le héros touché.
+fn burn_up_trigger() -> TriggerDef {
+    TriggerDef {
+        when: |g, me, e| {
+            matches!(*e, Event::Hit { attacker, target_obj: None, effect: false, .. }
+                if attacker == g.obj(me).controller)
+        },
+        anywhere: false,
+        targets: Vec::new(),
+        script: vec![Op::Do(|g, c| {
+            if let Some(Event::Hit { target, .. }) = c.event {
+                g.deal_damage_to(c.source_id(), c.controller, Target::Player(target), 4, true);
+            }
+        })],
+    }
 }
