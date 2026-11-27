@@ -68,19 +68,18 @@ const Editeur = (() => {
   function soutiens() {
     const h = herosC();
     if (!h) return null;
-    const s = new Set([...(h.classes || []), ...(h.talents || [])]);
-    for (const l of String(h.texte || "").split("\n")) {
-      const m = l.trim().match(/^Essence of (.*)/);
-      if (m) m[1].split(/[^A-Za-z]+/).filter(Boolean).forEach((t) => { if (t !== "and") s.add(t); });
-    }
-    return s;
+    // « Essence of X » : talents lus dans le fichier officiel (champ essences).
+    return new Set([...(h.classes || []), ...(h.talents || []), ...(h.essences || [])]);
   }
   // Filtre « pour ce héros » : même règle que la vérification du serveur
   // (Collection::hors_classe dans api_decks.rs) : la carte n'a que des
   // classes / talents du héros ; pour une carte hybride (« Brute / Warrior »),
   // un seul côté suffit ; « Essence of X » du héros ajoute le talent X.
+  // CR 8.3.7 : « [HERO] Specialization » = seulement pour le héros dont le
+  // surnom (le nom avant la virgule, CR 2.7.3) est HERO.
   function pourLeHeros(c) {
     const h = herosC();
+    if (h && (c.specialisation || []).length && !c.specialisation.includes(String(h.nom).split(",")[0].trim())) return false;
     if (!h || !(h.classes || []).length || !c.type_texte) return true;
     const sup = new Set([...soutiens(), "Generic"]);
     const connus = new Set([...(c.classes || []), ...(c.talents || [])]);

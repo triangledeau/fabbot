@@ -112,7 +112,10 @@ confirmées par le propriétaire : une carte demande au héros toutes ses
 classes et tous ses talents (une carte « Draconic Ninja » n'est pas pour un
 héros seulement Ninja) ; pour une carte hybride, un seul des deux côtés
 suffit ; « Essence of X » sur le héros ajoute le talent X. Code :
-`Collection::hors_classe` (`crates/ui/src/api_decks.rs`).
+`Collection::hors_classe` (`crates/ui/src/api_decks.rs`). Depuis le
+2026-11-27, la collection de l'éditeur couvre tout le pool Silver Age
+(`data/cards/collection.tsv`, depuis le fichier officiel LSS) et la
+spécialisation (CR 8.3.7) est vérifiée.
 
 **Étape 6, à regarder :** le fichier `data/side/b1.txt` (choix appris des
 bots, paire par paire, avec l'écart estimé de chaque carte laissée hors du
