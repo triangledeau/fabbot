@@ -50,6 +50,7 @@
 .homepg .ht .pic::after { background: linear-gradient(180deg, transparent 65%, rgb(13 17 25 / .5)); }
 .ht .resume[hidden] { display: none; }
 .homefoot { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; color: var(--muted); font-size: .85rem; text-align: center; }
+.homefoot[hidden] { display: none; }
 @media (max-width: 900px) { .tiles3 { grid-template-columns: minmax(0, 360px); } }
 .ht .pic .vs[hidden], .ht .pic .art[hidden] { display: none; }
 .ht .pbar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: rgb(255 255 255 / .08); }

@@ -58,16 +58,17 @@ l'échelle) :
   avant d'être employée : le test `ordre_des_notions` le vérifie ;
 - un plan de leçon = `dit` (texte du guide), `fait` (animations : `poser`,
   `zoom`, `attaquer`, `pitcher`…), `clic` (carte que l'élève doit cliquer),
-  `quiz` ou `scene` (partie sur le moteur). Le quiz ne donne pas la
+  `quiz`, `scene` (partie sur le moteur) ou `recap` (fiche « À retenir »
+  en fin de chapitre). Le quiz ne donne pas la
   solution en cas d'erreur : l'élève réessaie.
 
 ## Avancement
 
 | Chapitre | État |
 |---|---|
-| 1. Le duel | 3 leçons animées |
-| 2. Lire une carte | 4 leçons animées (zooms sur les coins) |
-| 3. Payer | 2 leçons animées, 1 scène (payer) |
+| 1. Le duel | 3 leçons animées, récapitulatif |
+| 2. Lire une carte | 3 leçons animées (héros, ligne de type, texte), récapitulatif |
+| 3. Payer | 5 leçons animées (coût, pitcher, couleurs, point d'action), 1 scène (payer), récapitulatif |
 | 4. Le tapis et les zones | 4 leçons reprises de la 1re version, 1 scène (arsenal) — animation à faire |
 | 5. Le tour | 5 leçons reprises de la 1re version, 1 scène (un point d'action) — animation à faire |
 | 6. La chaîne de combat | 5 leçons reprises de la 1re version, 2 scènes (go again, défendre) — animation à faire |
