@@ -287,6 +287,10 @@ précédent si l'épée a quitté ce maillon (notes de Mastery Pack Warrior).
 
 ## Prochaine tâche
 
+Niveau réfléchi fait le 2026-11-27 (chantier 4, `fab_ai::reflechi`, journal
+`docs/journal/2026-11-27-niveau-reflechi.md`) : reste à mesurer sa force selon
+le temps de réflexion (épreuves A/B, position par position).
+
 **Pour le propriétaire :** jouer quelques parties avec
 `cargo run --release -p fab-ui`, vérifier les cartes de Hala et Dorinthea
 (commande `t <n>` pour le texte officiel) et passer celles qui sont justes en
