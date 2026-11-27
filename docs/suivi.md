@@ -113,7 +113,10 @@ confirmées par le propriétaire : une carte demande au héros toutes ses
 classes et tous ses talents (une carte « Draconic Ninja » n'est pas pour un
 héros seulement Ninja) ; pour une carte hybride, un seul des deux côtés
 suffit ; « Essence of X » sur le héros ajoute le talent X. Code :
-`Collection::hors_classe` (`crates/ui/src/api_decks.rs`).
+`Collection::hors_classe` (`crates/ui/src/api_decks.rs`). Depuis le
+2026-11-27, la collection de l'éditeur couvre tout le pool Silver Age
+(`data/cards/collection.tsv`, depuis le fichier officiel LSS) et la
+spécialisation (CR 8.3.7) est vérifiée.
 
 **Étape 6, à regarder :** le fichier `data/side/b1.txt` (choix appris des
 bots, paire par paire, avec l'écart estimé de chaque carte laissée hors du
@@ -285,6 +288,10 @@ précédent si l'épée a quitté ce maillon (notes de Mastery Pack Warrior).
 
 ## Prochaine tâche
 
+Niveau réfléchi fait le 2026-11-27 (chantier 4, `fab_ai::reflechi`, journal
+`docs/journal/2026-11-27-niveau-reflechi.md`) : reste à mesurer sa force selon
+le temps de réflexion (épreuves A/B, position par position).
+
 **Pour le propriétaire :** jouer quelques parties avec
 `cargo run --release -p fab-ui`, vérifier les cartes de Hala et Dorinthea
 (commande `t <n>` pour le texte officiel) et passer celles qui sont justes en
@@ -333,6 +340,10 @@ pitch stacking ; table de side réapprise contre la table) : B3 contre B3,
 Ira 70 %, Hala 47 %, Iyslander 41 %. Poids de B3 de 4e génération essayés,
 moins bons (−22 Elo), non retenus. Réponse du propriétaire : AB3 contre
 Iyslander est réaliste.
+
+**Feuille de route vers un bot top 8 (2026-11-27)** : `docs/feuille-de-route-top8.md` (10 decks connus seulement, calcul sur la Surface ; première étape : mesurer avec des puzzles exacts et le regret contre un bot lent).
+**Chantier 0 fait (2026-11-27)** : script de nuit pour la Surface, `tools/nuit.bat` (mode d'emploi `docs/nuit.md`), résultats dans `resultats/nuit/AAAA-MM-JJ/resume.md` ; programmation par `tools/installer-nuit.bat` (à lancer une fois par le propriétaire). Suite : chantier 1 (épreuves A et B).
+**Chantier 1, épreuve A faite (2026-11-27)** : puzzles exacts du tour (`fab-sim --bin epreuve-a`, solveur `fab_ai::tour_exact`, mode d'emploi `docs/epreuves.md`, dans la liste de nuit). Première mesure (81 parties B3 contre B3, 1 452 puzzles par défense) : B3 résout au mieux 61 % des puzzles ; létaux trouvés 80 % (défense passive comme défense B1), loin du seuil « top 8 » (95 % et 100 %) ; Florian le plus loin (46 %, 4,2 PV laissés par tour). Épreuve B faite aussi (`epreuve-b`, regret contre une référence plus longue) : regret moyen 0,60 point de % par décision (3 130 positions), le plus fort en **défense** (0,88) et pour **Hala** (1,08) ; détails dans `docs/epreuves.md`. Chantier 1 terminé : refaire la feuille de route sur ces chiffres (nuits sur la Surface d'abord).
 
 **Pour Claude :** l'étape 7 est finie ; il n'y a plus d'étape prévue.
 Prochaine tâche proposée (B3 3e génération faite le 2026-11-26 : les

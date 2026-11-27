@@ -10,6 +10,14 @@ publish.workspace = true
 name = "fab-sim"
 path = "src/main.rs"
 
+[[bin]]
+name = "epreuve-a"
+path = "src/bin/epreuve_a.rs"
+
+[[bin]]
+name = "epreuve-b"
+path = "src/bin/epreuve_b.rs"
+
 [dependencies]
 fab-engine.workspace = true
 fab-ai.workspace = true

@@ -172,11 +172,19 @@ un deck du bot (copie : l'original ne change pas, un bandeau le rappelle).
   « ● modifications non enregistrées »), Annuler, Importer (remplace la
   liste), Exporter (format FaBrary), Imprimer (ouvre Imprimer avec ce deck,
   une fois enregistré), Enregistrer (Ctrl+S).
-- À gauche, la collection Silver Age : recherche (« / » pour y aller, en
+- À gauche, la collection Silver Age : **toutes les cartes légales du
+  format** (≈ 4 000 cartes-couleurs, table `data/cards/collection.tsv`
+  produite par `python3 -I tools/collection_silver_age.py` depuis le fichier
+  officiel LSS ; image VF bord noir et illustration standard d'abord, voir
+  l'en-tête du script). Recherche (« / » pour y aller, en
   français ou en anglais), filtres Pitch, Coût, Type, Mots-clés, Classe /
   talent, Afficher (légales pour le héros, jouables par le bot, déjà dans
   le deck, jouables d'abord), tri, taille des cartes (mémorisée). Les cartes
-  que le bot ne sait pas encore jouer sont grisées. Survol : grande image et
+  que le bot ne sait pas encore jouer sont un peu ternies et marquées
+  « bot ✗ » : on peut les mettre dans un deck et l'enregistrer, mais un deck
+  qui en contient n'est pas jouable contre le bot (Jouer le refuse et
+  l'onglet Vérifications les liste). Une carte « [Héros] Specialization »
+  n'est proposée qu'à ce héros (CR 8.3.7). Survol : grande image et
   texte, posés à côté de la carte.
 - Clic : +1 au deck ; ⇧ clic : +1 au side ; Alt clic : +1 aux envies ;
   Entrée au clavier. **Clic droit** (ou touche Menu) sur une carte de la
@@ -388,6 +396,23 @@ bord pointillé = carte face cachée (que vous seul voyez).
   désélectionner.
 - **Annuler mon dernier choix** revient avant votre dernier choix (et avant
   les réponses du bot qui ont suivi), autant de fois que voulu.
+- **Niveau réfléchi** (« Niveau du bot ») : la recherche de B3 sur tous les
+  cœurs ([`fab_ai::reflechi`](../crates/ai/src/reflechi.rs)). Avec une
+  **banque de temps** pour la partie (`reflechi-partie-5m`, `-10m`, `-15m`,
+  à la demande du propriétaire, 27/11) : chaque décision prend une part de
+  ce qui reste, plus grande si elle est complexe (rien quand une seule
+  option compte, 1/75e de la banque pour une priorité à 3 options, 1/25e
+  au plus) ; banque vide, il joue en 0,3 s. Sans banque (`reflechi`) : de
+  rien à 2 minutes par décision. La banque repart à chaque manche. Pendant
+  qu'il réfléchit, le ruban montre une **jauge** (temps écoulé sur le temps
+  prévu, et ce qu'il reste dans la banque), en petit l'**option qu'il préfère pour l'instant** avec ses chances
+  estimées (une carte cachée n'est pas nommée : « pitcher une carte
+  cachée ») et le bouton **Joue maintenant** (il joue le meilleur coup trouvé).
+  « Annuler » pendant sa réflexion l'arrête. Côté serveur, le bot réfléchit
+  dans un fil à part (`Session::poursuivre`) ; routes `GET /api/reflexion`
+  (avancement, `film_no` qui change quand il a joué) et
+  `POST /api/joue-maintenant`. Dans l'interface texte, le niveau marche
+  aussi, mais sans jauge (on attend).
 - **Fin de partie** : une fenêtre donne le vainqueur, les PV, les dégâts
   infligés et subis, vos défenses ; puis Manche suivante, Rejouer, Changer de
   deck, Voir le journal, Annuler, Exporter.

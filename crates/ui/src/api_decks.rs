@@ -1,10 +1,11 @@
 //! Arsenal, lot 4a : decks en données.
 //!
-//! - **Collection Silver Age** : toutes les cartes légales du format, d'après
-//!   la base communautaire (`data/cards/sources/fabcube_card.json`, légalité
-//!   seulement, voir `docs/cards/README.md`), avec pour chacune le drapeau
-//!   `codee` (« jouable par le bot » : la carte est codée dans `fab-cards`).
-//!   Sans ce fichier, la collection se limite aux cartes codées.
+//! - **Collection Silver Age** : toutes les cartes légales du format
+//!   (`data/cards/collection.tsv`, produite depuis le fichier officiel LSS
+//!   par `tools/collection_silver_age.py`, intégrée au programme), avec pour
+//!   chacune le drapeau `codee` (« jouable par le bot » : la carte est codée
+//!   dans `fab-cards`). Le texte des cartes vient du fichier officiel local
+//!   s'il est là ([`Textes`]).
 //! - **Decks maison** (`data/decks/maison/<nom>.txt`, [`fab_cards::decks`]) :
 //!   importés depuis une liste FaBrary ou au format du projet, vérifiés
 //!   (format Silver Age, légalité, cartes codées), lus à l'exécution. Un deck
@@ -27,6 +28,7 @@
 //! [`Decklist::check`], les cartes jouables sont celles du moteur.
 
 use crate::images;
+use crate::textes::Textes;
 use fab_cards::decklist::{self, Decklist};
 use fab_cards::decks::{self, DeckDuProjet};
 use fab_cards::import::{self, Classement};
@@ -59,7 +61,11 @@ pub struct CarteCollection {
     pub classes: Vec<String>,
     pub talents: Vec<String>,
     pub mots_cles: Vec<String>,
-    /// Texte de la carte (base communautaire), pour la recherche.
+    /// « [HERO] Specialization » (CR 8.3.7) : surnoms des héros permis.
+    pub specialisation: Vec<String>,
+    /// « Essence of X » d'un héros : talents X permis.
+    pub essences: Vec<String>,
+    /// Texte de la carte (vide : il vient du fichier officiel local).
     pub texte: String,
     pub heros: bool,
     /// PV et intellect d'un héros (en-tête de l'éditeur).
@@ -106,34 +112,25 @@ const TALENTS: [&str; 12] = [
 
 /// La collection et d'où elle vient.
 pub struct Collection {
-    /// `fabcube` (base communautaire lue) ou `codees` (cartes codées seules).
+    /// `lss` : la table versionnée `data/cards/collection.tsv`.
     pub source: &'static str,
     pub cartes: Vec<CarteCollection>,
     /// Nom → positions dans `cartes`.
     par_nom: HashMap<String, Vec<usize>>,
-    /// Cartes que la base communautaire déclare illégales (ou bannies).
-    illegales: HashSet<Cle>,
 }
-
-/// Une carte unique : nom et couleur.
-type Cle = (String, Option<Color>);
 
 fn db() -> &'static CardDb {
     static DB: OnceLock<CardDb> = OnceLock::new();
     DB.get_or_init(real::build)
 }
 
-fn couleur_fabcube(s: &str) -> Option<Color> {
+fn couleur_table(s: &str) -> Option<Color> {
     match s {
         "Red" => Some(Color::Red),
         "Yellow" => Some(Color::Yellow),
         "Blue" => Some(Color::Blue),
         _ => None,
     }
-}
-
-fn nombre(v: &Value) -> Option<u8> {
-    v.as_str().and_then(|s| s.trim().parse().ok())
 }
 
 fn nom_couleur(c: Option<Color>) -> &'static str {
@@ -145,68 +142,66 @@ fn nom_couleur(c: Option<Color>) -> &'static str {
     }
 }
 
-/// Le fichier de la base communautaire (non versionné).
-fn fichier_fabcube() -> std::path::PathBuf {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../data/cards/sources/fabcube_card.json")
+/// La table des cartes légales en Silver Age, produite par
+/// `tools/collection_silver_age.py` depuis le fichier officiel LSS
+/// (légalité : TRP 7.4, `config/silver_age.toml`), intégrée au programme.
+/// Sans le texte des cartes : il est lu dans le fichier officiel local
+/// ([`Textes`]) quand il est là.
+const TABLE: &str = include_str!("../../../data/cards/collection.tsv");
+
+fn liste_pv(s: &str) -> Vec<String> {
+    s.split(';')
+        .filter(|m| !m.is_empty())
+        .map(String::from)
+        .collect()
 }
 
-/// Lit la collection depuis le JSON de la base communautaire : les cartes
-/// légales, et celles que la base connaît mais déclare illégales.
-fn depuis_fabcube(v: &Value, db: &CardDb) -> (Vec<CarteCollection>, HashSet<Cle>) {
+/// Lit la table : une carte par ligne.
+fn depuis_table(texte: &str, db: &CardDb) -> Vec<CarteCollection> {
     let mut out = Vec::new();
-    let mut illegales = HashSet::new();
-    for c in v.as_array().into_iter().flatten() {
-        let Some(nom) = c["name"].as_str() else {
-            continue;
-        };
-        let couleur = c["color"].as_str().and_then(couleur_fabcube);
-        if c["silver_age_legal"] != true || c["silver_age_banned"] == true {
-            illegales.insert((nom.to_string(), couleur));
+    for l in texte.lines() {
+        if l.starts_with('#') || l.trim().is_empty() {
             continue;
         }
-        let liste = |k: &str| -> Vec<String> {
-            c[k].as_array()
-                .into_iter()
-                .flatten()
-                .filter_map(|t| t.as_str().map(String::from))
-                .collect()
-        };
-        let types = liste("types");
-        if types.iter().any(|t| t == "Token") {
+        let c: Vec<&str> = l.split('\t').collect();
+        if c.len() < 14 {
             continue;
         }
-        let codee = db.find(nom, couleur).is_some();
-        let (image, nom_fr) = match images::image_par_nom(nom, couleur) {
-            Some(i) => (
-                Some(i.code.to_string()),
-                (!i.nom_fr.is_empty()).then(|| i.nom_fr.to_string()),
-            ),
-            None => {
-                // Première impression normale : son code d'image LSS.
-                let code = c["printings"]
-                    .as_array()
-                    .into_iter()
-                    .flatten()
-                    .filter(|p| p["foiling"] == "S")
-                    .find_map(|p| p["image_url"].as_str())
-                    .and_then(|u| u.rsplit('/').next())
-                    .and_then(|f| f.strip_suffix(".webp"))
-                    .map(String::from);
-                (code, None)
+        let nombre = |s: &str| s.trim().parse::<u8>().ok();
+        let nom = c[0].to_string();
+        let couleur = couleur_table(c[1]);
+        let type_texte = c[8].to_string();
+        // Mots de la ligne de type (« Brute / Warrior Action - Attack »).
+        let types: Vec<String> = type_texte
+            .split(|ch: char| ch.is_whitespace() || ch == '/')
+            .filter(|m| !m.is_empty() && *m != "-")
+            .map(String::from)
+            .fold(Vec::new(), |mut v, m| {
+                if !v.contains(&m) {
+                    v.push(m);
+                }
+                v
+            });
+        let a = |t: &str| types.iter().any(|x| x == t);
+        // « Attack Reaction », « Defense Reaction », « Off-Hand » : deux mots.
+        let mut types_complets = types.clone();
+        for (t, mots) in [
+            ("Attack Reaction", "Attack Reaction"),
+            ("Defense Reaction", "Defense Reaction"),
+        ] {
+            if type_texte.contains(mots) {
+                types_complets.push(t.to_string());
             }
-        };
+        }
         out.push(CarteCollection {
-            nom: nom.to_string(),
+            codee: db.find(&nom, couleur).is_some(),
             couleur,
-            type_texte: c["type_text"].as_str().unwrap_or("").to_string(),
-            pitch: nombre(&c["pitch"]),
-            cout: nombre(&c["cost"]),
-            puissance: nombre(&c["power"]),
-            defense: nombre(&c["defense"]),
-            image,
-            nom_fr,
-            codee,
+            pitch: nombre(c[2]),
+            cout: nombre(c[3]),
+            puissance: nombre(c[4]),
+            defense: nombre(c[5]),
+            pv: nombre(c[6]),
+            intellect: nombre(c[7]),
             classes: types
                 .iter()
                 .filter(|t| CLASSES.contains(&t.as_str()))
@@ -217,78 +212,23 @@ fn depuis_fabcube(v: &Value, db: &CardDb) -> (Vec<CarteCollection>, HashSet<Cle>
                 .filter(|t| TALENTS.contains(&t.as_str()))
                 .cloned()
                 .collect(),
-            heros: types.iter().any(|t| t == "Hero"),
-            pv: nombre(&c["health"]),
-            intellect: nombre(&c["intelligence"]),
-            mots_cles: liste("card_keywords"),
-            texte: c["functional_text_plain"]
-                .as_str()
-                .unwrap_or("")
-                .to_string(),
-            types,
-        });
-    }
-    // Une impression légale l'emporte (même nom et couleur).
-    for c in &out {
-        illegales.remove(&(c.nom.clone(), c.couleur));
-    }
-    (out, illegales)
-}
-
-/// Les cartes codées absentes de `deja` (toutes si `deja` est vide) : sans
-/// la base communautaire, ou pour les cartes trop récentes pour elle.
-fn cartes_codees(
-    db: &CardDb,
-    deja: &[CarteCollection],
-    exclues: &HashSet<Cle>,
-) -> Vec<CarteCollection> {
-    let mut vus: HashSet<Cle> = deja.iter().map(|c| (c.nom.clone(), c.couleur)).collect();
-    vus.extend(exclues.iter().cloned());
-    // Les côtés d'une carte double (« Arcane Seeds // Life ») ne sont pas des
-    // cartes à part : seule la carte entière va dans un deck.
-    let cotes: HashSet<&str> = (0..db.len())
-        .map(|i| db.get(fab_engine::CardId(i as u16)).name.as_str())
-        .filter(|n| n.contains(" // "))
-        .flat_map(|n| n.split(" // "))
-        .collect();
-    let mut out = Vec::new();
-    for i in 0..db.len() {
-        let d = db.get(fab_engine::CardId(i as u16));
-        let cote = cotes.contains(d.name.as_str());
-        if cote || d.types.has(Types::TOKEN) || !vus.insert((d.name.clone(), d.color)) {
-            continue;
-        }
-        let (image, nom_fr) = images::champs(d);
-        out.push(CarteCollection {
-            nom: d.name.clone(),
-            couleur: d.color,
-            types: Vec::new(),
-            type_texte: String::new(),
-            pitch: d.pitch,
-            cout: d.cost,
-            puissance: d.power,
-            defense: d.defense,
-            image: image.map(String::from),
-            nom_fr: nom_fr.map(String::from),
-            codee: true,
-            classes: Vec::new(),
-            talents: Vec::new(),
-            mots_cles: Vec::new(),
+            heros: a("Hero"),
+            mots_cles: liste_pv(c[9]),
+            specialisation: liste_pv(c[10]),
+            essences: liste_pv(c[11]),
+            image: (!c[12].is_empty()).then(|| c[12].to_string()),
+            nom_fr: (!c[13].is_empty()).then(|| c[13].to_string()),
             texte: String::new(),
-            heros: d.types.has(Types::HERO),
-            pv: d.life,
-            intellect: d.intellect,
+            types: types_complets,
+            type_texte,
+            nom,
         });
     }
     out
 }
 
 impl Collection {
-    fn nouvelle(
-        source: &'static str,
-        mut cartes: Vec<CarteCollection>,
-        illegales: HashSet<Cle>,
-    ) -> Collection {
+    fn nouvelle(source: &'static str, mut cartes: Vec<CarteCollection>) -> Collection {
         cartes.sort_by(|a, b| a.nom.cmp(&b.nom).then(a.pitch.cmp(&b.pitch)));
         let mut par_nom: HashMap<String, Vec<usize>> = HashMap::new();
         for (i, c) in cartes.iter().enumerate() {
@@ -298,7 +238,6 @@ impl Collection {
             source,
             cartes,
             par_nom,
-            illegales,
         }
     }
 
@@ -313,15 +252,25 @@ impl Collection {
 
     /// Classes et talents d'un texte de type, par côté d'une carte hybride
     /// (« Brute / Warrior Action » → {Brute}, {Warrior}) ; un seul côté pour
-    /// une carte ordinaire. « Generic » ne compte pas.
+    /// une carte ordinaire. « Generic » ne compte pas. Une carte double
+    /// (« Runeblade Action // Earth Instant ») compte ses deux moitiés.
     fn cotes(type_texte: &str) -> Vec<HashSet<&str>> {
-        let sup = type_texte.split(" - ").next().unwrap_or("");
-        sup.split(" / ")
-            .map(|c| {
-                c.split_whitespace()
-                    .filter(|m| *m != "Generic" && (CLASSES.contains(m) || TALENTS.contains(m)))
-                    .collect()
-            })
+        let moities: Vec<&str> = type_texte
+            .split(" // ")
+            .map(|m| m.split(" - ").next().unwrap_or(""))
+            .collect();
+        fn mots(c: &str) -> Vec<&str> {
+            c.split_whitespace()
+                .filter(|m| *m != "Generic" && (CLASSES.contains(m) || TALENTS.contains(m)))
+                .collect()
+        }
+        if moities.len() > 1 {
+            // Meld : le héros doit pouvoir jouer les deux moitiés.
+            return vec![moities.iter().flat_map(|m| mots(m)).collect()];
+        }
+        moities[0]
+            .split(" / ")
+            .map(|c| mots(c).into_iter().collect())
             .collect()
     }
 
@@ -340,14 +289,7 @@ impl Collection {
             Self::cotes(&h.type_texte).into_iter().flatten().collect();
         // « Essence of Ice » (Iyslander), « Essence of Earth, Ice, and
         // Lightning » (Bravo) : le héros peut avoir des cartes de ces talents.
-        for l in h.texte.lines() {
-            if let Some(r) = l.trim().strip_prefix("Essence of ") {
-                du_heros.extend(
-                    r.split(|c: char| !c.is_alphabetic())
-                        .filter(|m| TALENTS.contains(m)),
-                );
-            }
-        }
+        du_heros.extend(h.essences.iter().map(String::as_str));
         Some(
             !Self::cotes(&c.type_texte)
                 .iter()
@@ -355,26 +297,31 @@ impl Collection {
         )
     }
 
-    /// La carte de ce nom et de cette couleur est légale en Silver Age.
-    /// `None` : on ne sait pas (pas de base communautaire, ou carte trop
-    /// récente pour elle).
-    pub fn legale(&self, nom: &str, couleur: Option<Color>) -> Option<bool> {
-        if self.source != "fabcube" {
-            return None;
-        }
-        if self.par_nom(nom).any(|c| c.couleur == couleur) {
-            return Some(true);
-        }
-        self.illegales
-            .contains(&(nom.to_string(), couleur))
-            .then_some(false)
+    /// CR 8.3.7 : « [HERO] Specialization » = la carte ne va que dans le
+    /// deck d'un héros dont le surnom (CR 2.7.3, le nom avant la virgule) est
+    /// HERO. `None` : carte inconnue de la table ou sans spécialisation.
+    pub fn specialisation_d_un_autre(&self, heros: &str, nom: &str) -> Option<String> {
+        let c = self.par_nom(nom).find(|c| !c.specialisation.is_empty())?;
+        let surnom = heros.split(',').next().unwrap_or("").trim();
+        (!c.specialisation.iter().any(|s| s == surnom)).then(|| c.specialisation.join(", "))
     }
 
-    fn json(&self) -> Value {
+    /// La carte de ce nom et de cette couleur est légale en Silver Age :
+    /// présente dans la table (toutes les cartes légales du fichier officiel).
+    pub fn legale(&self, nom: &str, couleur: Option<Color>) -> Option<bool> {
+        Some(self.par_nom(nom).any(|c| c.couleur == couleur))
+    }
+
+    /// La collection en JSON, avec le texte officiel quand il est là.
+    pub fn json(&self, textes: Option<&Textes>) -> Value {
         let cartes: Vec<Value> = self
             .cartes
             .iter()
             .map(|c| {
+                let texte = textes
+                    .and_then(|t| t.texte(&c.nom.replace(" // ", "||"), c.couleur))
+                    .map(|(_, b)| b)
+                    .unwrap_or_else(|| c.texte.clone());
                 json!({
                     "nom": c.nom,
                     "nom_fr": c.nom_fr,
@@ -390,7 +337,9 @@ impl Collection {
                     "classes": c.classes,
                     "talents": c.talents,
                     "mots_cles": c.mots_cles,
-                    "texte": c.texte,
+                    "specialisation": c.specialisation,
+                    "essences": c.essences,
+                    "texte": texte,
                     "heros": c.heros,
                     "pv": c.pv,
                     "intellect": c.intellect,
@@ -402,32 +351,20 @@ impl Collection {
             "source": self.source,
             "nombre": cartes.len(),
             "codees": self.cartes.iter().filter(|c| c.codee).count(),
+            "textes": textes.is_some(),
             "cartes": cartes,
         })
     }
 }
 
-/// La collection, lue une fois (la base communautaire fait ~20 Mo).
+/// La collection, lue une fois.
 pub fn collection() -> &'static Collection {
     static C: OnceLock<Collection> = OnceLock::new();
     C.get_or_init(|| {
         let db = db();
-        let lu = std::fs::read(fichier_fabcube())
-            .ok()
-            .and_then(|o| serde_json::from_slice::<Value>(&o).ok());
-        match lu {
-            Some(v) => {
-                let (mut cartes, illegales) = depuis_fabcube(&v, db);
-                let recentes = cartes_codees(db, &cartes, &illegales);
-                cartes.extend(recentes);
-                Collection::nouvelle("fabcube", cartes, illegales)
-            }
-            None => Collection::nouvelle(
-                "codees",
-                cartes_codees(db, &[], &HashSet::new()),
-                HashSet::new(),
-            ),
-        }
+        // Une carte codée absente de la table (carte plus récente que la
+        // table) n'y est pas : refaire la table (tools/collection_silver_age.py).
+        Collection::nouvelle("lss", depuis_table(TABLE, db))
     })
 }
 
@@ -551,7 +488,10 @@ pub fn verifier(liste: &Decklist) -> Value {
         if db.find(nom, c).is_none() && !non_codees.contains(&lib) {
             non_codees.push(lib.clone());
         }
-        if col.legale(nom, c) == Some(false) && !illegales.contains(&lib) {
+        if db.find(nom, c).is_none()
+            && col.legale(nom, c) == Some(false)
+            && !illegales.contains(&lib)
+        {
             illegales.push(lib);
         }
     };
@@ -590,6 +530,17 @@ pub fn verifier(liste: &Decklist) -> Value {
             liste.hero
         ));
     }
+    // CR 8.3.7 : spécialisation d'un autre héros.
+    let mut vues: Vec<&str> = Vec::new();
+    for n in liste.deck.iter().map(|e| e.name.as_str()) {
+        if vues.contains(&n) {
+            continue;
+        }
+        vues.push(n);
+        if let Some(h) = col.specialisation_d_un_autre(&liste.hero, n) {
+            problemes.push(format!("« {n} » est une spécialisation de {h}"));
+        }
+    }
     // Le card-pool se monte-t-il dans le moteur (emplacements, mains) ?
     if problemes.is_empty() && non_codees.is_empty() {
         match real::card_pool(db, liste) {
@@ -616,7 +567,7 @@ pub fn verifier(liste: &Decklist) -> Value {
         "jouable": jouable,
         "problemes": problemes,
         "non_codees": non_codees,
-        "legalite_verifiee": col.source == "fabcube",
+        "legalite_verifiee": true,
     })
 }
 
@@ -668,9 +619,10 @@ pub fn repondre(
     chemin: &str,
     param: &dyn Fn(&str) -> Option<String>,
     corps: &[u8],
+    textes: Option<&Textes>,
 ) -> Option<Resultat> {
     Some(match (methode, chemin) {
-        ("GET", "/api/collection") => (200, collection().json()),
+        ("GET", "/api/collection") => (200, collection().json(textes)),
         ("GET", "/api/decks-maison") => {
             let v: Vec<Value> = decks::maison().iter().map(resume).collect();
             (

@@ -10,12 +10,15 @@
 use crate::images;
 use crate::textes::Textes;
 use crate::vue;
+use fab_ai::reflechi::Suivi;
 use fab_ai::{creer_agent, Agent, BOTS};
 use fab_engine::card::{CardDef, Color, Types};
 use fab_engine::{
     Choice, DecisionKind, Event, GameState, History, ObjectId, PlayerId, Target, Zone,
 };
 use serde_json::{json, Value};
+use std::sync::Arc;
+use std::thread::JoinHandle;
 
 /// Une ligne du journal.
 #[derive(Clone, Debug)]
@@ -66,8 +69,14 @@ pub struct Session {
     pub g: GameState,
     pub humain: PlayerId,
     pub reglages: Reglages,
-    bot: Box<dyn Agent + Send>,
+    /// Le bot ; `None` pendant qu'il réfléchit dans son fil ([`Session::reflexion`]).
+    bot: Option<Box<dyn Agent + Send>>,
     nom_bot: String,
+    /// Le suivi de la réflexion du niveau réfléchi (`None` pour les autres
+    /// bots, qui répondent tout de suite).
+    suivi: Option<Arc<Suivi>>,
+    /// La réflexion en cours : le fil qui rend le bot et son choix.
+    reflexion: Option<JoinHandle<(Box<dyn Agent + Send>, usize)>>,
     historique: History<Instantane>,
     journal: Vec<Ligne>,
     tour: u32,
@@ -86,6 +95,13 @@ pub struct Session {
     /// même partie (sauvegarde, lot 3 ; voir `crate::sauvegarde`).
     coups: Vec<u32>,
     stats: Stats,
+}
+
+impl Drop for Session {
+    fn drop(&mut self) {
+        // Une partie remplacée ou abandonnée : le fil du bot s'arrête.
+        self.interrompre();
+    }
 }
 
 impl Session {
@@ -120,12 +136,15 @@ impl Session {
             g.record = Some(Vec::new());
         }
         let nom_bot = bot.name().to_string();
+        let suivi = bot.suivi();
         let mut s = Session {
             g,
             humain: PlayerId::P0,
             reglages: r,
-            bot,
+            bot: Some(bot),
             nom_bot,
+            suivi,
+            reflexion: None,
             historique: History::new(),
             journal: Vec::new(),
             tour: 0,
@@ -150,12 +169,15 @@ impl Session {
         let bot = creer_agent(&r.niveau, r.graine ^ 0x5A5A)
             .ok_or_else(|| format!("niveau de bot inconnu « {} »", r.niveau))?;
         let nom_bot = bot.name().to_string();
+        let suivi = bot.suivi();
         let mut s = Session {
             g,
             humain: PlayerId::P0,
             reglages: r,
-            bot,
+            bot: Some(bot),
             nom_bot,
+            suivi,
+            reflexion: None,
             historique: History::new(),
             journal: Vec::new(),
             tour: 0,
@@ -394,6 +416,11 @@ impl Session {
 
     /// Le moteur avance ; le bot répond à ses décisions, jusqu'à une
     /// décision de l'humain ou la fin de la partie.
+    ///
+    /// Le niveau réfléchi (bot avec un [`Suivi`]) réfléchit dans un fil à
+    /// part dès qu'une décision a plusieurs options distinctes : `avancer`
+    /// rend alors la main tout de suite, et [`Session::poursuivre`] applique
+    /// son choix quand il a fini (la page suit la jauge en attendant).
     fn avancer(&mut self) -> Result<(), String> {
         loop {
             self.tourner();
@@ -403,12 +430,139 @@ impl Session {
             if d.player == self.humain {
                 return Ok(());
             }
-            let i = self.bot.choose(&self.g, &d);
-            self.g
-                .apply(i)
-                .map_err(|e| format!("choix du bot refusé : {e:?}"))?;
-            self.coups.push(i as u32);
+            let Some(mut bot) = self.bot.take() else {
+                return Ok(()); // il réfléchit déjà
+            };
+            if self.suivi.is_some() && fab_ai::b2::cles_des_options(&self.g, &d).len() > 1 {
+                let g = self.g.clone();
+                self.reflexion = Some(std::thread::spawn(move || {
+                    let i = bot.choose(&g, &d);
+                    (bot, i)
+                }));
+                return Ok(());
+            }
+            let i = bot.choose(&self.g, &d);
+            self.bot = Some(bot);
+            self.appliquer_choix_du_bot(i)?;
         }
+    }
+
+    fn appliquer_choix_du_bot(&mut self, i: usize) -> Result<(), String> {
+        self.g
+            .apply(i)
+            .map_err(|e| format!("choix du bot refusé : {e:?}"))?;
+        self.coups.push(i as u32);
+        Ok(())
+    }
+
+    /// Numéro du film (change à chaque coup rejoué par la page).
+    pub fn film_no(&self) -> u64 {
+        self.film_no
+    }
+
+    /// Le bot réfléchit-il en ce moment (niveau réfléchi) ?
+    pub fn reflechit(&self) -> bool {
+        self.reflexion.is_some()
+    }
+
+    /// Si le bot a fini de réfléchir, applique son choix et continue la
+    /// partie (le bot peut se remettre à réfléchir à la décision suivante).
+    /// Avec `attendre`, attend la fin de chaque réflexion (tests, interface
+    /// sans page). Renvoie `true` si quelque chose a changé ; le film
+    /// recommence alors à ce coup du bot.
+    pub fn poursuivre(&mut self, attendre: bool) -> Result<bool, String> {
+        let mut change = false;
+        while let Some(fil) = self.reflexion.take() {
+            if !attendre && !fil.is_finished() {
+                self.reflexion = Some(fil);
+                break;
+            }
+            let (bot, i) = fil
+                .join()
+                .map_err(|_| "le bot s'est arrêté pendant sa réflexion".to_string())?;
+            self.bot = Some(bot);
+            if !change {
+                self.film.clear();
+                self.film_no += 1;
+                change = true;
+            }
+            self.appliquer_choix_du_bot(i)?;
+            self.avancer()?;
+        }
+        Ok(change)
+    }
+
+    /// « Joue maintenant » : le bot arrête de réfléchir et joue le meilleur
+    /// choix trouvé (appliqué au prochain [`Session::poursuivre`]).
+    pub fn jouer_maintenant(&self) -> bool {
+        let en_cours = self.reflexion.as_ref().is_some_and(|f| !f.is_finished());
+        match (&self.suivi, en_cours) {
+            (Some(s), true) => {
+                s.jouer_maintenant();
+                true
+            }
+            _ => false,
+        }
+    }
+
+    /// Arrête la réflexion en cours sans appliquer son choix (annulation,
+    /// partie abandonnée).
+    fn interrompre(&mut self) {
+        if let Some(fil) = self.reflexion.take() {
+            if let Some(s) = &self.suivi {
+                s.arreter_tout();
+            }
+            if let Ok((bot, _)) = fil.join() {
+                self.bot = Some(bot);
+            }
+            if let Some(s) = &self.suivi {
+                s.reprendre();
+            }
+        }
+    }
+
+    /// L'avancement de la réflexion, vu par l'humain : temps écoulé et
+    /// prévu, et les options préférées du bot avec ses chances estimées
+    /// (une option sur une carte cachée n'est pas nommée). `Null` si le bot
+    /// ne réfléchit pas.
+    pub fn reflexion_json(&self) -> Value {
+        let (Some(suivi), true) = (&self.suivi, self.reflexion.is_some()) else {
+            return Value::Null;
+        };
+        let mut p = suivi.progression();
+        if !p.en_cours {
+            // Le fil vient d'être lancé : ce sont encore les chiffres de la
+            // réflexion précédente.
+            p = fab_ai::reflechi::Progression::default();
+        }
+        let g = &self.g;
+        let options: Vec<Value> = match g.pending_decision() {
+            Some(d) => p
+                .options
+                .iter()
+                .take(3)
+                .filter_map(|o| {
+                    let c = *d.options.get(o.index)?;
+                    Some(json!({
+                        "texte": option_vue_par(g, self.humain, d, c),
+                        "chances": (o.chances * 100.0).round(),
+                        "visites": o.visites,
+                    }))
+                })
+                .collect(),
+            None => Vec::new(),
+        };
+        json!({
+            "en_cours": true,
+            "ecoule_ms": p.ecoule.as_millis() as u64,
+            "prevu_ms": p.prevu.as_millis() as u64,
+            "iterations": p.iterations,
+            "fils": p.fils,
+            // Ce qu'il reste dans la banque de temps de la partie (null :
+            // pas de banque).
+            "banque_ms": p.banque.map(|b| b.as_millis() as u64),
+            "options": options,
+        })
     }
 
     /// L'humain choisit l'option `i` (à partir de 0).
@@ -502,6 +656,10 @@ impl Session {
     /// Annule le dernier choix de l'humain (et les réponses du bot qui ont
     /// suivi). `false` : rien à annuler.
     pub fn annuler(&mut self) -> bool {
+        if self.historique.is_empty() {
+            return false; // la réflexion éventuelle du bot continue
+        }
+        self.interrompre();
         match self.historique.undo() {
             Some(avant) => {
                 self.g = avant.g;
@@ -612,6 +770,7 @@ impl Session {
                 "blocs_autres": self.stats.blocs_autres,
             },
             "annulables": self.historique.len(),
+            "reflexion": self.reflexion_json(),
             "fini": g.is_over(),
             "resultat": if g.is_over() { Some(vue::resultat(g, h)) } else { None },
             "journal": journal,
@@ -762,6 +921,35 @@ fn effets(g: &GameState, p: PlayerId) -> Vec<String> {
         }
     }
     v
+}
+
+/// Le texte d'une option du bot montré à l'humain : une option qui porte
+/// sur une carte qu'il ne peut pas voir (main, arsenal du bot) ne la nomme
+/// pas.
+fn option_vue_par(g: &GameState, viewer: PlayerId, d: &fab_engine::Decision, c: Choice) -> String {
+    let sur_un_objet = matches!(
+        c,
+        Choice::Play(_)
+            | Choice::Activate(..)
+            | Choice::Pitch(_)
+            | Choice::Defend(_)
+            | Choice::Arsenal(_)
+            | Choice::PitchToBottom(_)
+            | Choice::Object(_)
+            | Choice::Target(Target::Object(_))
+    );
+    if sur_un_objet && carte_de_l_option(g, viewer, c).is_none() {
+        return match c {
+            Choice::Play(_) => "jouer une carte cachée",
+            Choice::Pitch(_) => "pitcher une carte cachée",
+            Choice::Defend(_) => "défendre avec une carte cachée",
+            Choice::Arsenal(_) => "mettre une carte en arsenal",
+            Choice::PitchToBottom(_) => "remettre une carte sous le deck",
+            _ => "une carte cachée",
+        }
+        .into();
+    }
+    vue::option(g, d, c)
 }
 
 /// La carte concernée par une option, si l'humain peut la voir : cliquer

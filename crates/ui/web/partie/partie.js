@@ -412,7 +412,10 @@ const botAuHasard = new Set(); // matchs lancés avec « Deck du bot : Au hasard
 
 const NIVEAUX_BOT = [
   ["b0", "Niveau 0 (hasard)"], ["b1", "Niveau 1 (règles fixes)"], ["b2", "Niveau 2 (réfléchit)"],
-  ["b3", "Niveau 3 (évaluation apprise)"], ["b2-500ms", "Niveau 2, ½ s par décision"], ["b2-1000", "Niveau 2, 1 000 essais"],
+  ["b3", "Niveau 3 (évaluation apprise)"], ["reflechi-partie-5m", "Réfléchi, 5 min pour la partie"],
+  ["reflechi-partie-10m", "Réfléchi, 10 min pour la partie"], ["reflechi-partie-15m", "Réfléchi, 15 min pour la partie"],
+  ["reflechi", "Réfléchi, jusqu'à 2 min par décision"],
+  ["b2-500ms", "Niveau 2, ½ s par décision"], ["b2-1000", "Niveau 2, 1 000 essais"],
 ];
 
 function preparation(bouge) {
@@ -997,6 +1000,7 @@ function ruban() {
   boutonsRuban = [];
   const d = etat.decision;
   if (etat.fini) { q.innerHTML = html(etat.resultat || "Partie terminée."); return; }
+  if (!d && etat.reflexion) { jaugeReflexion(q, o); return; }
   if (!d) { q.innerHTML = '<span class="thinking">Le bot joue…</span>'; return; }
   const sp = () => o.appendChild(el("span", "sp"));
   const passe = d.options.find(x => x.passer);
@@ -1082,6 +1086,60 @@ function ruban() {
     if (ordre.children.length) o.appendChild(ordre);
   }
   d.options.forEach((x, n) => o.appendChild(bouton(x.texte, () => choisir(x.i), { principal: n === 0 && !x.passer, discret: x.passer, i: x.i, carte: x.carte })));
+}
+
+// ---------- réflexion du bot (niveau réfléchi) ----------
+// Le serveur fait réfléchir le bot dans un fil à part ; la page demande
+// l'avancement 4 fois par seconde (GET /api/reflexion) et montre une jauge
+// (temps écoulé sur le temps prévu), l'option préférée pour l'instant
+// (une carte cachée n'est pas nommée) et « Joue maintenant ». Quand le
+// coup du bot est joué (film_no change), on recharge l'état : le film le
+// rejoue.
+let suiviReflexion = null;
+const duree = (ms) => ms >= 60000 ? `${Math.floor(ms / 60000)} min ${String(Math.floor(ms % 60000 / 1000)).padStart(2, "0")} s` : `${(ms / 1000).toFixed(ms < 10000 ? 1 : 0)} s`;
+function jaugeReflexion(q, o) {
+  q.replaceChildren();
+  const j = el("div", "reflexion");
+  j.append(el("span", "thinking", "Le bot réfléchit…"), el("span", "reflexion-temps"));
+  const barre = el("div", "reflexion-barre");
+  barre.appendChild(el("div", "reflexion-plein"));
+  j.append(barre, el("div", "reflexion-pref"));
+  q.appendChild(j);
+  const b = bouton("Joue maintenant", jouerMaintenant, { principal: true });
+  b.id = "b-joue-maintenant";
+  b.title = "Le bot arrête de réfléchir et joue le meilleur coup trouvé jusqu'ici";
+  o.appendChild(b);
+  majReflexion(etat.reflexion);
+  if (!suiviReflexion) suiviReflexion = setTimeout(suivreReflexion, 250);
+}
+function majReflexion(r) {
+  const j = document.querySelector("#question .reflexion");
+  if (!j || !r) return;
+  const pct = r.prevu_ms ? Math.min(100, 100 * r.ecoule_ms / r.prevu_ms) : 0;
+  j.querySelector(".reflexion-plein").style.width = pct + "%";
+  const banque = r.banque_ms != null ? ` · banque : ${duree(r.banque_ms)}` : "";
+  j.querySelector(".reflexion-temps").textContent = (r.prevu_ms ? `${duree(r.ecoule_ms)} sur ${duree(r.prevu_ms)} au plus` : "") + banque;
+  const p = (r.options || [])[0];
+  const essais = r.iterations ? ` · ${r.iterations.toLocaleString("fr-FR")} parties imaginées sur ${r.fils} cœurs` : "";
+  j.querySelector(".reflexion-pref").innerHTML = p
+    ? `Préfère pour l'instant : <b>${html(p.texte)}</b> (chances estimées ${p.chances} %)${essais}`
+    : essais.slice(3);
+}
+async function suivreReflexion() {
+  suiviReflexion = null;
+  if (!etat || !etat.reflexion) return;
+  const encore = () => { suiviReflexion = setTimeout(suivreReflexion, 250); };
+  let v = null;
+  try { v = await api("GET", "/api/reflexion"); } catch (e) { encore(); return; }
+  if (v.film_no === etat.film_no && v.reflexion) { etat.reflexion = v.reflexion; majReflexion(v.reflexion); encore(); return; }
+  // Le bot a joué : l'état complet (avec le film de son coup).
+  if (occupe) { encore(); return; }
+  action("GET", "/api/etat");
+}
+async function jouerMaintenant() {
+  const b = $("b-joue-maintenant");
+  if (b) { b.disabled = true; b.textContent = "Il joue…"; }
+  try { await api("POST", "/api/joue-maintenant"); } catch (e) { $("erreur").textContent = e.message; }
 }
 
 // Journal (Arsenal JS) : une ligne de titre par tour, collé en bas tant
@@ -1211,7 +1269,7 @@ async function preparerDialogue() {
   };
   remplir(f.deck);
   remplir(f.bot);
-  remplir(f.niveau, [...v.niveaux, "b2-500ms", "b2-1000"]);
+  remplir(f.niveau, [...v.niveaux, "reflechi-partie-5m", "reflechi-partie-10m", "reflechi-partie-15m", "reflechi", "b2-500ms", "b2-1000"]);
 }
 
 async function ouvrirNouveau() {

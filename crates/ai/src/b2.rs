@@ -340,20 +340,11 @@ impl Agent for IsmctsAgent {
         if decision.options.len() <= 1 {
             return 0;
         }
-        let mut cles = Vec::new();
-        options_par_cle(state, decision, &mut cles);
+        let cles = cles_des_options(state, decision);
         if cles.len() == 1 {
             return cles[0].1;
         }
-        self.recherches += 1;
-        if let Some(m) = self.reglages.modele {
-            let adresse = std::sync::Arc::as_ptr(&state.db) as usize;
-            if self.evaluation.as_ref().is_none_or(|(a, _)| *a != adresse) {
-                self.evaluation = Some((adresse, m.indexer(&state.db)));
-            }
-        }
-        self.arbre.clear();
-        self.arbre.push(Noeud::new(0, 0));
+        self.preparer(state);
         let debut = Instant::now();
         let moi = decision.player;
         let mut tampon = Vec::new();
@@ -366,27 +357,95 @@ impl Agent for IsmctsAgent {
             }
             self.iteration(state, moi, &mut tampon);
         }
-        // L'option de la racine la plus visitée (à égalité : meilleur score).
-        let racine = &self.arbre[0];
-        let mut meilleur: Option<(u32, f32, usize)> = None;
-        for &(k, i) in &cles {
-            if let Some(&e) = racine
-                .enfants
-                .iter()
-                .find(|&&e| self.arbre[e as usize].cle == k)
-            {
-                let n = &self.arbre[e as usize];
-                let moy = n.gains / n.visites.max(1) as f32;
-                if meilleur.is_none_or(|(v, m, _)| n.visites > v || (n.visites == v && moy > m)) {
-                    meilleur = Some((n.visites, moy, i));
-                }
-            }
-        }
-        match meilleur {
-            Some((_, _, i)) => i,
+        match meilleure_option(&self.racine(&cles), &cles) {
+            Some(i) => i,
             None => self.b1.choose(state, decision),
         }
     }
+}
+
+/// Statistiques d'une option de la racine après une recherche.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct StatOption {
+    /// Nombre de parties simulées passées par cette option.
+    pub visites: u32,
+    /// Somme des résultats, du point de vue du joueur qui décide.
+    pub gains: f32,
+}
+
+impl IsmctsAgent {
+    /// Prépare une nouvelle recherche sur `state` : arbre vide, évaluation
+    /// de B3 rangée pour la base de cartes de la partie. Sert à la recherche
+    /// découpée en morceaux du niveau réfléchi ([`crate::reflechi`]) ;
+    /// `choose` fait la même chose d'un bloc.
+    pub fn preparer(&mut self, state: &GameState) {
+        self.recherches += 1;
+        if let Some(m) = self.reglages.modele {
+            let adresse = std::sync::Arc::as_ptr(&state.db) as usize;
+            if self.evaluation.as_ref().is_none_or(|(a, _)| *a != adresse) {
+                self.evaluation = Some((adresse, m.indexer(&state.db)));
+            }
+        }
+        self.arbre.clear();
+        self.arbre.push(Noeud::new(0, 0));
+    }
+
+    /// Fait `n` itérations de plus sur la recherche préparée par
+    /// [`IsmctsAgent::preparer`] (pour le joueur `moi`).
+    pub fn iterer(&mut self, state: &GameState, moi: PlayerId, n: u32) {
+        let mut tampon = Vec::new();
+        for _ in 0..n {
+            self.iteration(state, moi, &mut tampon);
+        }
+    }
+
+    /// Statistiques de chaque option de `cles` ([`cles_des_options`]) à la
+    /// racine de la recherche en cours (zéro si jamais essayée).
+    pub fn racine(&self, cles: &[(u64, usize)]) -> Vec<StatOption> {
+        let racine = &self.arbre[0];
+        cles.iter()
+            .map(|&(k, _)| {
+                racine
+                    .enfants
+                    .iter()
+                    .find(|&&e| self.arbre[e as usize].cle == k)
+                    .map(|&e| {
+                        let n = &self.arbre[e as usize];
+                        StatOption {
+                            visites: n.visites,
+                            gains: n.gains,
+                        }
+                    })
+                    .unwrap_or_default()
+            })
+            .collect()
+    }
+}
+
+/// L'option choisie après une recherche : la plus visitée (à égalité :
+/// meilleur score moyen) ; `None` si aucune n'a été essayée. `stats` est
+/// dans l'ordre de `cles`.
+pub fn meilleure_option(stats: &[StatOption], cles: &[(u64, usize)]) -> Option<usize> {
+    let mut meilleur: Option<(u32, f32, usize)> = None;
+    for (n, &(_, i)) in stats.iter().zip(cles) {
+        if n.visites == 0 {
+            continue;
+        }
+        let moy = n.gains / n.visites as f32;
+        if meilleur.is_none_or(|(v, m, _)| n.visites > v || (n.visites == v && moy > m)) {
+            meilleur = Some((n.visites, moy, i));
+        }
+    }
+    meilleur.map(|(_, _, i)| i)
+}
+
+/// Les options de `d` qui comptent vraiment : une par clé (deux exemplaires
+/// identiques en main n'en font qu'une), avec la clé et l'index de la
+/// première option de cette clé.
+pub fn cles_des_options(g: &GameState, d: &Decision) -> Vec<(u64, usize)> {
+    let mut cles = Vec::new();
+    options_par_cle(g, d, &mut cles);
+    cles
 }
 
 /// Estimation du résultat d'une partie simulée arrêtée avant la fin, pour le

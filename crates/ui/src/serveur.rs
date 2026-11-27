@@ -13,6 +13,8 @@
 //! | `GET /outils/proxies-de-rathe.html` | l'outil d'impression complet, s'il est dans `data/outils/` |
 //! | `GET /api/etat` | l'état vu par l'humain (JSON) |
 //! | `GET /api/decks` | decks et niveaux de bot proposés |
+//! | `GET /api/reflexion` | avancement de la réflexion du bot (niveau réfléchi) : `null` s'il ne réfléchit pas |
+//! | `POST /api/joue-maintenant` | le bot arrête de réfléchir et joue le meilleur choix trouvé |
 //! | `GET /api/carte?id=12` | fiche et texte officiel de la carte `[12]` |
 //! | `POST /api/choix?i=3` | choisir l'option 3 (à partir de 0) |
 //! | `POST /api/choix-cartes?cartes=12,15&passer=1` | plusieurs choix d'un coup (défense préparée…), annulés ensemble |
@@ -146,8 +148,19 @@ pub fn repondre(methode: &str, requete: &str, etat: &mut Etat) -> Reponse {
 /// des decks maison.
 pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mut Etat) -> Reponse {
     let (chemin, ps) = parametres(requete);
+    // Le niveau réfléchi réfléchit dans un fil à part : son choix est
+    // appliqué à la première requête qui suit la fin de sa réflexion.
+    if let Some(m) = etat.partie.as_mut() {
+        if let Some(s) = m.session.as_mut() {
+            match s.poursuivre(false) {
+                Ok(true) => m.apres_coup(),
+                Ok(false) => {}
+                Err(e) => return Reponse::erreur(500, e),
+            }
+        }
+    }
     let param = |k: &str| ps.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone());
-    let lot = crate::api_decks::repondre(methode, chemin, &param, corps)
+    let lot = crate::api_decks::repondre(methode, chemin, &param, corps, etat.textes.as_ref())
         .or_else(|| crate::api_tournoi::repondre(methode, chemin, &param))
         .or_else(|| crate::api_apprendre::repondre(methode, chemin, &param, etat.textes.as_ref()));
     if let Some((code, v)) = lot {
@@ -172,6 +185,22 @@ pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mu
             Some(m) => Reponse::json(m.etat()),
             None => Reponse::json(json!({ "aucune_partie": true })),
         },
+        ("GET", "/api/reflexion") => {
+            let s = etat.partie.as_ref().and_then(|m| m.session.as_ref());
+            Reponse::json(json!({
+                "reflexion": s.map_or(Value::Null, |s| s.reflexion_json()),
+                // Change quand le bot a joué : la page recharge alors l'état.
+                "film_no": s.map(|s| s.film_no()),
+            }))
+        }
+        ("POST", "/api/joue-maintenant") => {
+            let ok = etat
+                .partie
+                .as_ref()
+                .and_then(|m| m.session.as_ref())
+                .is_some_and(|s| s.jouer_maintenant());
+            Reponse::json(json!({ "arrete": ok }))
+        }
         ("GET", "/api/carte") => {
             let Some(id) = param("id").and_then(|v| v.parse::<u32>().ok()) else {
                 return Reponse::erreur(400, "paramètre id manquant");
