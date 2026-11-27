@@ -672,7 +672,37 @@ impl GameState {
                     } else {
                         1
                     };
-                    let options = (0..=(spare / per_x).min(20) as u8)
+                    // CR 5.1.3a puis 5.1.4 : la cible se déclare après X ; un X
+                    // sans cible légale rendrait l'activation illégale, il n'est
+                    // donc pas proposé (Beckoning Haunt, règle confirmée par le
+                    // propriétaire le 2026-11-27).
+                    let specs = if activated_x > 0 {
+                        def.activated[match kind {
+                            LayerKind::Activated(i) => i as usize,
+                            _ => 0,
+                        }]
+                        .targets
+                        .clone()
+                    } else {
+                        def.targets.clone()
+                    };
+                    let base = (*self.top_layer().ctx).clone();
+                    // Les cibles d'une carte à modes dépendent du mode, choisi
+                    // après X : pas de filtre dans ce cas.
+                    let filtrer = activated_x > 0 || def.modes.is_empty();
+                    let toutes: Vec<u8> = (0..=(spare / per_x).min(20) as u8).collect();
+                    let legales: Vec<u8> = toutes
+                        .iter()
+                        .copied()
+                        .filter(|&x| {
+                            !filtrer || {
+                                let ctx = Ctx { x, ..base.clone() };
+                                self.targets_available(&specs, &ctx)
+                            }
+                        })
+                        .collect();
+                    let options = if legales.is_empty() { toutes } else { legales }
+                        .into_iter()
                         .map(Choice::Number)
                         .collect();
                     self.pending = Some(Decision {

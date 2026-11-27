@@ -28,5 +28,15 @@ Agent : Claude Code. Branche : `claude/project-thread-v8uk72` (reprend
 
 ## Pas fait
 - Pas de nouveau tournoi Elo complet (`docs/bots.md` garde les chiffres à 9 decks).
-- Point de règle ouvert inchangé : Beckoning Haunt, X sans cible légale.
 - Les 24 cartes restent `Tested` : validation par le propriétaire en jouant le deck.
+
+## Complément : règle de Beckoning Haunt (réponse du propriétaire)
+- Sans aura de coût X au cimetière, l'activation avec ce X est illégale : le
+  moteur ne propose plus que les X qui ont une cible (`Task::PlayX`, CR 5.1.3a
+  puis 5.1.4 ; vaut pour toute capacité ou carte à X sans modes).
+- Si l'aura quitte le cimetière avant la résolution : coûts payés, sans effet
+  (déjà le cas, test ajouté).
+- Tests : `beckoning_haunt_x_sans_aura_de_ce_cout_n_est_pas_propose` (échouait
+  avant le correctif), `beckoning_haunt_cible_partie_avant_la_resolution_couts_payes_sans_effet`.
+  Tous les tests verts ; 100 000 parties Aurora contre Ira et un tournoi B1/B0
+  de 50 parties par paire : 0 erreur.
