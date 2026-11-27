@@ -1914,8 +1914,8 @@ fn entwine_lightning_sans_carte_lightning_en_main_pas_de_question() {
     assert_eq!(t.g.player(P0).action_points, 0, "pas de go again");
 }
 
-// Arcanic Shockwave (CR 8.3.17) : « Lightning Fusion » ; le déclencheur
-// « when this attacks, if it was fused » n'est pas encore codé (TODO(règles)).
+// Arcanic Shockwave (CR 8.3.17) : « Lightning Fusion » ; « When this attacks,
+// if it was fused, deal 1 arcane damage to target hero. »
 
 /// Partie où P0 a `Arcanic Shockwave` (rouge) et `Cloud Cover` (Lightning) en main.
 fn arcanic_partie() -> Partie {
@@ -1930,6 +1930,29 @@ fn arcanic_lightning_fusion_propose_les_cartes_lightning_de_la_main() {
     jouer(&mut t, P0, "Arcanic Shockwave", R);
     assert_eq!(t.kind(), DecisionKind::Effect, "question de fusion");
     assert_eq!(t.options(), vec![Choice::Object(cloud), Choice::Pass]);
+}
+
+#[test]
+fn arcanic_fusionnee_quand_elle_attaque_inflige_1_degat_arcanique_a_un_heros() {
+    // « When this attacks, if it was fused, deal 1 arcane damage to target hero. »
+    let mut t = arcanic_partie();
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    jouer(&mut t, P0, "Arcanic Shockwave", R);
+    t.choisir(Choice::Object(cloud));
+    cibler_heros(&mut t, P1);
+    resoudre(&mut t);
+    assert!(arcanique_1_a(&t, P1), "1 dégât arcanique à P1");
+}
+
+#[test]
+fn arcanic_non_fusionnee_quand_elle_attaque_n_inflige_aucun_degat_arcanique() {
+    // Cas limite : sans fusion, le déclencheur ne se produit pas (pas de cible demandée).
+    let mut t = arcanic_partie();
+    jouer(&mut t, P0, "Arcanic Shockwave", R);
+    t.choisir(Choice::Pass);
+    resoudre(&mut t);
+    assert!(!arcanique_1_a(&t, P1), "pas de dégât arcanique");
+    assert!(!arcanique_1_a(&t, P0), "pas de dégât arcanique");
 }
 
 #[test]
@@ -1962,8 +1985,8 @@ fn arcanic_lightning_fusion_sans_carte_lightning_en_main_pas_de_question() {
 
 // Weave Lightning (bleu, rouge, jaune) : « The next Lightning or Elemental attack
 // action card you play this turn gets +1{p} (rouge : +3 ; jaune : +2). If it's
-// fused, it gets go again. Go again. » La partie « fused → go again » n'est pas
-// codée (TODO(règles) dans lightning.rs) : pas de test dessus.
+// fused, it gets go again. Go again. » La fusion est décidée après le jeu de la
+// carte suivante (CR 6.4.7b, exemple Weave Earth).
 
 fn weave_partie(main0: &[(&str, Option<Color>)]) -> Partie {
     partie_vraie([HEROS, HEROS], main0, RIEN, RIEN, RIEN, &[], &[])
@@ -2035,4 +2058,86 @@ fn weave_lightning_pas_pour_une_attaque_sans_lightning_ni_elemental() {
     let a = jouer(&mut t, P0, "Autumn's Touch", R);
     jusqua_active(&mut t, a);
     assert_eq!(t.g.power(a), 7, "Autumn's Touch (Runeblade) : pas de bonus");
+}
+
+/// P0 a Weave Lightning (rouge), Arcanic Shockwave (rouge) et Cloud Cover (Lightning).
+fn weave_fusion_partie() -> Partie {
+    weave_partie(&[
+        ("Weave Lightning", R),
+        ("Arcanic Shockwave", R),
+        ("Cloud Cover", R),
+    ])
+}
+
+#[test]
+fn weave_lightning_prochaine_attaque_fusionnee_gagne_go_again_et_le_bonus() {
+    // « If it's fused, it gets go again. » : la fusion est choisie après le jeu.
+    let mut t = weave_fusion_partie();
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    jouer(&mut t, P0, "Weave Lightning", R);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Arcanic Shockwave", R);
+    t.choisir(Choice::Object(cloud));
+    assert!(
+        t.g.keywords(a).has(Keywords::GO_AGAIN),
+        "fusionnée : go again"
+    );
+    assert_eq!(t.g.power(a), 4 + 3, "le bonus +3 s'applique aussi");
+}
+
+#[test]
+fn weave_lightning_prochaine_attaque_non_fusionnee_n_a_pas_go_again() {
+    // Cas limite : fusion refusée, le bonus de puissance seul s'applique.
+    let mut t = weave_fusion_partie();
+    jouer(&mut t, P0, "Weave Lightning", R);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Arcanic Shockwave", R);
+    t.choisir(Choice::Pass);
+    assert!(
+        !t.g.keywords(a).has(Keywords::GO_AGAIN),
+        "pas fusionnée : pas de go again"
+    );
+    assert_eq!(t.g.power(a), 4 + 3, "bonus +3");
+}
+
+#[test]
+fn weave_lightning_attaque_sans_fusion_possible_n_a_pas_go_again() {
+    // Cas limite : une attaque Lightning sans « Lightning Fusion » n'est jamais fusionnée.
+    let mut t = weave_partie(&[
+        ("Weave Lightning", R),
+        ("Lightning Surge", R),
+        ("Cloud Cover", R),
+    ]);
+    jouer(&mut t, P0, "Weave Lightning", R);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Lightning Surge", R);
+    jusqua_active(&mut t, a);
+    assert!(!t.g.keywords(a).has(Keywords::GO_AGAIN), "pas de go again");
+    assert_eq!(t.g.power(a), 4 + 3, "bonus +3");
+}
+
+#[test]
+fn weave_lightning_go_again_conditionnel_n_est_pas_garde_pour_une_autre_carte() {
+    // Cas limite : l'effet est consommé par la première attaque ; une seconde
+    // attaque fusionnée n'en profite pas (seul son propre go again éventuel).
+    let mut t = weave_partie(&[
+        ("Weave Lightning", R),
+        ("Arcanic Shockwave", R),
+        ("Arcanic Shockwave", R),
+        ("Cloud Cover", R),
+    ]);
+    jouer(&mut t, P0, "Weave Lightning", R);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Arcanic Shockwave", R);
+    t.choisir(Choice::Pass);
+    assert!(!t.g.keywords(a).has(Keywords::GO_AGAIN));
+    jusqua_active(&mut t, a);
+    resoudre_chaine(&mut t);
+    let b = jouer(&mut t, P0, "Arcanic Shockwave", R);
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    t.choisir(Choice::Object(cloud));
+    assert!(
+        !t.g.keywords(b).has(Keywords::GO_AGAIN),
+        "Weave déjà consommé"
+    );
 }

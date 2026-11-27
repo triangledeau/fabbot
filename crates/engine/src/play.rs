@@ -546,6 +546,7 @@ impl GameState {
                 activations: [0; 4],
                 life_delta: 0,
                 life_counters: 0,
+                fused: false,
             });
             let proxy = ObjectId(self.objects.len() as u32 - 1);
             // Numéro de cette attaque parmi celles de l'arme ce tour.

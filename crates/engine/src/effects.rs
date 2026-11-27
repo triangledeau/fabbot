@@ -613,6 +613,7 @@ impl GameState {
             activations: [0; 4],
             life_delta: 0,
             life_counters: 0,
+            fused: false,
         });
         let id = ObjectId(self.objects.len() as u32 - 1);
         if !self.db.get(card).triggers.is_empty() {
@@ -681,7 +682,39 @@ impl GameState {
                 target,
                 delta,
                 until,
+                if_fused: false,
             });
+        }
+    }
+
+    /// « If it's fused » : `true` si la carte `id` a payé « Lightning Fusion »
+    /// (CR 8.3.17a). Lisible par les déclencheurs (« when this attacks, if it
+    /// was fused »).
+    pub fn is_fused(&self, id: ObjectId) -> bool {
+        self.obj(id).fused
+    }
+
+    /// CR 8.3.17a : la carte `card` est fusionnée.
+    pub fn set_fused(&mut self, card: ObjRef) {
+        if self.is_current(card) {
+            self.obj_mut(card.id).fused = true;
+        }
+    }
+
+    /// « The next [attaque filtrée] you play this turn … If it's fused, it
+    /// gets [delta] » : comme [`Self::next_attack`], mais le bonus n'agit que
+    /// si l'attaque est fusionnée (CR 8.3.17a). La fusion est décidée après
+    /// l'annonce : on pose un modificateur conditionnel (CR 6.4.7b, exemple
+    /// Weave Earth).
+    pub fn next_attack_if_fused(
+        &mut self,
+        p: PlayerId,
+        filter: Option<fn(&GameState, ObjectId) -> bool>,
+        delta: Delta,
+    ) {
+        self.next_attack(p, filter, delta, true);
+        if let Some(e) = self.next_attack_effects.last_mut() {
+            e.if_fused = true;
         }
     }
 
@@ -702,6 +735,7 @@ impl GameState {
             weapon: None,
             combat_chain: false,
             at_attack: false,
+            if_fused: false,
         });
     }
 
@@ -724,6 +758,7 @@ impl GameState {
             weapon: None,
             combat_chain: true,
             at_attack: false,
+            if_fused: false,
         });
     }
 
@@ -746,6 +781,7 @@ impl GameState {
             weapon: None,
             combat_chain: false,
             at_attack: false,
+            if_fused: false,
         });
     }
 
@@ -761,6 +797,7 @@ impl GameState {
             weapon: Some(weapon),
             combat_chain: false,
             at_attack: false,
+            if_fused: false,
         });
     }
 
@@ -1063,6 +1100,7 @@ impl GameState {
                     target: attack,
                     delta: e.delta,
                     until: Until::EndOfTurn,
+                    if_fused: e.if_fused,
                 });
             } else {
                 i += 1;

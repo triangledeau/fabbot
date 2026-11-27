@@ -861,10 +861,8 @@ pub fn add(db: &mut CardDb) {
     // « Lightning Fusion
     //   When this attacks, if it was fused, deal 1 arcane damage to target hero. »
     // CR 8.3.17 : la fusion est un coût d'effet optionnel (révéler une carte
-    // Lightning de la main). TODO(règles) : le déclencheur « when this attacks,
-    // if it was fused » n'est pas codé : le moteur ne garde pas l'état « fusionnée »
-    // jusqu'à la déclaration d'attaque (`ctx.optional_paid` n'est pas transmis
-    // aux déclencheurs). À faire quand le moteur le permettra.
+    // Lightning de la main) ; le moteur garde « fusionnée » sur l'objet
+    // (`GameState::is_fused`), lisible par le déclencheur d'attaque.
     for (c, p) in [(Color::Blue, 2), (Color::Red, 4), (Color::Yellow, 3)] {
         let mut d = deck_card(
             "Arcanic Shockwave",
@@ -875,7 +873,18 @@ pub fn add(db: &mut CardDb) {
             Some(p),
             Some(3),
         );
+        d.arcane_damage = true;
         d.effect_cost = lightning_fusion();
+        d.triggers = vec![TriggerDef {
+            when: |g, me, e| super::generic::when_this_attacks(g, me, e) && g.is_fused(me),
+            anywhere: false,
+            targets: vec![super::wizard::TARGET_HERO],
+            script: vec![Op::Do(|g, c| {
+                if let Some(t) = c.target(0) {
+                    g.deal_damage_to(c.source_id(), c.controller, t, 1, true);
+                }
+            })],
+        }];
         db.add(d);
     }
 
@@ -883,12 +892,8 @@ pub fn add(db: &mut CardDb) {
     // « The next Lightning or Elemental attack action card you play this turn
     //   gets +1{p} (rouge : +3 ; jaune : +2). If it's **fused**, it gets **go again**.
     //   **Go again** »
-    // TODO(règles) : « If it's fused, it gets go again » non codé. La fusion de la
-    // carte suivante est décidée au moment où elle est jouée, après que
-    // `apply_next_attack_effects` (play.rs) a appliqué le bonus de puissance. Le
-    // go again doit donc dépendre d'une décision future (CR 6.4.7b, exemple Weave
-    // Earth). Le moteur n'a pas de « prochaine attaque conditionnée à la fusion » :
-    // à faire quand le moteur le permettra.
+    // La fusion de la carte suivante est décidée après son jeu : le go again est
+    // un modificateur conditionnel `if_fused` (CR 8.3.17a, 6.4.7b, exemple Weave Earth).
     for c in COLORS {
         let mut d = deck_card(
             "Weave Lightning",
@@ -902,16 +907,13 @@ pub fn add(db: &mut CardDb) {
         d.keywords = Keywords::GO_AGAIN;
         d.resolve = vec![Op::Do(|g, c| {
             let n = by_color(g, c, [3, 2, 1]);
-            g.next_attack(
-                c.controller,
-                Some(|g, a| {
-                    is_attack_action_card(g, a)
-                        && (g.supertypes(a).has(Supertypes::LIGHTNING)
-                            || g.supertypes(a).has(Supertypes::ELEMENTAL))
-                }),
-                power(n),
-                true,
-            );
+            fn cible(g: &GameState, a: ObjectId) -> bool {
+                is_attack_action_card(g, a)
+                    && (g.supertypes(a).has(Supertypes::LIGHTNING)
+                        || g.supertypes(a).has(Supertypes::ELEMENTAL))
+            }
+            g.next_attack(c.controller, Some(cible), power(n), true);
+            g.next_attack_if_fused(c.controller, Some(cible), grant(Keywords::GO_AGAIN));
         })];
         db.add(d);
     }
@@ -947,6 +949,9 @@ pub(crate) fn lightning_fusion() -> Vec<Op> {
                     card: x,
                 });
                 c.optional_paid = true; // CR 8.3.17a : la carte est fusionnée.
+                if let Some(s) = c.source {
+                    g.set_fused(s);
+                }
             }
         }),
     ]

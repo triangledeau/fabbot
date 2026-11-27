@@ -40,6 +40,10 @@ pub struct Object {
     /// Compteurs +1{h} / -1{h} d'un allié (ex. Nekria) : ils modifient sa vie
     /// de base, y compris après la remise à zéro de fin de tour (CR 4.4.3a).
     pub life_counters: i8,
+    /// « Fused » (CR 8.3.17a) : la carte a payé « Lightning Fusion » en la
+    /// jouant. Vrai tant que l'objet est sur la pile ou dans l'arène ; remis à
+    /// faux quand il devient un nouvel objet (CR 3.0.9).
+    pub fused: bool,
 }
 
 impl Object {
@@ -229,6 +233,9 @@ pub struct Modifier {
     pub target: ObjRef,
     pub delta: Delta,
     pub until: Until,
+    /// L'effet ne compte que si la cible est « fused » (Weave Lightning :
+    /// « if it's fused, it gets go again »).
+    pub if_fused: bool,
 }
 
 /// « Votre prochaine attaque [qui …] ce tour gets … » (CR 1.8.10), en attente.
@@ -254,6 +261,9 @@ pub struct NextAttackEffect {
     /// est connue, et non à l'annonce de l'attaque. Le filtre peut alors lire
     /// le maillon actif.
     pub at_attack: bool,
+    /// Le bonus devient un [`Modifier`] `if_fused` (la fusion est décidée
+    /// après, pendant le paiement des coûts d'effet ; CR 6.4.7b, Weave Earth).
+    pub if_fused: bool,
 }
 
 /// « Your next [carte filtrée] this turn costs {r} less to play » (ex. le
@@ -795,6 +805,7 @@ impl GameState {
             o.activations = [0; 4];
             o.life_delta = 0;
             o.life_counters = 0;
+            o.fused = false;
         }
         o.zone = zone;
         o.face_down = matches!(zone, Zone::Deck | Zone::Hand | Zone::Arsenal);
@@ -950,7 +961,7 @@ impl GameState {
             d.loses = d.loses | x.loses;
         };
         for m in &self.modifiers {
-            if m.target == r {
+            if m.target == r && (!m.if_fused || o.fused) {
                 add(m.delta);
             }
         }

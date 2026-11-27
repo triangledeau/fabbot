@@ -76,6 +76,7 @@ impl GameState {
                     activations: [0; 4],
                     life_delta: 0,
                     life_counters: 0,
+                    fused: false,
                 });
                 ObjectId(objects.len() as u32 - 1)
             };
