@@ -138,12 +138,54 @@ de Surface.
 | 1 | **Épreuves A et B** (puzzles exacts du tour, banque de positions, regret contre bot lent) | sans mesure, on ne sait pas où le bot perd ni s'il progresse | 2 | 1 nuit | aucun directement ; donne la liste des défauts |
 | 2 | **Planifier son tour en entier** : le solveur exact de l'épreuve A sert aussi à jouer (B3 choisit la meilleure séquence du tour au lieu d'une décision à la fois) | c'est le cœur du jeu à haut niveau en FaB (ordre des attaques, go again, pitch, garder une carte pour bloquer ou pour l'arsenal) ; règle aussi une partie du pitch stacking d'Iyslander | 2 à 3 | quelques nuits de mesures | le plus grand gain probable : la recherche actuelle ne fait que 4 tours avec B1 |
 | 3 | **Remplacer B1 dans les parties simulées** par une politique apprise en imitant B3 (on enregistre les choix de B3 en auto-jeu, on apprend à les prédire ; aussi rapide que B1) | faiblesse n° 1 : B3 ne peut pas voir plus loin que la qualité de B1 | 2 à 3 | 2 à 4 nuits (auto-jeu + apprentissage) | important : chaque correctif de B1 a déjà donné +5 à +20 points sur un deck |
-| 4 | **Courbe force / temps de réflexion** (300, 1 000, 3 000 itérations…) et réglage de la page : jouer contre le propriétaire avec 1 à 2 s par décision | gratuit à mesurer ; contre un humain, le bot a le temps | 0,5 | 1 nuit | à mesurer ; B2 passait de +122 à +283 Elo entre 30 et 300 itérations |
+| 4 | **Niveau « réfléchi »** (voir plus bas) : recherche sur les 12 threads, temps de réflexion selon la complexité de la position (jusqu'à quelques minutes par tour), courbe force / temps de réflexion | accepté par le propriétaire le 2026-11-27 : un humain aussi prend son temps ; c'est le levier le moins cher | 1 à 1,5 | 1 à 2 nuits | à mesurer ; B2 passait de +122 à +283 Elo entre 30 et 300 itérations, et un tour de quelques minutes donne 100 à 1 000 fois le budget actuel |
 | 5 | **Lire l'information montrée par l'adversaire** : main imaginée selon ce qu'il a bloqué, pitché, gardé ; card-pool pondéré par les listes du méta | un joueur de top 8 « lit » la main adverse | 1 à 2 | quelques heures | moyen |
 | 6 | **Decks faibles** : Levia (en cours dans un autre fil), Arakni (analyse comme celle d'Iyslander), Aurora (tables et poids à faire quand le deck passe dans `data/decks/`) | un deck à 11-20 % fausse toute la matrice et l'apprentissage | 1 par deck | 1 nuit par deck | fort sur ces decks |
 | 7 | **Évaluation plus riche** : paires de caractéristiques (« peut-il finir ce tour ? »), puis petit réseau de neurones sur processeur | la régression linéaire plafonne (+46, +14, −22) | 2 à 3 | plusieurs nuits | moyen, incertain |
 | 8 | **Épreuves C, D, E** (écran « position à juger », journal des matchs, B3 spécialisé) | le juge final est le propriétaire | 1 à 2 | 1 nuit | aucun directement |
 | 9 | **Side appris avec B3** au lieu de B1 (en partant de la table actuelle, sur les cartes qui changent vraiment le résultat) | la table actuelle reflète ce qui réussit à B1 | 1 | **coûteux** : refaire 20 000 parties par paire avec B3 prendrait des semaines ; version réduite (≈ 1 000 parties, 15 cartes en doute par paire) ≈ 4 à 6 nuits | faible à moyen |
+
+### Le niveau « réfléchi » (accord du propriétaire, 2026-11-27)
+
+Le propriétaire accepte un niveau de bot qui réfléchit **jusqu'à quelques
+minutes par tour**, selon la complexité de la position. Cela change la
+feuille de route sur cinq points.
+
+1. **Deux bots au lieu d'un.** Un **B3 rapide** (≈ 2,5 s par partie, comme
+   aujourd'hui) sert aux parties simulées, aux tournois et à
+   l'apprentissage. Un **niveau réfléchi** joue contre le propriétaire et
+   passe les épreuves. Tout ce qui améliore le bot rapide améliore aussi le
+   niveau réfléchi, puisque l'un fait les parties simulées de l'autre.
+2. **Le budget.** Aujourd'hui, une décision prend quelques millisecondes
+   (300 itérations). Sur les 12 threads de la Surface, une minute par
+   décision importante donne de l'ordre de **100 à 1 000 fois plus**
+   d'itérations (à mesurer). Le temps est réparti selon la complexité :
+   rien quand une seule option compte, quelques secondes pour un pitch
+   évident, une à quelques minutes pour un tour d'attaque à beaucoup de
+   séquences ou une défense contre une attaque mortelle.
+3. **Ce qui redevient possible** avec ce budget, et doit être remesuré :
+   un arbre plus profond (profondeur 2 ou 3, moins bon aujourd'hui faute
+   d'itérations), des parties simulées plus longues (jusqu'à la fin), et
+   surtout la **planification du tour entier** (chantier 2), qui peut
+   énumérer toutes les séquences même pour Ira. Le pitch stacking
+   d'Iyslander sur deux tours entre aussi dans ce budget.
+4. **La mesure coûte plus cher.** Une partie complète au niveau réfléchi
+   dure de 20 minutes à 1 heure : une nuit donne une dizaine de parties
+   seulement, trop peu pour un Elo. Le niveau réfléchi se mesure donc
+   **position par position** (épreuves A et B, sur des banques de positions
+   gardées), et par les parties contre le propriétaire (épreuve D). Le
+   « bot lent » de l'épreuve B doit alors réfléchir encore plus longtemps
+   (une nuit pour quelques centaines de positions).
+5. **Un nouveau levier : apprendre du niveau réfléchi.** La nuit, le niveau
+   réfléchi joue des positions ; ses choix servent à entraîner le bot
+   rapide (chantier 3 : imiter le niveau réfléchi plutôt que B3). C'est la
+   méthode d'AlphaZero, en version modeste, sur processeur. Le bot rapide
+   s'améliore, donc les parties simulées du niveau réfléchi aussi.
+
+Coût : +1 session environ (recherche sur plusieurs threads, temps selon la
+complexité, réglage dans la page et dans `fab-ui`) ; le calcul est local.
+Le niveau réfléchi passe dans l'étape « Mesurer », car il est le moins cher
+des gros leviers.
 
 À ne **pas** faire (déjà mesuré comme inutile) : double Ice Eternal, pitch
 stacking « simple » de B1, 4e génération de poids sur la même méthode,
@@ -153,11 +195,11 @@ parties simulées par B0, arbre de recherche plus profond avec B1.
 
 | Étape | Chantiers | Sessions | Calcul local | Point d'arrêt |
 |---|---|---|---|---|
-| **Mesurer** | 0, 1, 4 | ≈ 4 | 2 à 3 nuits | on connaît le taux de puzzles réussis et le regret par type de décision ; on décide la suite sur ces chiffres |
+| **Mesurer** | 0, 1, 4 | ≈ 4 à 5 | 2 à 3 nuits | on connaît le taux de puzzles réussis et le regret par type de décision ; on décide la suite sur ces chiffres |
 | **Gros leviers** | 2, 3 | ≈ 5 | 1 à 2 semaines de nuits | gain mesuré contre B3 actuel et sur les épreuves A/B |
 | **Finitions** | 5, 6, 7 | ≈ 5 à 7 | 1 à 2 semaines de nuits | matrice B3 contre B3 proche de la matrice réelle du propriétaire |
 | **Juger** | 8, puis 9 si besoin | ≈ 2 à 3 | 1 semaine de nuits | épreuves C, D, E atteintes |
-| **Total** | | **≈ 16 à 19 sessions** | **≈ 4 à 6 semaines de nuits sur la Surface** | |
+| **Total** | | **≈ 17 à 20 sessions** | **≈ 4 à 6 semaines de nuits sur la Surface** | |
 
 Repères : ces nombres sont des estimations, pas des mesures. La moitié du
 travail (étape « Mesurer ») sert à savoir si la suite est nécessaire telle

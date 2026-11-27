@@ -18,3 +18,8 @@ Agent : Claude, branche `claude/project-thread-s5ckuh`.
 Aucune nouvelle mesure : les chiffres viennent de `docs/bots.md` et de
 `docs/analyses/2026-11-26-iyslander-hala-ira-b3.md`. Les coûts sont des
 estimations, à refaire après l'étape « Mesurer ».
+
+## Mise à jour (même jour)
+Le propriétaire accepte un niveau de bot qui réfléchit jusqu'à quelques
+minutes par tour selon la complexité : ajouté (section « Le niveau
+réfléchi », chantier 4 élargi, total ≈ 17 à 20 sessions).
