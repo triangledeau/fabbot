@@ -1,0 +1,41 @@
+# AURORA — Sunday Showdown: Sydney 5th (Aurora)
+Hero: Aurora
+Class: Elemental Runeblade
+Source: Sunday Showdown: Sydney 5th (Aurora)
+
+Arena:
+1 Beckoning Haunt [Arms]
+1 Blade Beckoner Boots [Legs]
+1 Blossom of Spring [Chest]
+1 Flash of Brilliance [Head]
+1 Helm of Might and Magic [Head]
+1 Star Fall [Weapon]
+1 Twinkle Toes [Legs]
+
+Deck:
+1 Arcane Polarity (red)
+2 Arcanic Shockwave (red)
+2 Burn Up // Shock (red)
+2 Cloud Cover (red)
+2 Electrostatic Discharge (red)
+2 Entwine Lightning (red)
+2 Fyendal's Fighting Spirit (red)
+2 Harness Lightning (red)
+1 Jack Be Quick (red)
+2 Lightning Surge (red)
+2 Nimblism (red)
+2 Path of Same Ends (red)
+2 Ravenous Rabble (red)
+2 Rush of Power (red)
+2 Scar for a Scar (red)
+2 Second Strike (red)
+2 Sizzle (red)
+2 Snatch (red)
+2 Static Shock (red)
+2 Stinging Sprite (red)
+1 Visionary of Orbits (red)
+2 Weave Lightning (red)
+2 Quick Succession (yellow)
+2 Sigil of Voltaris (blue)
+2 Stinging Sprite (blue)
+1 Voltbound Duality (blue)

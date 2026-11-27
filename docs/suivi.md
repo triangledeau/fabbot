@@ -106,6 +106,10 @@ Mark of the Huntsman).
 les 25 cartes Warrior sont écrites en données (`crates/cards/cartes/warrior.cartes`)
 et réécrites en anglais pour vérification. Voir `docs/langage-cartes.md`.
 
+**Deck Aurora (2026-11-27)** : 24 cartes codées et testées (`real/lightning.rs`), deck dans
+`data/decks/en_cours/10_aurora.txt`. Haiku : 17 justes sur 24 ; Sonnet a repris les 7 autres.
+Voir `docs/journal/2026-11-27-encodage-aurora.md`.
+
 ## Questions ouvertes pour le propriétaire
 
 **Decks maison, classes et talents (réglé le 2026-11-26) :** règles
