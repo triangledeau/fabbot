@@ -57,7 +57,13 @@ html[data-vue="accueil"] #v-accueil, html[data-vue="partie"] #v-partie, html[dat
 .sym-i, .sym-c { width: auto; padding: 0 .25em; border: 1px solid var(--line); border-radius: 4px; font: 700 .72em/1.2 var(--f-num); color: var(--ink); }
 .sym-t { color: var(--ink); font-weight: 700; }
 
-/* Vrai dos de carte : s'il est posé dans data/outils/dos-de-carte.webp (hors
-   du dépôt public), cartes.js ajoute la classe vrai-dos et tous les dos
-   (deck, main du bot, cartes cachées) prennent l'image. Sinon, dos dessiné. */
-.vrai-dos .dos, .vrai-dos .carte.cachee, .vrai-dos .ap-c.cachee { background: url("/outils/dos-de-carte") center / cover no-repeat !important; color: transparent !important; }
+/* Dos de carte : le vrai dos officiel de Flesh and Blood partout où une carte
+   est de dos (deck, main du bot, cartes cachées, didacticiel). Trois couches,
+   de haut en bas : l'image locale data/outils/dos-de-carte.webp si elle est
+   posée (marche hors ligne), sinon l'image en ligne (la même que l'Arsenal JS),
+   et en dernier recours, sans réseau, le dos dessiné. */
+:root {
+  --dos-officiel: url("https://images.talishar.net/public/cardimages/english/CardBack.webp");
+  --dos-carte: url("/outils/dos-de-carte") center / 100% 100% no-repeat, var(--dos-officiel) center / 100% 100% no-repeat, radial-gradient(circle at 50% 50%, #7a2318 0 18%, #2a0f0c 19% 30%, #14100e 31%);
+}
+.dos, .carte.cachee, .ap-c.cachee { background: var(--dos-carte) !important; background-color: #14100e !important; border-color: #000 !important; color: transparent !important; }

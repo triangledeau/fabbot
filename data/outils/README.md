@@ -10,6 +10,8 @@ qu'ils embarquent une base de cartes (éditions, liens d'images).
   fabbot. Copier le fichier tel quel (celui à côté de l'Arsenal JS) ; le
   serveur pose lui-même le mode intégré.
 
-- `dos-de-carte.webp` (ou `.png`, `.jpg`) : le vrai dos des cartes Flesh and
-  Blood. S'il est ici, Arsenal l'affiche partout où une carte est de dos
-  (deck, main du bot, cartes cachées) ; sinon, un dos dessiné.
+- `dos-de-carte.webp` (ou `.png`, `.jpg`) : facultatif. Arsenal affiche
+  déjà le vrai dos des cartes Flesh and Blood partout où une carte est de dos
+  (deck, main du bot, cartes cachées, didacticiel), en le chargeant en ligne
+  comme les images des cartes. Une image posée ici passe avant (utile hors
+  ligne). Sans réseau et sans image ici : un dos dessiné.
