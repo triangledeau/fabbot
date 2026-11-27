@@ -37,6 +37,8 @@ pub static FICHIERS: &[Fichier] = &[
     // commun : images des cartes (lot 1)
     fichier!("commun/cartes.js", JS),
     fichier!("commun/logo_arsenal.webp", "image/webp"),
+    // commun : fonds illustrés, tirés au hasard à chaque page
+    fichier!("commun/fonds.js", JS),
     // accueil (lot 0)
     fichier!("accueil/accueil.css", CSS),
     fichier!("accueil/accueil.js", JS),

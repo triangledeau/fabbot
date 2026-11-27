@@ -23,6 +23,15 @@ couches : image locale `data/outils/dos-de-carte.*` si présente, sinon le dos
 officiel en ligne (même adresse que l'Arsenal JS), sinon le dos dessiné.
 L'ancien interrupteur `vrai-dos` de `cartes.js` est retiré.
 
+## Image haute définition
+
+L'image en ligne (Talishar) ne fait que 300 × 419 : trop floue selon Antoine.
+Dos officiel trouvé sur fabtcg.com (article « Backing Things Up », image
+« Official Card Back », 744 × 1040, soit 63 × 88 mm à 300 ppp, liseré noir
+compris : rien à rogner). Antoine l'a enregistrée ; convertie en WebP
+(190 Ko) et posée dans `data/outils/dos-de-carte.webp` sur la Surface (hors
+dépôt public). L'image en ligne ne sert plus que de secours.
+
 ## Non repris
 
 - Impression (outil simple et Proxies de Rathe) : les cartes à une face sont
