@@ -131,8 +131,15 @@
       tapis.querySelectorAll(".ap-zoom").forEach((x) => x.remove());
       const z = document.createElement("div"); z.className = "ap-zoom";
       const [cx, cy] = COINS[coin] || [50, 50];
-      z.innerHTML = `<div class="zc ct">${e.n.innerHTML}<div class="anneau" style="left:${cx}%;top:${cy}%"></div></div>
-        <div class="etiq" style="top:${12 + cy * 6.4}px">${icone(ICONE_COIN[coin], "grande")}<span>${esc(label || "")}</span></div>`;
+      // Carte agrandie (140×196 × 3.27) : à droite si le coin est à gauche, pour
+      // que l'étiquette et son trait pointent vers le bon coin.
+      const ZW = 458, ZH = 641, R = 49, gauche = cx < 50;
+      const L = gauche ? 700 : 230, rx = L + cx / 100 * ZW, ry = 40 + cy / 100 * ZH;
+      const bout = gauche ? rx - R : rx + R, fin = gauche ? bout - 80 : bout + 80;
+      const posEtiq = gauche ? `right:${1280 - fin}px` : `left:${fin}px`;
+      z.innerHTML = `<div class="zc ct" style="left:${L}px">${e.n.innerHTML}<div class="anneau" style="left:${cx}%;top:${cy}%"></div></div>
+        <div class="trait" style="left:${Math.min(bout, fin)}px;top:${ry - 1}px;width:80px"></div>
+        <div class="etiq${gauche ? " g" : ""}" style="${posEtiq};top:${ry - 25}px">${icone(ICONE_COIN[coin], "grande")}<span>${esc(label || "")}</span></div>`;
       z.querySelector(".pv")?.remove();
       tapis.appendChild(z);
       if (!vite) { z.getBoundingClientRect(); z.classList.add("ouvert"); await attendre(1400); } else z.classList.add("ouvert");
@@ -151,6 +158,7 @@
   // ——— Les actions animées des plans (lecons.js, champ `fait`) ———
   let main = 0, pitchs = 0, ressources = 0;
   const ACTIONS = {
+    vider: (t) => t.vider(),
     poser: (t, id, spec, z, o = {}) => t.creer(id, spec, z, null, o),
     dos: (t, id, z) => t.creer(id, null, z, null, { vite: true }),
     deplacer: (t, id, z) => t.placer(id, z),
@@ -418,7 +426,7 @@
       brancherNav(g);
       g.querySelector("#ap-recommencer")?.addEventListener("click", () => aller(k));
       if (ok) {
-        const r = document.createElement("div"); r.className = "ap-retour ok"; r.innerHTML = `<b>Réussi !</b> ${rendre(esc(sc.bravo(e)))}`;
+        const r = document.createElement("div"); r.className = "ap-retour ok"; r.innerHTML = `<b>Réussi !</b> ${rendre(esc(typeof sc.bravo === "function" ? sc.bravo(e) : sc.bravo))}`;
         opts.replaceWith(r);
       }
     };

@@ -95,9 +95,12 @@ html[data-vue="apprendre"] #v-apprendre { display: block; }
 .ap-zoom .anneau { position: absolute; width: 30px; height: 30px; translate: -50% -50%; border-radius: 50%; border: 2px solid var(--brass); box-shadow: 0 0 10px var(--brass), inset 0 0 8px rgb(255 216 74 / .6); opacity: 0; }
 .ap-zoom.ouvert .anneau { opacity: 1; animation: ap-anneau 1.2s ease-out .55s infinite; }
 @keyframes ap-anneau { 0% { scale: 1.6; opacity: 0; } 35% { scale: 1; opacity: 1; } 100% { scale: 1.25; opacity: .2; } }
-.ap-zoom .etiq { position: absolute; left: 740px; display: flex; align-items: center; gap: 14px; font-family: var(--f-display); font-weight: 800; font-size: 38px; color: #fff3c4; opacity: 0; transform: translateX(-30px); transition: opacity .4s .5s, transform .5s .5s; text-shadow: 0 2px 0 #000; }
+.ap-zoom .etiq { position: absolute; display: flex; align-items: center; gap: 14px; font-family: var(--f-display); font-weight: 800; font-size: 38px; color: #fff3c4; opacity: 0; transform: translateX(-30px); transition: opacity .4s .5s, transform .5s .5s; text-shadow: 0 2px 0 #000; }
 .ap-zoom.ouvert .etiq { opacity: 1; transform: none; }
-.ap-zoom .etiq::before { content: ""; position: absolute; right: 100%; top: 50%; width: 90px; height: 2px; margin-right: 12px; background: linear-gradient(90deg, transparent, var(--brass)); }
+.ap-zoom .etiq.g { transform: translateX(30px); flex-direction: row-reverse; }
+.ap-zoom.ouvert .etiq.g { transform: none; }
+.ap-zoom .trait { position: absolute; height: 2px; background: var(--brass); box-shadow: 0 0 8px var(--brass); opacity: 0; transition: opacity .4s .5s; }
+.ap-zoom.ouvert .trait { opacity: 1; }
 .ap-bulle { position: absolute; translate: -50% -50%; display: flex; align-items: center; gap: 4px; padding: 3px 10px 3px 4px; border-radius: 999px; background: #0b0f17; border: 2px solid var(--brass); font-family: var(--f-num); font-size: 1.4rem; z-index: 50; animation: ap-pop .4s cubic-bezier(.3,1.6,.5,1); box-shadow: 0 0 18px rgb(255 216 74 / .5); }
 .ap-bulle .ico { width: 30px; height: 30px; }
 @keyframes ap-pop { from { scale: 0; } }
