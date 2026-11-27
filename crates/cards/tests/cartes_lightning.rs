@@ -1816,3 +1816,71 @@ fn burn_up_shock_fusionnee_resout_shock_d_abord_une_seule_fois() {
     resoudre(&mut t);
     assert_eq!(t.vie(P1), 19, "un seul dégât de Shock");
 }
+
+// ---------------------------------------------------------------------------
+/// Une attaque : résout la chaîne de combat (go again est lu à la résolution).
+fn resoudre_chaine(t: &mut Partie) {
+    passer_jusqua_que(t, |t| {
+        t.g.stack.is_empty() && t.g.pending_triggers.is_empty() && !t.g.combat.open
+    });
+}
+
+// Entwine Lightning (CR 8.3.17) : « Lightning Fusion » ; « If this was fused,
+// it gets go again. »
+
+/// Partie où P0 a `Entwine Lightning` (rouge) et `Cloud Cover` (Lightning) en main.
+fn entwine_partie() -> Partie {
+    partie_cloud(&[("Entwine Lightning", R), ("Cloud Cover", R)])
+}
+
+#[test]
+fn entwine_lightning_fusion_propose_les_cartes_lightning_de_la_main() {
+    // « Lightning Fusion » : révéler une carte Lightning de la main, ou passer.
+    let mut t = entwine_partie();
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    jouer(&mut t, P0, "Entwine Lightning", R);
+    assert_eq!(t.kind(), DecisionKind::Effect, "question de fusion");
+    assert_eq!(t.options(), vec![Choice::Object(cloud), Choice::Pass]);
+}
+
+#[test]
+fn entwine_lightning_fusionnee_gagne_go_again() {
+    // « If this was fused, it gets go again. » : fusionnée, elle rend un point d'action.
+    let mut t = entwine_partie();
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    jouer(&mut t, P0, "Entwine Lightning", R);
+    t.choisir(Choice::Object(cloud));
+    resoudre_chaine(&mut t);
+    assert_eq!(t.g.player(P0).action_points, 1, "go again");
+}
+
+#[test]
+fn entwine_lightning_refuser_la_fusion_pas_de_go_again() {
+    // Sans fusion, pas de go again.
+    let mut t = entwine_partie();
+    jouer(&mut t, P0, "Entwine Lightning", R);
+    t.choisir(Choice::Pass);
+    resoudre_chaine(&mut t);
+    assert_eq!(t.g.player(P0).action_points, 0, "pas de go again");
+}
+
+#[test]
+fn entwine_lightning_carte_revelee_reste_en_main() {
+    // Cas limite (CR 8.3.17a) : révéler ne défausse pas la carte.
+    let mut t = entwine_partie();
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    jouer(&mut t, P0, "Entwine Lightning", R);
+    t.choisir(Choice::Object(cloud));
+    assert_eq!(t.g.obj(cloud).zone, Zone::Hand, "révélée, pas défaussée");
+}
+
+#[test]
+fn entwine_lightning_sans_carte_lightning_en_main_pas_de_question() {
+    // Cas limite (CR 8.3.17b) : sans carte Lightning en main, pas de fusion
+    // possible : pas de question et pas de go again.
+    let mut t = partie_cloud(&[("Entwine Lightning", R), ("Autumn's Touch", R)]);
+    jouer(&mut t, P0, "Entwine Lightning", R);
+    assert_ne!(t.kind(), DecisionKind::Effect, "pas de question de fusion");
+    resoudre_chaine(&mut t);
+    assert_eq!(t.g.player(P0).action_points, 0, "pas de go again");
+}

@@ -45,6 +45,7 @@ pub const NAMES: &[&str] = &[
     "Aurora",
     "Embodiment of Lightning",
     "Burn Up // Shock",
+    "Entwine Lightning",
     // NOMS
 ];
 
@@ -860,7 +861,65 @@ pub fn add(db: &mut CardDb) {
         assert_eq!(db.add(melded), split.melded.unwrap());
     }
 
+    // Entwine Lightning (bleu, rouge, jaune) — Elemental Action - Attack,
+    // coût 0, déf. 2 ; puissance bleu 2, rouge 4, jaune 3.
+    // « Lightning Fusion
+    //   If this was fused, it gets go again. »
+    // CR 8.3.17 : la fusion est un coût d'effet optionnel (révéler une carte
+    // Lightning de la main) ; le go again n'existe que si elle est fusionnée.
+    for (c, p) in [(Color::Blue, 2), (Color::Red, 4), (Color::Yellow, 3)] {
+        let mut d = deck_card(
+            "Entwine Lightning",
+            c,
+            Supertypes::ELEMENTAL,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(2),
+        );
+        d.effect_cost = lightning_fusion();
+        d.effect_cost.push(Op::Do(|g, c| {
+            if let (true, Some(s)) = (c.optional_paid, c.source) {
+                g.modify(s, grant(Keywords::GO_AGAIN), Until::EndOfTurn);
+            }
+        }));
+        db.add(d);
+    }
+
     // CARTES
+}
+
+/// « Lightning Fusion » (CR 8.3.17) : coût d'effet optionnel « you may reveal
+/// a Lightning card from your hand ». Si le joueur révèle une carte Lightning
+/// (CR 8.3.17b : seulement si elle est en main), la carte est fusionnée
+/// (CR 8.3.17a) : `c.optional_paid` devient vrai. Les effets propres à la
+/// carte fusionnée sont ajoutés par la carte, après cette liste.
+pub(crate) fn lightning_fusion() -> Vec<Op> {
+    vec![
+        Op::Ask(|g, c| {
+            let lightning: Vec<Choice> = g
+                .player(c.controller)
+                .hand
+                .iter()
+                .filter(|&&x| g.def(x).supertypes.has(Supertypes::LIGHTNING))
+                .map(|&x| Choice::Object(x))
+                .collect();
+            (!lightning.is_empty()).then(|| Ask {
+                player: c.controller,
+                label: "Lightning Fusion : révéler une carte Lightning de votre main ?",
+                options: lightning.into_iter().chain([Choice::Pass]).collect(),
+            })
+        }),
+        Op::Do(|g, c| {
+            if let Some(Choice::Object(x)) = c.answer.take() {
+                g.emit(Event::Revealed {
+                    player: c.controller,
+                    card: x,
+                });
+                c.optional_paid = true; // CR 8.3.17a : la carte est fusionnée.
+            }
+        }),
+    ]
 }
 
 /// Les auras que `p` contrôle sur l'arène.
