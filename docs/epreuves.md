@@ -107,3 +107,84 @@ tour) :
 |---|---|---|---|
 | passive | 61,4 % | 1,67 PV | 80,1 % (249 / 311) |
 | b1 | 61,1 % | 1,26 PV | 80,0 % (76 / 95) |
+
+## Épreuve B : regret contre une référence plus longue
+
+Programme : `cargo run --release -p fab-sim --bin epreuve-b`.
+
+### Principe
+
+1. **Banque de positions** : des parties B3 contre B3 (mêmes graines que
+   l'épreuve A). Parmi les décisions où B3 a vraiment le choix (au moins
+   deux options différentes : deux exemplaires identiques comptent pour
+   une), une sur `--une-sur` est gardée avec le choix de B3. Mêmes graines
+   et même code : mêmes positions.
+2. **Référence** : chaque option est notée sur les **mêmes** `--mondes`
+   mondes imaginés (main adverse et ordre des decks tirés au hasard selon
+   ce que voit le joueur, comme B3 : la référence ne triche pas), puis la
+   partie est finie par B1 pour les deux joueurs **jusqu'à la fin** (B3,
+   lui, s'arrête après 4 tours et estime). Le même hasard sert à toutes
+   les options d'un monde (comparaison appariée).
+3. **Regret** : chances de gagner de la meilleure option moins celles de
+   l'option de B3, en points de %. La meilleure option est choisie sur les
+   mondes pairs et le regret mesuré sur les mondes impairs : sans cela,
+   prendre le maximum de notes bruitées gonflerait le regret.
+
+### Lire le résultat
+
+Deux tables (par type de décision, par deck du joueur qui décide) :
+
+- **regret moyen** : points de % de chances de gagner perdus en moyenne
+  par décision ;
+- **écart net** : part des décisions où la référence préfère nettement une
+  autre option (écart de plus de 2 erreurs types). Par hasard seul, on en
+  attend environ 2 à 3 % : seul l'excédent compte ;
+- **bot = meilleure option** : B3 a fait le choix de la référence ;
+- puis les 20 plus gros écarts nets en clair (graine, numéro de décision).
+  Attention, parmi 3 000 positions, quelques-uns sont dus au hasard :
+  vérifier en relançant avec plus de mondes avant de corriger.
+
+### Ce qu'il faut garder en tête
+
+- La référence n'est **pas** la vérité : elle joue la suite avec B1, dont
+  on connaît les défauts. Elle voit plus loin que B3 (jusqu'à la fin, et
+  bien plus de parties), mais une option que B1 joue mal sera mal notée.
+  `--simulation b3-30 --tours 4` change la référence (plus lente).
+- Le seuil « top 8 » proposé : regret moyen < 1 point par décision
+  importante.
+
+### Options
+
+| Option | Défaut | Rôle |
+|---|---|---|
+| `--parties N` | 81 | parties jouées (81 = chaque paire une fois) |
+| `--une-sur K` | 10 | une décision gardée sur K |
+| `--mondes N` | 400 | mondes imaginés par position (la moitié sert au choix, l'autre à la mesure) |
+| `--simulation nom` | `b1` | bot qui finit les parties de la référence |
+| `--tours N` | 0 | 0 : jusqu'à la fin ; N : N tours puis évaluation de B3 |
+| `--bot nom` | `b3` | bot testé |
+| `--decks`, `--seed`, `--threads`, `--details` | | comme l'épreuve A |
+
+### Première mesure (2026-11-27)
+
+81 parties, une décision sur 5, 400 mondes : 3 130 positions en 489 s
+(4 threads), 0 erreur. Regret moyen **0,60 point** par décision ; B3 fait
+le choix de la référence dans 79 % des cas ; écart net 5,3 %.
+
+| Type de décision | positions | regret moyen | écart net |
+|---|---|---|---|
+| défense | 1 004 | 0,88 | 8,1 % |
+| pitch | 234 | 0,78 | 5,6 % |
+| arsenal | 84 | 0,64 | 4,8 % |
+| priorité (tour adverse) | 556 | 0,59 | 5,4 % |
+| priorité (son tour) | 853 | 0,41 | 2,9 % |
+
+Par deck : Hala 1,08 (9,5 % d'écarts nets), Iyslander 0,79, Florian 0,66,
+Arakni 0,58, Dorinthea et Levia 0,55, Ira et Bravo 0,44, Dromai 0,32.
+
+### Pas encore fait
+
+- Une référence sans B1 (parties finies par B3, beaucoup plus lente : à
+  essayer une nuit avec `--simulation b3 --tours 4`).
+- Garder la banque dans un fichier (aujourd'hui : refaite à partir des
+  graines ; un changement du moteur ou de B3 change les positions).

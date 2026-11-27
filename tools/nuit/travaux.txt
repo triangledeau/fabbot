@@ -18,3 +18,6 @@ matrice-b3 | fab-sim | --tournoi --bots b3 b3 --games 100 --check --seed 7
 # 5. Épreuve A (docs\epreuves.md) : puzzles exacts du tour, 162 parties B3
 #    contre B3 (chaque paire de decks deux fois), défenses passive et b1.
 puzzles-a | epreuve-a | --parties 162 --budget 1000000 --seed 1
+# 6. Épreuve B (docs\epreuves.md) : regret de B3 contre une référence
+#    longue (2 000 mondes par position, parties finies par B1).
+regret-b | epreuve-b | --parties 81 --une-sur 5 --mondes 2000 --seed 1

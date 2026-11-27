@@ -88,3 +88,4 @@ basse, pour garder le PC utilisable dans la journée), `-SansMiseAJour`.
 | `b3-contre-b2` : 16 parties par paire | suivre le niveau de B3 | ≈ 10 à 20 min |
 | `matrice-b3` : B3 contre B3, 100 parties par paire | matrice des matchups (± 10 points par case) | ≈ 1 à 2 h |
 | `puzzles-a` : épreuve A, 162 parties B3 contre B3, puzzles exacts (`docs/epreuves.md`) | taux de puzzles résolus et de létaux trouvés par B3 | ≈ 10 à 20 min (dans le conteneur : 81 parties en 4,6 min sur 4 threads) |
+| `regret-b` : épreuve B, 81 parties, une décision sur 5, 2 000 mondes (`docs/epreuves.md`) | regret de B3 par type de décision et par deck | ≈ 40 min à 1 h 30 (dans le conteneur : 400 mondes en 8 min sur 4 threads) |
