@@ -471,3 +471,10 @@ details summary { cursor: pointer; color: var(--doux); font-size: 12px; }
 /* Centrage exact du nombre dans le médaillon, quelle que soit la police :
    la boîte du texte est rognée à la hauteur des chiffres (capitale → ligne de base). */
 .z .pv b { display: block; line-height: 1; text-box: trim-both cap alphabetic; }
+
+/* Réflexion du bot (niveau réfléchi) : jauge, option préférée en petit. */
+.reflexion { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+.reflexion-temps { color: var(--doux); font: 600 12px/1 var(--f-num); }
+.reflexion-barre { height: 8px; border-radius: 999px; background: var(--zone); border: 1px solid var(--bord); overflow: hidden; }
+.reflexion-plein { height: 100%; width: 0; background: var(--accent); transition: width .25s linear; }
+.reflexion-pref { color: var(--doux); font-size: 12px; overflow-wrap: anywhere; }
