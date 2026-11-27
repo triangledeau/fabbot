@@ -334,6 +334,7 @@ moins bons (−22 Elo), non retenus. Réponse du propriétaire : AB3 contre
 Iyslander est réaliste.
 
 **Feuille de route vers un bot top 8 (2026-11-27)** : `docs/feuille-de-route-top8.md` (10 decks connus seulement, calcul sur la Surface ; première étape : mesurer avec des puzzles exacts et le regret contre un bot lent).
+**Chantier 0 fait (2026-11-27)** : script de nuit pour la Surface, `tools/nuit.bat` (mode d'emploi `docs/nuit.md`), résultats dans `resultats/nuit/AAAA-MM-JJ/resume.md` ; programmation par `tools/installer-nuit.bat` (à lancer une fois par le propriétaire). Suite : chantier 1 (épreuves A et B).
 
 **Pour Claude :** l'étape 7 est finie ; il n'y a plus d'étape prévue.
 Prochaine tâche proposée (B3 3e génération faite le 2026-11-26 : les
