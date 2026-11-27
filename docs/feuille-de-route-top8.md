@@ -138,7 +138,7 @@ de Surface.
 | 1 | **Épreuves A et B** (puzzles exacts du tour, banque de positions, regret contre bot lent) | sans mesure, on ne sait pas où le bot perd ni s'il progresse | 2 | 1 nuit | aucun directement ; donne la liste des défauts |
 | 2 | **Planifier son tour en entier** : le solveur exact de l'épreuve A sert aussi à jouer (B3 choisit la meilleure séquence du tour au lieu d'une décision à la fois) | c'est le cœur du jeu à haut niveau en FaB (ordre des attaques, go again, pitch, garder une carte pour bloquer ou pour l'arsenal) ; règle aussi une partie du pitch stacking d'Iyslander | 2 à 3 | quelques nuits de mesures | le plus grand gain probable : la recherche actuelle ne fait que 4 tours avec B1 |
 | 3 | **Remplacer B1 dans les parties simulées** par une politique apprise en imitant B3 (on enregistre les choix de B3 en auto-jeu, on apprend à les prédire ; aussi rapide que B1) | faiblesse n° 1 : B3 ne peut pas voir plus loin que la qualité de B1 | 2 à 3 | 2 à 4 nuits (auto-jeu + apprentissage) | important : chaque correctif de B1 a déjà donné +5 à +20 points sur un deck |
-| 4 | **Niveau « réfléchi »** (voir plus bas) : recherche sur les 12 threads, temps de réflexion selon la complexité de la position (jusqu'à quelques minutes par tour), courbe force / temps de réflexion | accepté par le propriétaire le 2026-11-27 : un humain aussi prend son temps ; c'est le levier le moins cher | 1 à 1,5 | 1 à 2 nuits | à mesurer ; B2 passait de +122 à +283 Elo entre 30 et 300 itérations, et un tour de quelques minutes donne 100 à 1 000 fois le budget actuel |
+| 4 | **Niveau « réfléchi »** (voir plus bas) : jauge de réflexion à l'écran, recherche sur les 12 threads, temps de réflexion selon la complexité de la position (jusqu'à quelques minutes par tour), courbe force / temps de réflexion | accepté par le propriétaire le 2026-11-27 : un humain aussi prend son temps ; c'est le levier le moins cher | 1 à 1,5 | 1 à 2 nuits | à mesurer ; B2 passait de +122 à +283 Elo entre 30 et 300 itérations, et un tour de quelques minutes donne 100 à 1 000 fois le budget actuel |
 | 5 | **Lire l'information montrée par l'adversaire** : main imaginée selon ce qu'il a bloqué, pitché, gardé ; card-pool pondéré par les listes du méta | un joueur de top 8 « lit » la main adverse | 1 à 2 | quelques heures | moyen |
 | 6 | **Decks faibles** : Levia (en cours dans un autre fil), Arakni (analyse comme celle d'Iyslander), Aurora (tables et poids à faire quand le deck passe dans `data/decks/`) | un deck à 11-20 % fausse toute la matrice et l'apprentissage | 1 par deck | 1 nuit par deck | fort sur ces decks |
 | 7 | **Évaluation plus riche** : paires de caractéristiques (« peut-il finir ce tour ? »), puis petit réseau de neurones sur processeur | la régression linéaire plafonne (+46, +14, −22) | 2 à 3 | plusieurs nuits | moyen, incertain |
@@ -149,7 +149,7 @@ de Surface.
 
 Le propriétaire accepte un niveau de bot qui réfléchit **jusqu'à quelques
 minutes par tour**, selon la complexité de la position. Cela change la
-feuille de route sur cinq points.
+feuille de route sur six points.
 
 1. **Deux bots au lieu d'un.** Un **B3 rapide** (≈ 2,5 s par partie, comme
    aujourd'hui) sert aux parties simulées, aux tournois et à
@@ -182,8 +182,17 @@ feuille de route sur cinq points.
    méthode d'AlphaZero, en version modeste, sur processeur. Le bot rapide
    s'améliore, donc les parties simulées du niveau réfléchi aussi.
 
-Coût : +1 session environ (recherche sur plusieurs threads, temps selon la
-complexité, réglage dans la page et dans `fab-ui`) ; le calcul est local.
+6. **Une jauge de réflexion à l'écran** (demande du propriétaire) : pendant
+   que le bot réfléchit, la page montre une barre qui avance (temps écoulé
+   sur le temps prévu pour cette décision) et, en petit, l'option que le
+   bot préfère pour l'instant avec ses chances estimées. Le serveur
+   `fab-web` envoie l'avancement de la recherche plusieurs fois par
+   seconde ; un bouton « Joue maintenant » arrête la réflexion et prend le
+   meilleur choix trouvé.
+
+Coût : +1 à 1,5 session environ (recherche sur plusieurs threads, temps
+selon la complexité, jauge et bouton « Joue maintenant » dans la page,
+réglage dans `fab-ui`) ; le calcul est local.
 Le niveau réfléchi passe dans l'étape « Mesurer », car il est le moins cher
 des gros leviers.
 

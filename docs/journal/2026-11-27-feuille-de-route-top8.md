@@ -23,3 +23,4 @@ estimations, à refaire après l'étape « Mesurer ».
 Le propriétaire accepte un niveau de bot qui réfléchit jusqu'à quelques
 minutes par tour selon la complexité : ajouté (section « Le niveau
 réfléchi », chantier 4 élargi, total ≈ 17 à 20 sessions).
+Ajout : jauge de progression de la réflexion dans la page, avec un bouton « Joue maintenant ».
