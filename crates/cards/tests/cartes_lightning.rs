@@ -1741,3 +1741,78 @@ fn embodiment_of_lightning_ne_se_declenche_pas_pour_l_attaque_adverse() {
     assert_eq!(jetons_embodiment(&t, P1), 1, "le jeton de P1 ne bouge pas");
     assert!(!t.g.keywords(a).has(Keywords::GO_AGAIN));
 }
+
+// ---------------------------------------------------------------------------
+// Burn Up // Shock (carte double, Meld)
+// ---------------------------------------------------------------------------
+
+const BURN_UP_SHOCK: &str = "Burn Up // Shock";
+
+/// Joue Burn Up // Shock de la main de P0 du côté `cote` (0 : Burn Up,
+/// 1 : Shock, 2 : les deux, meld) ; cible P1 si la cible est demandée.
+fn jouer_burn_up_shock(t: &mut Partie, cote: u8) -> ObjectId {
+    let c = t.en_main(P0, BURN_UP_SHOCK, R);
+    passer_jusqua_que(t, |t| t.joueur() == P0 && t.peut(Choice::Play(c)));
+    t.choisir(Choice::Play(c));
+    if t.kind() == DecisionKind::Mode {
+        t.choisir(Choice::Mode(cote));
+    }
+    if t.kind() == DecisionKind::Target {
+        t.choisir(Choice::Target(Target::Player(P1)));
+    }
+    c
+}
+
+#[test]
+fn burn_up_shock_se_joue_de_trois_facons() {
+    // « Meld » : Burn Up, Shock ou les deux côtés fusionnés.
+    let mut t = partie_cloud(&[(BURN_UP_SHOCK, R)]);
+    let c = t.en_main(P0, BURN_UP_SHOCK, R);
+    passer_jusqua_que(&mut t, |t| t.joueur() == P0 && t.peut(Choice::Play(c)));
+    t.choisir(Choice::Play(c));
+    assert_eq!(
+        t.kind(),
+        DecisionKind::Mode,
+        "le joueur choisit la façon de jouer"
+    );
+}
+
+#[test]
+fn burn_up_go_again() {
+    // « Go again » (côté Burn Up) : porté par la définition du côté Burn Up.
+    let t = partie_cloud(&[(BURN_UP_SHOCK, R)]);
+    let burn_up = t.g.db.find_name("Burn Up").expect("côté Burn Up");
+    assert!(t.g.db.get(burn_up).keywords.has(Keywords::GO_AGAIN));
+}
+
+#[test]
+fn shock_inflige_1_degat_arcane_a_une_cible() {
+    // « Deal 1 arcane damage to any target. » (côté Shock).
+    let mut t = partie_cloud(&[(BURN_UP_SHOCK, R)]);
+    jouer_burn_up_shock(&mut t, 1);
+    resoudre(&mut t);
+    assert_eq!(t.vie(P1), 19, "20 - 1 arcane");
+}
+
+#[test]
+fn shock_sans_go_again() {
+    // Le côté Shock (instant) n'a pas go again.
+    let mut t = partie_cloud(&[(BURN_UP_SHOCK, R)]);
+    let c = t.en_main(P0, BURN_UP_SHOCK, R);
+    passer_jusqua_que(&mut t, |t| t.joueur() == P0 && t.peut(Choice::Play(c)));
+    t.choisir(Choice::Play(c));
+    t.choisir(Choice::Mode(1));
+    let pile = t.g.stack.last().expect("sur la pile").card;
+    assert_eq!(t.g.db.get(pile).name, "Shock");
+    assert!(!t.g.db.get(pile).keywords.has(Keywords::GO_AGAIN));
+}
+
+#[test]
+fn burn_up_shock_fusionnee_resout_shock_d_abord_une_seule_fois() {
+    // Cas limite (CR 5.3.4d) : la carte fusionnée se résout d'abord par le
+    // côté droit (Shock) : 1 seul dégât à la cible.
+    let mut t = partie_cloud(&[(BURN_UP_SHOCK, R)]);
+    jouer_burn_up_shock(&mut t, 2);
+    resoudre(&mut t);
+    assert_eq!(t.vie(P1), 19, "un seul dégât de Shock");
+}

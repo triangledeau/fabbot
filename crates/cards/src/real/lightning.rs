@@ -6,13 +6,15 @@
 use super::assassin::this_hits_a_hero;
 use super::generic::{destroy_source, is_attack_action_card, when_this_attacks};
 use super::shadow::{ask_object, picked};
-use super::wizard::{arcane_to_target, TARGET_HERO};
+use super::wizard::{arcane_to_target, ANY_TARGET, TARGET_HERO};
 use super::{by_color, card_named, deck_card, equipment, grant, power, target_obj, COLORS};
-use fab_engine::card::{CardDb, CardDef, Color, Delta, Keywords, Subtypes, Supertypes, Types};
+use fab_engine::card::{
+    CardDb, CardDef, Color, Delta, Keywords, Split, Subtypes, Supertypes, Types,
+};
 use fab_engine::script::{Ask, Ctx, Op, Target, TargetSpec};
 use fab_engine::PlayerId;
 use fab_engine::{
-    ActivatedDef, Choice, Event, GameState, ObjectId, Speed, TriggerDef, Until, Zone,
+    ActivatedDef, CardId, Choice, Event, GameState, ObjectId, Speed, TriggerDef, Until, Zone,
 };
 
 const LIGHTNING_FLOW: &str = "Lightning Flow";
@@ -42,6 +44,7 @@ pub const NAMES: &[&str] = &[
     "Lightning Flow",
     "Aurora",
     "Embodiment of Lightning",
+    "Burn Up // Shock",
     // NOMS
 ];
 
@@ -794,6 +797,68 @@ pub fn add(db: &mut CardDb) {
         }],
         ..Default::default()
     });
+
+    // Burn Up // Shock (rouge) — carte double (Meld), coût 0, déf. 3.
+    // Burn Up : Runeblade Action, « **Meld**{br}The next time an attack you
+    //   control hits a hero this turn, deal 4 arcane damage to them.{br}
+    //   **Go again** ».
+    // Shock : Lightning Instant, « **Meld**{br}Deal 1 arcane damage to any
+    //   target. ».
+    // TODO(règles) : Burn Up, « The next time an attack you control hits a hero
+    // this turn, deal 4 arcane damage to them » non codé : il faut un
+    // déclencheur différé (prochain coup de n'importe quelle attaque, pas seulement
+    // la prochaine attaque) ; `next_attack` ne gère que des deltas (moteur, hors
+    // périmètre). Go again et Shock sont codés.
+    {
+        let base = db.len() as u16;
+        let split = Split {
+            whole: CardId(base),
+            left: CardId(base + 1),
+            right: CardId(base + 2),
+            melded: Some(CardId(base + 3)),
+        };
+        let side = |name: &str, types: Types, supertypes: Supertypes| CardDef {
+            name: name.into(),
+            color: Some(Color::Red),
+            pitch: Some(1),
+            cost: Some(0),
+            defense: Some(3),
+            types,
+            supertypes,
+            split: Some(split),
+            ..Default::default()
+        };
+        // La carte entière (main, deck, cimetière…) : les deux côtés (CR 9.2.2).
+        let mut whole = side(
+            "Burn Up // Shock",
+            Types::ACTION | Types::INSTANT,
+            Supertypes(Supertypes::LIGHTNING.0 | Supertypes::RUNEBLADE.0),
+        );
+        whole.keywords = Keywords::GO_AGAIN;
+        // Libellés des façons de la jouer (interface, CR 5.1.2c).
+        whole.modes = vec!["Burn Up", "Shock", "Meld : les deux côtés"];
+        assert_eq!(db.add(whole), split.whole);
+        let mut left = side("Burn Up", Types::ACTION, Supertypes::RUNEBLADE);
+        left.keywords = Keywords::GO_AGAIN;
+        assert_eq!(db.add(left), split.left);
+        let mut right = side("Shock", Types::INSTANT, Supertypes::LIGHTNING);
+        right.arcane_damage = true;
+        right.targets = vec![ANY_TARGET];
+        right.resolve = vec![Op::Do(|g, c| arcane_to_target(g, c, 1))];
+        assert_eq!(db.add(right), split.right);
+        // Fusionnée : coût = deux fois le coût de base (0), CR 8.3.38b. Première
+        // résolution : le côté droit (Shock), CR 5.3.4d.
+        let mut melded = side(
+            "Burn Up // Shock",
+            Types::ACTION | Types::INSTANT,
+            Supertypes(Supertypes::LIGHTNING.0 | Supertypes::RUNEBLADE.0),
+        );
+        melded.keywords = Keywords::GO_AGAIN;
+        melded.arcane_damage = true;
+        melded.targets = vec![ANY_TARGET];
+        melded.resolve = vec![Op::Do(|g, c| arcane_to_target(g, c, 1))];
+        assert_eq!(db.add(melded), split.melded.unwrap());
+    }
 
     // CARTES
 }
