@@ -1511,12 +1511,39 @@ fn beckoning_haunt_x_propose_jusqu_a_ce_que_les_ressources_permettent() {
 }
 
 #[test]
-fn beckoning_haunt_ne_peut_pas_viser_une_aura_de_cout_different_de_x() {
-    // Seule une aura de coût 0 au cimetière : avec X = 1, aucune cible légale.
+fn beckoning_haunt_x_sans_aura_de_ce_cout_n_est_pas_propose() {
+    // Règle confirmée par le propriétaire (2026-11-27) : X se déclare, puis la
+    // cible ; sans aura de coût X au cimetière, l'activation est illégale
+    // (CR 5.1.3a puis 5.1.4) : on ne peut pas payer pour rien.
+    // Seule une aura de coût 0 au cimetière : X = 0 seul est proposé.
     let (mut t, b, a) = beckoning_avec_aura_au_cimetiere(("Sigil of Voltaris", B), 3);
+    passer_jusqua_que(&mut t, |t| {
+        t.joueur() == P0 && t.peut(Choice::Activate(b, 0))
+    });
+    t.choisir(Choice::Activate(b, 0));
+    assert_eq!(t.kind(), DecisionKind::ChooseX);
+    assert!(t.peut(Choice::Number(0)));
+    assert!(!t.peut(Choice::Number(1)), "coût 0 ≠ X = 1 : X = 1 illégal");
+    assert_eq!(t.g.obj(a).zone, Zone::Graveyard);
+    assert_eq!(t.g.obj(b).zone, Zone::Arms, "rien n'est encore payé");
+}
+
+#[test]
+fn beckoning_haunt_cible_partie_avant_la_resolution_couts_payes_sans_effet() {
+    // Si l'aura quitte le cimetière avant la résolution (bannie en réponse) :
+    // les coûts restent payés, la capacité ne fait rien (CR 1.2.3, cible
+    // illégale à la résolution).
+    let (mut t, b, a) = beckoning_avec_aura_au_cimetiere(("Harvest Season", R), 3);
     activer_beckoning(&mut t, b, 1);
+    assert_eq!(t.g.obj(b).zone, Zone::Graveyard, "détruit en coût");
+    t.g.banish(P1, a, false);
     resoudre(&mut t);
-    assert_eq!(t.g.obj(a).zone, Zone::Graveyard, "coût 0 ≠ X = 1");
+    assert_eq!(t.g.obj(a).zone, Zone::Banished, "l'aura ne revient pas");
+    assert_eq!(
+        t.g.player(P0).hand.len(),
+        0,
+        "3 cartes pitchées, rien rendu"
+    );
 }
 
 #[test]
