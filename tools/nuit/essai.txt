@@ -1,0 +1,3 @@
+# Essai rapide du script de nuit (tools\nuit.bat -Essai) : quelques minutes.
+essai-b1 | fab-sim | --tournoi --bots b1 b0 --games 4 --check
+essai-b3 | fab-sim | --tournoi --bots b3 b1 --games 1 --check
