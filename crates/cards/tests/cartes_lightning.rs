@@ -1930,3 +1930,80 @@ fn arcanic_lightning_fusion_sans_carte_lightning_en_main_pas_de_question() {
     jouer(&mut t, P0, "Arcanic Shockwave", R);
     assert_ne!(t.kind(), DecisionKind::Effect, "pas de question de fusion");
 }
+
+// Weave Lightning (bleu, rouge, jaune) : « The next Lightning or Elemental attack
+// action card you play this turn gets +1{p} (rouge : +3 ; jaune : +2). If it's
+// fused, it gets go again. Go again. » La partie « fused → go again » n'est pas
+// codée (TODO(règles) dans lightning.rs) : pas de test dessus.
+
+fn weave_partie(main0: &[(&str, Option<Color>)]) -> Partie {
+    partie_vraie([HEROS, HEROS], main0, RIEN, RIEN, RIEN, &[], &[])
+}
+
+#[test]
+fn weave_lightning_bleu_prochaine_attaque_elemental_plus_1() {
+    let mut t = weave_partie(&[("Weave Lightning", B), ("Colors of Aria", R)]);
+    jouer(&mut t, P0, "Weave Lightning", B);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Colors of Aria", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(t.g.power(a), 7 + 1, "bleu : +1");
+}
+
+#[test]
+fn weave_lightning_rouge_prochaine_attaque_lightning_plus_3() {
+    let mut t = weave_partie(&[("Weave Lightning", R), ("Lightning Surge", R)]);
+    jouer(&mut t, P0, "Weave Lightning", R);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Lightning Surge", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(t.g.power(a), 4 + 3, "Lightning Surge (Lightning) : +3");
+}
+
+#[test]
+fn weave_lightning_jaune_prochaine_attaque_elemental_plus_2() {
+    let mut t = weave_partie(&[("Weave Lightning", Y), ("Colors of Aria", R)]);
+    jouer(&mut t, P0, "Weave Lightning", Y);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Colors of Aria", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(t.g.power(a), 7 + 2, "jaune : +2");
+}
+
+#[test]
+fn weave_lightning_go_again_sur_la_carte_elle_meme() {
+    let mut t = weave_partie(&[("Weave Lightning", R)]);
+    jouer(&mut t, P0, "Weave Lightning", R);
+    resoudre(&mut t);
+    assert_eq!(t.g.player(P0).action_points, 1, "go again");
+}
+
+#[test]
+fn weave_lightning_ne_vise_que_la_prochaine_attaque() {
+    // Cas limite : la deuxième attaque ne reçoit pas le bonus.
+    // Entwine Lightning (rouge, puissance 4, coût 0) : pas de coût à payer en pitch.
+    let mut t = weave_partie(&[
+        ("Weave Lightning", R),
+        ("Entwine Lightning", R),
+        ("Entwine Lightning", R),
+    ]);
+    jouer(&mut t, P0, "Weave Lightning", R);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Entwine Lightning", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(t.g.power(a), 4 + 3, "première attaque : +3");
+    resoudre(&mut t);
+    let b = jouer(&mut t, P0, "Entwine Lightning", R);
+    jusqua_active(&mut t, b);
+    assert_eq!(t.g.power(b), 4, "deuxième attaque : pas de bonus");
+}
+
+#[test]
+fn weave_lightning_pas_pour_une_attaque_sans_lightning_ni_elemental() {
+    let mut t = weave_partie(&[("Weave Lightning", R), ("Autumn's Touch", R)]);
+    jouer(&mut t, P0, "Weave Lightning", R);
+    resoudre(&mut t);
+    let a = jouer(&mut t, P0, "Autumn's Touch", R);
+    jusqua_active(&mut t, a);
+    assert_eq!(t.g.power(a), 7, "Autumn's Touch (Runeblade) : pas de bonus");
+}

@@ -47,6 +47,7 @@ pub const NAMES: &[&str] = &[
     "Burn Up // Shock",
     "Entwine Lightning",
     "Arcanic Shockwave",
+    "Weave Lightning",
     // NOMS
 ];
 
@@ -907,6 +908,43 @@ pub fn add(db: &mut CardDb) {
             Some(3),
         );
         d.effect_cost = lightning_fusion();
+        db.add(d);
+    }
+
+    // Weave Lightning (bleu, rouge, jaune) — Lightning Action, coût 0, déf. 2.
+    // « The next Lightning or Elemental attack action card you play this turn
+    //   gets +1{p} (rouge : +3 ; jaune : +2). If it's **fused**, it gets **go again**.
+    //   **Go again** »
+    // TODO(règles) : « If it's fused, it gets go again » non codé. La fusion de la
+    // carte suivante est décidée au moment où elle est jouée, après que
+    // `apply_next_attack_effects` (play.rs) a appliqué le bonus de puissance. Le
+    // go again doit donc dépendre d'une décision future (CR 6.4.7b, exemple Weave
+    // Earth). Le moteur n'a pas de « prochaine attaque conditionnée à la fusion » :
+    // à faire quand le moteur le permettra.
+    for c in COLORS {
+        let mut d = deck_card(
+            "Weave Lightning",
+            c,
+            LIGHTNING,
+            Types::ACTION,
+            Some(0),
+            None,
+            Some(2),
+        );
+        d.keywords = Keywords::GO_AGAIN;
+        d.resolve = vec![Op::Do(|g, c| {
+            let n = by_color(g, c, [3, 2, 1]);
+            g.next_attack(
+                c.controller,
+                Some(|g, a| {
+                    is_attack_action_card(g, a)
+                        && (g.supertypes(a).has(Supertypes::LIGHTNING)
+                            || g.supertypes(a).has(Supertypes::ELEMENTAL))
+                }),
+                power(n),
+                true,
+            );
+        })];
         db.add(d);
     }
 
