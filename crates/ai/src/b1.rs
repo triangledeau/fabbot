@@ -380,6 +380,9 @@ fn defendre(v: &Vue, d: &Decision, r: &Reglages) -> Option<usize> {
         let Choice::Defend(id) = c else {
             return 0.0; // Pass
         };
+        if v.equipement_sans_defense(id) {
+            return -1.0;
+        }
         let def = v.defense(id).max(0) as i32;
         let evite = def.min(restant) as f32;
         if mortel {

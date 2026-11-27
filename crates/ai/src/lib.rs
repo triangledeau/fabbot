@@ -152,6 +152,22 @@ pub fn play_out(
     Ok(decisions)
 }
 
+/// Un équipement qui n'apporterait rien en défendant : défense 0, et aucune
+/// capacité qui pourrait en dépendre (déclencheur, modification de sa
+/// propre défense, remplacement, capacité activée). Ex. : les Nullrune
+/// (défense 0, « Arcane Barrier 1 », qui marche qu'ils défendent ou non).
+/// Défendre avec reste légal, mais les bots ne l'envisagent pas.
+pub fn equipement_sans_defense(g: &GameState, id: fab_engine::ObjectId) -> bool {
+    let c = g.def(id);
+    c.types.has(fab_engine::Types::EQUIPMENT)
+        && g.defense(id) <= 0
+        && c.triggers.is_empty()
+        && c.granted.is_empty()
+        && c.self_mod.is_none()
+        && c.replacements.is_empty()
+        && c.activated.is_empty()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

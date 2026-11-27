@@ -464,6 +464,14 @@ pub fn estimer(g: &GameState, valeur_carte: f32) -> f32 {
 fn options_par_cle(g: &GameState, d: &Decision, sortie: &mut Vec<(u64, usize)>) {
     sortie.clear();
     for (i, &c) in d.options.iter().enumerate() {
+        // Défendre avec un équipement qui n'ajoute aucune défense ne change
+        // rien (à part l'exposer) : pas la peine de l'essayer. « Pass »
+        // reste toujours possible dans une déclaration de défenseurs.
+        if let Choice::Defend(o) = c {
+            if crate::equipement_sans_defense(g, o) {
+                continue;
+            }
+        }
         let k = cle(g, d, c);
         if !sortie.iter().any(|&(x, _)| x == k) {
             sortie.push((k, i));

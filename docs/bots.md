@@ -33,6 +33,10 @@ complètes sur les 9 decks prouvent qu'aucune lecture interdite n'a lieu.
   0,8 × défense pour un équipement avec blade break, 1 avec battleworn ou
   temper, 0,5 sinon. Contre une attaque mortelle, il pose tout ce qu'il
   faut. Il joue une réaction de défense si elle évite au moins 2 dégâts.
+  Il ne défend jamais avec un équipement qui n'ajoute aucune défense
+  (défense 0, sans capacité qui en dépende : les Nullrune, Arcane
+  Lantern, Aetherstorm Wellingtons) ; B2, B3 et le niveau réfléchi ne
+  l'essaient pas non plus (`fab_ai::equipement_sans_defense`).
 - **Pitch** : la carte qui paie le reste au plus juste, en gardant les
   cartes les plus fortes.
 - **Arsenal** : la carte d'attaque la plus forte (Iyslander : une carte
