@@ -609,11 +609,41 @@ pub fn add(db: &mut CardDb) {
     // « **Action** -- {x}{x}{r}, destroy this: Return target aura with cost X
     //   from your graveyard to your hand.
     //   **Guardwell** »
-    // TODO(règles) : capacité activée non codée. `ActivatedDef.cost` est un u8
-    // fixe, et le choix de X n'existe que pour les cartes jouées (play.rs,
-    // `Task::PlayX`) : le moteur ne sait pas payer un X sur une capacité
-    // activée, ni filtrer « aura de coût X » avec ce X. Guardwell est codé.
+    // « {x}{x}{r} » : coût 1 + 2 par X (CR 5.1.3a, `x_per`) ; le X déclaré est
+    // lu dans `c.x` par le filtre de cible (la cible est choisie après X,
+    // CR 5.1.3a puis 5.1.4) et à la résolution.
     let mut d = equipment("Beckoning Haunt", Supertypes::RUNEBLADE, Subtypes::ARMS, 2);
+    d.activated = vec![ActivatedDef {
+        label: "Détruire : une aura de coût X du cimetière en main",
+        speed: Speed::Action,
+        cost: 1,
+        x_per: 2,
+        targets: vec![TargetSpec {
+            label: "aura de coût X de votre cimetière",
+            filter: |g, c, t| match t {
+                Target::Object(r) => {
+                    let o = g.obj(r.id);
+                    o.zone == Zone::Graveyard
+                        && o.owner == c.controller
+                        && g.def(r.id).subtypes.has(Subtypes::AURA)
+                        && g.def(r.id).cost == Some(c.x)
+                }
+                Target::Player(_) => false,
+            },
+            optional: false,
+            in_graveyard: true,
+            in_banished: false,
+        }],
+        effect_cost: vec![Op::Do(|g, c| destroy_source(g, c))],
+        script: vec![Op::Do(|g, c| {
+            if let Some(r) = target_obj(c, 0) {
+                if g.obj(r.id).zone == Zone::Graveyard {
+                    g.return_to_hand(r.id);
+                }
+            }
+        })],
+        ..Default::default()
+    }];
     d.keywords = Keywords::GUARDWELL;
     db.add(d);
 

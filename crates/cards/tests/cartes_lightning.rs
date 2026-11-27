@@ -1442,6 +1442,117 @@ fn beckoning_haunt_guardwell_ne_retire_rien_s_il_ne_defend_pas() {
     assert_eq!(t.g.defense(b), 2, "il n'a pas défendu : rien retiré");
 }
 
+/// Active le Beckoning Haunt avec X = `x` : répond à ChooseX, choisit la
+/// première cible proposée et pitche la première carte, jusqu'à la fin du paiement.
+fn activer_beckoning(t: &mut Partie, b: ObjectId, x: u8) {
+    passer_jusqua_que(t, |t| t.joueur() == P0 && t.peut(Choice::Activate(b, 0)));
+    t.choisir(Choice::Activate(b, 0));
+    for _ in 0..20 {
+        match t.kind() {
+            DecisionKind::ChooseX => t.choisir(Choice::Number(x)),
+            DecisionKind::Target | DecisionKind::Pitch => {
+                let o = t.options()[0];
+                t.choisir(o)
+            }
+            _ => return,
+        }
+    }
+    panic!("activation jamais terminée");
+}
+
+fn beckoning_avec_aura_au_cimetiere(
+    aura: (&str, Option<Color>),
+    pitchs: usize,
+) -> (Partie, ObjectId, ObjectId) {
+    let mut main = vec![aura];
+    main.extend(std::iter::repeat_n(("Essai Frappe", R), pitchs));
+    let mut t = partie_vraie([HEROS, HEROS], &main, RIEN, RIEN, RIEN, &[BECKONING], &[]);
+    let a = au_cimetiere_depuis_deck(&mut t, P0, aura.0, aura.1);
+    let b = t.equipement(P0, BECKONING);
+    (t, b, a)
+}
+
+#[test]
+fn beckoning_haunt_x1_coute_trois_ressources_detruit_et_rend_l_aura_de_cout_1() {
+    // {x}{x}{r} avec X = 1 : 3 ressources (3 cartes de pitch 1) ; Harvest
+    // Season a un coût de 1.
+    let (mut t, b, a) = beckoning_avec_aura_au_cimetiere(("Harvest Season", R), 3);
+    activer_beckoning(&mut t, b, 1);
+    assert_eq!(t.g.obj(b).zone, Zone::Graveyard, "détruit en coût");
+    assert_eq!(t.g.obj(a).zone, Zone::Hand, "l'aura revient en main");
+    assert_eq!(
+        t.g.player(P0).hand.len(),
+        1,
+        "3 cartes pitchées, l'aura revenue"
+    );
+}
+
+#[test]
+fn beckoning_haunt_x0_coute_une_ressource_et_rend_une_aura_de_cout_0() {
+    let (mut t, b, a) = beckoning_avec_aura_au_cimetiere(("Sigil of Voltaris", B), 3);
+    activer_beckoning(&mut t, b, 0);
+    assert_eq!(t.g.obj(a).zone, Zone::Hand);
+    assert_eq!(t.g.player(P0).hand.len(), 3, "1 carte pitchée ({{r}} seul)");
+}
+
+#[test]
+fn beckoning_haunt_x_propose_jusqu_a_ce_que_les_ressources_permettent() {
+    let (mut t, b, _) = beckoning_avec_aura_au_cimetiere(("Harvest Season", R), 3);
+    let dispo = t.g.available_resources(P0, None);
+    assert_eq!(dispo, 3, "3 cartes rouges de pitch 1");
+    passer_jusqua_que(&mut t, |t| {
+        t.joueur() == P0 && t.peut(Choice::Activate(b, 0))
+    });
+    t.choisir(Choice::Activate(b, 0));
+    assert_eq!(t.kind(), DecisionKind::ChooseX);
+    let max = ((dispo - 1) / 2) as u8;
+    assert!(t.peut(Choice::Number(max)));
+    assert!(!t.peut(Choice::Number(max + 1)));
+}
+
+#[test]
+fn beckoning_haunt_ne_peut_pas_viser_une_aura_de_cout_different_de_x() {
+    // Seule une aura de coût 0 au cimetière : avec X = 1, aucune cible légale.
+    let (mut t, b, a) = beckoning_avec_aura_au_cimetiere(("Sigil of Voltaris", B), 3);
+    activer_beckoning(&mut t, b, 1);
+    resoudre(&mut t);
+    assert_eq!(t.g.obj(a).zone, Zone::Graveyard, "coût 0 ≠ X = 1");
+}
+
+#[test]
+fn beckoning_haunt_inactivable_sans_aura_dans_le_cimetiere() {
+    let t = partie_vraie(
+        [HEROS, HEROS],
+        &[("Essai Frappe", R)],
+        RIEN,
+        RIEN,
+        RIEN,
+        &[BECKONING],
+        &[],
+    );
+    let b = t.equipement(P0, BECKONING);
+    assert!(!t.peut(Choice::Activate(b, 0)));
+}
+
+#[test]
+fn beckoning_haunt_inactivable_si_l_aura_n_est_pas_dans_le_cimetiere_du_joueur() {
+    // Une aura de coût 0 en main (pas au cimetière) ne compte pas.
+    let mut t = partie_vraie(
+        [HEROS, HEROS],
+        &[("Sigil of Voltaris", B), ("Essai Frappe", R)],
+        RIEN,
+        RIEN,
+        RIEN,
+        &[BECKONING],
+        &[],
+    );
+    let b = t.equipement(P0, BECKONING);
+    passer_jusqua_que(&mut t, |t| {
+        t.joueur() == P0 && t.kind() == DecisionKind::Priority
+    });
+    assert!(!t.peut(Choice::Activate(b, 0)));
+}
+
 // ---- Quick Succession (bleu, rouge, jaune) ----
 
 fn quick_succession_partie(main0: &[(&str, Option<Color>)]) -> Partie {
