@@ -39,3 +39,4 @@ Statistiques : `cargo run -p fab-cards --bin deck-stats`.
 | 7 | Levia | Shadow Brute | 8 | 47 | Sunday Showdown Atlanta, 5e |
 | 8 | Dromai | Draconic Illusionist | 7 | 48 | Sunday Showdown Paris, 5e |
 | 9 | Arakni, Web of Deceit | Assassin | 8 | 47 | Sunday Showdown Jakarta, 5e |
+| 10 | Aurora | Elemental Runeblade | 7 | 48 | Sunday Showdown Sydney, 5e |

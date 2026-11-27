@@ -25,13 +25,18 @@ Arcane Polarity	Red	FR_SBW023	Polarité arcanique
 Arcane Polarity	Yellow	FR_ROS232	Polarité arcanique
 Arcane Seeds // Life	Red	FR_SBA024	Graines d’arcane||Vie
 Arcane Twining	Blue	FR_SBZ026	Dédoublement arcanique
+Arcanic Shockwave	Blue	FR_2HP063	Onde de choc arcanique
+Arcanic Shockwave	Red	FR_SBA011	Onde de choc arcanique
+Arcanic Shockwave	Yellow	FR_2HP062	Onde de choc arcanique
 Art of Desire: Body	Red	FR_SAR010	Art du désir : corps
 Ash		DRO002	
 Aspect of Tiger: Body	Red	FR_MST164	Aspect du tigre : corps
+Aurora		FR_ROS008	Aurora
 Autumn's Touch	Blue	FR_AJV014	Toucher de l’automne
 Autumn's Touch	Red	FR_ROS046	Toucher de l’automne
 Autumn's Touch	Yellow	FR_TER013	Toucher de l’automne
 Azvolai		UPR009_BACK	
+Beckoning Haunt		FR_SVI007	Hantise envoûtante
 Billowing Mirage	Red	DRO012	
 Bite	Blue	FR_HNT019	Morsure
 Bite	Red	FR_HNT017	Morsure
@@ -61,6 +66,7 @@ Brutal Assault	Blue	FR_IRA010	Assaut Brutal
 Brutal Assault	Red	DRO024	
 Brutal Assault	Yellow	CRU193	
 Buckling Blow	Blue	FR_SBR024	Frappe anéantissante
+Burn Up // Shock	Red	FR_SBA025	Brûler||Choc
 Buzzard Helm		FR_PEN002	Heaume de rapace
 Chest Puff	Red	FR_SUP222	Bomber le torse
 Chokeslam	Blue	FR_SBR025	Étouffclac
@@ -76,6 +82,9 @@ Clash of Vigor	Blue	FR_SBR026	Duel de vigueur
 Cleave the Heavens	Blue	FR_IAR022	Pourfendre les cieux
 Cleave the Heavens	Red	FR_IAR020	Pourfendre les cieux
 Cleave the Heavens	Yellow	FR_IAR021	Pourfendre les cieux
+Cloud Cover	Blue	FR_PEN248	Couvert des nuages
+Cloud Cover	Red	FR_SBA031	Couvert des nuages
+Cloud Cover	Yellow	FR_PEN247	Couvert des nuages
 Colors of Aria	Red	FR_PEN206	Les couleurs d’Aria
 Concoct Disorder	Blue	FR_PEN281	Concocter le désordre
 Concoct Disorder	Red	FR_SAR011	Concocter le désordre
@@ -124,12 +133,19 @@ Edge of Autumn		FR_ASR002	Bord de l’automne
 Edict of Steel	Blue	FR_MPW105	Décret d’acier
 Edict of Steel	Red	FR_SBL020	Décret d’acier
 Edict of Steel	Yellow	FR_MPW104	Décret d’acier
+Electrostatic Discharge	Blue	FR_ROS112	Décharge électrostatique
+Electrostatic Discharge	Red	FR_AST020	Décharge électrostatique
+Electrostatic Discharge	Yellow	FR_ROS111	Décharge électrostatique
 Embodiment of Earth		FR_SBA034	Incarnation de la terre
+Embodiment of Lightning		FR_SBA035	Incarnation de la foudre
 Embraforged Gauntlet		FR_PEN192	Gantelet forgé par Embra
 Endless Maw	Blue	FR_2HP225	Gueule sans fin
 Endless Maw	Red	FR_2HP223	Gueule sans fin
 Endless Maw	Yellow	FR_2HP224	Gueule sans fin
 Engulfing Shadows	Yellow	FR_PEN194	Ombres dévorantes
+Entwine Lightning	Blue	ELE102	
+Entwine Lightning	Red	FR_SBA012	Tresser la foudre
+Entwine Lightning	Yellow	ELE101	
 Essence of Ancestry: Body	Red	FR_MST137	Essence d’ascendance : corps
 Fatal Engagement	Blue	FR_HVY111	Affrontement fatal
 Fatal Engagement	Red	FR_HVY109	Affrontement fatal
@@ -145,6 +161,7 @@ Feign Vengeance	Blue	FR_PEN036	Feinte vengeresse
 Felling Swing	Blue	DYN084	
 Felling Swing	Red	DYN082	
 Felling Swing	Yellow	DYN083	
+Flash of Brilliance		FR_ROS072	Éclair d’intelligence
 Flatten the Field	Blue	FR_SBR030	Aplanir le terrain
 Florian		FR_ROS002	Florian
 Flurry		FR_SBL036	Rafale
@@ -171,11 +188,14 @@ Graveling Growl	Yellow	MON145
 Growl	Red	TCC086	
 Growl	Yellow	TCC094	
 Hala		FR_MPW004	Hala
+Harness Lightning	Red	FR_AUR013	Maîtriser la foudre
+Harness Lightning	Yellow	FR_AUR020	Maîtriser la foudre
 Harvest Season	Blue	FR_ROS063	Saison des récoltes
 Harvest Season	Red	FR_ROS061	Saison des récoltes
 Harvest Season	Yellow	FR_ROS062	Saison des récoltes
 Hell Hammer		FR_IAR003	Marteau des enfers
 Helm of Lignum Vitae		FR_ROS029	Heaume de lignum vitae
+Helm of Might and Magic		FR_PEN093	Heaume de puissance et de magie
 Helm of Unity		FR_SBL004	Heaume d’unité
 Hex Gauntlet		FR_IAR004	Gantelet de sortilège
 Hit and Run	Blue	FR_SDO032	Délit de fuite
@@ -213,6 +233,10 @@ Lair of the Spider	Red	FR_SAR026	Repaire de l’araignée
 Lay Low	Yellow	FR_SAT022	Rester à couvert
 Legacy of Ikaru	Blue	FR_ASR026	Héritage d’Ikaru
 Levia		FR_IAR002	Lévia
+Lightning Flow		FR_OMN203	Flux de foudre
+Lightning Surge	Blue	FR_ROS100	Surgissement de foudre
+Lightning Surge	Red	FR_SBA015	Surgissement de foudre
+Lightning Surge	Yellow	FR_AUR018	Surgissement de foudre
 Look Tuff	Red	FR_SBZ010	Avoir l’air coriace
 Macho Grande	Blue	FR_SBR031	Macho Grande
 Mark of the Black Widow	Blue	FR_SAR029	Marque de la veuve noire
@@ -253,6 +277,9 @@ Overpower	Blue	FR_SDO027	Surpuissance
 Overpower	Red	FR_SDO015	Surpuissance
 Overpower	Yellow	FR_1HP154	Surpuissance
 Passing Mirage	Blue	FR_SAT030	Mirage éphémère
+Path of Same Ends	Blue	FR_OMN067	Sentier des mêmes fins
+Path of Same Ends	Red	FR_SBA016	Sentier des mêmes fins
+Path of Same Ends	Yellow	FR_OMN066	Sentier des mêmes fins
 Photon Splicing	Blue	FR_SBZ030	Épissage de photon
 Pick Up the Point	Blue	FR_HNT184	Reprendre la pointe
 Pick Up the Point	Red	FR_SAR017	Reprendre la pointe
@@ -277,6 +304,9 @@ Pyroglyphic Protection	Blue	FR_SIY030	Protection pyroglyphique
 Qi Unleashed	Blue	FR_MST169	Qi déchaîné
 Qi Unleashed	Red	FR_MST167	Qi déchaîné
 Qi Unleashed	Yellow	FR_MST168	Qi déchaîné
+Quick Succession	Blue	FR_OMN085	Succession rapide
+Quick Succession	Red	FR_OMN083	Succession rapide
+Quick Succession	Yellow	FR_OMN084	Succession rapide
 Quicken		FR_ASB028	Accélérer
 Raging Onslaught	Blue	R-WTR190	
 Raging Onslaught	Red	R-WTR188	
@@ -311,11 +341,17 @@ Runeblood Incantation	Blue	EVR109
 Runeblood Incantation	Red	EVR107	
 Runeblood Incantation	Yellow	EVR108	
 Runechant		FR_SBW035	Chanterune
+Rush of Power	Blue	FR_OMN070	Montée de puissance
+Rush of Power	Red	FR_SBA018	Montée de puissance
+Rush of Power	Yellow	FR_OMN069	Montée de puissance
 Sand Cover	Red	UPR039	
 Scar for a Scar	Blue	FR_1HP398	Sang pour Sang
 Scar for a Scar	Red	FR_SBA019	Sang pour sang
 Scar for a Scar	Yellow	FR_1HP397	Sang pour Sang
 Scepter of Pain		FR_DTD210	Sceptre de douleur
+Second Strike	Blue	FR_ROS103	Deux fois foudroyé
+Second Strike	Red	FR_SBA020	Deuxième frappe
+Second Strike	Yellow	FR_ROS102	Deux fois foudroyé
 Seek Vengeance	Blue	FR_ASR022	Chercher la vengeance
 Seek Vengeance	Red	FR_ASR012	Chercher la vengeance
 Seeker's Leggings		FR_OMN208	Jambières du chercheur
@@ -334,11 +370,14 @@ Sift	Blue	UPR199
 Sift	Red	UPR197	
 Sift	Yellow	UPR198	
 Sigil of Silphidae	Blue	FR_SVI032	Sceau des silphidés
+Sigil of Voltaris	Blue	FR_PEN237	Sceau de Voltaris
 Silken Shroud		FR_PEN123	Linceul soyeux
 Sirens of Safe Harbor	Blue	FR_SEA228	Sirènes de Port-Sûr
 Sirens of Safe Harbor	Red	FR_SEA226	Sirènes de Port-Sûr
 Sirens of Safe Harbor	Yellow	FR_SEA227	Sirènes de Port-Sûr
 Sit!	Red	FR_SUP210	Assis !
+Sizzle	Red	FR_SBA027	Grésillement
+Sizzle	Yellow	FR_AUR021	Grésillement
 Skera Strapping		FR_PEN004	Plastron en skera
 Smashback Alehorn	Blue	FR_ARR027	Corne à boire cogneuse
 Smoldering Scales		FR_PEN253	Écailles incandescentes
@@ -350,11 +389,17 @@ Stains of the Redback	Blue	FR_HNT025	Taches du Dos rouge
 Stains of the Redback	Red	FR_SAR021	Taches du Dos rouge
 Stains of the Redback	Yellow	FR_HNT024	Taches du Dos rouge
 Stalker's Steps		FR_SAR009	Pas du traqueur
+Star Fall		FR_SBA003	Chute d’étoile
+Static Shock	Red	FR_SBA022	Choc statique
+Static Shock	Yellow	FR_AUR019	Choc statique
 Staunch Response	Red	FR_SBR021	Réponse ardente
 Steelblade Shunt	Blue	FR_MPW058	Décharge de la lame d’acier
 Steelblade Shunt	Red	FR_MPW056	Décharge de la lame d’acier
 Steelblade Shunt	Yellow	FR_MPW057	Décharge de la lame d’acier
 Steelbraid Buckler		FR_SBR004	Bouclier en acier tressé
+Stinging Sprite	Blue	FR_OMN058	Farfadet piquant
+Stinging Sprite	Red	FR_OMN056	Farfadet piquant
+Stinging Sprite	Yellow	FR_OMN057	Farfadet piquant
 Stir the Aetherwinds	Blue	FR_SIY031	Remue éthervents
 Storm of Sandikai		DRO004	
 Sweeping Blow	Red	DRO017	
@@ -376,6 +421,7 @@ Timesnap Potion	Blue	FR_SGB032	Potion de saut temporel
 Toe the Line	Red	FR_SBL022	Rentrer dans le rang
 Topsy Turvy		FR_SAR004	Sens dessus dessous
 Turn to Mindfire	Red	FR_SBZ017	Transformer en feu d’esprit
+Twinkle Toes		FR_ROS073	Orteils scintillants
 Unflinching Foothold		FR_PEN318	Posture inébranlable
 Unmovable	Red	FR_SEN012	Inamovible
 Untamed	Blue	FR_MST187	Indompté
@@ -386,9 +432,16 @@ Vigor		FR_SKA036	Vigueur
 Vigorous Smashup	Blue	FR_SUP166	Écrasement vigoureux
 Vigorous Smashup	Red	FR_SUP164	Écrasement vigoureux
 Vigorous Smashup	Yellow	FR_SUP165	Écrasement vigoureux
+Visionary of Orbits	Red	FR_OMN151	Visionnaire d’orbites
+Voltbound Duality	Blue	FR_OMN079	Dualité foudroyante
+Voltbound Duality	Red	FR_OMN077	Dualité foudroyante
+Voltbound Duality	Yellow	FR_OMN078	Dualité foudroyante
 Voltic Bolt	Blue	FR_SBZ031	Tourbillon voltic
 Voltic Bolt	Red	FR_SBZ018	Tourbillon voltic
 Wave of Reality		FR_SAT008	Vague de réalité
+Weave Lightning	Blue	FR_2HP131	Tisser la foudre
+Weave Lightning	Red	FR_SBA029	Tisser la foudre
+Weave Lightning	Yellow	FR_2HP130	Tisser la foudre
 Well Grounded		FR_ROS030	Bien ancré
 Winter's Bite	Blue	FR_SIY033	Morsure de l’hiver
 Wounded Bull	Red	FR_SBZ011	Taureau blessé
