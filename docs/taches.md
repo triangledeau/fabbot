@@ -9,7 +9,7 @@ retire en finissant.
 
 | Début | Agent | Branche | Tâche | Zone touchée (crates, fichiers) |
 |---|---|---|---|---|
-| 2026-11-26 | Claude | `claude/project-thread-0p5cpk` | Didacticiel « Apprendre » des règles (phase 2 du rapatriement) | `crates/ui/web/apprendre/` (nouveau), `crates/ui/src/api_apprendre.rs` (nouveau), quelques lignes dans `serveur.rs`, `index.html`, `accueil.js` |
+| 2026-11-27 | Claude | `claude/dazzling-heisenberg-efmszx` | Lire les épreuves A et B de la liste de nuit (relancées dans le conteneur) et refaire la feuille de route sur ces chiffres | `docs/feuille-de-route-top8.md`, `docs/epreuves.md`, `docs/journal/`, `docs/suivi.md` (lignes concernées) |
 | 2026-11-26 | Claude | `claude/vigilant-fermat-iq5cjs` | B2/B3 : estimation qui comprend le blood debt et les cartes bannies (Levia), mesurée contre B2 | `crates/ai/src/b2.rs`, `b3.rs` (recherche seulement), `docs/bots.md` |
 
 ## Découpage conseillé des prochaines tâches
