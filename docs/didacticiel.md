@@ -39,15 +39,37 @@ didacticiel des règles, repensé. Choix du propriétaire (2026-11-26) : public
 3. Écrire la leçon dans `lecons.js`, avec `cr: [...]` sur chaque étape de
    règle.
 
+## Refonte animée (2026-11-27)
+
+Le propriétaire a rejeté la première version (notions employées avant d'être
+expliquées, pas d'icônes du jeu, cartes peu montrées, pas assez animé). La
+leçon se joue maintenant sur un **tapis animé** plein écran (1280×720, mis à
+l'échelle) :
+
+- les vraies cartes, en grand ; un **zoom** agrandit une carte et entoure un
+  coin (anneau + trait + étiquette avec l'icône, du côté du coin) ;
+- les cartes se déplacent (main → combat → cimetière), les PV défilent, les
+  dégâts s'affichent ;
+- les **icônes officielles** (`rules.fabtcg.com/en/assets/images/icon_*.png`,
+  chargées par le navigateur, rien n'est versionné ; symbole de secours si
+  le site ne répond pas) ;
+- chaque mot de jeu s'écrit `{{notion}}` dans `lecons.js` : icône +
+  définition au survol. Une notion doit être déclarée (`introduit: [...]`)
+  avant d'être employée : le test `ordre_des_notions` le vérifie ;
+- un plan de leçon = `dit` (texte du guide), `fait` (animations : `poser`,
+  `zoom`, `attaquer`, `pitcher`…), `clic` (carte que l'élève doit cliquer),
+  `quiz` ou `scene` (partie sur le moteur). Le quiz ne donne pas la
+  solution en cas d'erreur : l'élève réessaie.
+
 ## Avancement
 
 | Chapitre | État |
 |---|---|
-| 1. Le but du jeu | 3 leçons, 1 scène |
-| 2. Lire une carte | 4 leçons (cartes montrées avec leur image, sans scène) |
-| 3. Le tapis et les zones | 4 leçons, 1 scène (arsenal) |
-| 4. Le déroulement d'un tour | 3 leçons, 1 scène (un seul point d'action) |
-| 5. Payer : coût et pitch | 3 leçons, 1 scène (payer de deux façons) |
-| 6. Attaquer : la chaîne de combat | 3 leçons, 1 scène (go again) |
-| 7. Défendre | 3 leçons, 1 scène (bloquer) |
-| 8 à 13 | à écrire |
+| 1. Le duel | 3 leçons animées |
+| 2. Lire une carte | 4 leçons animées (zooms sur les coins) |
+| 3. Payer | 2 leçons animées, 1 scène (payer) |
+| 4. Le tapis et les zones | 4 leçons reprises de la 1re version, 1 scène (arsenal) — animation à faire |
+| 5. Le tour | 5 leçons reprises de la 1re version, 1 scène (un point d'action) — animation à faire |
+| 6. La chaîne de combat | 5 leçons reprises de la 1re version, 2 scènes (go again, défendre) — animation à faire |
+| 7. Réactions et priorité | 1 leçon reprise (réactions de défense) |
+| 8 à 12 | à écrire |

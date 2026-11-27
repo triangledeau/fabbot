@@ -471,31 +471,77 @@ mod tests {
         assert_eq!(s.etat()["bot"]["vie"].as_i64().unwrap(), vie - 7);
     }
 
-    /// Toutes les cartes montrées par les leçons (`cartes: [[nom, couleur]]`
+    /// Toutes les cartes montrées par les leçons (`{ nom: "…", couleur: "…" }`
     /// dans `lecons.js`) existent dans la base.
     #[test]
     fn les_cartes_des_lecons_existent() {
         let js = include_str!("../web/apprendre/lecons.js");
         let mut n = 0;
-        for bloc in js.split("cartes: [").skip(1) {
-            let fin = bloc.find("]]").expect("liste de cartes fermée");
-            for paire in bloc[..fin].split('[').skip(1) {
-                let champs: Vec<&str> = paire.split('"').collect();
-                let (nom, couleur) = (champs[1], champs[3]);
-                let c = match couleur {
-                    "rouge" => R,
-                    "jaune" => Y,
-                    "bleu" => B,
-                    _ => None,
-                };
-                assert!(
-                    base().find(nom, c).is_some(),
-                    "carte inconnue : {nom} {couleur}"
-                );
-                n += 1;
-            }
+        for bloc in js.split("{ nom: \"").skip(1) {
+            let nom = &bloc[..bloc.find('"').unwrap()];
+            let reste = &bloc[nom.len()..bloc.find('}').unwrap()];
+            let couleur = reste
+                .split("couleur: \"")
+                .nth(1)
+                .map(|c| &c[..c.find('"').unwrap()]);
+            let c = match couleur {
+                Some("rouge") => R,
+                Some("jaune") => Y,
+                Some("bleu") => B,
+                _ => None,
+            };
+            assert!(
+                base().find(nom, c).is_some(),
+                "carte inconnue : {nom} {couleur:?}"
+            );
+            n += 1;
         }
-        assert!(n > 0);
+        assert!(n > 10, "{n} cartes seulement");
+    }
+
+    /// Une notion (`{{notion}}`) n'est employée qu'après le plan qui
+    /// l'introduit (`introduit: [...]`), et chaque notion est définie dans
+    /// `NOTIONS`. C'est ce qui garantit qu'aucun mot du jeu n'arrive avant
+    /// d'avoir été expliqué.
+    #[test]
+    fn ordre_des_notions() {
+        let js = include_str!("../web/apprendre/lecons.js");
+        let (defs, corps) = js.split_at(js.find("const LECONS").unwrap());
+        let mut connues = std::collections::HashSet::new();
+        let mut i = 0;
+        while i < corps.len() {
+            if !corps.is_char_boundary(i) {
+                i += 1;
+                continue;
+            }
+            if corps[i..].starts_with("introduit: [") {
+                let fin = i + corps[i..].find(']').unwrap();
+                for n in corps[i + 12..fin].split(',') {
+                    let n = n.trim().trim_matches('"');
+                    assert!(
+                        defs.contains(&format!("\n  {n}: {{")),
+                        "notion « {n} » absente de NOTIONS"
+                    );
+                    connues.insert(n.to_string());
+                }
+                i = fin;
+            } else if corps[i..].starts_with("{{") {
+                let fin = i + corps[i..].find("}}").unwrap();
+                let n = corps[i + 2..fin].split('|').next().unwrap();
+                let mut d = i.saturating_sub(60);
+                while !corps.is_char_boundary(d) {
+                    d += 1;
+                }
+                let contexte = &corps[d..fin];
+                assert!(
+                    connues.contains(n),
+                    "« {n} » employé avant d'être introduit : …{contexte}"
+                );
+                i = fin;
+            }
+            i += 1;
+        }
+        assert!(connues.len() > 10);
     }
 
     /// Scène « un-point » : après la première attaque, l'élève n'a plus de
