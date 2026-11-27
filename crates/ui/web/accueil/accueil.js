@@ -45,8 +45,9 @@
       if (e && e.reglages && !e.erreur) {
         const m = e.match || {};
         const fini = m.gagnant ? " (terminé)" : "";
-        r.innerHTML = `<span><b>Match en cours${fini}</b> : ${esc(nomDeck(e.reglages.deck))} contre ${esc(nomDeck(e.reglages.deck_bot))} (bot ${esc(String(e.reglages.niveau).toUpperCase())}), score <span class="num">${m.vous ?? 0}–${m.bot ?? 0}</span></span>
-          <div class="row"><a class="btn small primary" href="#partie">Reprendre</a><a class="btn small quiet" href="#nouveau-match">Nouveau match</a></div>`;
+        const titre = `Match en cours${fini} : ${nomDeck(e.reglages.deck)} contre ${nomDeck(e.reglages.deck_bot)} (bot ${String(e.reglages.niveau).toUpperCase()})`;
+        r.innerHTML = `<div class="row"><span class="lib" title="${esc(titre)}"><b>${esc(nomDeck(e.reglages.deck))} – ${esc(nomDeck(e.reglages.deck_bot))}</b> <span class="num">${m.vous ?? 0}–${m.bot ?? 0}</span></span>
+          <a class="btn small primary" href="#partie">Reprendre</a><a class="btn small quiet" href="#nouveau-match" title="Nouveau match">Nouveau</a></div>`;
         r.hidden = false;
       } else r.hidden = true;
       illustrations(e && e.vous && e.vous.heros_image);
