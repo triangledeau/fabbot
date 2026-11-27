@@ -396,12 +396,16 @@ bord pointillé = carte face cachée (que vous seul voyez).
   désélectionner.
 - **Annuler mon dernier choix** revient avant votre dernier choix (et avant
   les réponses du bot qui ont suivi), autant de fois que voulu.
-- **Niveau réfléchi** (`reflechi`, `reflechi-30s`, `reflechi-5m` dans
-  « Niveau du bot ») : la recherche de B3 sur tous les cœurs, de rien à
-  2 minutes par décision (30 s, 5 min) selon le nombre d'options et le genre
-  de décision ([`fab_ai::reflechi`](../crates/ai/src/reflechi.rs)). Pendant
+- **Niveau réfléchi** (« Niveau du bot ») : la recherche de B3 sur tous les
+  cœurs ([`fab_ai::reflechi`](../crates/ai/src/reflechi.rs)). Avec une
+  **banque de temps** pour la partie (`reflechi-partie-5m`, `-10m`, `-15m`,
+  à la demande du propriétaire, 27/11) : chaque décision prend une part de
+  ce qui reste, plus grande si elle est complexe (rien quand une seule
+  option compte, 1/75e de la banque pour une priorité à 3 options, 1/25e
+  au plus) ; banque vide, il joue en 0,3 s. Sans banque (`reflechi`) : de
+  rien à 2 minutes par décision. La banque repart à chaque manche. Pendant
   qu'il réfléchit, le ruban montre une **jauge** (temps écoulé sur le temps
-  prévu), en petit l'**option qu'il préfère pour l'instant** avec ses chances
+  prévu, et ce qu'il reste dans la banque), en petit l'**option qu'il préfère pour l'instant** avec ses chances
   estimées (une carte cachée n'est pas nommée : « pitcher une carte
   cachée ») et le bouton **Joue maintenant** (il joue le meilleur coup trouvé).
   « Annuler » pendant sa réflexion l'arrête. Côté serveur, le bot réfléchit

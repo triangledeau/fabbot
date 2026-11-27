@@ -142,6 +142,33 @@ fn annuler_pendant_la_reflexion_l_interrompt() {
 }
 
 #[test]
+fn la_banque_de_temps_de_la_partie_diminue_et_s_affiche() {
+    let mut s = session("reflechi-partie-1m", 9);
+    jusqu_a_une_reflexion(&mut s);
+    attendre_le_debut(&s);
+    let b1 = s.reflexion_json()["banque_ms"].as_u64().unwrap();
+    assert!(b1 <= 60_000);
+    // Une décision prend une part de la banque (1 minute : quelques
+    // dixièmes de seconde à 2,4 s), pas tout.
+    assert!(s.reflexion_json()["prevu_ms"].as_u64().unwrap() <= 2_400);
+    attendre_le_coup_long(&mut s);
+    jusqu_a_une_reflexion(&mut s);
+    attendre_le_debut(&s);
+    let b2 = s.reflexion_json()["banque_ms"].as_u64().unwrap();
+    assert!(b2 < b1, "{b2} >= {b1}");
+    assert!(b2 > 0);
+}
+
+/// Comme `attendre_le_coup`, sans « Joue maintenant » (le temps prévu).
+fn attendre_le_coup_long(s: &mut Session) {
+    let debut = Instant::now();
+    while !s.poursuivre(false).unwrap() {
+        assert!(debut.elapsed() < Duration::from_secs(10));
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
+
+#[test]
 fn les_autres_niveaux_ne_reflechissent_pas_a_part() {
     let mut s = session("b1", 8);
     for _ in 0..50 {

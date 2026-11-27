@@ -412,8 +412,9 @@ const botAuHasard = new Set(); // matchs lancés avec « Deck du bot : Au hasard
 
 const NIVEAUX_BOT = [
   ["b0", "Niveau 0 (hasard)"], ["b1", "Niveau 1 (règles fixes)"], ["b2", "Niveau 2 (réfléchit)"],
-  ["b3", "Niveau 3 (évaluation apprise)"], ["reflechi", "Réfléchi (jusqu'à 2 min par décision)"],
-  ["reflechi-30s", "Réfléchi, 30 s au plus"], ["reflechi-5m", "Réfléchi, 5 min au plus"],
+  ["b3", "Niveau 3 (évaluation apprise)"], ["reflechi-partie-5m", "Réfléchi, 5 min pour la partie"],
+  ["reflechi-partie-10m", "Réfléchi, 10 min pour la partie"], ["reflechi-partie-15m", "Réfléchi, 15 min pour la partie"],
+  ["reflechi", "Réfléchi, jusqu'à 2 min par décision"],
   ["b2-500ms", "Niveau 2, ½ s par décision"], ["b2-1000", "Niveau 2, 1 000 essais"],
 ];
 
@@ -1116,7 +1117,8 @@ function majReflexion(r) {
   if (!j || !r) return;
   const pct = r.prevu_ms ? Math.min(100, 100 * r.ecoule_ms / r.prevu_ms) : 0;
   j.querySelector(".reflexion-plein").style.width = pct + "%";
-  j.querySelector(".reflexion-temps").textContent = r.prevu_ms ? `${duree(r.ecoule_ms)} sur ${duree(r.prevu_ms)} au plus` : "";
+  const banque = r.banque_ms != null ? ` · banque : ${duree(r.banque_ms)}` : "";
+  j.querySelector(".reflexion-temps").textContent = (r.prevu_ms ? `${duree(r.ecoule_ms)} sur ${duree(r.prevu_ms)} au plus` : "") + banque;
   const p = (r.options || [])[0];
   const essais = r.iterations ? ` · ${r.iterations.toLocaleString("fr-FR")} parties imaginées sur ${r.fils} cœurs` : "";
   j.querySelector(".reflexion-pref").innerHTML = p
@@ -1267,7 +1269,7 @@ async function preparerDialogue() {
   };
   remplir(f.deck);
   remplir(f.bot);
-  remplir(f.niveau, [...v.niveaux, "reflechi", "reflechi-30s", "reflechi-5m", "b2-500ms", "b2-1000"]);
+  remplir(f.niveau, [...v.niveaux, "reflechi-partie-5m", "reflechi-partie-10m", "reflechi-partie-15m", "reflechi", "b2-500ms", "b2-1000"]);
 }
 
 async function ouvrirNouveau() {

@@ -120,5 +120,9 @@ fn une_seule_option_distincte_ne_fait_pas_reflechir() {
 fn le_niveau_reflechi_se_cree_par_son_nom_et_a_un_suivi() {
     assert!(creer_agent("reflechi", 1).unwrap().suivi().is_some());
     assert!(creer_agent("reflechi-30s", 1).unwrap().suivi().is_some());
+    assert!(creer_agent("reflechi-partie-10m", 1)
+        .unwrap()
+        .suivi()
+        .is_some());
     assert!(creer_agent("b3", 1).unwrap().suivi().is_none());
 }

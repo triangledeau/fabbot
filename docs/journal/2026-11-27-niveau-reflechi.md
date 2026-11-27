@@ -35,3 +35,11 @@ Agent : Claude. Branche : `claude/project-thread-lip8f5`.
   à mesurer avant de changer les réglages de la recherche.
 - Jauge dans l'interface texte (le niveau y marche, sans jauge).
 - Cœurs performants / économes de la Surface : tous les fils sont égaux.
+
+## Suite : banque de temps par partie (demande du propriétaire après essai)
+- `reflechi-partie-5m` / `-10m` / `-15m` : banque pour toute la manche ;
+  une décision prend `restant / 150 × poids × (options − 1, 6 au plus) / 2`,
+  entre 0,3 s et 2 min ; la jauge montre ce qui reste. Valeurs de départ,
+  non mesurées ; sans arrêt anticipé, 60 grosses décisions laissent encore
+  ≈ 1/12e de la banque.
+- Le temps d'une réflexion annulée (« Annuler ») reste décompté.

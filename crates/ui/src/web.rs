@@ -558,6 +558,9 @@ impl Session {
             "prevu_ms": p.prevu.as_millis() as u64,
             "iterations": p.iterations,
             "fils": p.fils,
+            // Ce qu'il reste dans la banque de temps de la partie (null :
+            // pas de banque).
+            "banque_ms": p.banque.map(|b| b.as_millis() as u64),
             "options": options,
         })
     }
