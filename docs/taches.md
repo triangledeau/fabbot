@@ -11,7 +11,6 @@ retire en finissant.
 |---|---|---|---|---|
 | 2026-11-26 | Claude | `claude/project-thread-0p5cpk` | Didacticiel « Apprendre » des règles (phase 2 du rapatriement) | `crates/ui/web/apprendre/` (nouveau), `crates/ui/src/api_apprendre.rs` (nouveau), quelques lignes dans `serveur.rs`, `index.html`, `accueil.js` |
 | 2026-11-26 | Claude | `claude/vigilant-fermat-iq5cjs` | B2/B3 : estimation qui comprend le blood debt et les cartes bannies (Levia), mesurée contre B2 | `crates/ai/src/b2.rs`, `b3.rs` (recherche seulement), `docs/bots.md` |
-| 2026-11-27 | Claude | `claude/project-thread-4x9bjp` | Feuille de route top 8, étape « Mesurer » : chantier 0 (script de nuit Surface), puis épreuves A/B, puis niveau réfléchi (jauge, « Joue maintenant ») | `tools/nuit*`, `docs/nuit.md`, `.gitignore` ; ensuite `crates/ai/src/epreuves*` (nouveau), `crates/sim/src/bin/` (nouveau binaire), puis `crates/ai/src/b2.rs` (recherche multi-threads), `crates/ui/src/serveur.rs`, `crates/ui/web/` (jauge). Pas touché : poids B3, table de side, `docs/bots.md` |
 
 ## Découpage conseillé des prochaines tâches
 

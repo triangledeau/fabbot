@@ -1,0 +1,17 @@
+# Travaux de nuit par défaut (tools\nuit.ps1, mode d'emploi : docs\nuit.md).
+# Une ligne par travail :   nom | programme | arguments
+# Les travaux sont lancés dans l'ordre ; à l'heure limite (07:30 par
+# défaut), le travail en cours est arrêté et les suivants sautés : mettre
+# les plus importants en premier.
+# Règle : un travail de nuit ne doit PAS écrire dans un fichier suivi par
+# git (data\b3\evaluation.txt, data\side\b1.txt...) : sinon la mise à jour
+# du lendemain (Jouer.bat) est bloquée. Utiliser --sortie resultats\...
+#
+# 1. Vitesse de la Surface : B3 contre B3, 4 parties par paire de decks.
+vitesse-b3 | fab-sim | --tournoi --bots b3 b3 --games 4 --check
+# 2. Contrôle des règles : 1 000 parties B1 contre B1 par paire, vérifiées.
+controle-b1 | fab-sim | --tournoi --bots b1 b1 --games 1000 --check
+# 3. Niveau de B3 contre B2 (16 parties par paire de decks).
+b3-contre-b2 | fab-sim | --tournoi --bots b3 b2 --games 16 --check
+# 4. Matrice B3 contre B3 (100 parties par paire de decks, ± 10 points par case).
+matrice-b3 | fab-sim | --tournoi --bots b3 b3 --games 100 --check --seed 7

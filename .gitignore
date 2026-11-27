@@ -14,3 +14,5 @@ Thumbs.db
 /data/outils/*
 !/data/outils/README.md
 __pycache__/
+# Résultats des travaux de nuit (tools/nuit.ps1), propres à chaque machine
+/resultats/
