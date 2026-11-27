@@ -135,6 +135,12 @@ impl<'a> Vue<'a> {
         self.g.defense(self.voir(id))
     }
 
+    /// Un de mes équipements (visible) qui n'ajouterait rien en défendant
+    /// ([`crate::equipement_sans_defense`]).
+    pub fn equipement_sans_defense(&self, id: ObjectId) -> bool {
+        crate::equipement_sans_defense(self.g, self.voir(id))
+    }
+
     pub fn mots_cles(&self, id: ObjectId) -> Keywords {
         self.g.keywords(self.voir(id))
     }
