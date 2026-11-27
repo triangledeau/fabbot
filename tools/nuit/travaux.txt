@@ -15,3 +15,6 @@ controle-b1 | fab-sim | --tournoi --bots b1 b1 --games 1000 --check
 b3-contre-b2 | fab-sim | --tournoi --bots b3 b2 --games 16 --check
 # 4. Matrice B3 contre B3 (100 parties par paire de decks, ± 10 points par case).
 matrice-b3 | fab-sim | --tournoi --bots b3 b3 --games 100 --check --seed 7
+# 5. Épreuve A (docs\epreuves.md) : puzzles exacts du tour, 162 parties B3
+#    contre B3 (chaque paire de decks deux fois), défenses passive et b1.
+puzzles-a | epreuve-a | --parties 162 --budget 1000000 --seed 1
