@@ -23,7 +23,9 @@
   const NOMS_ICONES = { p: "puissance", d: "défense", r: "ressource", h: "vie", i: "intellect" };
   const icone = (k, cls = "") => k ? `<img class="ico ${cls}" src="https://rules.fabtcg.com/en/assets/images/icon_${k}.png" alt="${NOMS_ICONES[k] || ""}" referrerpolicy="no-referrer" onerror="this.outerHTML=Symboles.html('{${k}}')">` : "";
   // {{notion}} ou {{notion|forme}} → mot souligné, avec son icône et sa définition au survol.
-  const rendre = (t) => String(t ?? "").replace(/\{\{(\w+)(?:\|([^}]+))?\}\}/g, (m, n, forme) => {
+  // Typographie française : espace insécable avant « : ; ? ! » et après « « ».
+  const fine = (t) => String(t ?? "").replace(/ ([:;?!»])/g, "\u00a0$1").replace(/« /g, "«\u00a0");
+  const rendre = (t) => fine(t).replace(/\{\{(\w+)(?:\|([^}]+))?\}\}/g, (m, n, forme) => {
     const d = NOTIONS[n];
     return d ? `<span class="ap-mot" tabindex="0" data-def="${esc(d.def)}">${icone(d.icone)}${esc(forme || d.mot)}</span>` : m;
   });
@@ -32,23 +34,31 @@
   // ——— Le tapis : 1280 × 720 unités, mis à l'échelle de la fenêtre ———
   const W = 1280, H = 720, CW = 140, CH = 196;
   const ZONES = {
-    "adv.heros": [570, 22], "moi.heros": [570, 500],
-    "chaine": [470, 262], "def.0": [640, 262], "def.1": [700, 262], "def.2": [760, 262],
-    "moi.pitch": [400, 500], "adv.pitch": [400, 22],
-    "moi.arsenal": [740, 500], "moi.cimetiere": [230, 500], "adv.cimetiere": [230, 22],
-    "moi.deck": [60, 500], "adv.deck": [60, 22],
-    "centre": [380, 120], "trio.0": [330, 200], "trio.1": [570, 200], "trio.2": [810, 200],
+    "adv.heros": [570, 22], "moi.heros": [570, 488],
+    "chaine": [470, 262], "def.0": [640, 262], "def.1": [790, 262], "def.2": [940, 262],
+    "moi.pitch": [400, 488], "adv.pitch": [400, 22],
+    "moi.arsenal": [740, 488], "moi.cimetiere": [230, 488], "adv.cimetiere": [230, 22],
+    "moi.deck": [60, 488], "adv.deck": [60, 22],
+    "centre": [570, 120], "trio.0": [330, 200], "trio.1": [570, 200], "trio.2": [810, 200],
   };
   const zone = (z) => {
     if (ZONES[z]) return ZONES[z];
-    let m = /^moi\.main\.(\d+)$/.exec(z); if (m) return [900 + 88 * +m[1], 505];
+    let m = /^moi\.main\.(\d+)$/.exec(z); if (m) return [760 + 120 * +m[1], 493];
     m = /^adv\.main\.(\d+)$/.exec(z); if (m) return [920 + 70 * +m[1], 18];
-    m = /^moi\.pitch\.(\d+)$/.exec(z); if (m) return [400, 500 - 26 * +m[1]];
+    m = /^moi\.pitch\.(\d+)$/.exec(z); if (m) return [400, 488 - 26 * +m[1]];
+    // Cimetière : chaque carte un peu décalée, pour qu'on voie qu'il y en a plusieurs.
+    m = /^(moi|adv)\.cimetiere\.(\d+)$/.exec(z);
+    if (m) { const [x, y] = ZONES[m[1] + ".cimetiere"], k = +m[2]; return [x + 10 * k, y + (m[1] === "moi" ? -10 : 10) * k]; }
     return [W / 2 - CW / 2, H / 2 - CH / 2];
   };
   const GRANDES = { centre: 2.1, "trio.0": 1.45, "trio.1": 1.45, "trio.2": 1.45 };
   // Coins d'une carte (en % de sa largeur / hauteur) pour les zooms.
   const COINS = { pitch: [11, 6], cout: [89, 6], puissance: [10, 93], defense: [90, 93], vie: [90, 93], intellect: [10, 93], type: [50, 92], texte: [50, 72], nom: [50, 5] };
+  // Zones de texte d'une carte (x, y, largeur, hauteur en %) : surlignées par un cadre.
+  // Les sous-zones (classe, sorte, règles, ambiance) sont mesurées sur la carte
+  // du chapitre 2, Décharge de la lame d'acier (scan français).
+  const RECTS = { type: [21, 88.8, 58, 5.6], texte: [7, 62, 86, 23], nom: [20, 2.5, 60, 6],
+    classe: [26.5, 88.8, 17, 5.6], sorte: [41, 88.8, 34, 5.6], regles: [7, 63, 86, 11], ambiance: [7, 74.5, 86, 11] };
   const ICONE_COIN = { pitch: "r", cout: "r", puissance: "p", defense: "d", vie: "h", intellect: "i" };
 
   const fiches = {};
@@ -57,7 +67,13 @@
     return fiches[k] || (fiches[k] = api("GET", `/api/apprendre/fiche?nom=${encodeURIComponent(spec.nom)}&couleur=${encodeURIComponent(spec.couleur || "")}`).catch(() => ({ nom: spec.nom })));
   };
 
+  // Le didacticiel nomme les cartes comme elles sont imprimées. Brutal Assault
+  // rouge et jaune n'existent qu'en anglais : la bleue est montrée elle aussi
+  // en version anglaise, pour que les trois couleurs portent le même nom.
+  const VO = { "Brutal Assault|bleu": "IRA010" };
   function carteHtml(c) {
+    const vo = VO[c.nom + "|" + c.couleur];
+    if (vo) c = { ...c, image: vo, nom_fr: null };
     const coul = c.couleur ? ` coul-${esc(c.couleur)}` : "";
     const v = (k, x) => x != null ? `<span class="v v-${k}">${icone(k)}<b>${x}</b></span>` : "";
     const cadre = `<div class="cadre${coul}"><div class="nom">${esc(c.nom_fr || c.nom)}</div><div class="vals">${v("r", c.cout)}${v("p", c.puissance)}${v("d", c.defense)}${v("h", c.vie)}${v("i", c.intellect)}</div></div>`;
@@ -76,12 +92,14 @@
     const ajuster = () => {
       const parent = racine.parentElement; if (!parent) return;
       const haut = racine.getBoundingClientRect().top + window.scrollY;
-      const dispo = window.innerHeight - haut - RESERVE_GUIDE;
+      const g = parent.querySelector(".ap-guide");
+      const dispo = window.innerHeight - haut - Math.max(RESERVE_GUIDE, (g ? g.offsetHeight : 0) + 24);
       const s = Math.max(0.4, Math.min(parent.clientWidth / W, dispo / H));
       tapis.style.setProperty("--s", s);
       racine.style.width = (W * s) + "px"; racine.style.height = (H * s) + "px";
     };
-    new ResizeObserver(ajuster).observe(racine.parentElement || racine);
+    const ro = new ResizeObserver(ajuster); ro.observe(racine.parentElement || racine);
+    const gd = racine.parentElement?.querySelector(".ap-guide"); if (gd) ro.observe(gd);
     window.addEventListener("resize", ajuster); ajuster();
     const duree = (d) => vite ? 0 : d;
     function placer(id, z, d = 650, echelle) {
@@ -91,7 +109,7 @@
       const s = echelle ?? GRANDES[z] ?? 1;
       e.n.style.transition = `transform ${duree(d)}ms cubic-bezier(.2,.75,.2,1), opacity ${duree(d)}ms`;
       e.n.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
-      e.n.style.zIndex = z.startsWith("moi.main") ? 20 + (+z.split(".")[2]) : (GRANDES[z] ? 30 : (z === "chaine" || z.startsWith("def") ? 25 : 10));
+      e.n.style.zIndex = z.includes(".cimetiere.") ? 10 + (+z.split(".")[2]) : z.startsWith("moi.main") ? 20 + (+z.split(".")[2]) : (GRANDES[z] ? 30 : (z === "chaine" || z.startsWith("def") ? 25 : 10));
       return attendre(duree(d));
     }
     async function creer(id, spec, z, depuis, opts = {}) {
@@ -110,7 +128,20 @@
       return placer(id, z, opts.vite ? 250 : 750);
     }
     function retirer(id) { if (el[id]) { el[id].n.remove(); delete el[id]; } }
-    function vider() { for (const id of Object.keys(el)) retirer(id); tapis.querySelectorAll(".ap-zoom, .ap-flot, .ap-bulle").forEach((x) => x.remove()); }
+    function vider() { for (const id of Object.keys(el)) retirer(id); tapis.querySelectorAll(".ap-zoom, .ap-flot, .ap-bulle, .ap-slot, .ap-recap, .ap-fin, .ap-jauge, .ap-points").forEach((x) => x.remove()); }
+    // Une zone du tapis, dessinée en pointillés avec son nom. Elle apparaît la
+    // première fois qu'on en parle et reste ensuite ; `eclairer` la fait briller.
+    async function slot(z, nom, eclairer = true) {
+      let n = tapis.querySelector(`.ap-slot[data-z="${z}"]`);
+      if (!n) {
+        const [x, y] = zone(z);
+        n = document.createElement("div"); n.className = "ap-slot"; n.dataset.z = z;
+        n.style.left = x + "px"; n.style.top = y + "px";
+        n.innerHTML = `<span>${esc(nom)}</span>`;
+        tapis.prepend(n);
+      }
+      if (eclairer && !vite) { n.classList.remove("eclaire"); n.getBoundingClientRect(); n.classList.add("eclaire"); await attendre(900); }
+    }
     // PV d'un héros : pastille sur la carte, chiffres qui défilent.
     async function vie(id, v, lent) {
       const e = el[id]; if (!e) return;
@@ -141,6 +172,20 @@
       const e = el[id]; if (!e) return;
       tapis.querySelectorAll(".ap-zoom").forEach((x) => x.remove());
       const z = document.createElement("div"); z.className = "ap-zoom";
+      // Une zone de texte (nom, ligne de type, texte) : un cadre ajusté à la
+      // zone, à droite de la carte. Une icône (coin) : un cercle.
+      const rect = RECTS[coin];
+      if (rect) {
+        const [x0, y0, w0, h0] = rect, ZW = 458, ZH = 641, L = 230;
+        const bout = L + (x0 + w0) / 100 * ZW, ry = 40 + (y0 + h0 / 2) / 100 * ZH, fin = 740;
+        z.innerHTML = `<div class="zc ct" style="left:${L}px">${e.n.innerHTML}<div class="surligne" style="left:${x0}%;top:${y0}%;width:${w0}%;height:${h0}%"></div></div>
+          <div class="trait" style="left:${bout}px;top:${ry - 1}px;width:${fin - bout}px"></div>
+          <div class="etiq" style="left:${fin}px;top:${ry - 25}px"><span>${esc(label || "")}</span></div>`;
+        z.querySelector(".pv")?.remove();
+        tapis.appendChild(z);
+        if (!vite) { z.getBoundingClientRect(); z.classList.add("ouvert"); await attendre(1400); } else z.classList.add("ouvert");
+        return;
+      }
       const [cx, cy] = COINS[coin] || [50, 50];
       // Carte agrandie (140×196 × 3.27) : à droite si le coin est à gauche, pour
       // que l'étiquette et son trait pointent vers le bon coin.
@@ -163,13 +208,14 @@
       b.style.left = (x + CW / 2 + (cx / 100 - .5) * CW * s) + "px"; b.style.top = (y + CH / 2 + (cy / 100 - .5) * CH * s) + "px";
       tapis.appendChild(b);
     }
-    return { el, placer, creer, retirer, vider, vie, flotter, secouer, zoom, fermerZoom, bulle, tapis, set vite(v) { vite = v; }, get vite() { return vite; } };
+    return { el, placer, creer, retirer, vider, slot, vie, flotter, secouer, zoom, fermerZoom, bulle, tapis, set vite(v) { vite = v; }, get vite() { return vite; } };
   }
 
   // ——— Les actions animées des plans (lecons.js, champ `fait`) ———
   let main = 0, pitchs = 0, ressources = 0;
   const ACTIONS = {
     vider: (t) => t.vider(),
+    zone: (t, z, nom, calme) => t.slot(z, nom, !calme),
     poser: (t, id, spec, z, o = {}) => t.creer(id, spec, z, null, o),
     dos: (t, id, z) => t.creer(id, null, z, null, { vite: true }),
     deplacer: (t, id, z) => t.placer(id, z),
@@ -179,7 +225,11 @@
     bulle: async (t, id, coin, txt) => { t.bulle(id, coin, txt); if (!t.vite) await attendre(350); },
     perd: async (t, id) => { t.el[id]?.n.classList.add("vaincu"); if (!t.vite) await attendre(700); },
     releve: async (t, id) => { t.el[id]?.n.classList.remove("vaincu"); },
-    cimetiere: (t, id) => t.placer(id, id.startsWith("x") ? "adv.cimetiere" : "moi.cimetiere", 600),
+    cimetiere: (t, id) => {
+      const qui = id.startsWith("x") ? "adv" : "moi";
+      const k = Object.values(t.el).filter((e) => e.z?.startsWith(qui + ".cimetiere")).length;
+      return t.placer(id, qui + ".cimetiere." + k, 600);
+    },
     jouer: async (t, id, spec, z) => {
       const e = t.el[id];
       if (spec && e) { e.n.classList.remove("dos"); e.n.innerHTML = carteHtml(await fiche(spec)); e.spec = spec; }
@@ -218,12 +268,22 @@
       t.flotter(id, `+${n} ${icone("r")}`, "gain");
     },
     payer: async (t, n) => { if (!t.vite) await attendre(500); ressources -= n; jauge(t); },
+    ressources: (t, n) => { ressources = n; jauge(t); },
+    points: async (t, n) => { pointsAction(t, n); if (!t.vite) await attendre(500); },
+    // Fin du tour : les ressources non dépensées sont perdues.
+    finTour: async (t) => {
+      if (!t.vite && ressources) { t.flotter("moi", `−${ressources} ${icone("r")}`, "degats"); await attendre(700); }
+      ressources = 0; jauge(t);
+    },
   };
-  function jauge(t) {
-    let j = t.tapis.querySelector(".ap-jauge");
-    if (!j) { j = document.createElement("div"); j.className = "ap-jauge"; t.tapis.appendChild(j); }
-    j.innerHTML = `${icone("r")}<b>${ressources}</b><span>ressource${ressources > 1 ? "s" : ""}</span>`;
+  function compteur(t, cls, html) {
+    let j = t.tapis.querySelector("." + cls);
+    if (!j) { j = document.createElement("div"); j.className = cls; t.tapis.appendChild(j); }
+    j.innerHTML = html;
+    if (!t.vite) { j.classList.remove("bouge"); j.getBoundingClientRect(); j.classList.add("bouge"); }
   }
+  const jauge = (t) => compteur(t, "ap-jauge", `${icone("r")}<b>${ressources}</b><span>ressource${ressources > 1 ? "s" : ""}</span>`);
+  const pointsAction = (t, n) => compteur(t, "ap-points", `<i class="pa${n ? "" : " vide"}"></i><b>${n}</b><span>point${n > 1 ? "s" : ""} d'action</span>`);
   async function faire(t, actions) {
     for (const [nom, ...args] of actions || []) {
       if (!ACTIONS[nom]) { console.warn("action inconnue", nom); continue; }
@@ -303,9 +363,9 @@
       for (const c of [...n.childNodes]) {
         if (c.nodeType === 3) {
           const f = document.createDocumentFragment();
-          for (const m of c.textContent.split(/(\s+)/)) {
+          for (const m of c.textContent.split(/([ \t\n]+)/)) {
             if (!m) continue;
-            if (/^\s+$/.test(m)) { f.appendChild(document.createTextNode(m)); continue; }
+            if (/^[ \t\n]+$/.test(m)) { f.appendChild(document.createTextNode(m)); continue; }
             const s = document.createElement("span"); s.className = "mt"; s.style.animationDelay = (i++ * 28) + "ms"; s.textContent = m; f.appendChild(s);
           }
           c.replaceWith(f);
@@ -342,7 +402,7 @@
     if (pl.recap) {
       // Récapitulatif de fin de chapitre : une fiche sur le tapis.
       tapis.vider(); tapis.tapis.querySelector(".ap-jauge")?.remove();
-      tapis.tapis.insertAdjacentHTML("beforeend", `<div class="ap-recap"><h2>À retenir</h2><ol>${pl.recap.map((r, i) => `<li style="animation-delay:${200 + i * 350}ms">${esc(r)}</li>`).join("")}</ol></div>`);
+      tapis.tapis.insertAdjacentHTML("beforeend", `<div class="ap-recap"><h2>À retenir</h2><ol>${pl.recap.map((r, i) => `<li style="animation-delay:${200 + i * 350}ms">${fine(esc(r))}</li>`).join("")}</ol></div>`);
       const g = guide("Voici l'essentiel du chapitre. Relis-le avant de passer à la suite.", navBoutons(), null);
       brancherNav(g);
       return;
@@ -423,6 +483,7 @@
   async function scene(pl, mon) {
     const sc = pl.scene;
     tapis.vider(); enJeu = null;
+    for (const [z, nom] of [["moi.cimetiere", "Cimetière"], ["moi.pitch", "Pitch"], ["adv.cimetiere", "Cimetière"]]) tapis.slot(z, nom, false);
     let dernier = null;
     const g = guide(`${rendre(pl.dit || "")}<div class="ap-consigne">${rendre(sc.consigne)}</div>`, navBoutons(false), pl.cr);
     brancherNav(g);
@@ -442,7 +503,7 @@
         const c = ev.target.closest(".ct.jouable"); if (!c) return;
         choisir(optDe[c.dataset.id.slice(1)]);
       };
-      opts.innerHTML = ok ? "" : (d ? `<span class="muted petit">${esc(d.titre)}</span>` + d.options.filter((o) => o.carte == null || o.passer).map((o) => `<button class="btn small${o.passer ? " quiet" : ""}" data-o="${o.i}">${esc(propre(o.texte))}</button>`).join("") : "");
+      opts.innerHTML = ok ? "" : (d ? `<span class="ap-q">${fine(esc(tutoyer(d.titre)))}</span>` + d.options.filter((o) => o.carte == null || o.passer).map((o) => `<button class="btn small${o.passer ? " quiet" : ""}" data-o="${o.i}">${esc(propre(o.texte))}</button>`).join("") : "");
       opts.querySelectorAll("[data-o]").forEach((b) => b.addEventListener("click", () => choisir(b.dataset.o)));
       g.querySelector(".ap-actions").innerHTML = navBoutons(ok) + (ok ? "" : `<button class="btn quiet" id="ap-recommencer">Recommencer</button>`);
       brancherNav(g);
@@ -466,7 +527,25 @@
     } catch (err) { g.querySelector(".ap-dit").insertAdjacentHTML("beforeend", `<p class="erreur">Scène indisponible : ${esc(err.message)}</p>`); }
   }
   // « Jouer Raging Onslaught (rouge) [40] — coût 3… » → « Jouer Raging Onslaught (rouge) ».
-  const propre = (t) => String(t).replace(/\s*\[\d+\]/g, "").replace(/\s+—.*$/, "").replace(/\s*\(\+\d+ ressources?\)/, "");
+  const propre = (t) => tutoyer(String(t).replace(/\s*\[\d+\]/g, "").replace(/\s+—.*$/, "").replace(/\s*\(\+\d+ ressources?\)/, ""));
+  // Les questions du moteur sont écrites pour l'application (« vous ») ; le
+  // didacticiel tutoie, et n'emploie pas de mot qu'il n'a pas encore expliqué.
+  const TUTOIEMENT = [
+    [/^Vous avez la priorité\.$/, "À toi de jouer : clique sur une carte qui brille."],
+    [/^Passer$/, "Ne rien jouer"],
+    [/^Payez le coût : choisissez une carte à pitcher — il faut (\d+), vous avez (\d+)$/, (m, a, b) => `Paie le coût : clique sur une carte de ta main pour la pitcher. Il te faut ${a}, tu en as ${b}.`],
+    [/^Payez le coût : choisissez une carte à pitcher/, "Paie le coût : clique sur une carte de ta main pour la pitcher."],
+    [/^Déclarez vos cartes qui défendent \(une par une\), puis terminez\.$/, "Choisis tes cartes qui défendent, une par une, puis termine."],
+    [/^Déclarez vos cartes qui défendent\. Déjà déclarées : /, "Choisis tes cartes qui défendent. Déjà choisies : "],
+    [/^Terminer la déclaration des défenseurs$/, "J'ai fini de défendre"],
+    [/^Fin de tour : choisissez/, "Fin de tour : choisis"],
+    [/^Choisissez/, "Choisis"],
+    [/^Des dégâts vous sont infligés/, "Tu subis des dégâts"],
+  ];
+  function tutoyer(t) {
+    for (const [re, par] of TUTOIEMENT) if (re.test(t)) return t.replace(re, par);
+    return t;
+  }
 
   // Pose un état du moteur : héros, mains, pitch, arsenal, cimetière, chaîne.
   async function poserEtat(e) {
@@ -478,8 +557,8 @@
     (e.vous.pitch || []).forEach((c, i) => mettre(c, "moi.pitch." + i));
     (e.bot.pitch || []).forEach((c) => mettre(c, "adv.pitch"));
     if (e.vous.arsenal && !e.vous.arsenal.cache) mettre(e.vous.arsenal, "moi.arsenal");
-    (e.vous.cimetiere || []).forEach((c) => mettre(c, "moi.cimetiere"));
-    (e.bot.cimetiere || []).forEach((c) => mettre(c, "adv.cimetiere"));
+    (e.vous.cimetiere || []).forEach((c, i) => mettre(c, "moi.cimetiere." + i));
+    (e.bot.cimetiere || []).forEach((c, i) => mettre(c, "adv.cimetiere." + i));
     (e.combat?.maillons || []).forEach((m) => { mettre(m.attaque, "chaine"); (m.defenseurs || []).forEach((d, i) => mettre(d, "def." + i)); });
     if (enJeu && (e.pile || []).length && !voulu.has("o" + enJeu.id)) mettre(enJeu, "chaine");
     // Les cartes de l'adversaire en main : des dos.

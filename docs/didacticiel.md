@@ -62,6 +62,24 @@ l'échelle) :
   en fin de chapitre). Le quiz ne donne pas la
   solution en cas d'erreur : l'élève réessaie.
 
+## Revue de design avant livraison (exigence du propriétaire, 2026-11-27)
+
+Avant de livrer un chapitre, capturer **chaque étape** à 1366 × 720 et à
+1280 × 750 (script Playwright qui clique « Continuer », la carte qui brille
+et la bonne réponse des quiz), puis regarder chaque capture :
+
+- texte lisible et contrasté ; étiquettes en français, sur fond sombre plein,
+  jamais posées sur la carte ;
+- rien ne déborde, ne se chevauche ni n'est coupé (guide et boutons compris :
+  le tapis se réduit à la hauteur réelle du guide) ;
+- un cadre ajusté pour une zone de texte, un cercle pour une icône ; le zoom
+  revient à chaque étape qui parle de la zone ;
+- le nom d'une carte dans le texte est celui imprimé sur le scan montré
+  (`VO` dans `apprendre.js` force une impression quand les couleurs n'ont pas
+  la même langue) ;
+- les questions du moteur sont tutoyées et sans mot pas encore expliqué
+  (`TUTOIEMENT`) ; espace insécable avant « : ; ? ! » (`fine`).
+
 ## Avancement
 
 | Chapitre | État |
