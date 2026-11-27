@@ -28,7 +28,7 @@
           <div class="pbar" id="a-tournoi-barre"><i></i></div></div>
       </a>
     </nav>
-    <div class="homefoot"><span>Moteur <b>fabbot</b></span><span id="a-textes"></span></div>
+    <div class="homefoot" id="a-textes" hidden></div>
   </div></div>`;
 
   // Match en cours (le serveur en lance un au démarrage) : on propose de le reprendre.
@@ -38,7 +38,10 @@
         fetch("/api/decks").then((r) => r.json()),
         fetch("/api/etat").then((r) => r.json()),
       ]);
-      document.getElementById("a-textes").textContent = d.textes ? "Textes officiels des cartes chargés" : "Textes officiels des cartes absents : relancez Jouer.bat avec Internet pour les télécharger.";
+      // Pied de page affiché seulement en cas de problème : textes des cartes absents.
+      const pied = document.getElementById("a-textes");
+      pied.hidden = !!d.textes;
+      pied.textContent = d.textes ? "" : "Textes officiels des cartes absents : relancez Jouer.bat avec Internet pour les télécharger.";
       const noms = d.noms || {};
       const nomDeck = (id) => (noms[id] || nom(id)).split(",")[0];
       const r = document.getElementById("a-resume");
