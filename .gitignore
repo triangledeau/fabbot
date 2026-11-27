@@ -13,3 +13,4 @@ Thumbs.db
 # Outils locaux non publiés (embarquent une base de cartes)
 /data/outils/*
 !/data/outils/README.md
+__pycache__/

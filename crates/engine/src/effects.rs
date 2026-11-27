@@ -613,6 +613,7 @@ impl GameState {
             activations: [0; 4],
             life_delta: 0,
             life_counters: 0,
+            fused: false,
         });
         let id = ObjectId(self.objects.len() as u32 - 1);
         if !self.db.get(card).triggers.is_empty() {
@@ -673,6 +674,20 @@ impl GameState {
         }
     }
 
+    /// Capacité différée à usage unique (CR 6.6.2) : « The next time … this
+    /// turn, … ». Le script est `CardDef::granted[index]` de la carte `card` ;
+    /// sa condition `when` reçoit l'objet `source`. Elle se déclenche une seule
+    /// fois ce tour, avec l'événement dans le contexte.
+    pub fn add_delayed_trigger(&mut self, p: PlayerId, source: ObjRef, card: CardId, index: u8) {
+        self.delayed_triggers.push(crate::state::DelayedTrigger {
+            player: p,
+            source,
+            card,
+            index,
+            turn: self.turn,
+        });
+    }
+
     /// Un objet « gets » +N / go again… (CR 8.5.8, 8.5.9).
     pub fn modify(&mut self, target: ObjRef, delta: Delta, until: Until) {
         if self.is_current(target) {
@@ -681,7 +696,40 @@ impl GameState {
                 target,
                 delta,
                 until,
+                if_fused: false,
+                if_go_again: false,
             });
+        }
+    }
+
+    /// « If it's fused » : `true` si la carte `id` a payé « Lightning Fusion »
+    /// (CR 8.3.17a). Lisible par les déclencheurs (« when this attacks, if it
+    /// was fused »).
+    pub fn is_fused(&self, id: ObjectId) -> bool {
+        self.obj(id).fused
+    }
+
+    /// CR 8.3.17a : la carte `card` est fusionnée.
+    pub fn set_fused(&mut self, card: ObjRef) {
+        if self.is_current(card) {
+            self.obj_mut(card.id).fused = true;
+        }
+    }
+
+    /// « The next [attaque filtrée] you play this turn … If it's fused, it
+    /// gets [delta] » : comme [`Self::next_attack`], mais le bonus n'agit que
+    /// si l'attaque est fusionnée (CR 8.3.17a). La fusion est décidée après
+    /// l'annonce : on pose un modificateur conditionnel (CR 6.4.7b, exemple
+    /// Weave Earth).
+    pub fn next_attack_if_fused(
+        &mut self,
+        p: PlayerId,
+        filter: Option<fn(&GameState, ObjectId) -> bool>,
+        delta: Delta,
+    ) {
+        self.next_attack(p, filter, delta, true);
+        if let Some(e) = self.next_attack_effects.last_mut() {
+            e.if_fused = true;
         }
     }
 
@@ -702,7 +750,24 @@ impl GameState {
             weapon: None,
             combat_chain: false,
             at_attack: false,
+            if_fused: false,
+            if_go_again: false,
+            remaining: 1,
         });
+    }
+
+    /// « Your next `n` attacks this turn get [delta] while they have go
+    /// again » (Quick Succession) : les `n` prochaines attaques reçoivent
+    /// chacune un modificateur qui ne compte que tant que l'attaque a go again
+    /// (CR 1.8.10, 6.3). Une attaque sans go again consomme quand même
+    /// l'effet : « next attack » désigne la prochaine attaque, quelle qu'elle
+    /// soit ; seul le bonus est conditionnel.
+    pub fn next_attacks_while_go_again(&mut self, p: PlayerId, n: u8, delta: Delta) {
+        self.next_attack(p, None, delta, false);
+        if let Some(e) = self.next_attack_effects.last_mut() {
+            e.if_go_again = true;
+            e.remaining = n;
+        }
     }
 
     /// « The next [attaque filtrée] you play this combat chain gets … »
@@ -724,6 +789,9 @@ impl GameState {
             weapon: None,
             combat_chain: true,
             at_attack: false,
+            if_fused: false,
+            if_go_again: false,
+            remaining: 1,
         });
     }
 
@@ -746,6 +814,9 @@ impl GameState {
             weapon: None,
             combat_chain: false,
             at_attack: false,
+            if_fused: false,
+            if_go_again: false,
+            remaining: 1,
         });
     }
 
@@ -761,6 +832,9 @@ impl GameState {
             weapon: Some(weapon),
             combat_chain: false,
             at_attack: false,
+            if_fused: false,
+            if_go_again: false,
+            remaining: 1,
         });
     }
 
@@ -1057,12 +1131,21 @@ impl GameState {
                 })
                 && e.filter.is_none_or(|f| f(self, attack.id));
             if ok {
-                self.next_attack_effects.remove(i);
+                // CR 1.8.10 : « your next N attacks » : l'effet reste jusqu'à
+                // avoir touché N attaques.
+                if e.remaining > 1 {
+                    self.next_attack_effects[i].remaining -= 1;
+                    i += 1;
+                } else {
+                    self.next_attack_effects.remove(i);
+                }
                 self.any_lose_abilities |= e.delta.lose_abilities;
                 self.modifiers.push(Modifier {
                     target: attack,
                     delta: e.delta,
                     until: Until::EndOfTurn,
+                    if_fused: e.if_fused,
+                    if_go_again: e.if_go_again,
                 });
             } else {
                 i += 1;

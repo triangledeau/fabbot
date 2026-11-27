@@ -59,12 +59,12 @@ pub const NAMES: &[&str] = &[
 const G: Supertypes = Supertypes::NONE;
 
 /// « When this attacks ».
-fn when_this_attacks(_: &GameState, me: ObjectId, e: &Event) -> bool {
+pub(crate) fn when_this_attacks(_: &GameState, me: ObjectId, e: &Event) -> bool {
     matches!(e, Event::Attack { attack, .. } if *attack == me)
 }
 
 /// « When this defends ».
-fn when_this_defends(_: &GameState, me: ObjectId, e: &Event) -> bool {
+pub(crate) fn when_this_defends(_: &GameState, me: ObjectId, e: &Event) -> bool {
     matches!(e, Event::Defend { card, .. } if *card == me)
 }
 

@@ -40,6 +40,10 @@ pub struct Object {
     /// Compteurs +1{h} / -1{h} d'un allié (ex. Nekria) : ils modifient sa vie
     /// de base, y compris après la remise à zéro de fin de tour (CR 4.4.3a).
     pub life_counters: i8,
+    /// « Fused » (CR 8.3.17a) : la carte a payé « Lightning Fusion » en la
+    /// jouant. Vrai tant que l'objet est sur la pile ou dans l'arène ; remis à
+    /// faux quand il devient un nouvel objet (CR 3.0.9).
+    pub fused: bool,
 }
 
 impl Object {
@@ -229,6 +233,13 @@ pub struct Modifier {
     pub target: ObjRef,
     pub delta: Delta,
     pub until: Until,
+    /// L'effet ne compte que si la cible est « fused » (Weave Lightning :
+    /// « if it's fused, it gets go again »).
+    pub if_fused: bool,
+    /// L'effet ne compte que tant que la cible a go again (« +1{p} while it
+    /// has go again », Quick Succession). Ne doit modifier que la puissance :
+    /// il est ignoré dans le calcul des mots-clés (évite la boucle).
+    pub if_go_again: bool,
 }
 
 /// « Votre prochaine attaque [qui …] ce tour gets … » (CR 1.8.10), en attente.
@@ -254,6 +265,14 @@ pub struct NextAttackEffect {
     /// est connue, et non à l'annonce de l'attaque. Le filtre peut alors lire
     /// le maillon actif.
     pub at_attack: bool,
+    /// Le bonus devient un [`Modifier`] `if_fused` (la fusion est décidée
+    /// après, pendant le paiement des coûts d'effet ; CR 6.4.7b, Weave Earth).
+    pub if_fused: bool,
+    /// Le bonus devient un [`Modifier`] `if_go_again`.
+    pub if_go_again: bool,
+    /// Nombre d'attaques que l'effet touche encore (« your next 3 attacks »),
+    /// 1 pour « your next attack ».
+    pub remaining: u8,
 }
 
 /// « Your next [carte filtrée] this turn costs {r} less to play » (ex. le
@@ -304,6 +323,23 @@ pub struct GrantedTrigger {
     /// Index dans `CardDef::granted`.
     pub index: u8,
     pub until: Until,
+}
+
+/// Une capacité déclenchée différée à usage unique (CR 6.6.2 ; « The next
+/// time an attack you control hits a hero this turn, … ») : créée par la
+/// résolution d'une carte, elle se déclenche une seule fois, puis disparaît ;
+/// sinon elle disparaît à la fin du tour `turn`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DelayedTrigger {
+    /// Le joueur qui contrôle la capacité.
+    pub player: PlayerId,
+    /// La carte qui l'a créée (source des dégâts éventuels).
+    pub source: ObjRef,
+    /// La définition qui porte le script, dans `CardDef::granted`.
+    pub card: CardId,
+    pub index: u8,
+    /// Le tour où elle est valable.
+    pub turn: u32,
 }
 
 /// Effet d'un tour sur les attaques d'une arme (CR 5.2.3, 5.1.6).
@@ -495,6 +531,8 @@ pub struct GameState {
     pub play_permissions: Vec<PlayPermission>,
     /// Capacités déclenchées accordées par des effets.
     pub granted_triggers: Vec<GrantedTrigger>,
+    /// Capacités différées à usage unique (« the next time … this turn »).
+    pub delayed_triggers: Vec<DelayedTrigger>,
     /// Objets aiguisés ce tour (sharpen, CR 8.5.58) : leurs compteurs +1{p}
     /// sont retirés au début de la phase de fin.
     pub sharpened: Vec<ObjRef>,
@@ -795,6 +833,7 @@ impl GameState {
             o.activations = [0; 4];
             o.life_delta = 0;
             o.life_counters = 0;
+            o.fused = false;
         }
         o.zone = zone;
         o.face_down = matches!(zone, Zone::Deck | Zone::Hand | Zone::Arsenal);
@@ -930,12 +969,18 @@ impl GameState {
 
     /// Somme des effets continus qui s'appliquent à un objet.
     pub fn continuous_delta(&self, id: ObjectId) -> Delta {
-        self.delta_with(id, false)
+        self.delta_with(id, false, false, false)
     }
 
     /// `no_gain` : les bonus de puissance sont ignorés (« can't gain {p} »),
     /// seuls les malus comptent.
-    fn delta_with(&self, id: ObjectId, no_gain: bool) -> Delta {
+    fn delta_with(
+        &self,
+        id: ObjectId,
+        no_gain: bool,
+        skip_self_mod: bool,
+        skip_go_again_mods: bool,
+    ) -> Delta {
         let o = self.obj(id);
         let r = o.obj_ref(id);
         let mut d = Delta::default();
@@ -950,7 +995,11 @@ impl GameState {
             d.loses = d.loses | x.loses;
         };
         for m in &self.modifiers {
-            if m.target == r {
+            if m.target == r
+                && (!m.if_fused || o.fused)
+                && (!m.if_go_again
+                    || (!skip_go_again_mods && self.keywords(id).has(Keywords::GO_AGAIN)))
+            {
                 add(m.delta);
             }
         }
@@ -962,9 +1011,18 @@ impl GameState {
         }
         // Effets statiques de la carte elle-même (CR 5.4), sauf si elle a
         // perdu ses capacités.
-        if o.proxy_of.is_none() && !self.lost_abilities(id) {
+        if !skip_self_mod && o.proxy_of.is_none() && !self.lost_abilities(id) {
             if let Some(f) = self.db.get(o.card).self_mod {
                 add(f(self, id));
+            }
+        }
+        // Effets statiques d'une arme sur ses attaques (« this card's attacks
+        // get … ») : évalués en continu sur l'attaque-proxy (CR 1.4.3).
+        if let Some(w) = o.proxy_of {
+            if !self.lost_abilities(w) {
+                if let Some(f) = self.db.get(self.obj(w).card).attack_mod {
+                    add(f(self, w));
+                }
             }
         }
         // Effets statiques des héros, équipements et permanents (CR 1.7.4).
@@ -1017,7 +1075,11 @@ impl GameState {
             Some(w) => self.power(w),
             None => self.db.get(o.card).power.unwrap_or(0) as i16 + o.power_counters as i16,
         };
-        (base + self.delta_with(id, self.cant_gain_power(id)).power).max(0)
+        (base
+            + self
+                .delta_with(id, self.cant_gain_power(id), false, false)
+                .power)
+            .max(0)
     }
 
     /// Chokeslam : « attack action cards they control can't gain {p} during
@@ -1046,6 +1108,17 @@ impl GameState {
 
     /// Mots-clés actuels (de base + accordés par des effets).
     pub fn keywords(&self, id: ObjectId) -> Keywords {
+        self.keywords_with(id, false)
+    }
+
+    /// Mots-clés en ignorant l'effet statique `self_mod` de la carte elle-même.
+    /// Sert à un `self_mod` qui dépend des mots-clés (« if this has go again,
+    /// it gets +1{p} ») sans boucler : keywords → delta → self_mod → keywords.
+    pub fn keywords_sans_self_mod(&self, id: ObjectId) -> Keywords {
+        self.keywords_with(id, true)
+    }
+
+    fn keywords_with(&self, id: ObjectId, skip_self_mod: bool) -> Keywords {
         let o = self.obj(id);
         let base = match o.proxy_of {
             // Une proxy n'hérite pas des capacités de résolution de sa source
@@ -1056,7 +1129,7 @@ impl GameState {
             None if self.lost_abilities(id) => self.material_keywords(id),
             None => self.db.get(o.card).keywords | self.material_keywords(id),
         };
-        let d = self.continuous_delta(id);
+        let d = self.delta_with(id, false, skip_self_mod, true);
         // « Loses and can't gain » l'emporte sur les mots-clés accordés.
         (base | d.grants).without(d.loses)
     }

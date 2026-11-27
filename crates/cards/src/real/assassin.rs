@@ -76,7 +76,7 @@ fn when_this_attacks(_: &GameState, me: ObjectId, e: &Event) -> bool {
 }
 
 /// « When this attacks a hero ».
-fn when_this_attacks_a_hero(_: &GameState, me: ObjectId, e: &Event) -> bool {
+pub(crate) fn when_this_attacks_a_hero(_: &GameState, me: ObjectId, e: &Event) -> bool {
     matches!(e, Event::Attack { attack, target_obj: None, .. } if *attack == me)
 }
 

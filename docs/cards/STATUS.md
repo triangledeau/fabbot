@@ -15,6 +15,11 @@ mais sont suivies séparément, car leurs valeurs (attaque, défense...) diffèr
 imprimées vérifiées par `python3 tools/check_coded_cards.py`). Le token
 **Flurry** (créé par Edict of Steel et Toe the Line) est aussi codé et testé.
 
+**Deck Aurora (2026-11-27, en cours)** : les cartes nouvelles du deck Aurora
+sont `Tested` (code : `crates/cards/src/real/lightning.rs`, tests :
+`crates/cards/tests/cartes_lightning.rs`). Les jetons **Embodiment of
+Lightning** et **Lightning Flow** sont aussi codés et testés.
+
 **Étape 3, deck Ira (2026-11-22)** : toutes les cartes du deck Ira sont
 `Tested` (code : `crates/cards/src/real/ninja.rs` et `generic.rs`, tests :
 `crates/cards/tests/cartes_ninja.rs` et `cartes_generiques.rs`). La carte
@@ -70,6 +75,7 @@ souvent que la rouge).
 
 | Carte | Couleur | Utilisée par | Statut |
 |---|---|---|---|
+| **Aurora** | héros | Aurora | Tested |
 | **Ira, Crimson Haze** | héros | Ira, Crimson Haze | Tested |
 | **Hala** | héros | Hala | Tested |
 | **Dorinthea** | héros | Dorinthea | Tested |
@@ -82,13 +88,14 @@ souvent que la rouge).
 | Aetherstorm Wellingtons | arène | Iyslander | Tested |
 | Annals of Sutcliffe | arène | Florian | Tested |
 | Arcane Lantern | arène | Florian | Tested |
-| Blade Beckoner Boots | arène | Dorinthea, Iyslander | Tested |
+| Beckoning Haunt | arène | Aurora | Tested |
+| Blade Beckoner Boots | arène | Dorinthea, Iyslander, Aurora | Tested |
 | Blade Beckoner Gauntlets | arène | Iyslander | Tested |
 | Blade Beckoner Helm | arène | Bravo, Flattering Showman, Ira, Crimson Haze, Iyslander | Tested |
 | Blade Beckoner Plating | arène | Iyslander | Tested |
 | Blood Scent | arène | Ira, Crimson Haze | Tested |
 | Bloodied Oval | arène | Florian | Tested |
-| Blossom of Spring | arène | Arakni, Web of Deceit, Florian | Tested |
+| Blossom of Spring | arène | Arakni, Web of Deceit, Florian, Aurora | Tested |
 | Buzzard Helm | arène | Levia | Tested |
 | Civic Steps | arène | Bravo, Flattering Showman | Tested |
 | Crown of Dichotomy | arène | Florian | Tested |
@@ -100,10 +107,12 @@ souvent que la rouge).
 | Edge Laden Plate | arène | Hala | Tested |
 | Edge of Autumn | arène | Ira, Crimson Haze | Tested |
 | Embraforged Gauntlet | arène | Levia | Tested |
+| Flash of Brilliance | arène | Aurora | Tested |
 | Gauntlet of Boulderhold | arène | Bravo, Flattering Showman | Tested |
 | Gauntlets of Unity | arène | Dorinthea, Hala | Tested |
 | Hell Hammer | arène | Levia | Tested |
 | Helm of Lignum Vitae | arène | Florian | Tested |
+| Helm of Might and Magic | arène | Aurora | Tested |
 | Helm of Unity | arène | Dorinthea, Hala | Tested |
 | Hex Gauntlet | arène | Levia | Tested |
 | Hooves of the Shadowbeast | arène | Levia | Tested |
@@ -130,11 +139,13 @@ souvent que la rouge).
 | Smoldering Scales | arène | Dromai | Tested |
 | Spellfire Cloak | arène | Iyslander | Tested |
 | Stalker's Steps | arène | Arakni, Web of Deceit | Tested |
+| Star Fall | arène | Aurora | Tested |
 | Steelbraid Buckler | arène | Bravo, Flattering Showman | Tested |
 | Storm of Sandikai | arène | Dromai | Tested |
 | Tearing Shuko | arène | Ira, Crimson Haze | Tested |
 | Time Skippers | arène | Dromai | Tested |
 | Topsy Turvy | arène | Arakni, Web of Deceit | Tested |
+| Twinkle Toes | arène | Aurora | Tested |
 | Unflinching Foothold | arène | Bravo, Flattering Showman, Iyslander | Tested |
 | Unyielding Grip | arène | Florian | Tested |
 | Wave of Reality | arène | Dromai | Tested |
@@ -144,9 +155,10 @@ souvent que la rouge).
 | Agile Windup | yellow | Levia | Tested |
 | Amplify the Arknight | blue | Florian | Tested |
 | Amplify the Arknight | red | Florian | Tested |
-| Arcane Polarity | red | Arakni, Web of Deceit, Bravo, Flattering Showman, Dorinthea, Florian, Hala, Ira, Crimson Haze, Iyslander | Tested |
+| Arcane Polarity | red | Arakni, Web of Deceit, Bravo, Flattering Showman, Dorinthea, Florian, Hala, Ira, Crimson Haze, Iyslander, Aurora | Tested |
 | Arcane Seeds // Life | red | Florian | Tested |
 | Arcane Twining | blue | Iyslander | Tested |
+| Arcanic Shockwave | red | Aurora | Tested |
 | Art of Desire: Body | red | Arakni, Web of Deceit | Tested |
 | Aspect of Tiger: Body | red | Ira, Crimson Haze | Tested |
 | Autumn's Touch | blue | Florian | Tested |
@@ -163,6 +175,7 @@ souvent que la rouge).
 | Boulder Drop | red | Bravo, Flattering Showman | Tested |
 | Brutal Assault | blue | Hala | Tested |
 | Buckling Blow | blue | Bravo, Flattering Showman | Tested |
+| Burn Up // Shock | red | Aurora | Tested |
 | Chest Puff | red | Hala, Iyslander | Tested |
 | Chokeslam | blue | Bravo, Flattering Showman | Tested |
 | Chokeslam | red | Bravo, Flattering Showman | Tested |
@@ -173,6 +186,7 @@ souvent que la rouge).
 | Clash of Vigor | blue | Bravo, Flattering Showman | Tested |
 | Cleave the Heavens | blue | Levia | Tested |
 | Cleave the Heavens | red | Levia | Tested |
+| Cloud Cover | red | Aurora | Tested |
 | Colors of Aria | red | Florian | Tested |
 | Concoct Disorder | red | Arakni, Web of Deceit | Tested |
 | Consuming Strength | yellow | Levia | Tested |
@@ -196,8 +210,10 @@ souvent que la rouge).
 | Edict of Steel | blue | Hala | Tested |
 | Edict of Steel | red | Hala | Tested |
 | Edict of Steel | yellow | Hala | Tested |
+| Electrostatic Discharge | red | Aurora | Tested |
 | Endless Maw | red | Levia | Tested |
 | Engulfing Shadows | yellow | Levia | Tested |
+| Entwine Lightning | red | Aurora | Tested |
 | Essence of Ancestry: Body | red | Dromai | Tested |
 | Fatal Engagement | blue | Hala | Tested |
 | Fault Line | red | Bravo, Flattering Showman | Tested |
@@ -215,11 +231,12 @@ souvent que la rouge).
 | Fruits of the Forest | blue | Florian | Tested |
 | Fruits of the Forest | yellow | Florian | Tested |
 | Fyendal's Fighting Spirit | blue | Dorinthea | Tested |
-| Fyendal's Fighting Spirit | red | Dorinthea, Hala, Iyslander | Tested |
+| Fyendal's Fighting Spirit | red | Dorinthea, Hala, Iyslander, Aurora | Tested |
 | Goremass Summoning | blue | Levia | Tested |
 | Graveling Growl | red | Levia | Tested |
 | Graveling Growl | yellow | Levia | Tested |
 | Growl | red | Ira, Crimson Haze | Tested |
+| Harness Lightning | red | Aurora | Tested |
 | Harvest Season | red | Florian | Tested |
 | Hit and Run | blue | Dorinthea | Tested |
 | Humble | red | Hala, Ira, Crimson Haze | Tested |
@@ -238,17 +255,18 @@ souvent que la rouge).
 | Invoke Yendurai | red | Dromai | Tested |
 | Ironsong Response | blue | Dorinthea | Tested |
 | Ironsong Response | red | Hala | Tested |
-| Jack Be Quick | red | Dromai | Tested |
+| Jack Be Quick | red | Dromai, Aurora | Tested |
 | Lair of the Spider | red | Arakni, Web of Deceit | Tested |
 | Lay Low | yellow | Dorinthea | Tested |
 | Legacy of Ikaru | blue | Ira, Crimson Haze | Tested |
+| Lightning Surge | red | Aurora | Tested |
 | Look Tuff | red | Dorinthea, Iyslander | Tested |
 | Macho Grande | blue | Bravo, Flattering Showman | Tested |
 | Mark of the Black Widow | red | Arakni, Web of Deceit | Tested |
 | Mark of the Funnel Web | red | Arakni, Web of Deceit | Tested |
 | Mark the Prey | red | Arakni, Web of Deceit | Tested |
 | Night's Embrace | blue | Arakni, Web of Deceit | Tested |
-| Nimblism | red | Arakni, Web of Deceit, Dromai | Tested |
+| Nimblism | red | Arakni, Web of Deceit, Dromai, Aurora | Tested |
 | Oasis Respite | red | Arakni, Web of Deceit, Dromai | Tested |
 | Oath of the Arknight | blue | Florian | Tested |
 | On the Horizon | red | Dorinthea, Dromai, Florian, Hala, Ira, Crimson Haze, Iyslander | Tested |
@@ -257,6 +275,7 @@ souvent que la rouge).
 | Overpower | blue | Dorinthea | Tested |
 | Overpower | red | Dorinthea | Tested |
 | Passing Mirage | blue | Dromai | Tested |
+| Path of Same Ends | red | Aurora | Tested |
 | Photon Splicing | blue | Iyslander | Tested |
 | Pick Up the Point | red | Arakni, Web of Deceit | Tested |
 | Pouncing Qi | blue | Ira, Crimson Haze | Tested |
@@ -267,9 +286,10 @@ souvent que la rouge).
 | Pursue to the Pits of Despair | red | Arakni, Web of Deceit | Tested |
 | Pyroglyphic Protection | blue | Iyslander | Tested |
 | Qi Unleashed | blue | Ira, Crimson Haze | Tested |
+| Quick Succession | yellow | Aurora | Tested |
 | Raging Onslaught | blue | Dorinthea | Tested |
 | Rake the Embers | red | Dromai | Tested |
-| Ravenous Rabble | red | Arakni, Web of Deceit, Dromai, Iyslander | Tested |
+| Ravenous Rabble | red | Arakni, Web of Deceit, Dromai, Iyslander, Aurora | Tested |
 | Razor Reflex | red | Arakni, Web of Deceit, Ira, Crimson Haze | Tested |
 | Razor's Edge | red | Arakni, Web of Deceit | Tested |
 | Read the Runes | red | Florian | Tested |
@@ -282,8 +302,10 @@ souvent que la rouge).
 | Rootbound Carapace | red | Florian | Tested |
 | Rootbound Carapace | yellow | Florian | Tested |
 | Runeblood Incantation | red | Florian | Tested |
+| Rush of Power | red | Aurora | Tested |
 | Sand Cover | red | Dromai | Tested |
-| Scar for a Scar | red | Dromai, Ira, Crimson Haze, Iyslander | Tested |
+| Scar for a Scar | red | Dromai, Ira, Crimson Haze, Iyslander, Aurora | Tested |
+| Second Strike | red | Aurora | Tested |
 | Seek Vengeance | blue | Ira, Crimson Haze | Tested |
 | Seek Vengeance | red | Ira, Crimson Haze | Tested |
 | Sharp Incline | blue | Hala | Tested |
@@ -295,18 +317,23 @@ souvent que la rouge).
 | Shred | red | Arakni, Web of Deceit | Tested |
 | Sift | blue | Dorinthea | Tested |
 | Sigil of Silphidae | blue | Florian | Tested |
+| Sigil of Voltaris | blue | Aurora | Tested |
 | Sirens of Safe Harbor | blue | Dorinthea, Hala, Ira, Crimson Haze | Tested |
 | Sirens of Safe Harbor | red | Dorinthea, Hala, Ira, Crimson Haze | Tested |
 | Sirens of Safe Harbor | yellow | Hala, Ira, Crimson Haze | Tested |
 | Sit! | red | Bravo, Flattering Showman | Tested |
+| Sizzle | red | Aurora | Tested |
 | Smashback Alehorn | blue | Levia | Tested |
-| Snatch | red | Dromai | Tested |
+| Snatch | red | Dromai, Aurora | Tested |
 | Soul Harvest | blue | Levia | Tested |
 | Stains of the Redback | red | Arakni, Web of Deceit | Tested |
+| Static Shock | red | Aurora | Tested |
 | Staunch Response | red | Bravo, Flattering Showman | Tested |
 | Steelblade Shunt | blue | Dorinthea | Tested |
 | Steelblade Shunt | red | Dorinthea, Hala | Tested |
 | Steelblade Shunt | yellow | Dorinthea | Tested |
+| Stinging Sprite | blue | Aurora | Tested |
+| Stinging Sprite | red | Aurora | Tested |
 | Stir the Aetherwinds | blue | Iyslander | Tested |
 | Sweeping Blow | red | Dromai | Tested |
 | Swordmaster's Path | blue | Hala | Tested |
@@ -326,8 +353,11 @@ souvent que la rouge).
 | Vigorous Smashup | blue | Levia | Tested |
 | Vigorous Smashup | red | Levia | Tested |
 | Vigorous Smashup | yellow | Levia | Tested |
+| Visionary of Orbits | red | Aurora | Tested |
+| Voltbound Duality | blue | Aurora | Tested |
 | Voltic Bolt | blue | Iyslander | Tested |
 | Voltic Bolt | red | Iyslander | Tested |
+| Weave Lightning | red | Aurora | Tested |
 | Winter's Bite | blue | Iyslander | Tested |
 | Wounded Bull | red | Iyslander | Tested |
 | Wrecker Romp | blue | Levia | Tested |

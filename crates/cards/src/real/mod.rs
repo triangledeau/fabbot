@@ -15,12 +15,14 @@
 //! - [`runeblade`] : cartes Runeblade, Earth et Elemental (Florian) ;
 //! - [`shadow`] : cartes Shadow et Brute (Levia) ;
 //! - [`draconic`] : cartes Draconic et Illusionist (Dromai) ;
-//! - [`assassin`] : cartes Assassin et Chaos (Arakni).
+//! - [`assassin`] : cartes Assassin et Chaos (Arakni) ;
+//! - [`lightning`] : cartes Lightning, Elemental et Runeblade (Aurora).
 
 pub mod assassin;
 pub mod draconic;
 pub mod generic;
 pub mod guardian;
+pub mod lightning;
 pub mod ninja;
 pub mod runeblade;
 pub mod shadow;
@@ -44,6 +46,7 @@ pub fn build() -> CardDb {
     shadow::add(&mut db);
     draconic::add(&mut db);
     assassin::add(&mut db);
+    lightning::add(&mut db);
     db
 }
 
@@ -57,6 +60,7 @@ pub fn build_names() -> Vec<&'static str> {
         .chain(guardian::NAMES.iter())
         .chain(wizard::NAMES.iter())
         .chain(runeblade::NAMES.iter())
+        .chain(lightning::NAMES.iter())
         .chain(shadow::NAMES.iter())
         .chain(draconic::NAMES.iter())
         .chain(assassin::NAMES.iter())

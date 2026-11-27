@@ -1,0 +1,1064 @@
+//! Cartes Lightning, Elemental et Runeblade du deck Aurora (essai
+//! d'encodage deck par deck, 2026-11-26).
+
+#![allow(unused_imports)]
+
+use super::assassin::this_hits_a_hero;
+use super::generic::{destroy_source, is_attack_action_card, when_this_attacks};
+use super::shadow::{ask_object, picked};
+use super::wizard::{arcane_to_target, ANY_TARGET, TARGET_HERO};
+use super::{by_color, card_named, deck_card, equipment, grant, power, target_obj, COLORS};
+use fab_engine::card::{
+    CardDb, CardDef, Color, Delta, Keywords, Split, Subtypes, Supertypes, Types,
+};
+use fab_engine::script::{Ask, Ctx, Op, Target, TargetSpec};
+use fab_engine::PlayerId;
+use fab_engine::{
+    ActivatedDef, CardId, Choice, Event, GameState, ObjectId, Speed, TriggerDef, Until, Zone,
+};
+
+const LIGHTNING_FLOW: &str = "Lightning Flow";
+const EMBODIMENT_OF_LIGHTNING: &str = "Embodiment of Lightning";
+
+/// Noms des cartes de ce module (pour `docs/cards/STATUS.md`).
+pub const NAMES: &[&str] = &[
+    "Cloud Cover",
+    "Sizzle",
+    "Electrostatic Discharge",
+    "Stinging Sprite",
+    "Lightning Surge",
+    "Second Strike",
+    "Rush of Power",
+    "Visionary of Orbits",
+    "Harness Lightning",
+    "Static Shock",
+    "Path of Same Ends",
+    "Twinkle Toes",
+    "Star Fall",
+    "Helm of Might and Magic",
+    "Sigil of Voltaris",
+    "Flash of Brilliance",
+    "Beckoning Haunt",
+    "Quick Succession",
+    "Voltbound Duality",
+    "Lightning Flow",
+    "Aurora",
+    "Embodiment of Lightning",
+    "Burn Up // Shock",
+    "Entwine Lightning",
+    "Arcanic Shockwave",
+    "Weave Lightning",
+    // NOMS
+];
+
+#[allow(dead_code)]
+const LIGHTNING: Supertypes = Supertypes::LIGHTNING;
+#[allow(dead_code)]
+const LIGHTNING_RB: Supertypes = Supertypes(Supertypes::LIGHTNING.0 | Supertypes::RUNEBLADE.0);
+#[allow(dead_code)]
+const ELEMENTAL_RB: Supertypes = Supertypes(Supertypes::ELEMENTAL.0 | Supertypes::RUNEBLADE.0);
+
+pub fn add(db: &mut CardDb) {
+    let _ = &db;
+    // Cloud Cover (bleu, rouge, jaune) — Lightning Instant, coût 0.
+    // « The next time you would be dealt damage this turn, prevent 1 of that
+    //   damage. » (bleu : 1 ; rouge : 3 ; jaune : 2)
+    // Prévention « fixe » (CR 6.4.10i) : ne vaut que pour un seul événement de dégâts.
+    for c in COLORS {
+        let mut d = deck_card(
+            "Cloud Cover",
+            c,
+            LIGHTNING,
+            Types::INSTANT,
+            Some(0),
+            None,
+            None,
+        );
+        d.resolve = vec![Op::Do(|g, c| {
+            let n = by_color(g, c, [3, 2, 1]);
+            g.prevent_next_time(c.controller, Some(n as i32));
+        })];
+        db.add(d);
+    }
+
+    // Sizzle (rouge, jaune) — Lightning Action, coût 0, déf. 2.
+    // « Your next Lightning or Elemental attack this turn gets +3{p}
+    //   (jaune : +2).
+    //   Go again »
+    // Pas de version bleue : la valeur bleue de by_color n'est jamais utilisée.
+    for c in [Color::Red, Color::Yellow] {
+        let mut d = deck_card(
+            "Sizzle",
+            c,
+            LIGHTNING,
+            Types::ACTION,
+            Some(0),
+            None,
+            Some(2),
+        );
+        d.keywords = Keywords::GO_AGAIN;
+        d.resolve = vec![Op::Do(|g, c| {
+            let n = by_color(g, c, [3, 2, 0]);
+            g.next_attack(
+                c.controller,
+                Some(|g, a| {
+                    g.supertypes(a).has(Supertypes::LIGHTNING)
+                        || g.supertypes(a).has(Supertypes::ELEMENTAL)
+                }),
+                power(n),
+                false,
+            );
+        })];
+        db.add(d);
+    }
+
+    // Electrostatic Discharge (bleu, rouge, jaune) — Lightning Instant, coût 0.
+    // « The next attack action card you play this turn with cost 1 or less
+    //   gets +1{p} (rouge : +3 ; jaune : +2). »
+    for c in COLORS {
+        let mut d = deck_card(
+            "Electrostatic Discharge",
+            c,
+            LIGHTNING,
+            Types::INSTANT,
+            Some(0),
+            None,
+            None,
+        );
+        d.resolve = vec![Op::Do(|g, c| {
+            let n = by_color(g, c, [3, 2, 1]);
+            g.next_attack(
+                c.controller,
+                Some(|g, a| {
+                    super::generic::is_attack_action_card(g, a) && g.def(a).cost.unwrap_or(0) <= 1
+                }),
+                power(n),
+                true,
+            );
+        })];
+        db.add(d);
+    }
+
+    // Stinging Sprite (bleu, rouge, jaune) — Lightning Runeblade Action - Attack,
+    // coût 0, déf. 2.
+    // « When this attacks or defends, deal 1 arcane damage to target hero. »
+    // (puissance : bleu 1 ; rouge 3 ; jaune 2)
+    for (c, p) in [(Color::Blue, 1), (Color::Red, 3), (Color::Yellow, 2)] {
+        let mut d = deck_card(
+            "Stinging Sprite",
+            c,
+            LIGHTNING_RB,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(2),
+        );
+        d.arcane_damage = true;
+        d.triggers = vec![TriggerDef {
+            when: |g, me, e| {
+                super::generic::when_this_attacks(g, me, e)
+                    || super::generic::when_this_defends(g, me, e)
+            },
+            anywhere: false,
+            targets: vec![super::wizard::TARGET_HERO],
+            script: vec![Op::Do(|g, c| {
+                if let Some(t) = c.target(0) {
+                    g.deal_damage_to(c.source_id(), c.controller, t, 1, true);
+                }
+            })],
+        }];
+        db.add(d);
+    }
+
+    // Lightning Surge (bleu, rouge, jaune) — Lightning Action - Attack, coût 0,
+    // défense 2 ; puissance bleu 2, rouge 4, jaune 3.
+    // « If this was played from arsenal, it gets go again. »
+    for (c, p) in [(Color::Blue, 2), (Color::Red, 4), (Color::Yellow, 3)] {
+        let mut d = deck_card(
+            "Lightning Surge",
+            c,
+            LIGHTNING,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(2),
+        );
+        d.self_mod = Some(|g, me| {
+            if joue_depuis_arsenal(g, me) {
+                grant(Keywords::GO_AGAIN)
+            } else {
+                Delta::default()
+            }
+        });
+        db.add(d);
+    }
+
+    // Second Strike (bleu, rouge, jaune) — Lightning Action - Attack, coût 0,
+    // déf. 2. Puissance : bleu 1 ; rouge 3 ; jaune 2.
+    // « When this attacks, if you've dealt damage this turn, this gets +1{p}
+    //   and **go again**. »
+    // La condition est vérifiée au déclenchement (quand l'attaque est déclarée),
+    // comme le texte le demande.
+    for (c, p) in [(Color::Blue, 1), (Color::Red, 3), (Color::Yellow, 2)] {
+        let mut d = deck_card(
+            "Second Strike",
+            c,
+            LIGHTNING,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(2),
+        );
+        d.triggers = vec![TriggerDef {
+            when: when_this_attacks,
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| {
+                if a_inflige_des_degats(g, c.controller) {
+                    if let Some(s) = c.source {
+                        g.modify(
+                            s,
+                            Delta {
+                                power: 1,
+                                grants: Keywords::GO_AGAIN,
+                                ..Default::default()
+                            },
+                            Until::EndOfTurn,
+                        );
+                    }
+                }
+            })],
+        }];
+        db.add(d);
+    }
+
+    // Rush of Power (bleu, rouge, jaune) — Lightning Runeblade Action - Attack,
+    // coût 0, déf. 3. Puissance : bleu 1 ; rouge 3 ; jaune 2.
+    // « **Quickstrike** - If this has go again, it gets +1{p}.
+    //   When this hits a hero, deal 1 arcane damage to them. »
+    // Quickstrike n'est pas un mot-clé du moteur : seul le texte « If this has
+    // go again, it gets +1{p} » est codé, comme effet statique continu
+    // (CR 6.3) : le +1 vaut tant que l'attaque a go again, même accordé après
+    // la déclaration. Lecture des mots-clés sans `self_mod` pour éviter la boucle.
+    for (c, p) in [(Color::Blue, 1), (Color::Red, 3), (Color::Yellow, 2)] {
+        let mut d = deck_card(
+            "Rush of Power",
+            c,
+            LIGHTNING_RB,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(3),
+        );
+        d.self_mod = Some(|g, me| {
+            if g.keywords_sans_self_mod(me).has(Keywords::GO_AGAIN) {
+                power(1)
+            } else {
+                Delta::default()
+            }
+        });
+        d.arcane_damage = true;
+        d.triggers = vec![TriggerDef {
+            when: |g, me, e| super::assassin::this_hits_a_hero(g, me, e),
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| {
+                if let Some(Event::Hit { target, .. }) = c.event {
+                    g.deal_damage_to(c.source_id(), c.controller, Target::Player(target), 1, true);
+                }
+            })],
+        }];
+        db.add(d);
+    }
+
+    // Visionary of Orbits (rouge) — Lightning Action - Attack, coût 3,
+    // 7{p} 2{d}.
+    // « When this hits, you may put an instant card from your graveyard on
+    //   the bottom of your deck. »
+    let mut d = deck_card(
+        "Visionary of Orbits",
+        Color::Red,
+        LIGHTNING,
+        Types::ACTION,
+        Some(3),
+        Some(7),
+        Some(2),
+    );
+    d.triggers = vec![TriggerDef {
+        when: super::generic::this_hits,
+        anywhere: false,
+        targets: vec![],
+        script: vec![
+            Op::Ask(|g, c| {
+                let mut options: Vec<Choice> = g
+                    .player(c.controller)
+                    .graveyard
+                    .iter()
+                    .filter(|&&x| g.def(x).types.any(Types::INSTANT))
+                    .map(|&x| Choice::Object(x))
+                    .collect();
+                if options.is_empty() {
+                    return None;
+                }
+                options.push(Choice::Pass);
+                Some(Ask {
+                    player: c.controller,
+                    label: "Carte instant du cimetière sous le deck (Pass : aucune)",
+                    options,
+                })
+            }),
+            Op::Do(|g, c| {
+                if let Some(Choice::Object(x)) = c.answer.take() {
+                    if g.obj(x).zone == Zone::Graveyard && g.obj(x).owner == c.controller {
+                        g.put_on_bottom(x);
+                    }
+                }
+            }),
+        ],
+    }];
+    db.add(d);
+
+    // Harness Lightning (rouge, jaune) — Elemental Runeblade Action, coût 0,
+    // déf. 2. Pas de puissance.
+    // « **Lightning Flow** - If you've played a Lightning card this turn,
+    //   deal 3 arcane damage to target hero. » (rouge : 3 ; jaune : 2)
+    // La carte elle-même n'est pas une carte Lightning : seule une autre carte
+    // Lightning jouée ce tour compte.
+    for c in [Color::Red, Color::Yellow] {
+        let mut d = deck_card(
+            "Harness Lightning",
+            c,
+            ELEMENTAL_RB,
+            Types::ACTION,
+            Some(0),
+            None,
+            Some(2),
+        );
+        d.targets = vec![super::wizard::TARGET_HERO];
+        d.arcane_damage = true;
+        d.resolve = vec![Op::Do(|g, c| {
+            if a_joue_une_carte_lightning(g, c.controller) {
+                if let Some(t) = c.target(0) {
+                    let n = by_color(g, c, [3, 2, 0]);
+                    g.deal_damage_to(c.source_id(), c.controller, t, n as i32, true);
+                }
+            }
+        })];
+        db.add(d);
+    }
+
+    // Static Shock (rouge, jaune) — Elemental Runeblade Action - Attack, coût 0,
+    // déf. 3. Puissance : rouge 4 ; jaune 3.
+    // « **Lightning Flow** - When this hits a hero, if you've played a Lightning
+    //   card this turn, deal 1 arcane damage to them. »
+    // La carte elle-même n'est pas une carte Lightning : seule une autre carte
+    // Lightning jouée ce tour compte.
+    for (c, p) in [(Color::Red, 4), (Color::Yellow, 3)] {
+        let mut d = deck_card(
+            "Static Shock",
+            c,
+            ELEMENTAL_RB,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(3),
+        );
+        d.arcane_damage = true;
+        d.triggers = vec![TriggerDef {
+            when: this_hits_a_hero,
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| {
+                if a_joue_une_carte_lightning(g, c.controller) {
+                    if let Some(t) = hit_hero(c) {
+                        g.deal_damage_to(c.source_id(), c.controller, Target::Player(t), 1, true);
+                    }
+                }
+            })],
+        }];
+        db.add(d);
+    }
+
+    // Path of Same Ends (bleu, rouge, jaune) — Lightning Runeblade Action - Attack,
+    // coût 0, déf. 2. Puissance : bleu 1 ; rouge 3 ; jaune 2.
+    // « When this attacks a hero, deal 1 arcane damage to them. If damage is dealt
+    //   this way, this gets **go again**.
+    //   **Instant** -- {r}: This gets **go again**. »
+    // « them » = le héros attaqué (événement `Attack`, cible sans objet).
+    for (c, p) in [(Color::Blue, 1), (Color::Red, 3), (Color::Yellow, 2)] {
+        let mut d = deck_card(
+            "Path of Same Ends",
+            c,
+            LIGHTNING_RB,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(2),
+        );
+        d.arcane_damage = true;
+        d.triggers = vec![TriggerDef {
+            when: super::assassin::when_this_attacks_a_hero,
+            anywhere: false,
+            targets: vec![],
+            script: vec![
+                Op::Do(|g, c| {
+                    g.last_damage = 0;
+                    if let Some(Event::Attack { target, .. }) = c.event {
+                        g.deal_damage_to(
+                            c.source_id(),
+                            c.controller,
+                            Target::Player(target),
+                            1,
+                            true,
+                        );
+                    }
+                }),
+                // `last_damage` est lu à l'instruction suivante.
+                Op::Do(|g, c| {
+                    if g.last_damage > 0 {
+                        if let Some(s) = c.source {
+                            g.modify(s, grant(Keywords::GO_AGAIN), Until::EndOfTurn);
+                        }
+                    }
+                }),
+            ],
+        }];
+        // TODO(règles) : test de la capacité Instant non écrit : dans le harnais,
+        // P0 n'a pas de fenêtre de priorité où la capacité est proposée après la
+        // déclaration (Defend, puis fin de chaîne). À vérifier (CR 7 / priorité).
+        // La condition ci-dessous limite l'usage à la chaîne de combat.
+        d.activated = vec![ActivatedDef {
+            label: "{r} : go again",
+            speed: Speed::Instant,
+            cost: 1,
+            condition: Some(|g, _, me| g.obj(me).zone == Zone::CombatChain),
+            script: vec![Op::Do(|g, c| {
+                if let Some(s) = c.source {
+                    g.modify(s, grant(Keywords::GO_AGAIN), Until::EndOfTurn);
+                }
+            })],
+            ..Default::default()
+        }];
+        db.add(d);
+    }
+
+    // Twinkle Toes — Lightning Equipment - Legs, déf. 0, sans couleur.
+    // « Instant -- Destroy this: Prevent the next 2 damage that would be dealt
+    //   to you this turn. Activate this only if you've played an instant card
+    //   this turn. »
+    let mut d = equipment("Twinkle Toes", LIGHTNING, Subtypes::LEGS, 0);
+    d.activated = vec![ActivatedDef {
+        label: "Détruire : prévenir les 2 prochains dégâts",
+        speed: Speed::Instant,
+        condition: Some(|g, p, _| a_joue_un_instant_ce_tour(g, p)),
+        effect_cost: vec![Op::Do(|g, c| destroy_source(g, c))],
+        script: vec![Op::Do(|g, c| g.prevent_next(c.controller, 2, false, None))],
+        ..Default::default()
+    }];
+    db.add(d);
+
+    // Star Fall — Lightning Runeblade Weapon - Sword (2H), 1{p}, sans couleur.
+    // « Once per Turn Action -- {r}: **Attack**
+    //   If you've played a Lightning card this turn, this card's attacks get +1{p}
+    //   and **go again**. »
+    db.add(CardDef {
+        name: "Star Fall".into(),
+        power: Some(1),
+        types: Types::WEAPON,
+        subtypes: Subtypes::SWORD | Subtypes::TWO_HAND,
+        supertypes: LIGHTNING_RB,
+        activated: vec![ActivatedDef {
+            label: "Attaquer",
+            speed: Speed::Action,
+            cost: 1,
+            once_per_turn: true,
+            attack: true,
+            ..Default::default()
+        }],
+        // « this card's attacks get +1{p} and go again » : effet statique continu
+        // sur l'attaque-proxy, valable aussi si la carte Lightning est jouée
+        // après la déclaration de l'attaque.
+        attack_mod: Some(|g, w| {
+            if a_joue_une_carte_lightning(g, g.obj(w).controller) {
+                Delta {
+                    power: 1,
+                    grants: Keywords::GO_AGAIN,
+                    ..Default::default()
+                }
+            } else {
+                Delta::default()
+            }
+        }),
+        ..Default::default()
+    });
+
+    // Helm of Might and Magic — Runeblade Equipment - Head, déf. 1 (sans couleur).
+    // « Blade Break
+    // Spellvoid 1 »
+    // Spellvoid 1 : « If you would be dealt arcane damage, you may destroy this
+    // to prevent 1 of that damage. » (CR 8.3.15)
+    let mut d = equipment(
+        "Helm of Might and Magic",
+        Supertypes::RUNEBLADE,
+        Subtypes::HEAD,
+        1,
+    );
+    d.keywords = Keywords::BLADE_BREAK;
+    d.spellvoid = 1;
+    db.add(d);
+
+    // Sigil of Voltaris (bleu) — Lightning Runeblade Instant - Aura, coût 0,
+    // sans déf. (carte d'arène : pas de défense).
+    // « When this enters or leaves the arena, deal 1 arcane damage to target hero.
+    //   At the beginning of your action phase, destroy this. »
+    let mut d = deck_card(
+        "Sigil of Voltaris",
+        Color::Blue,
+        LIGHTNING_RB,
+        Types::INSTANT,
+        Some(0),
+        None,
+        None,
+    );
+    d.subtypes = Subtypes::AURA;
+    d.arcane_damage = true;
+    d.triggers = vec![
+        TriggerDef {
+            when: |g, me, e| match *e {
+                Event::EnterArena { card } => card == me && g.obj(me).zone == Zone::Permanent,
+                Event::LeaveArena { card, .. } => card == me,
+                _ => false,
+            },
+            // « leaves the arena » : la carte est alors au cimetière.
+            anywhere: true,
+            targets: vec![super::wizard::TARGET_HERO],
+            script: vec![Op::Do(|g, c| {
+                if let Some(t) = c.target(0) {
+                    g.deal_damage_to(c.source_id(), c.controller, t, 1, true);
+                }
+            })],
+        },
+        TriggerDef {
+            when: |g, me, e| matches!(*e, Event::BeginActionPhase(p) if p == g.obj(me).controller),
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| destroy_source(g, c))],
+        },
+    ];
+    db.add(d);
+
+    // Flash of Brilliance (sans couleur) — Lightning Equipment - Head, déf. 1.
+    // « When this defends, you may discard a Lightning card. If you do, return
+    //   an aura you control to its owner's hand.
+    //   Blade Break »
+    let mut d = equipment("Flash of Brilliance", LIGHTNING, Subtypes::HEAD, 1);
+    d.keywords = Keywords::BLADE_BREAK;
+    d.triggers = vec![TriggerDef {
+        when: super::generic::when_this_defends,
+        anywhere: false,
+        targets: vec![],
+        script: vec![
+            // « you may discard a Lightning card » : Pass = ne rien faire.
+            Op::Ask(|g, c| {
+                let mut options: Vec<Choice> = g
+                    .player(c.controller)
+                    .hand
+                    .iter()
+                    .filter(|&&x| g.def(x).supertypes.has(Supertypes::LIGHTNING))
+                    .map(|&x| Choice::Object(x))
+                    .collect();
+                if options.is_empty() {
+                    return None;
+                }
+                options.push(Choice::Pass);
+                Some(Ask {
+                    player: c.controller,
+                    label: "Défausser une carte Lightning pour renvoyer une aura en main ?",
+                    options,
+                })
+            }),
+            Op::Do(|g, c| {
+                if let Some(Choice::Object(x)) = c.answer {
+                    if g.obj(x).zone == Zone::Hand && g.def(x).supertypes.has(Supertypes::LIGHTNING)
+                    {
+                        g.discard(x);
+                        c.flag = true;
+                    }
+                }
+            }),
+            // « If you do » : sans défausse, on saute la suite.
+            Op::If(|_, c| c.flag, 2),
+            Op::Ask(|g, c| {
+                ask_object(
+                    c.controller,
+                    "Renvoyer quelle aura en main ?",
+                    auras_you_control(g, c.controller),
+                )
+            }),
+            Op::Do(|g, c| {
+                let v = auras_you_control(g, c.controller);
+                if let Some(x) = picked(c, &v) {
+                    g.return_to_hand(x);
+                }
+            }),
+        ],
+    }];
+    db.add(d);
+
+    // Beckoning Haunt — Runeblade Equipment - Arms, déf. 2, sans couleur.
+    // « **Action** -- {x}{x}{r}, destroy this: Return target aura with cost X
+    //   from your graveyard to your hand.
+    //   **Guardwell** »
+    // « {x}{x}{r} » : coût 1 + 2 par X (CR 5.1.3a, `x_per`) ; le X déclaré est
+    // lu dans `c.x` par le filtre de cible (la cible est choisie après X,
+    // CR 5.1.3a puis 5.1.4) et à la résolution.
+    let mut d = equipment("Beckoning Haunt", Supertypes::RUNEBLADE, Subtypes::ARMS, 2);
+    d.activated = vec![ActivatedDef {
+        label: "Détruire : une aura de coût X du cimetière en main",
+        speed: Speed::Action,
+        cost: 1,
+        x_per: 2,
+        targets: vec![TargetSpec {
+            label: "aura de coût X de votre cimetière",
+            filter: |g, c, t| match t {
+                Target::Object(r) => {
+                    let o = g.obj(r.id);
+                    o.zone == Zone::Graveyard
+                        && o.owner == c.controller
+                        && g.def(r.id).subtypes.has(Subtypes::AURA)
+                        && g.def(r.id).cost == Some(c.x)
+                }
+                Target::Player(_) => false,
+            },
+            optional: false,
+            in_graveyard: true,
+            in_banished: false,
+        }],
+        effect_cost: vec![Op::Do(|g, c| destroy_source(g, c))],
+        script: vec![Op::Do(|g, c| {
+            if let Some(r) = target_obj(c, 0) {
+                if g.obj(r.id).zone == Zone::Graveyard {
+                    g.return_to_hand(r.id);
+                }
+            }
+        })],
+        ..Default::default()
+    }];
+    d.keywords = Keywords::GUARDWELL;
+    db.add(d);
+
+    // Quick Succession (bleu, rouge, jaune) — Lightning Runeblade Action, coût 0, déf. 2.
+    // « The next Runeblade or Lightning attack action card you play this turn gets **go again**.
+    //   Your next attack this turn gets +1{p} while it has go again. (bleu)
+    //   Your next 3 attacks this turn get +1{p} while they have go again. (rouge)
+    //   Your next 2 attacks this turn get +1{p} while they have go again. (jaune)
+    //   **Go again** »
+    // « Your next N attacks » : un seul effet qui compte N attaques (CR 1.8.10) ;
+    // « while it has go again » : le +1 est un modificateur conditionnel, évalué
+    // en continu (CR 6.3). Une attaque sans go again consomme quand même l'effet
+    // (CR 1.8.10 : « the next attack … and the effect applies to the attack at
+    // that time »).
+    for c in COLORS {
+        let mut d = deck_card(
+            "Quick Succession",
+            c,
+            LIGHTNING_RB,
+            Types::ACTION,
+            Some(0),
+            None,
+            Some(2),
+        );
+        d.keywords = Keywords::GO_AGAIN;
+        d.resolve = vec![Op::Do(|g, c| {
+            g.next_attack(
+                c.controller,
+                Some(|g, a| {
+                    super::generic::is_attack_action_card(g, a)
+                        && (g.supertypes(a).has(Supertypes::LIGHTNING)
+                            || g.supertypes(a).has(Supertypes::RUNEBLADE))
+                }),
+                grant(Keywords::GO_AGAIN),
+                true,
+            );
+            let n = match g.db.get(c.card).color {
+                Some(Color::Red) => 3,
+                Some(Color::Yellow) => 2,
+                _ => 1,
+            };
+            g.next_attacks_while_go_again(c.controller, n, power(1));
+        })];
+        db.add(d);
+    }
+
+    // Voltbound Duality — Lightning Runeblade Action - Attack, coût 0, déf. 3.
+    // Puissance 2 (bleu), 4 (rouge), 3 (jaune) ; pitch 3 / 1 / 2.
+    // « Instant -- {r}, discard this: Deal 1 arcane damage to target hero.
+    //   Create a Lightning Flow token. »
+    for (c, power) in [(Color::Blue, 2), (Color::Red, 4), (Color::Yellow, 3)] {
+        let mut d = deck_card(
+            "Voltbound Duality",
+            c,
+            LIGHTNING_RB,
+            Types::ACTION,
+            Some(0),
+            Some(power),
+            Some(3),
+        );
+        d.arcane_damage = true;
+        d.activated = vec![ActivatedDef {
+            label: "{r}, défausser : 1 dégât arcane au héros cible",
+            speed: Speed::Instant,
+            cost: 1,
+            from_hand: true,
+            targets: vec![TARGET_HERO],
+            effect_cost: vec![Op::Do(|g, c| {
+                if let Some(s) = c.source_id() {
+                    g.discard(s);
+                }
+            })],
+            script: vec![
+                Op::Do(|g, c| arcane_to_target(g, c, 1)),
+                Op::Do(|g, c| {
+                    let flow = card_named(g, LIGHTNING_FLOW);
+                    g.create_tokens(c.controller, flow, 1);
+                }),
+            ],
+            ..Default::default()
+        }];
+        db.add(d);
+    }
+
+    // Lightning Flow — Elemental Token - Aura, sans texte (CR 8.6.38).
+    db.add(CardDef {
+        name: LIGHTNING_FLOW.into(),
+        types: Types::TOKEN,
+        subtypes: Subtypes::AURA,
+        supertypes: Supertypes::ELEMENTAL,
+        ..Default::default()
+    });
+
+    // Aurora — Elemental Runeblade Hero - Young, 20 PV, intellect 4.
+    // « Once per Turn Instant -- {r}{r}: Create an Embodiment of Lightning token.
+    //   Activate this only if you've played a Lightning card this turn.
+    //   Essence of Lightning »
+    // Essence of Lightning (CR 8.3.16) ne concerne que la construction du deck.
+    db.add(CardDef {
+        name: "Aurora".into(),
+        life: Some(20),
+        intellect: Some(4),
+        types: Types::HERO,
+        subtypes: Subtypes::YOUNG,
+        supertypes: ELEMENTAL_RB,
+        activated: vec![ActivatedDef {
+            label: "Créer un jeton Embodiment of Lightning",
+            speed: Speed::Instant,
+            cost: 2,
+            once_per_turn: true,
+            condition: Some(|g, p, _| a_joue_une_carte_lightning(g, p)),
+            script: vec![Op::Do(|g, c| {
+                let e = card_named(g, EMBODIMENT_OF_LIGHTNING);
+                g.create_tokens(c.controller, e, 1);
+            })],
+            ..Default::default()
+        }],
+        ..Default::default()
+    });
+
+    // Embodiment of Lightning — Elemental Token - Aura, sans couleur.
+    // « When you play an attack action card, destroy this and the attack gets
+    //   go again. »
+    db.add(CardDef {
+        name: EMBODIMENT_OF_LIGHTNING.into(),
+        types: Types::TOKEN,
+        subtypes: Subtypes::AURA,
+        supertypes: Supertypes::ELEMENTAL,
+        triggers: vec![TriggerDef {
+            when: |g, me, e| match *e {
+                Event::Played { player, card, .. } => {
+                    player == g.obj(me).controller && is_attack_action_card(g, card)
+                }
+                _ => false,
+            },
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| {
+                destroy_source(g, c);
+                if let Some(Event::Played { card, .. }) = c.event {
+                    // Seulement si l'attaque est encore sur la pile.
+                    if matches!(g.obj(card).zone, Zone::Stack | Zone::CombatChain) {
+                        g.modify(g.obj_ref(card), grant(Keywords::GO_AGAIN), Until::EndOfTurn);
+                    }
+                }
+            })],
+        }],
+        ..Default::default()
+    });
+
+    // Burn Up // Shock (rouge) — carte double (Meld), coût 0, déf. 3.
+    // Burn Up : Runeblade Action, « **Meld**{br}The next time an attack you
+    //   control hits a hero this turn, deal 4 arcane damage to them.{br}
+    //   **Go again** ».
+    // Shock : Lightning Instant, « **Meld**{br}Deal 1 arcane damage to any
+    //   target. ».
+    // Burn Up : capacité différée à usage unique (CR 6.6.2) créée à la résolution ;
+    // elle se déclenche à la prochaine touche d'un héros par une attaque que le
+    // joueur contrôle ce tour (une touche « par effet », comme celle d'une dague,
+    // n'est pas une attaque). Fusionnée : Shock puis Burn Up (CR 5.3.4d, 8.3.38).
+    {
+        let base = db.len() as u16;
+        let split = Split {
+            whole: CardId(base),
+            left: CardId(base + 1),
+            right: CardId(base + 2),
+            melded: Some(CardId(base + 3)),
+        };
+        let burn_up: Vec<Op> = vec![Op::Do(|g, c| {
+            if let Some(src) = c.source {
+                g.add_delayed_trigger(c.controller, src, c.card, 0);
+            }
+        })];
+        let side = |name: &str, types: Types, supertypes: Supertypes| CardDef {
+            name: name.into(),
+            color: Some(Color::Red),
+            pitch: Some(1),
+            cost: Some(0),
+            defense: Some(3),
+            types,
+            supertypes,
+            split: Some(split),
+            ..Default::default()
+        };
+        // La carte entière (main, deck, cimetière…) : les deux côtés (CR 9.2.2).
+        let mut whole = side(
+            "Burn Up // Shock",
+            Types::ACTION | Types::INSTANT,
+            Supertypes(Supertypes::LIGHTNING.0 | Supertypes::RUNEBLADE.0),
+        );
+        whole.keywords = Keywords::GO_AGAIN;
+        // Libellés des façons de la jouer (interface, CR 5.1.2c).
+        whole.modes = vec!["Burn Up", "Shock", "Meld : les deux côtés"];
+        assert_eq!(db.add(whole), split.whole);
+        let mut left = side("Burn Up", Types::ACTION, Supertypes::RUNEBLADE);
+        left.keywords = Keywords::GO_AGAIN;
+        left.arcane_damage = true;
+        left.resolve = burn_up.clone();
+        left.granted = vec![burn_up_trigger()];
+        assert_eq!(db.add(left), split.left);
+        let mut right = side("Shock", Types::INSTANT, Supertypes::LIGHTNING);
+        right.arcane_damage = true;
+        right.targets = vec![ANY_TARGET];
+        right.resolve = vec![Op::Do(|g, c| arcane_to_target(g, c, 1))];
+        assert_eq!(db.add(right), split.right);
+        // Fusionnée : coût = deux fois le coût de base (0), CR 8.3.38b. Première
+        // résolution : le côté droit (Shock), CR 5.3.4d ; la seconde : le côté
+        // gauche (Burn Up, `left.resolve`), sans nouveau choix de cible.
+        let mut melded = side(
+            "Burn Up // Shock",
+            Types::ACTION | Types::INSTANT,
+            Supertypes(Supertypes::LIGHTNING.0 | Supertypes::RUNEBLADE.0),
+        );
+        melded.keywords = Keywords::GO_AGAIN;
+        melded.arcane_damage = true;
+        melded.targets = vec![ANY_TARGET];
+        melded.resolve = vec![Op::Do(|g, c| arcane_to_target(g, c, 1))];
+        assert_eq!(db.add(melded), split.melded.unwrap());
+    }
+
+    // Entwine Lightning (bleu, rouge, jaune) — Elemental Action - Attack,
+    // coût 0, déf. 2 ; puissance bleu 2, rouge 4, jaune 3.
+    // « Lightning Fusion
+    //   If this was fused, it gets go again. »
+    // CR 8.3.17 : la fusion est un coût d'effet optionnel (révéler une carte
+    // Lightning de la main) ; le go again n'existe que si elle est fusionnée.
+    for (c, p) in [(Color::Blue, 2), (Color::Red, 4), (Color::Yellow, 3)] {
+        let mut d = deck_card(
+            "Entwine Lightning",
+            c,
+            Supertypes::ELEMENTAL,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(2),
+        );
+        d.effect_cost = lightning_fusion();
+        d.effect_cost.push(Op::Do(|g, c| {
+            if let (true, Some(s)) = (c.optional_paid, c.source) {
+                g.modify(s, grant(Keywords::GO_AGAIN), Until::EndOfTurn);
+            }
+        }));
+        db.add(d);
+    }
+
+    // Arcanic Shockwave (bleu, rouge, jaune) — Elemental Runeblade Action -
+    // Attack, coût 0, déf. 3 ; puissance bleu 2, rouge 4, jaune 3.
+    // « Lightning Fusion
+    //   When this attacks, if it was fused, deal 1 arcane damage to target hero. »
+    // CR 8.3.17 : la fusion est un coût d'effet optionnel (révéler une carte
+    // Lightning de la main) ; le moteur garde « fusionnée » sur l'objet
+    // (`GameState::is_fused`), lisible par le déclencheur d'attaque.
+    for (c, p) in [(Color::Blue, 2), (Color::Red, 4), (Color::Yellow, 3)] {
+        let mut d = deck_card(
+            "Arcanic Shockwave",
+            c,
+            ELEMENTAL_RB,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(3),
+        );
+        d.arcane_damage = true;
+        d.effect_cost = lightning_fusion();
+        d.triggers = vec![TriggerDef {
+            when: |g, me, e| super::generic::when_this_attacks(g, me, e) && g.is_fused(me),
+            anywhere: false,
+            targets: vec![super::wizard::TARGET_HERO],
+            script: vec![Op::Do(|g, c| {
+                if let Some(t) = c.target(0) {
+                    g.deal_damage_to(c.source_id(), c.controller, t, 1, true);
+                }
+            })],
+        }];
+        db.add(d);
+    }
+
+    // Weave Lightning (bleu, rouge, jaune) — Lightning Action, coût 0, déf. 2.
+    // « The next Lightning or Elemental attack action card you play this turn
+    //   gets +1{p} (rouge : +3 ; jaune : +2). If it's **fused**, it gets **go again**.
+    //   **Go again** »
+    // La fusion de la carte suivante est décidée après son jeu : le go again est
+    // un modificateur conditionnel `if_fused` (CR 8.3.17a, 6.4.7b, exemple Weave Earth).
+    for c in COLORS {
+        let mut d = deck_card(
+            "Weave Lightning",
+            c,
+            LIGHTNING,
+            Types::ACTION,
+            Some(0),
+            None,
+            Some(2),
+        );
+        d.keywords = Keywords::GO_AGAIN;
+        d.resolve = vec![Op::Do(|g, c| {
+            let n = by_color(g, c, [3, 2, 1]);
+            fn cible(g: &GameState, a: ObjectId) -> bool {
+                is_attack_action_card(g, a)
+                    && (g.supertypes(a).has(Supertypes::LIGHTNING)
+                        || g.supertypes(a).has(Supertypes::ELEMENTAL))
+            }
+            g.next_attack(c.controller, Some(cible), power(n), true);
+            g.next_attack_if_fused(c.controller, Some(cible), grant(Keywords::GO_AGAIN));
+        })];
+        db.add(d);
+    }
+
+    // CARTES
+}
+
+/// « Lightning Fusion » (CR 8.3.17) : coût d'effet optionnel « you may reveal
+/// a Lightning card from your hand ». Si le joueur révèle une carte Lightning
+/// (CR 8.3.17b : seulement si elle est en main), la carte est fusionnée
+/// (CR 8.3.17a) : `c.optional_paid` devient vrai. Les effets propres à la
+/// carte fusionnée sont ajoutés par la carte, après cette liste.
+pub(crate) fn lightning_fusion() -> Vec<Op> {
+    vec![
+        Op::Ask(|g, c| {
+            let lightning: Vec<Choice> = g
+                .player(c.controller)
+                .hand
+                .iter()
+                .filter(|&&x| g.def(x).supertypes.has(Supertypes::LIGHTNING))
+                .map(|&x| Choice::Object(x))
+                .collect();
+            (!lightning.is_empty()).then(|| Ask {
+                player: c.controller,
+                label: "Lightning Fusion : révéler une carte Lightning de votre main ?",
+                options: lightning.into_iter().chain([Choice::Pass]).collect(),
+            })
+        }),
+        Op::Do(|g, c| {
+            if let Some(Choice::Object(x)) = c.answer.take() {
+                g.emit(Event::Revealed {
+                    player: c.controller,
+                    card: x,
+                });
+                c.optional_paid = true; // CR 8.3.17a : la carte est fusionnée.
+                if let Some(s) = c.source {
+                    g.set_fused(s);
+                }
+            }
+        }),
+    ]
+}
+
+/// Les auras que `p` contrôle sur l'arène.
+fn auras_you_control(g: &GameState, p: PlayerId) -> Vec<ObjectId> {
+    g.permanents
+        .iter()
+        .copied()
+        .filter(|&o| g.obj(o).controller == p && g.def(o).subtypes.has(Subtypes::AURA))
+        .collect()
+}
+
+/// Le héros touché (« them ») d'une capacité « when this hits a hero ».
+fn hit_hero(c: &Ctx) -> Option<fab_engine::PlayerId> {
+    match c.event {
+        Some(Event::Hit {
+            target,
+            target_obj: None,
+            ..
+        }) => Some(target),
+        _ => None,
+    }
+}
+
+/// « If you've played a Lightning card this turn » : `p` a joué ce tour une
+/// carte de supertype Lightning.
+fn a_joue_une_carte_lightning(g: &GameState, p: fab_engine::PlayerId) -> bool {
+    g.played_def_this_turn(p, |d| d.supertypes.has(Supertypes::LIGHTNING))
+}
+
+/// « If you've played an instant card this turn » : `p` a joué ce tour une
+/// carte de type Instant.
+fn a_joue_un_instant_ce_tour(g: &GameState, p: fab_engine::PlayerId) -> bool {
+    g.played_def_this_turn(p, |d| d.types.has(Types::INSTANT))
+}
+
+/// « If you've dealt damage this turn » : `p` a infligé des dégâts ce tour
+/// (un événement `Damage` n'existe que si des dégâts ont été réellement infligés).
+fn a_inflige_des_degats(g: &GameState, p: fab_engine::PlayerId) -> bool {
+    g.turn_events()
+        .iter()
+        .any(|e| matches!(e, Event::Damage { by, .. } if *by == p))
+}
+
+/// « If this was played from arsenal » : la carte a été jouée depuis l'arsenal
+/// (dernier événement `Played` de cette carte, ce tour).
+fn joue_depuis_arsenal(g: &fab_engine::GameState, me: ObjectId) -> bool {
+    if !matches!(g.obj(me).zone, Zone::Stack | Zone::CombatChain) {
+        return false;
+    }
+    let from = g.turn_events().iter().rev().find_map(|e| match *e {
+        Event::Played { card, from, .. } if card == me => Some(from),
+        _ => None,
+    });
+    from == Some(Zone::Arsenal)
+}
+
+/// Burn Up : « The next time an attack you control hits a hero this turn, deal
+/// 4 arcane damage to them. » La condition lit la touche (CR 7.5.5) ; la cible
+/// est le héros touché.
+fn burn_up_trigger() -> TriggerDef {
+    TriggerDef {
+        when: |g, me, e| {
+            matches!(*e, Event::Hit { attacker, target_obj: None, effect: false, .. }
+                if attacker == g.obj(me).controller)
+        },
+        anywhere: false,
+        targets: Vec::new(),
+        script: vec![Op::Do(|g, c| {
+            if let Some(Event::Hit { target, .. }) = c.event {
+                g.deal_damage_to(c.source_id(), c.controller, Target::Player(target), 4, true);
+            }
+        })],
+    }
+}

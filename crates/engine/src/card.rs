@@ -185,6 +185,9 @@ pub struct ActivatedDef {
     pub speed: Speed,
     /// Coût en ressources.
     pub cost: u8,
+    /// Coût variable : ressources par unité de X (0 = pas de X ; 2 pour « {x}{x} »).
+    /// CR 5.1.3a : le joueur déclare X, le coût devient `cost + X * x_per`.
+    pub x_per: u8,
     /// Coût {t} : engager la source.
     pub tap: bool,
     /// « Once per Turn ».
@@ -210,6 +213,7 @@ impl Default for ActivatedDef {
             label: "",
             speed: Speed::Action,
             cost: 0,
+            x_per: 0,
             tap: false,
             once_per_turn: false,
             from_hand: false,
@@ -332,6 +336,10 @@ pub struct CardDef {
     pub cost_mod: Option<fn(&GameState, PlayerId, ObjectId) -> i16>,
     /// Effets statiques sur la carte elle-même (« this gets +1{p} if … »).
     pub self_mod: Option<fn(&GameState, ObjectId) -> Delta>,
+    /// Effets statiques d'une arme sur ses attaques (« this card's attacks get
+    /// +1{p} and go again »), appliqués en continu à l'attaque-proxy. Argument :
+    /// l'arme.
+    pub attack_mod: Option<fn(&GameState, ObjectId) -> Delta>,
     /// Effets statiques sur d'autres objets, actifs quand la source est dans
     /// l'arène (héros, équipements, auras). Arguments : source, objet modifié.
     pub aura: Option<fn(&GameState, ObjectId, ObjectId) -> Delta>,

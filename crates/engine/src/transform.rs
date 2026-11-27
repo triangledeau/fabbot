@@ -94,6 +94,7 @@ impl GameState {
             o.activations = [0; 4];
             o.life_delta = 0;
             o.life_counters = 0;
+            o.fused = false;
         }
         for e in &mut self.sub_cards {
             if e.1 == obj {
