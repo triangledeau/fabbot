@@ -182,9 +182,8 @@
       BOT = p.decks.map((v) => deDeck(v, true));
       ARCH_MES = m.archives || [];
       $("dk-dossier").title = String(m.dossier || "");
-      $("dk-collection").textContent = c.source === "fabcube"
-        ? `Collection Silver Age : ${c.nombre} cartes, dont ${c.codees} jouables par le bot.`
-        : `Collection : ${c.codees} cartes jouables par le bot (liste complète Silver Age absente).`;
+      $("dk-collection").textContent = `Collection Silver Age : ${c.nombre} cartes, dont ${c.codees} jouables par le bot.`
+        + (c.textes ? "" : " (texte des cartes absent : relancer Jouer.bat avec Internet)");
       $("dk-erreur").textContent = "";
     } catch (e) { $("dk-erreur").textContent = "Serveur injoignable : relance Jouer.bat."; }
   }

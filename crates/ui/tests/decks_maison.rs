@@ -181,7 +181,7 @@ fn la_collection_contient_les_cartes_des_neuf_decks_marquees_codees() {
     let mut e = etat_serveur();
     let v = json(&repondre("GET", "/api/collection", &mut e));
     let cartes = v["cartes"].as_array().unwrap();
-    assert!(["fabcube", "codees"].contains(&v["source"].as_str().unwrap()));
+    assert_eq!(v["source"], "lss");
     for d in decks::tous() {
         let l = decks::liste(&d.nom).unwrap();
         for e in &l.deck {
@@ -295,10 +295,6 @@ fn les_neuf_decks_du_projet_respectent_les_classes_de_leur_heros() {
 #[test]
 fn une_carte_d_une_autre_classe_est_signalee_mais_une_hybride_a_moitie_suffit() {
     let col = fab_ui::api_decks::collection();
-    if col.source != "fabcube" {
-        // Sans la base communautaire (CI), les types des cartes sont inconnus.
-        return;
-    }
     // Hala est Light Warrior (Young) : une carte Ninja n'est pas pour elle.
     assert_eq!(col.hors_classe("Hala", "Bleed Out"), Some(true));
     // Hybride Guardian / Warrior : le côté Warrior suffit.
@@ -353,4 +349,94 @@ fn l_outil_proxies_de_rathe_recoit_le_mode_integre_une_seule_fois() {
         "<!doctype html><html><head><script>window.ARSENAL_IMPRESSION=1;</script><title>"
     ));
     assert_eq!(fab_ui::fichiers::mode_integre(&a), a);
+}
+
+#[test]
+fn la_collection_contient_toutes_les_cartes_silver_age_pas_seulement_les_codees() {
+    let col = fab_ui::api_decks::collection();
+    // Pool Silver Age du fichier officiel LSS : plus de 4 000 cartes-couleurs.
+    assert!(col.cartes.len() > 4000, "{}", col.cartes.len());
+    let non_codees = col.cartes.iter().filter(|c| !c.codee).count();
+    assert!(non_codees > 3000, "{non_codees}");
+    // Une carte non codée a ses données, son image et son nom français.
+    let c = col
+        .par_nom("Snatch")
+        .find(|c| c.couleur == Some(fab_engine::Color::Red))
+        .expect("Snatch rouge");
+    assert_eq!(
+        (c.pitch, c.cout, c.puissance, c.defense),
+        (Some(1), Some(0), Some(4), Some(2))
+    );
+    assert_eq!(c.nom_fr.as_deref(), Some("Vol à l'Arraché"));
+    assert!(c.image.as_deref().unwrap().starts_with("FR_"));
+}
+
+#[test]
+fn les_cartes_bannies_les_jetons_et_les_heros_adultes_ne_sont_pas_dans_la_collection() {
+    let col = fab_ui::api_decks::collection();
+    // Bannie (config/silver_age.toml), jeton, héros adulte, héros mis sur la touche.
+    for nom in [
+        "Ball Lightning",
+        "Frostbite",
+        "Iyslander, Stormbind",
+        "Briar",
+    ] {
+        assert_eq!(col.par_nom(nom).count(), 0, "{nom}");
+    }
+    assert_eq!(
+        col.legale("Ball Lightning", Some(fab_engine::Color::Red)),
+        Some(false)
+    );
+    assert!(col.par_nom("Iyslander").any(|c| c.heros));
+}
+
+#[test]
+fn image_standard_en_francais_plutot_qu_une_illustration_alternative() {
+    // Snatch : illustration standard de Yulia Litvinova (WTR), pas
+    // l'illustration alternative des decks Armory / Silver Age Fai.
+    let col = fab_ui::api_decks::collection();
+    let codes: Vec<&str> = col
+        .par_nom("Snatch")
+        .filter_map(|c| c.image.as_deref())
+        .collect();
+    assert_eq!(codes.len(), 3);
+    for c in codes {
+        assert!(
+            !c.contains("SFA") && !c.contains("AST") && !c.contains("ASR"),
+            "{c}"
+        );
+        assert!(
+            !c.starts_with("U-") && !c.starts_with("R-"),
+            "bord blanc : {c}"
+        );
+    }
+}
+
+#[test]
+fn cr_8_3_7_une_specialisation_d_un_autre_heros_est_signalee() {
+    let col = fab_ui::api_decks::collection();
+    // Une carte « Iyslander Specialization » (ex. Ice Eternal).
+    let spe = col
+        .cartes
+        .iter()
+        .find(|c| c.specialisation == ["Iyslander"])
+        .expect("une spécialisation d'Iyslander");
+    assert_eq!(col.specialisation_d_un_autre("Iyslander", &spe.nom), None);
+    assert_eq!(
+        col.specialisation_d_un_autre("Hala", &spe.nom).as_deref(),
+        Some("Iyslander")
+    );
+    // Une carte sans spécialisation : rien à dire.
+    assert_eq!(col.specialisation_d_un_autre("Hala", "Snatch"), None);
+}
+
+#[test]
+fn les_mots_cles_et_l_essence_viennent_de_la_table_sans_le_texte() {
+    let col = fab_ui::api_decks::collection();
+    let i = col.par_nom("Iyslander").find(|c| c.heros).unwrap();
+    assert_eq!(i.essences, ["Ice"]);
+    assert!(col
+        .cartes
+        .iter()
+        .any(|c| c.mots_cles.iter().any(|m| m == "Legendary")));
 }

@@ -172,11 +172,19 @@ un deck du bot (copie : l'original ne change pas, un bandeau le rappelle).
   « ● modifications non enregistrées »), Annuler, Importer (remplace la
   liste), Exporter (format FaBrary), Imprimer (ouvre Imprimer avec ce deck,
   une fois enregistré), Enregistrer (Ctrl+S).
-- À gauche, la collection Silver Age : recherche (« / » pour y aller, en
+- À gauche, la collection Silver Age : **toutes les cartes légales du
+  format** (≈ 4 000 cartes-couleurs, table `data/cards/collection.tsv`
+  produite par `python3 -I tools/collection_silver_age.py` depuis le fichier
+  officiel LSS ; image VF bord noir et illustration standard d'abord, voir
+  l'en-tête du script). Recherche (« / » pour y aller, en
   français ou en anglais), filtres Pitch, Coût, Type, Mots-clés, Classe /
   talent, Afficher (légales pour le héros, jouables par le bot, déjà dans
   le deck, jouables d'abord), tri, taille des cartes (mémorisée). Les cartes
-  que le bot ne sait pas encore jouer sont grisées. Survol : grande image et
+  que le bot ne sait pas encore jouer sont un peu ternies et marquées
+  « bot ✗ » : on peut les mettre dans un deck et l'enregistrer, mais un deck
+  qui en contient n'est pas jouable contre le bot (Jouer le refuse et
+  l'onglet Vérifications les liste). Une carte « [Héros] Specialization »
+  n'est proposée qu'à ce héros (CR 8.3.7). Survol : grande image et
   texte, posés à côté de la carte.
 - Clic : +1 au deck ; ⇧ clic : +1 au side ; Alt clic : +1 aux envies ;
   Entrée au clavier. **Clic droit** (ou touche Menu) sur une carte de la

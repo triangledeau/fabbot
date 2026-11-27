@@ -147,7 +147,7 @@ pub fn repondre(methode: &str, requete: &str, etat: &mut Etat) -> Reponse {
 pub fn repondre_avec_corps(methode: &str, requete: &str, corps: &[u8], etat: &mut Etat) -> Reponse {
     let (chemin, ps) = parametres(requete);
     let param = |k: &str| ps.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone());
-    let lot = crate::api_decks::repondre(methode, chemin, &param, corps)
+    let lot = crate::api_decks::repondre(methode, chemin, &param, corps, etat.textes.as_ref())
         .or_else(|| crate::api_tournoi::repondre(methode, chemin, &param))
         .or_else(|| crate::api_apprendre::repondre(methode, chemin, &param, etat.textes.as_ref()));
     if let Some((code, v)) = lot {
