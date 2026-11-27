@@ -353,14 +353,21 @@
     brancherNav(g);
     c.querySelectorAll("[data-i]").forEach((b) => b.addEventListener("click", () => {
       const bon = +b.dataset.i === q.bonne;
-      c.querySelectorAll("[data-i]").forEach((x) => { x.disabled = true; if (+x.dataset.i === q.bonne) x.classList.add("bon"); });
-      if (!bon) b.classList.add("faux");
+      g.querySelector(".ap-retour")?.remove();
       const r = document.createElement("div"); r.className = "ap-retour " + (bon ? "ok" : "ko");
-      r.innerHTML = `<b>${bon ? "Exact !" : "Pas tout à fait."}</b> ${rendre(esc(q.pourquoi))} ${crs(pl.cr)}`;
+      if (bon) {
+        // Bonne réponse : on explique pourquoi, et on peut continuer.
+        c.querySelectorAll("[data-i]").forEach((x) => { x.disabled = true; });
+        b.classList.add("bon");
+        r.innerHTML = `<b>Exact !</b> ${rendre(esc(q.pourquoi))} ${crs(pl.cr)}`;
+        g.querySelector(".ap-actions").innerHTML = navBoutons();
+        brancherNav(g);
+      } else {
+        // Mauvaise réponse : on ne donne pas la solution, l'élève réessaie.
+        b.classList.add("faux"); b.disabled = true;
+        r.innerHTML = `<b>Pas tout à fait.</b> Réessaie avec une autre réponse.`;
+      }
       c.after(r);
-      g.querySelector(".ap-actions").innerHTML = bon ? navBoutons() : `${navBoutons(false)}<button class="btn" id="ap-re">Réessayer</button>`;
-      brancherNav(g);
-      g.querySelector("#ap-re")?.addEventListener("click", () => quiz(pl));
     }));
   }
 

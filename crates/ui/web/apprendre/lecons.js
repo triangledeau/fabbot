@@ -71,7 +71,7 @@ const LECONS = [
           { dit: "<b>À toi.</b> Clique sur Raging Onslaught pour attaquer Bravo.", clic: "a1",
             apres: [["attaquer", "a1", "adv", 7]],
             introduit: ["degats"], ensuite: "Personne ne s'est défendu : l'attaque touche. Elle inflige autant de {{degats}} que sa {{puissance}}, et Bravo perd 7 {{pv}}.", cr: ["7.5.2"] },
-          { dit: "Dans une vraie partie, une attaque se paie avant d'être jouée. Tu l'apprendras au chapitre 3. Pour l'instant, retiens la {{puissance}}.",
+          { dit: "Dans une vraie partie, jouer une attaque a un prix : il faut la payer. Tu apprendras comment au chapitre 3. Pour l'instant, retiens la {{puissance}}.",
             fait: [["cimetiere", "a1"]] },
           { quiz: { q: "Une attaque de puissance 5 touche un héros qui ne se défend pas. Combien de PV perd-il ?", choix: ["5", "0", "Cela dépend de ses PV"], bonne: 0,
             pourquoi: "Sans défense, les dégâts sont égaux à la puissance." }, cr: ["7.5.2"] },
