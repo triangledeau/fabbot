@@ -473,6 +473,23 @@ fn rush_of_power_quickstrike_avec_go_again_gagne_1_p() {
 }
 
 #[test]
+fn rush_of_power_go_again_accorde_apres_la_declaration_donne_plus_1_p() {
+    let mut t = rush_partie();
+    let a = rush_attaque(&mut t, R, false);
+    assert_eq!(t.g.power(a), 3);
+    let r = t.g.obj(a).obj_ref(a);
+    t.g.modify(
+        r,
+        fab_engine::Delta {
+            grants: Keywords::GO_AGAIN,
+            ..Default::default()
+        },
+        fab_engine::Until::EndOfTurn,
+    );
+    assert_eq!(t.g.power(a), 4, "le +1 suit le go again accordé plus tard");
+}
+
+#[test]
 fn rush_of_power_quickstrike_sans_go_again_ne_gagne_rien() {
     let mut t = rush_partie();
     let a = rush_attaque(&mut t, R, false);
@@ -971,13 +988,25 @@ fn star_fall_attaque_pour_1_ressource_une_fois_par_tour() {
 
 #[test]
 fn star_fall_une_carte_lightning_jouee_ce_tour_donne_plus_1_puissance() {
-    // Sizzle (rouge, Lightning) : son propre +3 s'ajoute à l'attaque ; on
-    // vérifie donc d'abord la puissance de l'arme seule (1 + 1).
+    // Sizzle (rouge, Lightning) : on vérifie la puissance de l'attaque de l'arme (1 + 1).
     let mut t = star_fall_partie(&[("Sizzle", R)]);
-    let w = t.equipement(P0, "Star Fall");
     jouer(&mut t, P0, "Sizzle", R);
     resoudre(&mut t);
-    assert_eq!(t.g.power(w), 2, "1 de base + 1 : une carte Lightning jouée");
+    let proxy = attaquer_star_fall(&mut t, P0);
+    // Sizzle donne aussi +3{p} à la prochaine attaque : 1 + 1 + 3.
+    assert_eq!(t.g.power(proxy), 5, "1 + 1 (Star Fall) + 3 (Sizzle)");
+}
+
+#[test]
+fn star_fall_carte_lightning_jouee_apres_la_declaration_donne_puissance_et_go_again() {
+    let mut t = star_fall_partie(&[RAMPART_STAR_FALL, ("Sizzle", R)]);
+    let proxy = attaquer_star_fall(&mut t, P0);
+    assert_eq!(t.g.power(proxy), 1);
+    assert!(!t.g.keywords(proxy).has(Keywords::GO_AGAIN));
+    // Sizzle est joué pendant la chaîne : l'effet statique s'applique aussitôt.
+    jouer(&mut t, P0, "Sizzle", R);
+    assert_eq!(t.g.power(proxy), 2, "+1 accordé après la déclaration");
+    assert!(t.g.keywords(proxy).has(Keywords::GO_AGAIN));
 }
 
 #[test]
@@ -997,28 +1026,28 @@ fn star_fall_carte_non_lightning_jouee_ne_compte_pas() {
         RAMPART_STAR_FALL,
         RAMPART_STAR_FALL,
     ]);
-    let w = t.equipement(P0, "Star Fall");
     jouer_en_pitchant(&mut t, P0, "Harvest Season", R);
     resoudre(&mut t);
+    let proxy = attaquer_star_fall(&mut t, P0);
     assert_eq!(
-        t.g.power(w),
+        t.g.power(proxy),
         1,
         "Harvest Season n'est pas une carte Lightning"
     );
-    let proxy = attaquer_star_fall(&mut t, P0);
     assert!(!t.g.keywords(proxy).has(Keywords::GO_AGAIN));
 }
 
 #[test]
 fn star_fall_carte_lightning_du_tour_precedent_ne_compte_pas() {
     let mut t = star_fall_partie(&[("Sizzle", R)]);
-    let w = t.equipement(P0, "Star Fall");
     jouer(&mut t, P0, "Sizzle", R);
     resoudre(&mut t);
     t.finir_le_tour();
     t.finir_le_tour();
     assert_eq!(t.g.turn_player, P0, "retour au tour de P0");
-    assert_eq!(t.g.power(w), 1, "Sizzle date du tour précédent");
+    let proxy = attaquer_star_fall(&mut t, P0);
+    assert_eq!(t.g.power(proxy), 1, "Sizzle date du tour précédent");
+    assert!(!t.g.keywords(proxy).has(Keywords::GO_AGAIN));
 }
 
 // ---------------------------------------------------------------------------

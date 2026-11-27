@@ -332,6 +332,10 @@ pub struct CardDef {
     pub cost_mod: Option<fn(&GameState, PlayerId, ObjectId) -> i16>,
     /// Effets statiques sur la carte elle-même (« this gets +1{p} if … »).
     pub self_mod: Option<fn(&GameState, ObjectId) -> Delta>,
+    /// Effets statiques d'une arme sur ses attaques (« this card's attacks get
+    /// +1{p} and go again »), appliqués en continu à l'attaque-proxy. Argument :
+    /// l'arme.
+    pub attack_mod: Option<fn(&GameState, ObjectId) -> Delta>,
     /// Effets statiques sur d'autres objets, actifs quand la source est dans
     /// l'arène (héros, équipements, auras). Arguments : source, objet modifié.
     pub aura: Option<fn(&GameState, ObjectId, ObjectId) -> Delta>,

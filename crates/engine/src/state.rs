@@ -930,12 +930,12 @@ impl GameState {
 
     /// Somme des effets continus qui s'appliquent à un objet.
     pub fn continuous_delta(&self, id: ObjectId) -> Delta {
-        self.delta_with(id, false)
+        self.delta_with(id, false, false)
     }
 
     /// `no_gain` : les bonus de puissance sont ignorés (« can't gain {p} »),
     /// seuls les malus comptent.
-    fn delta_with(&self, id: ObjectId, no_gain: bool) -> Delta {
+    fn delta_with(&self, id: ObjectId, no_gain: bool, skip_self_mod: bool) -> Delta {
         let o = self.obj(id);
         let r = o.obj_ref(id);
         let mut d = Delta::default();
@@ -962,9 +962,18 @@ impl GameState {
         }
         // Effets statiques de la carte elle-même (CR 5.4), sauf si elle a
         // perdu ses capacités.
-        if o.proxy_of.is_none() && !self.lost_abilities(id) {
+        if !skip_self_mod && o.proxy_of.is_none() && !self.lost_abilities(id) {
             if let Some(f) = self.db.get(o.card).self_mod {
                 add(f(self, id));
+            }
+        }
+        // Effets statiques d'une arme sur ses attaques (« this card's attacks
+        // get … ») : évalués en continu sur l'attaque-proxy (CR 1.4.3).
+        if let Some(w) = o.proxy_of {
+            if !self.lost_abilities(w) {
+                if let Some(f) = self.db.get(self.obj(w).card).attack_mod {
+                    add(f(self, w));
+                }
             }
         }
         // Effets statiques des héros, équipements et permanents (CR 1.7.4).
@@ -1017,7 +1026,7 @@ impl GameState {
             Some(w) => self.power(w),
             None => self.db.get(o.card).power.unwrap_or(0) as i16 + o.power_counters as i16,
         };
-        (base + self.delta_with(id, self.cant_gain_power(id)).power).max(0)
+        (base + self.delta_with(id, self.cant_gain_power(id), false).power).max(0)
     }
 
     /// Chokeslam : « attack action cards they control can't gain {p} during
@@ -1046,6 +1055,17 @@ impl GameState {
 
     /// Mots-clés actuels (de base + accordés par des effets).
     pub fn keywords(&self, id: ObjectId) -> Keywords {
+        self.keywords_with(id, false)
+    }
+
+    /// Mots-clés en ignorant l'effet statique `self_mod` de la carte elle-même.
+    /// Sert à un `self_mod` qui dépend des mots-clés (« if this has go again,
+    /// it gets +1{p} ») sans boucler : keywords → delta → self_mod → keywords.
+    pub fn keywords_sans_self_mod(&self, id: ObjectId) -> Keywords {
+        self.keywords_with(id, true)
+    }
+
+    fn keywords_with(&self, id: ObjectId, skip_self_mod: bool) -> Keywords {
         let o = self.obj(id);
         let base = match o.proxy_of {
             // Une proxy n'hérite pas des capacités de résolution de sa source
@@ -1056,7 +1076,7 @@ impl GameState {
             None if self.lost_abilities(id) => self.material_keywords(id),
             None => self.db.get(o.card).keywords | self.material_keywords(id),
         };
-        let d = self.continuous_delta(id);
+        let d = self.delta_with(id, false, skip_self_mod);
         // « Loses and can't gain » l'emporte sur les mots-clés accordés.
         (base | d.grants).without(d.loses)
     }

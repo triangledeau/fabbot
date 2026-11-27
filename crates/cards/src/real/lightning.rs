@@ -236,9 +236,10 @@ pub fn add(db: &mut CardDb) {
     // coût 0, déf. 3. Puissance : bleu 1 ; rouge 3 ; jaune 2.
     // « **Quickstrike** - If this has go again, it gets +1{p}.
     //   When this hits a hero, deal 1 arcane damage to them. »
-    // TODO(règles) : Quickstrike n'est pas un mot-clé du moteur. Le +1{p} est
-    // calculé au moment où l'attaque est déclarée (comme Second Strike), car
-    // « go again » peut être accordé avant l'attaque ; à confirmer dans le CR.
+    // Quickstrike n'est pas un mot-clé du moteur : seul le texte « If this has
+    // go again, it gets +1{p} » est codé, comme effet statique continu
+    // (CR 6.3) : le +1 vaut tant que l'attaque a go again, même accordé après
+    // la déclaration. Lecture des mots-clés sans `self_mod` pour éviter la boucle.
     for (c, p) in [(Color::Blue, 1), (Color::Red, 3), (Color::Yellow, 2)] {
         let mut d = deck_card(
             "Rush of Power",
@@ -249,44 +250,24 @@ pub fn add(db: &mut CardDb) {
             Some(p),
             Some(3),
         );
+        d.self_mod = Some(|g, me| {
+            if g.keywords_sans_self_mod(me).has(Keywords::GO_AGAIN) {
+                power(1)
+            } else {
+                Delta::default()
+            }
+        });
         d.arcane_damage = true;
-        d.triggers = vec![
-            TriggerDef {
-                when: when_this_attacks,
-                anywhere: false,
-                targets: vec![],
-                script: vec![Op::Do(|g, c| {
-                    if let Some(s) = c.source {
-                        if g.keywords(s.id).has(Keywords::GO_AGAIN) {
-                            g.modify(
-                                s,
-                                Delta {
-                                    power: 1,
-                                    ..Default::default()
-                                },
-                                Until::EndOfTurn,
-                            );
-                        }
-                    }
-                })],
-            },
-            TriggerDef {
-                when: |g, me, e| super::assassin::this_hits_a_hero(g, me, e),
-                anywhere: false,
-                targets: vec![],
-                script: vec![Op::Do(|g, c| {
-                    if let Some(Event::Hit { target, .. }) = c.event {
-                        g.deal_damage_to(
-                            c.source_id(),
-                            c.controller,
-                            Target::Player(target),
-                            1,
-                            true,
-                        );
-                    }
-                })],
-            },
-        ];
+        d.triggers = vec![TriggerDef {
+            when: |g, me, e| super::assassin::this_hits_a_hero(g, me, e),
+            anywhere: false,
+            targets: vec![],
+            script: vec![Op::Do(|g, c| {
+                if let Some(Event::Hit { target, .. }) = c.event {
+                    g.deal_damage_to(c.source_id(), c.controller, Target::Player(target), 1, true);
+                }
+            })],
+        }];
         db.add(d);
     }
 
@@ -494,33 +475,20 @@ pub fn add(db: &mut CardDb) {
             attack: true,
             ..Default::default()
         }],
-        self_mod: Some(|g, me| {
-            // « this card's attacks » : le bonus porte sur l'arme (et son attaque-proxy).
-            if a_joue_une_carte_lightning(g, g.obj(me).controller) {
-                power(1)
+        // « this card's attacks get +1{p} and go again » : effet statique continu
+        // sur l'attaque-proxy, valable aussi si la carte Lightning est jouée
+        // après la déclaration de l'attaque.
+        attack_mod: Some(|g, w| {
+            if a_joue_une_carte_lightning(g, g.obj(w).controller) {
+                Delta {
+                    power: 1,
+                    grants: Keywords::GO_AGAIN,
+                    ..Default::default()
+                }
             } else {
                 Delta::default()
             }
         }),
-        // Le « go again » d'une arme ne passe pas par `self_mod` (il n'atteint
-        // pas la proxy d'attaque) : il est accordé à l'attaque elle-même quand
-        // elle est déclarée, comme pour Graphene Chelicera (assassin.rs).
-        // TODO(règles) : la condition « a joué une carte Lightning ce tour » est
-        // évaluée à la déclaration de l'attaque. Une carte Lightning jouée ensuite
-        // (en chaîne, avant la résolution) ne donnerait pas le go again ici. À
-        // vérifier dans le CR (`docs/rules/sources/regles-cr.txt`).
-        triggers: vec![TriggerDef {
-            when: when_this_attacks,
-            anywhere: false,
-            targets: vec![],
-            script: vec![Op::Do(|g, c| {
-                if a_joue_une_carte_lightning(g, c.controller) {
-                    if let Some(a) = g.active_link().map(|l| l.attack) {
-                        g.modify(a, grant(Keywords::GO_AGAIN), Until::EndOfTurn);
-                    }
-                }
-            })],
-        }],
         ..Default::default()
     });
 
