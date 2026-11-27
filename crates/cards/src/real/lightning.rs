@@ -46,6 +46,7 @@ pub const NAMES: &[&str] = &[
     "Embodiment of Lightning",
     "Burn Up // Shock",
     "Entwine Lightning",
+    "Arcanic Shockwave",
     // NOMS
 ];
 
@@ -883,6 +884,29 @@ pub fn add(db: &mut CardDb) {
                 g.modify(s, grant(Keywords::GO_AGAIN), Until::EndOfTurn);
             }
         }));
+        db.add(d);
+    }
+
+    // Arcanic Shockwave (bleu, rouge, jaune) — Elemental Runeblade Action -
+    // Attack, coût 0, déf. 3 ; puissance bleu 2, rouge 4, jaune 3.
+    // « Lightning Fusion
+    //   When this attacks, if it was fused, deal 1 arcane damage to target hero. »
+    // CR 8.3.17 : la fusion est un coût d'effet optionnel (révéler une carte
+    // Lightning de la main). TODO(règles) : le déclencheur « when this attacks,
+    // if it was fused » n'est pas codé : le moteur ne garde pas l'état « fusionnée »
+    // jusqu'à la déclaration d'attaque (`ctx.optional_paid` n'est pas transmis
+    // aux déclencheurs). À faire quand le moteur le permettra.
+    for (c, p) in [(Color::Blue, 2), (Color::Red, 4), (Color::Yellow, 3)] {
+        let mut d = deck_card(
+            "Arcanic Shockwave",
+            c,
+            ELEMENTAL_RB,
+            Types::ACTION,
+            Some(0),
+            Some(p),
+            Some(3),
+        );
+        d.effect_cost = lightning_fusion();
         db.add(d);
     }
 

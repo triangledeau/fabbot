@@ -1884,3 +1884,49 @@ fn entwine_lightning_sans_carte_lightning_en_main_pas_de_question() {
     resoudre_chaine(&mut t);
     assert_eq!(t.g.player(P0).action_points, 0, "pas de go again");
 }
+
+// Arcanic Shockwave (CR 8.3.17) : « Lightning Fusion » ; le déclencheur
+// « when this attacks, if it was fused » n'est pas encore codé (TODO(règles)).
+
+/// Partie où P0 a `Arcanic Shockwave` (rouge) et `Cloud Cover` (Lightning) en main.
+fn arcanic_partie() -> Partie {
+    partie_cloud(&[("Arcanic Shockwave", R), ("Cloud Cover", R)])
+}
+
+#[test]
+fn arcanic_lightning_fusion_propose_les_cartes_lightning_de_la_main() {
+    // « Lightning Fusion » : révéler une carte Lightning de la main, ou passer.
+    let mut t = arcanic_partie();
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    jouer(&mut t, P0, "Arcanic Shockwave", R);
+    assert_eq!(t.kind(), DecisionKind::Effect, "question de fusion");
+    assert_eq!(t.options(), vec![Choice::Object(cloud), Choice::Pass]);
+}
+
+#[test]
+fn arcanic_lightning_fusion_refuser_la_fusion_laisse_resoudre() {
+    // Refuser la fusion : la carte se résout sans erreur.
+    let mut t = arcanic_partie();
+    jouer(&mut t, P0, "Arcanic Shockwave", R);
+    t.choisir(Choice::Pass);
+    resoudre_chaine(&mut t);
+    assert_eq!(t.g.player(P0).action_points, 0, "pas de go again");
+}
+
+#[test]
+fn arcanic_lightning_fusion_carte_revelee_reste_en_main() {
+    // Cas limite (CR 8.3.17a) : révéler ne défausse pas la carte.
+    let mut t = arcanic_partie();
+    let cloud = t.en_main(P0, "Cloud Cover", R);
+    jouer(&mut t, P0, "Arcanic Shockwave", R);
+    t.choisir(Choice::Object(cloud));
+    assert_eq!(t.g.obj(cloud).zone, Zone::Hand, "révélée, pas défaussée");
+}
+
+#[test]
+fn arcanic_lightning_fusion_sans_carte_lightning_en_main_pas_de_question() {
+    // Cas limite (CR 8.3.17b) : sans carte Lightning en main, pas de fusion possible.
+    let mut t = partie_cloud(&[("Arcanic Shockwave", R), ("Autumn's Touch", R)]);
+    jouer(&mut t, P0, "Arcanic Shockwave", R);
+    assert_ne!(t.kind(), DecisionKind::Effect, "pas de question de fusion");
+}
