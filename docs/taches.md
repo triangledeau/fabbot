@@ -9,7 +9,7 @@ retire en finissant.
 
 | Début | Agent | Branche | Tâche | Zone touchée (crates, fichiers) |
 |---|---|---|---|---|
-| 2026-11-27 | Claude | `claude/project-thread-v8uk72` | Finir l'intégration d'Aurora : table de side refaite (fait, poussée), poids B3 à refaire avec 10 héros (`--apprendre-b3 --games 112 --bots b3-100 b3-100 --lambda 40`, ≈ 1 h), puis comparer aux anciens poids et fusionner | `data/side/b1.txt`, `data/b3/evaluation.txt`, `docs/bots.md` (chiffres) |
+| 2026-11-27 | Claude | `claude/project-thread-v8uk72` | Finir l'intégration d'Aurora : table de side refaite (fait, poussée), poids B3 appris avec 10 héros dans `data/b3/candidat_aurora.txt` (fait), reste à comparer (`--tournoi --bots b3:data/b3/candidat_aurora.txt b3 --games 16 --check`) aux anciens poids et fusionner | `data/side/b1.txt`, `data/b3/evaluation.txt`, `docs/bots.md` (chiffres) |
 | 2026-11-26 | Claude | `claude/project-thread-0p5cpk` | Didacticiel « Apprendre » des règles (phase 2 du rapatriement) | `crates/ui/web/apprendre/` (nouveau), `crates/ui/src/api_apprendre.rs` (nouveau), quelques lignes dans `serveur.rs`, `index.html`, `accueil.js` |
 | 2026-11-26 | Claude | `claude/vigilant-fermat-iq5cjs` | B2/B3 : estimation qui comprend le blood debt et les cartes bannies (Levia), mesurée contre B2 | `crates/ai/src/b2.rs`, `b3.rs` (recherche seulement), `docs/bots.md` |
 
