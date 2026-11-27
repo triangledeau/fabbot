@@ -9,7 +9,7 @@ comportements qu'une capture ne montre pas. Captures côte à côte :
 Légende : ✅ déjà dans fabbot · 🟡 en partie · ❌ absent · ⛔ non repris
 (volontairement, raison donnée).
 
-Ce qui reste exclu (décisions déjà prises) : fonds ArtStation de l'accueil,
+Ce qui reste exclu (décisions déjà prises) :
 code Talishar, règles du moteur JS (le moteur fabbot reste la référence), son.
 Didacticiel et puzzles : phases 2 et 3 du plan.
 
@@ -115,7 +115,7 @@ contre Bot, signalement de bug, Importer une partie.
 | H3 | Bas du volet Jouer : « Decks 14 (0 à toi) », « Réflexion rapide · normale · sans limite » | ✅ « Decks 9 (0 à toi) » ; la ligne Réflexion devient « Bots B0 · B1 · B2 · B3 » (fabbot règle le niveau, pas un temps de réflexion) | ✅ |
 | H4 | Volet Entraîner : « Dernier tournoi » + barre d'avancement | ✅ « Dernier tournoi » (ou tournoi en cours) + barre | ✅ |
 | H5 | Pied : version du moteur, nombre de cartes de l'éditeur | ✅ (texte proche) | ✅ |
-| H6 | Fond d'accueil ArtStation | ⛔ exclu | ⛔ |
+| H6 | Fond d'accueil ArtStation | repris le 2026-11-27, élargi : un lieu tiré au hasard derrière toutes les pages, chargé en ligne (`commun/fonds.js`, voir `docs/interface.md`, « Fonds illustrés ») | ✅ |
 
 ## 6. Imprimer
 

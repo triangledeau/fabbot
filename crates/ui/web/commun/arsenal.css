@@ -61,3 +61,21 @@ html[data-vue="accueil"] #v-accueil, html[data-vue="partie"] #v-partie, html[dat
    du dépôt public), cartes.js ajoute la classe vrai-dos et tous les dos
    (deck, main du bot, cartes cachées) prennent l'image. Sinon, dos dessiné. */
 .vrai-dos .dos, .vrai-dos .carte.cachee, .vrai-dos .ap-c.cachee { background: url("/outils/dos-de-carte") center / cover no-repeat !important; color: transparent !important; }
+
+/* Fond illustré (commun/fonds.js) : une illustration de lieu derrière toutes
+   les pages, fondue dans le fond sombre. L'image est assombrie, puis un voile
+   (vignette + dégradé haut/bas) la fond dans --bg vers les bords, pour que
+   textes et cadres restent lisibles. Deux images se relaient (fondu enchaîné). */
+#fond { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+#fond img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.04);
+  filter: saturate(.95) brightness(.85); transition: opacity 1.4s ease, transform 12s ease-out; }
+#fond img.vu { opacity: var(--fond-opacite, .72); transform: none; }
+#fond::after { content: ""; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 85% 80% at 50% 42%, rgb(10 13 19 / .08), rgb(10 13 19 / .5) 65%, var(--bg) 100%),
+    linear-gradient(180deg, rgb(10 13 19 / .45), transparent 22%, transparent 72%, rgb(10 13 19 / .75)); }
+/* Écran de partie : le tapis a déjà l'illustration des deux héros, le lieu reste discret. */
+[data-vue="partie"] #fond { --fond-opacite: .3; }
+#fond-legende { position: fixed; right: 10px; bottom: 6px; z-index: 0; pointer-events: none; font-size: .68rem; color: rgb(239 229 207 / .38); text-shadow: 0 1px 3px #000; }
+[data-vue="partie"] #fond-legende, [data-vue="impression"] #fond-legende { display: none; }
+@media (prefers-reduced-motion: reduce) { #fond img { transition: none; transform: none; } }
+@media print { #fond, #fond-legende { display: none; } }

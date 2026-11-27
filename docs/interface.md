@@ -126,6 +126,24 @@ Pour les développeurs : `data/cards/images.tsv` (produit par
 `crates/ui/src/images.rs` ajoute `image` et `nom_fr` au JSON des cartes ;
 `crates/ui/web/commun/cartes.js` construit l'adresse.
 
+### Fonds illustrés
+
+Derrière chaque page, une **illustration de lieu sans personnage** (cartes
+Flesh and Blood en haute définition : Great Library of Solana, Mistcloak
+Gully, Channel the Bleak Expanse…), assombrie et fondue dans le fond sombre
+vers les bords pour que textes et cadres restent lisibles. Elle est **tirée
+au hasard** à l'ouverture et à chaque changement de page (fondu enchaîné, pas
+deux fois la même de suite). Sur l'écran de partie, elle est plus discrète
+(le tapis montre déjà les héros). Le nom de la carte et l'artiste sont écrits
+en petit en bas à droite. Les images viennent d'ArtStation, où les artistes
+les publient (les scans officiels font 546 px de large, trop flous en plein
+écran) : sans Internet, le fond reste uni.
+
+Pour les développeurs : la liste (nom, artiste, adresse, cadrage) est dans
+`crates/ui/web/commun/fonds.js` ; l'aspect (opacité, voile) dans
+`commun/arsenal.css`, règles `#fond`. Ajouter une illustration = une ligne
+dans `FONDS`, en vérifiant le nom et l'artiste dans le fichier officiel LSS.
+
 ### L'écran Jouer (choix des decks, decks maison)
 
 Depuis l'accueil, le volet **Jouer** (adresse `#decks`) reprend l'écran
