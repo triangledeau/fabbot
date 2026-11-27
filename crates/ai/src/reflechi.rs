@@ -66,6 +66,10 @@ pub struct ReglagesReflechi {
     pub duree_max: Duration,
     /// Arrêter dès que le choix ne peut plus changer.
     pub arret_anticipe: bool,
+    /// Banque de temps pour toute la partie (`None` : pas de banque, seul
+    /// le temps prévu par décision compte). Voir
+    /// [`ReglagesReflechi::temps_avec_banque`].
+    pub banque: Option<Duration>,
 }
 
 impl Default for ReglagesReflechi {
@@ -77,6 +81,7 @@ impl Default for ReglagesReflechi {
             duree_min: Duration::from_millis(300),
             duree_max: Duration::from_secs(120),
             arret_anticipe: true,
+            banque: None,
         }
     }
 }
@@ -93,6 +98,11 @@ impl ReglagesReflechi {
             Some(x) => x.strip_prefix('-')?,
             None => return None,
         };
+        // `reflechi-partie-10m` : une banque de 10 minutes pour la partie.
+        let (banque, reste) = match reste.strip_prefix("partie-") {
+            Some(x) => (true, x),
+            None => (false, reste),
+        };
         let chiffres: String = reste.chars().take_while(|c| c.is_ascii_digit()).collect();
         let n: u64 = chiffres.parse().ok().filter(|&n| n > 0)?;
         let max = match &reste[chiffres.len()..] {
@@ -101,6 +111,10 @@ impl ReglagesReflechi {
             "m" | "min" => Duration::from_secs(60 * n),
             _ => return None,
         };
+        if banque {
+            r.banque = Some(max);
+            return Some(r);
+        }
         r.duree_max = max;
         r.par_option = max / 40;
         r.duree_min = r.duree_min.min(max);
@@ -131,6 +145,31 @@ impl ReglagesReflechi {
             .par_option
             .mul_f32(Self::poids(genre) * (options - 1) as f32);
         t.clamp(self.duree_min, self.duree_max)
+    }
+
+    /// Temps prévu avec une banque où il reste `restant` : une part de la
+    /// banque d'autant plus grande que la décision est complexe. L'unité est
+    /// 1/150e de ce qui reste ; une décision vaut `poids × (options − 1) / 2`
+    /// unités (6 options distinctes comptées au plus) : 1/75e de la banque
+    /// pour une priorité à 3 options (8 s sur 10 min), 1/25e pour une
+    /// priorité à 7 options ou plus (24 s), jamais plus que
+    /// [`ReglagesReflechi::duree_max`]. La banque fond de décision en
+    /// décision sans s'épuiser d'un coup, et l'arrêt anticipé en rend une
+    /// partie. Banque vide : le temps minimal
+    /// ([`ReglagesReflechi::duree_min`], 0,3 s, encore bien plus que les
+    /// 300 itérations de B3) ; la partie peut alors dépasser un peu la banque.
+    pub fn temps_avec_banque(
+        &self,
+        genre: DecisionKind,
+        options: usize,
+        restant: Duration,
+    ) -> Duration {
+        if options <= 1 {
+            return Duration::ZERO;
+        }
+        let unites = Self::poids(genre) * (options - 1).min(6) as f32 / 2.0;
+        let t = (restant / 150).mul_f32(unites);
+        t.min(self.duree_max).max(self.duree_min)
     }
 
     fn nombre_de_fils(&self) -> usize {
@@ -168,6 +207,9 @@ pub struct Progression {
     pub options: Vec<OptionSuivie>,
     /// La réflexion s'est arrêtée parce que le choix ne pouvait plus changer.
     pub choix_acquis: bool,
+    /// Ce qu'il reste dans la banque de temps de la partie (`None` : pas de
+    /// banque).
+    pub banque: Option<Duration>,
 }
 
 /// Ce que l'interface partage avec le bot : l'avancement, et le bouton
@@ -228,6 +270,9 @@ pub struct ReflechiAgent {
     recherches: Vec<IsmctsAgent>,
     suivi: Arc<Suivi>,
     numero: u64,
+    /// Ce qu'il reste dans la banque de temps (`None` : pas de banque). Un
+    /// bot est créé pour chaque partie : la banque repart à chaque manche.
+    restant: Option<Duration>,
     /// Statistiques : itérations faites depuis la création du bot.
     pub iterations_faites: u64,
 }
@@ -248,6 +293,7 @@ impl ReflechiAgent {
             recherches,
             suivi: Arc::new(Suivi::default()),
             numero: 0,
+            restant: reglages.banque,
             iterations_faites: 0,
         }
     }
@@ -290,7 +336,13 @@ impl Agent for ReflechiAgent {
         if cles.len() == 1 {
             return cles[0].1;
         }
-        let prevu = self.reglages.temps_prevu(decision.kind, cles.len());
+        let restant = self.restant;
+        let prevu = match restant {
+            Some(r) => self
+                .reglages
+                .temps_avec_banque(decision.kind, cles.len(), r),
+            None => self.reglages.temps_prevu(decision.kind, cles.len()),
+        };
         let fils = self.recherches.len();
         self.numero += 1;
         let numero = self.numero;
@@ -300,6 +352,7 @@ impl Agent for ReflechiAgent {
                 numero,
                 prevu,
                 fils,
+                banque: restant,
                 ..Progression::default()
             }
         });
@@ -363,6 +416,7 @@ impl Agent for ReflechiAgent {
                     p.iterations = iterations;
                     p.options = options;
                     p.choix_acquis = acquis;
+                    p.banque = restant.map(|r| r.saturating_sub(ecoule));
                 });
                 if fini {
                     stop.store(true, Ordering::Relaxed);
@@ -377,6 +431,9 @@ impl Agent for ReflechiAgent {
             p.ecoule = debut.elapsed();
             p.iterations = iterations;
         });
+        let ecoule = debut.elapsed();
+        self.restant = restant.map(|r| r.saturating_sub(ecoule));
+        suivi.ecrire(|p| p.banque = self.restant);
         meilleure_option(&total, &cles).unwrap_or(cles[0].1)
     }
 }
@@ -397,7 +454,18 @@ mod tests {
         let r = ReglagesReflechi::depuis_nom("reflechi-200ms").unwrap();
         assert_eq!(r.duree_max, Duration::from_millis(200));
         assert_eq!(r.duree_min, Duration::from_millis(200));
-        for faux in ["reflechi-", "reflechi-0s", "reflechi-3h", "reflechix", "b3"] {
+        let r = ReglagesReflechi::depuis_nom("reflechi-partie-10m").unwrap();
+        assert_eq!(r.banque, Some(Duration::from_secs(600)));
+        assert_eq!(r.duree_max, Duration::from_secs(120));
+        for faux in [
+            "reflechi-",
+            "reflechi-0s",
+            "reflechi-3h",
+            "reflechix",
+            "b3",
+            "reflechi-partie-",
+            "reflechi-partie-0m",
+        ] {
             assert!(ReglagesReflechi::depuis_nom(faux).is_none(), "{faux}");
         }
     }
@@ -422,6 +490,49 @@ mod tests {
             Duration::from_secs(120)
         );
         assert!(r.temps_prevu(DecisionKind::Defend, 5) > r.temps_prevu(DecisionKind::Pitch, 5));
+    }
+
+    #[test]
+    fn la_banque_se_repartit_selon_la_complexite_sans_s_epuiser() {
+        let r = ReglagesReflechi::default();
+        let dix = Duration::from_secs(600);
+        // Une seule option : rien.
+        assert_eq!(
+            r.temps_avec_banque(DecisionKind::Priority, 1, dix),
+            Duration::ZERO
+        );
+        // Priorité à 3 options : 1/75e de la banque (8 s sur 10 min).
+        assert_eq!(
+            r.temps_avec_banque(DecisionKind::Priority, 3, dix),
+            Duration::from_secs(8)
+        );
+        // Priorité à beaucoup d'options : 1/25e (24 s), même au-delà de 7.
+        assert_eq!(
+            r.temps_avec_banque(DecisionKind::Priority, 30, dix),
+            Duration::from_secs(24)
+        );
+        // Un ordre de pitch à 2 options : 1/1200e (0,5 s).
+        assert_eq!(
+            r.temps_avec_banque(DecisionKind::PitchOrder, 2, dix),
+            Duration::from_millis(500)
+        );
+        // Jamais plus de 2 minutes.
+        assert_eq!(
+            r.temps_avec_banque(DecisionKind::Priority, 30, Duration::from_secs(7200)),
+            Duration::from_secs(120)
+        );
+        // Banque vide : le temps minimal.
+        assert_eq!(
+            r.temps_avec_banque(DecisionKind::Priority, 3, Duration::ZERO),
+            r.duree_min
+        );
+        // 60 grosses décisions d'affilée (sans arrêt anticipé) laissent
+        // encore plus d'un vingtième de la banque (52 s sur 10 min).
+        let mut reste = dix;
+        for _ in 0..60 {
+            reste = reste.saturating_sub(r.temps_avec_banque(DecisionKind::Priority, 7, reste));
+        }
+        assert!(reste > dix / 20, "{reste:?}");
     }
 
     #[test]
