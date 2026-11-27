@@ -194,7 +194,7 @@ foreach ($t in $travaux) {
 }
 
 # --- Bilan ---------------------------------------------------------------------------
-$fin = Get-Date
+$finNuit = Get-Date
 Ecrire ""
 Ecrire "## Bilan"
 Ecrire ""
@@ -202,5 +202,5 @@ Ecrire "| # | Travail | Statut | Durée |"
 Ecrire "|---|---|---|---|"
 $bilan | ForEach-Object { Ecrire $_ }
 Ecrire ""
-Ecrire ("Fin : " + $fin.ToString("dd/MM/yyyy HH:mm") + ", durée totale " + (Duree ($fin - $debut)) + ".")
+Ecrire ("Fin : " + $finNuit.ToString("dd/MM/yyyy HH:mm") + ", durée totale " + (Duree ($finNuit - $debut)) + ".")
 [void][Fabbot.Veille]::SetThreadExecutionState([uint32]"0x80000000")
