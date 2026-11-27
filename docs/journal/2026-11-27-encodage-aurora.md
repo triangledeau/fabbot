@@ -1,7 +1,7 @@
 # 2026-11-27 — Essai d'encodage du deck Aurora
 
 - Agent : Claude Code (session d'orchestration + sous-agents Haiku et Sonnet).
-- Branche : `claude/project-thread-0jwqpo` (part de `claude/prototype-langage-cartes` + `main`).
+- Branche : `claude/project-thread-0jwqpo` (part de `main` ; le prototype du langage de cartes reste à part).
 - Deck : `data/decks/en_cours/10_aurora.txt` (Sunday Showdown Sydney, 5e).
 
 ## Méthode

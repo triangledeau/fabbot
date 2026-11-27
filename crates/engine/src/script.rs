@@ -47,10 +47,6 @@ pub struct TargetSpec {
 pub type DoFn = fn(&mut GameState, &mut Ctx);
 pub type AskFn = fn(&GameState, &Ctx) -> Option<Ask>;
 pub type CondFn = fn(&GameState, &Ctx) -> bool;
-/// Instruction paramétrée (cartes écrites en données) : l'argument désigne
-/// une instruction dans une table propre au langage de cartes.
-pub type RunFn = fn(&mut GameState, &mut Ctx, u16);
-pub type CondArgFn = fn(&GameState, &Ctx, u16) -> bool;
 
 /// Une instruction.
 #[derive(Clone, Copy, Debug)]
@@ -60,11 +56,6 @@ pub enum Op {
     Ask(AskFn),
     If(CondFn, u8),
     Back(CondFn, u8),
-    /// Comme `Do`, avec un argument (langage de cartes).
-    Run(RunFn, u16),
-    /// Comme `If`, avec un argument (langage de cartes) : saute les `n`
-    /// instructions suivantes si la condition est fausse.
-    IfArg(CondArgFn, u16, u8),
 }
 
 /// Une question posée par une capacité.

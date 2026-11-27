@@ -101,11 +101,6 @@ prend Nebula Blade (2H) et donc aucun off-hand (Annals of Sutcliffe, listée
 exemplaires est équipée deux fois si les mains le permettent (Arakni : deux
 Mark of the Huntsman).
 
-
-**Prototype du langage de cartes (2026-11-25, branche `claude/prototype-langage-cartes`)** :
-les 25 cartes Warrior sont écrites en données (`crates/cards/cartes/warrior.cartes`)
-et réécrites en anglais pour vérification. Voir `docs/langage-cartes.md`.
-
 **Deck Aurora (2026-11-27)** : 24 cartes codées et testées (`real/lightning.rs`), deck dans
 `data/decks/en_cours/10_aurora.txt`. Haiku : 17 justes sur 24 ; Sonnet a repris les 7 autres.
 Voir `docs/journal/2026-11-27-encodage-aurora.md`.

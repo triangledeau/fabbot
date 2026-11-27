@@ -13,7 +13,6 @@
 pub mod decklist;
 pub mod decks;
 pub mod import;
-pub mod langage;
 pub mod real;
 pub mod test_set;
 
