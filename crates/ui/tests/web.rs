@@ -193,7 +193,10 @@ fn routes_du_serveur() {
     assert_eq!(repondre("POST", "/api/choix?i=0", &mut e).code, 400);
 
     let r = repondre("GET", "/api/decks", &mut e);
-    assert_eq!(json(&r)["decks"].as_array().unwrap().len(), 9);
+    assert_eq!(
+        json(&r)["decks"].as_array().unwrap().len(),
+        fab_cards::decks::noms().len()
+    );
 
     let r = repondre(
         "POST",

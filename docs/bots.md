@@ -236,6 +236,15 @@ test 0,426, non comparable à la 3e génération car les parties ont changé).
 Face-à-face contre la 3e génération : **46,9 % sur 1 296 parties, −22 Elo
 (−41 à −3)**, 0 erreur. La 3e génération reste dans `data/b3/evaluation.txt`.
 
+**Avec Aurora (2026-11-27, retenue)** : le 10e deck oblige à refaire les
+poids (le héros Aurora n'avait pas de poids). 11 200 parties B3-100
+(3e génération) contre B3-100 sur les 100 paires (196 147 positions,
+69 min ; perte de test 0,4727, λ = 40). Face-à-face contre la 3e génération :
+**48,7 % sur 1 600 parties, −9 Elo (−26 à +8)**, 0 erreur : écart non
+significatif. Ces poids sont dans `data/b3/evaluation.txt` car eux seuls
+connaissent Aurora ; la 3e génération est gardée dans
+`data/b3/generation3.txt` (`b3:data/b3/generation3.txt`).
+
 0 erreur. Les poids de 1re génération prédisent bien la fin d'une partie
 **jouée par B1** (perte 0,35 contre 0,60 pour la formule fixe), mais
 n'aident presque pas la recherche. Ceux de 2e génération, appris sur des
@@ -250,7 +259,7 @@ déjà beaucoup par leur nombre, et que la recherche joue de toute façon ces
 cartes dans ses parties simulées). Poids notables : une Passing Mirage
 (blue) en main vaut −1,2, une Dustup (red) +0,8 (par rapport à une carte
 quelconque, qui vaut déjà ≈ +0,3 + le poids du héros). Gardés dans le
-dépôt : `data/b3/evaluation.txt` (3e génération, utilisée par `b3`),
+dépôt : `data/b3/evaluation.txt` (poids avec Aurora, utilisés par `b3`), `data/b3/generation3.txt` (3e génération),
 `data/b3/generation2.txt` (`b3:data/b3/generation2.txt`) et
 `data/b3/generation1_b1.txt` (1re génération, `b3:data/b3/generation1_b1.txt`).
 Coût : le même que B2 (≈ 2,5 s par partie sur un cœur).

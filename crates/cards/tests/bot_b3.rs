@@ -51,7 +51,7 @@ fn b3(iterations: u32, graine: u64) -> IsmctsAgent {
 }
 
 #[test]
-fn le_fichier_des_poids_de_b3_se_lit_et_connait_les_9_heros() {
+fn le_fichier_des_poids_de_b3_se_lit_et_connait_tous_les_heros() {
     let m = Modele::par_defaut();
     let db = real::build();
     for n in GENERIQUES {

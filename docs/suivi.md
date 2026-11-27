@@ -102,7 +102,8 @@ exemplaires est équipée deux fois si les mains le permettent (Arakni : deux
 Mark of the Huntsman).
 
 **Deck Aurora (2026-11-27)** : 24 cartes codées et testées (`real/lightning.rs`), deck dans
-`data/decks/en_cours/10_aurora.txt`. Haiku : 17 justes sur 24 ; Sonnet a repris les 7 autres.
+`data/decks/10_aurora.txt` (intégré : table de side et poids B3 refaits, voir
+`docs/journal/2026-11-27-integration-aurora.md`). Haiku : 17 justes sur 24 ; Sonnet a repris les 7 autres.
 Voir `docs/journal/2026-11-27-encodage-aurora.md`.
 
 ## Questions ouvertes pour le propriétaire
