@@ -44,7 +44,7 @@ html[data-vue="apprendre"] #v-apprendre { display: block; }
 .ap-prog span { width: 26px; height: 6px; border-radius: 3px; background: var(--line2); transition: background .4s; }
 .ap-prog span.ok { background: var(--good); }
 .ap-prog span.ici { background: var(--brass); box-shadow: 0 0 10px rgb(255 216 74 / .6); }
-.ap-scene-cadre { position: relative; width: 100%; overflow: hidden; border-radius: 18px; box-shadow: 0 24px 70px rgb(0 0 0 / .55); }
+.ap-scene-cadre { position: relative; width: 100%; margin: 0 auto; overflow: hidden; border-radius: 18px; box-shadow: 0 24px 70px rgb(0 0 0 / .55); }
 .ap-tapis { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform: scale(var(--s, 1)); transform-origin: 0 0;
   background: radial-gradient(60% 55% at 50% 50%, rgb(255 216 74 / .07), transparent 70%), radial-gradient(120% 90% at 50% 120%, #1b2a2f, transparent 60%), radial-gradient(120% 90% at 50% -20%, #2a1b22, transparent 60%), #0c1117;
   border: 1px solid rgb(255 216 74 / .18); border-radius: 18px; }
@@ -93,8 +93,8 @@ html[data-vue="apprendre"] #v-apprendre { display: block; }
 .ap-zoom.ouvert .zc { transform: scale(3.27); opacity: 1; }
 .ap-zoom .zc .img, .ap-zoom .zc .cadre { box-shadow: 0 10px 40px rgb(0 0 0 / .7); }
 .ap-zoom .anneau { position: absolute; width: 30px; height: 30px; translate: -50% -50%; border-radius: 50%; border: 2px solid var(--brass); box-shadow: 0 0 10px var(--brass), inset 0 0 8px rgb(255 216 74 / .6); opacity: 0; }
-.ap-zoom.ouvert .anneau { opacity: 1; animation: ap-anneau 1.2s ease-out .55s infinite; }
-@keyframes ap-anneau { 0% { scale: 1.6; opacity: 0; } 35% { scale: 1; opacity: 1; } 100% { scale: 1.25; opacity: .2; } }
+.ap-zoom.ouvert .anneau { opacity: 1; transition: opacity .3s .5s; animation: ap-anneau 1.6s ease-in-out .55s infinite; }
+@keyframes ap-anneau { 0%, 100% { box-shadow: 0 0 6px var(--brass), inset 0 0 4px rgb(255 216 74 / .4); } 50% { box-shadow: 0 0 22px 4px var(--brass), inset 0 0 12px rgb(255 216 74 / .8); } }
 .ap-zoom .etiq { position: absolute; display: flex; align-items: center; gap: 14px; font-family: var(--f-display); font-weight: 800; font-size: 38px; color: #fff3c4; opacity: 0; transform: translateX(-30px); transition: opacity .4s .5s, transform .5s .5s; text-shadow: 0 2px 0 #000; }
 .ap-zoom.ouvert .etiq { opacity: 1; transform: none; }
 .ap-zoom .etiq.g { transform: translateX(30px); flex-direction: row-reverse; }
@@ -117,7 +117,11 @@ html[data-vue="apprendre"] #v-apprendre { display: block; }
 @keyframes ap-mot { from { opacity: 0; transform: translateY(6px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
 .ap-consigne { margin-top: 8px; font-size: 1.1rem; color: #fff3c4; border-left: 3px solid var(--brass); padding-left: 10px; }
 .ap-bas { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
-.ap-actions { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.ap-actions { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; align-items: center; }
+.ap-etape { font-size: .85rem; color: var(--muted); }
+.ap-indice { color: #fff3c4; font-weight: 600; animation: ap-indice 1.4s ease-in-out infinite; }
+@keyframes ap-indice { 50% { opacity: .55; } }
+.ap-actions [data-nav="suiv"] { font-size: 1.05rem; padding: 10px 22px; }
 .ap-cr { font-family: var(--f-num); font-size: .78rem; color: var(--mc); border: 1px solid rgb(201 162 74 / .4); border-radius: 6px; padding: 1px 6px; }
 .ap-etiq { font-family: var(--f-display); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--brass); margin-right: 6px; }
 .ap-mot { position: relative; white-space: nowrap; color: #fff3c4; font-weight: 700; border-bottom: 1px dotted rgb(255 216 74 / .7); cursor: help; }

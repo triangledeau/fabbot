@@ -65,13 +65,24 @@
     return cadre + img;
   }
 
+  const RESERVE_GUIDE = 215;
   // Une « table » : les éléments posés sur le tapis, repérés par un id.
   function Tapis(racine) {
     const el = {};
     let vite = false;
     const tapis = racine.querySelector(".ap-tapis");
-    const ajuster = () => { const s = racine.clientWidth / W; tapis.style.setProperty("--s", s); racine.style.height = (H * s) + "px"; };
-    new ResizeObserver(ajuster).observe(racine); ajuster();
+    // Le tapis tient dans la fenêtre avec le guide (texte + boutons) en dessous :
+    // on réserve la place du guide, pour ne jamais avoir à faire défiler la page.
+    const ajuster = () => {
+      const parent = racine.parentElement; if (!parent) return;
+      const haut = racine.getBoundingClientRect().top + window.scrollY;
+      const dispo = window.innerHeight - haut - RESERVE_GUIDE;
+      const s = Math.max(0.4, Math.min(parent.clientWidth / W, dispo / H));
+      tapis.style.setProperty("--s", s);
+      racine.style.width = (W * s) + "px"; racine.style.height = (H * s) + "px";
+    };
+    new ResizeObserver(ajuster).observe(racine.parentElement || racine);
+    window.addEventListener("resize", ajuster); ajuster();
     const duree = (d) => vite ? 0 : d;
     function placer(id, z, d = 650, echelle) {
       const e = el[id]; if (!e) return attendre(0);
@@ -308,9 +319,10 @@
 
   function guide(html, boutons, cr) {
     const g = sec.querySelector("#ap-guide");
-    g.innerHTML = `<div class="ap-dit">${anime(html)}</div><div class="ap-bas">${crs(cr)}<div class="ap-actions">${boutons || ""}</div></div>`;
+    g.innerHTML = `<div class="ap-dit">${anime(html)}</div><div class="ap-bas">${crs(cr)}<span class="ap-etape">Étape ${k + 1} / ${lecon.plans.length}</span><div class="ap-actions">${boutons || ""}</div></div>`;
     return g;
   }
+  const INDICE_CLIC = `<span class="ap-indice">👆 Clique sur la carte qui brille</span>`;
   const navBoutons = (suivant = true) => `${k > 0 ? `<button class="btn quiet" data-nav="prec">← Revoir</button>` : ""}${suivant ? `<button class="btn primary" data-nav="suiv">Continuer ▸</button>` : ""}`;
   function brancherNav(g) {
     g.querySelector('[data-nav="prec"]')?.addEventListener("click", () => aller(k - 1));
@@ -327,14 +339,16 @@
     prog();
     if (pl.scene) return scene(pl, mon);
     if (pl.quiz) { tapis.fermerZoom(); return quiz(pl); }
-    const g = guide(rendre(pl.dit || ""), pl.clic ? navBoutons(false) : "", pl.cr);
+    // Les boutons sont là tout de suite : « Continuer » pendant l'animation la
+    // passe ; quand l'élève doit cliquer une carte, on le lui dit en clair.
+    const g = guide(rendre(pl.dit || ""), pl.clic ? navBoutons(false) + INDICE_CLIC : navBoutons(), pl.cr);
+    brancherNav(g);
     await faire(tapis, pl.fait);
     if (mon !== jeton) return;
-    if (!pl.clic) { g.querySelector(".ap-actions").innerHTML = navBoutons(); brancherNav(g); return; }
+    if (!pl.clic) return;
     // L'élève doit cliquer une carte : elle s'illumine ; une autre carte tremble.
     tapis.fermerZoom();
     const cible = tapis.el[pl.clic];
-    g.querySelector(".ap-actions").innerHTML = navBoutons(false); brancherNav(g);
     cible?.n.classList.add("appel");
     await new Promise((ok) => {
       tapis.tapis.onclick = (ev) => {
