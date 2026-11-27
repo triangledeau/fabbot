@@ -171,7 +171,7 @@ html:has(#ed-vue:not([hidden])) body { overflow: hidden; }
 #ed-vue .cc.loaded .cph { display: none; }
 #ed-vue .cc:hover { transform: translateY(-3px) scale(1.03); z-index: 3; box-shadow: 0 12px 24px rgb(0 0 0 / .6), 0 0 0 2px rgb(255 216 74 / .55); }
 #ed-vue .cc:active { transform: scale(.97); }
-#ed-vue .cc.nobot img { filter: grayscale(.9) brightness(.55); }
+#ed-vue .cc.nobot img { filter: saturate(.55) brightness(.8); }
 #ed-vue .cc.nobot::after { content: "bot ✗"; position: absolute; left: 6px; bottom: 6px; font: 700 .66rem/1 var(--f-body); letter-spacing: .06em; padding: 3px 6px; border-radius: 4px; background: rgb(10 13 19 / .9); color: var(--muted); border: 1px solid var(--line2); }
 #ed-vue .cc.illegal { box-shadow: 0 0 0 2px rgb(255 138 120 / .65); }
 #ed-vue .cc.illegal img { filter: grayscale(1) brightness(.4); }

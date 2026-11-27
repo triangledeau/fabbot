@@ -104,6 +104,7 @@ contre Bot, signalement de bug, Importer une partie.
 | E13 | Bandeau « Deck du bot » + « Dupliquer plutôt » | ✅ bandeau « Copie du deck du bot » (Modifier fait déjà une copie : pas de « Dupliquer plutôt ») | ✅ |
 | E14 | Annuler (Ctrl+Z, 60 pas) | ✅ | ✅ |
 | E15 | Échap ferme menu et aperçu | ✅ | ✅ |
+| E16 | **Toute la collection** : l'éditeur proposait toutes les cartes du format (cards.json de la base communautaire, local), avec la VF | ✅ depuis le 2026-11-27 : table `data/cards/collection.tsv` (fichier officiel LSS, versionnée, sans le texte), 4 045 cartes, images VF bord noir à illustration standard ; avant, fabbot dépendait d'un fichier communautaire absent du PC et ne montrait que les cartes codées (écart oublié lors de la reprise) | ✅ |
 
 ## 5. Accueil
 

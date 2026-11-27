@@ -11,8 +11,13 @@ use fab_engine::{CardDef, Color};
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-/// Le fichier, intégré au programme.
+/// Le fichier, intégré au programme (cartes codées, dont jetons et faces
+/// arrière).
 const TABLE: &str = include_str!("../../../data/cards/images.tsv");
+/// La collection Silver Age (`tools/collection_silver_age.py`) : image et
+/// nom français de toutes les cartes légales ; elle l'emporte sur `TABLE`
+/// pour que l'éditeur et la partie montrent la même image.
+const COLLECTION: &str = include_str!("../../../data/cards/collection.tsv");
 
 /// Adresse d'une image, en ajoutant la taille (`normal` ou `large`) et le
 /// code : `{IMAGES}normal/FR_SBR016.webp`.
@@ -40,16 +45,31 @@ fn couleur(c: Option<Color>) -> &'static str {
 fn table() -> &'static HashMap<String, Image> {
     static T: OnceLock<HashMap<String, Image>> = OnceLock::new();
     T.get_or_init(|| {
-        TABLE
-            .lines()
-            .filter(|l| !l.starts_with('#') && !l.trim().is_empty())
+        let lignes = |t: &'static str| {
+            t.lines()
+                .filter(|l| !l.starts_with('#') && !l.trim().is_empty())
+        };
+        let mut t: HashMap<String, Image> = lignes(TABLE)
             .filter_map(|l| {
                 let mut c = l.split('\t');
                 let (nom, coul, code) = (c.next()?, c.next()?, c.next()?);
                 let nom_fr = c.next().unwrap_or("");
                 Some((format!("{nom}\t{coul}"), Image { code, nom_fr }))
             })
-            .collect()
+            .collect();
+        for l in lignes(COLLECTION) {
+            let c: Vec<&'static str> = l.split('\t').collect();
+            if c.len() >= 14 && !c[12].is_empty() {
+                t.insert(
+                    format!("{}\t{}", c[0], c[1]),
+                    Image {
+                        code: c[12],
+                        nom_fr: c[13],
+                    },
+                );
+            }
+        }
+        t
     })
 }
 
@@ -88,7 +108,8 @@ mod tests {
         let r = image_par_nom("Chokeslam", Some(Color::Red)).unwrap();
         let b = image_par_nom("Chokeslam", Some(Color::Blue)).unwrap();
         assert_ne!(r.code, b.code);
-        assert!(image_par_nom("Chokeslam", Some(Color::Yellow)).is_none());
+        // Pas de Chokeslam sans couleur.
+        assert!(image_par_nom("Chokeslam", None).is_none());
     }
 
     #[test]
