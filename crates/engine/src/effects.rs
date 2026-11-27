@@ -683,6 +683,7 @@ impl GameState {
                 delta,
                 until,
                 if_fused: false,
+                if_go_again: false,
             });
         }
     }
@@ -736,7 +737,23 @@ impl GameState {
             combat_chain: false,
             at_attack: false,
             if_fused: false,
+            if_go_again: false,
+            remaining: 1,
         });
+    }
+
+    /// « Your next `n` attacks this turn get [delta] while they have go
+    /// again » (Quick Succession) : les `n` prochaines attaques reçoivent
+    /// chacune un modificateur qui ne compte que tant que l'attaque a go again
+    /// (CR 1.8.10, 6.3). Une attaque sans go again consomme quand même
+    /// l'effet : « next attack » désigne la prochaine attaque, quelle qu'elle
+    /// soit ; seul le bonus est conditionnel.
+    pub fn next_attacks_while_go_again(&mut self, p: PlayerId, n: u8, delta: Delta) {
+        self.next_attack(p, None, delta, false);
+        if let Some(e) = self.next_attack_effects.last_mut() {
+            e.if_go_again = true;
+            e.remaining = n;
+        }
     }
 
     /// « The next [attaque filtrée] you play this combat chain gets … »
@@ -759,6 +776,8 @@ impl GameState {
             combat_chain: true,
             at_attack: false,
             if_fused: false,
+            if_go_again: false,
+            remaining: 1,
         });
     }
 
@@ -782,6 +801,8 @@ impl GameState {
             combat_chain: false,
             at_attack: false,
             if_fused: false,
+            if_go_again: false,
+            remaining: 1,
         });
     }
 
@@ -798,6 +819,8 @@ impl GameState {
             combat_chain: false,
             at_attack: false,
             if_fused: false,
+            if_go_again: false,
+            remaining: 1,
         });
     }
 
@@ -1094,13 +1117,21 @@ impl GameState {
                 })
                 && e.filter.is_none_or(|f| f(self, attack.id));
             if ok {
-                self.next_attack_effects.remove(i);
+                // CR 1.8.10 : « your next N attacks » : l'effet reste jusqu'à
+                // avoir touché N attaques.
+                if e.remaining > 1 {
+                    self.next_attack_effects[i].remaining -= 1;
+                    i += 1;
+                } else {
+                    self.next_attack_effects.remove(i);
+                }
                 self.any_lose_abilities |= e.delta.lose_abilities;
                 self.modifiers.push(Modifier {
                     target: attack,
                     delta: e.delta,
                     until: Until::EndOfTurn,
                     if_fused: e.if_fused,
+                    if_go_again: e.if_go_again,
                 });
             } else {
                 i += 1;

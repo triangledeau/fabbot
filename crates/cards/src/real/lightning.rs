@@ -623,14 +623,11 @@ pub fn add(db: &mut CardDb) {
     //   Your next 3 attacks this turn get +1{p} while they have go again. (rouge)
     //   Your next 2 attacks this turn get +1{p} while they have go again. (jaune)
     //   **Go again** »
-    // TODO(règles) : rouge et jaune, « les 3 / 2 prochaines attaques » non codées.
-    // `apply_next_attack_effects` (effects.rs) consomme TOUS les effets « prochaine
-    // attaque » qui correspondent à la même attaque (après un retrait, la boucle
-    // ne passe pas à l'effet suivant) : empiler 3 effets ne donne pas 3 attaques.
-    // Il faut un compteur d'attaques dans `NextAttackEffect` (moteur, hors périmètre).
-    // TODO(règles) : bleu, « your next attack … while it has go again » : on suppose que
-    // la prochaine attaque SANS encore une fois ne consomme pas l'effet (il attend
-    // une attaque avec encore une fois). À confirmer dans le CR / errata.
+    // « Your next N attacks » : un seul effet qui compte N attaques (CR 1.8.10) ;
+    // « while it has go again » : le +1 est un modificateur conditionnel, évalué
+    // en continu (CR 6.3). Une attaque sans go again consomme quand même l'effet
+    // (CR 1.8.10 : « the next attack … and the effect applies to the attack at
+    // that time »).
     for c in COLORS {
         let mut d = deck_card(
             "Quick Succession",
@@ -653,14 +650,12 @@ pub fn add(db: &mut CardDb) {
                 grant(Keywords::GO_AGAIN),
                 true,
             );
-            if g.db.get(c.card).color == Some(Color::Blue) {
-                g.next_attack(
-                    c.controller,
-                    Some(|g, a| g.keywords(a).has(Keywords::GO_AGAIN)),
-                    power(1),
-                    false,
-                );
-            }
+            let n = match g.db.get(c.card).color {
+                Some(Color::Red) => 3,
+                Some(Color::Yellow) => 2,
+                _ => 1,
+            };
+            g.next_attacks_while_go_again(c.controller, n, power(1));
         })];
         db.add(d);
     }

@@ -236,6 +236,10 @@ pub struct Modifier {
     /// L'effet ne compte que si la cible est « fused » (Weave Lightning :
     /// « if it's fused, it gets go again »).
     pub if_fused: bool,
+    /// L'effet ne compte que tant que la cible a go again (« +1{p} while it
+    /// has go again », Quick Succession). Ne doit modifier que la puissance :
+    /// il est ignoré dans le calcul des mots-clés (évite la boucle).
+    pub if_go_again: bool,
 }
 
 /// « Votre prochaine attaque [qui …] ce tour gets … » (CR 1.8.10), en attente.
@@ -264,6 +268,11 @@ pub struct NextAttackEffect {
     /// Le bonus devient un [`Modifier`] `if_fused` (la fusion est décidée
     /// après, pendant le paiement des coûts d'effet ; CR 6.4.7b, Weave Earth).
     pub if_fused: bool,
+    /// Le bonus devient un [`Modifier`] `if_go_again`.
+    pub if_go_again: bool,
+    /// Nombre d'attaques que l'effet touche encore (« your next 3 attacks »),
+    /// 1 pour « your next attack ».
+    pub remaining: u8,
 }
 
 /// « Your next [carte filtrée] this turn costs {r} less to play » (ex. le
@@ -941,12 +950,18 @@ impl GameState {
 
     /// Somme des effets continus qui s'appliquent à un objet.
     pub fn continuous_delta(&self, id: ObjectId) -> Delta {
-        self.delta_with(id, false, false)
+        self.delta_with(id, false, false, false)
     }
 
     /// `no_gain` : les bonus de puissance sont ignorés (« can't gain {p} »),
     /// seuls les malus comptent.
-    fn delta_with(&self, id: ObjectId, no_gain: bool, skip_self_mod: bool) -> Delta {
+    fn delta_with(
+        &self,
+        id: ObjectId,
+        no_gain: bool,
+        skip_self_mod: bool,
+        skip_go_again_mods: bool,
+    ) -> Delta {
         let o = self.obj(id);
         let r = o.obj_ref(id);
         let mut d = Delta::default();
@@ -961,7 +976,11 @@ impl GameState {
             d.loses = d.loses | x.loses;
         };
         for m in &self.modifiers {
-            if m.target == r && (!m.if_fused || o.fused) {
+            if m.target == r
+                && (!m.if_fused || o.fused)
+                && (!m.if_go_again
+                    || (!skip_go_again_mods && self.keywords(id).has(Keywords::GO_AGAIN)))
+            {
                 add(m.delta);
             }
         }
@@ -1037,7 +1056,11 @@ impl GameState {
             Some(w) => self.power(w),
             None => self.db.get(o.card).power.unwrap_or(0) as i16 + o.power_counters as i16,
         };
-        (base + self.delta_with(id, self.cant_gain_power(id), false).power).max(0)
+        (base
+            + self
+                .delta_with(id, self.cant_gain_power(id), false, false)
+                .power)
+            .max(0)
     }
 
     /// Chokeslam : « attack action cards they control can't gain {p} during
@@ -1087,7 +1110,7 @@ impl GameState {
             None if self.lost_abilities(id) => self.material_keywords(id),
             None => self.db.get(o.card).keywords | self.material_keywords(id),
         };
-        let d = self.delta_with(id, false, skip_self_mod);
+        let d = self.delta_with(id, false, skip_self_mod, true);
         // « Loses and can't gain » l'emporte sur les mots-clés accordés.
         (base | d.grants).without(d.loses)
     }

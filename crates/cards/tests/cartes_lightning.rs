@@ -1461,18 +1461,76 @@ fn quick_succession_donne_go_again_a_la_prochaine_attaque_runeblade() {
 }
 
 #[test]
-fn quick_succession_donne_go_again_sans_puissance_rouge() {
+fn quick_succession_rouge_donne_go_again_et_plus_1() {
     let mut t = quick_succession_partie(&[("Quick Succession", R), ("Colors of Aria", R)]);
     jouer(&mut t, P0, "Quick Succession", R);
     resoudre(&mut t);
     let a = jouer(&mut t, P0, "Colors of Aria", R);
     jusqua_active(&mut t, a);
     assert!(t.g.keywords(a).has(Keywords::GO_AGAIN));
+    assert_eq!(t.g.power(a), 7 + 1, "rouge : +1 car l'attaque a go again");
+}
+
+#[test]
+fn quick_succession_rouge_un_seul_effet_qui_compte_3_attaques() {
+    let mut t = quick_succession_partie(&[("Quick Succession", R)]);
+    jouer(&mut t, P0, "Quick Succession", R);
+    resoudre(&mut t);
+    let effets: Vec<_> =
+        t.g.next_attack_effects
+            .iter()
+            .filter(|e| e.if_go_again)
+            .collect();
+    assert_eq!(effets.len(), 1, "un seul effet pour le +1");
+    assert_eq!(effets[0].remaining, 3);
+}
+
+#[test]
+fn quick_succession_jaune_un_seul_effet_qui_compte_2_attaques() {
+    let mut t = quick_succession_partie(&[("Quick Succession", Y)]);
+    jouer(&mut t, P0, "Quick Succession", Y);
+    resoudre(&mut t);
+    let effets: Vec<_> =
+        t.g.next_attack_effects
+            .iter()
+            .filter(|e| e.if_go_again)
+            .collect();
+    assert_eq!(effets.len(), 1);
+    assert_eq!(effets[0].remaining, 2);
+}
+
+#[test]
+fn quick_succession_rouge_une_attaque_sans_go_again_consomme_l_effet_sans_plus_1() {
+    // CR 1.8.10 : « next attack » = la prochaine attaque, go again ou non.
+    let mut t = quick_succession_partie(&[
+        ("Quick Succession", R),
+        ("Essai Assaut", R),
+        ("Essai Frappe", R),
+        REMPART,
+    ]);
+    jouer(&mut t, P0, "Quick Succession", R);
+    resoudre(&mut t);
+    let restant = |t: &Partie| {
+        t.g.next_attack_effects
+            .iter()
+            .find(|e| e.if_go_again)
+            .map(|e| e.remaining)
+    };
+    let a = jouer(&mut t, P0, "Essai Assaut", R);
+    jusqua_active(&mut t, a);
+    let base_a = i16::from(t.g.def(a).power.unwrap());
+    assert_eq!(t.g.power(a), base_a + 1, "1re attaque : go again, +1");
+    assert_eq!(restant(&t), Some(2));
+    resoudre_chaine(&mut t);
+    let b = jouer(&mut t, P0, "Essai Frappe", R);
+    jusqua_active(&mut t, b);
+    let base_b = i16::from(t.g.def(b).power.unwrap());
     assert_eq!(
-        t.g.power(a),
-        7,
-        "rouge : pas de +1 dans le code (voir TODO)"
+        t.g.power(b),
+        base_b,
+        "2e attaque : pas de go again, pas de +1"
     );
+    assert_eq!(restant(&t), Some(1), "mais elle a compté parmi les 3");
 }
 
 #[test]
