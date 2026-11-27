@@ -140,3 +140,9 @@ html[data-vue="apprendre"] #v-apprendre { display: block; }
 .ap-retour.ko { background: rgb(224 87 74 / .1); border: 1px solid rgb(224 87 74 / .4); }
 @media (max-width: 700px) { .ap-dit { font-size: 1.08rem; } }
 @media (prefers-reduced-motion: reduce) { .ap-dit .mt { opacity: 1; animation: none; } }
+
+/* Récapitulatif de fin de chapitre */
+.ap-recap { position: absolute; left: 190px; top: 70px; width: 900px; padding: 34px 46px; border-radius: 20px; background: rgb(10 14 20 / .88); border: 1px solid rgb(255 216 74 / .35); box-shadow: 0 20px 60px rgb(0 0 0 / .6); }
+.ap-recap h2 { margin: 0 0 18px; font-family: var(--f-display); font-size: 40px; color: var(--brass); }
+.ap-recap ol { margin: 0; padding-left: 34px; display: grid; gap: 14px; }
+.ap-recap li { font-size: 25px; line-height: 1.35; opacity: 0; animation: ap-mot .5s ease-out forwards; }

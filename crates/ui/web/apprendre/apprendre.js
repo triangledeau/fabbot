@@ -65,7 +65,7 @@
     return cadre + img;
   }
 
-  const RESERVE_GUIDE = 215;
+  const RESERVE_GUIDE = 230;
   // Une « table » : les éléments posés sur le tapis, repérés par un id.
   function Tapis(racine) {
     const el = {};
@@ -339,6 +339,14 @@
     prog();
     if (pl.scene) return scene(pl, mon);
     if (pl.quiz) { tapis.fermerZoom(); return quiz(pl); }
+    if (pl.recap) {
+      // Récapitulatif de fin de chapitre : une fiche sur le tapis.
+      tapis.vider(); tapis.tapis.querySelector(".ap-jauge")?.remove();
+      tapis.tapis.insertAdjacentHTML("beforeend", `<div class="ap-recap"><h2>À retenir</h2><ol>${pl.recap.map((r, i) => `<li style="animation-delay:${200 + i * 350}ms">${esc(r)}</li>`).join("")}</ol></div>`);
+      const g = guide("Voici l'essentiel du chapitre. Relis-le avant de passer à la suite.", navBoutons(), null);
+      brancherNav(g);
+      return;
+    }
     // Les boutons sont là tout de suite : « Continuer » pendant l'animation la
     // passe ; quand l'élève doit cliquer une carte, on le lui dit en clair.
     const g = guide(rendre(pl.dit || ""), pl.clic ? navBoutons(false) + INDICE_CLIC : navBoutons(), pl.cr);
@@ -369,7 +377,7 @@
     const q = pl.quiz;
     const ordre = q.choix.map((_, i) => i).sort(() => Math.random() - 0.5);
     const g = guide(`<span class="ap-etiq">Question</span> ${rendre(q.q)}`, navBoutons(false), null);
-    const c = document.createElement("div"); c.className = "ap-choix";
+    const c = document.createElement("div"); c.className = "ap-choix ligne";
     c.innerHTML = ordre.map((i) => `<button class="btn" data-i="${i}">${rendre(esc(q.choix[i]))}</button>`).join("");
     g.querySelector(".ap-dit").after(c);
     brancherNav(g);
