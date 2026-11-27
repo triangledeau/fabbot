@@ -16,10 +16,11 @@ bord noir, illustration standard.
     impressions ordinaires de la carte (raretés basic à fabled, hors promo,
     marvel, gold) ; les illustrations alternatives et étendues (marvel) sont
     écartées ;
-  - ordre : FR non foil d'illustration standard ; sinon EN non foil
-    d'illustration standard, hors « Unlimited » (bord blanc, codes U- et R-) ;
-    sinon FR ou EN non foil quelle que soit l'illustration ; sinon FR puis
-    EN en foil ; sinon une autre langue ;
+  - ordre : FR non foil d'illustration standard ; sinon FR non foil
+    d'illustration alternative (la VF l'emporte, choix du propriétaire le
+    2026-11-27) ; sinon EN non foil d'illustration standard, hors
+    « Unlimited » (bord blanc, codes U- et R-) ; sinon EN non foil ; sinon
+    FR puis EN en foil ; sinon une autre langue ;
   - à égalité, une impression Silver Age d'abord, puis la plus récente du
     fichier.
 
@@ -103,8 +104,8 @@ def choisir(rs):
     std = lambda r: artiste(r) == standard and r["rarity"] in ORDINAIRES
     return (
         parmi(lambda r: r["print_language"] == "fr" and normal(r) and std(r))
-        or parmi(lambda r: r["print_language"] == "en" and normal(r) and std(r))
         or parmi(lambda r: r["print_language"] == "fr" and normal(r))
+        or parmi(lambda r: r["print_language"] == "en" and normal(r) and std(r))
         or parmi(lambda r: r["print_language"] == "en" and normal(r))
         or parmi(lambda r: r["print_language"] == "fr" and std(r))
         or parmi(lambda r: r["print_language"] == "en" and std(r))

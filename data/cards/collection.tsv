@@ -1056,7 +1056,7 @@ Dunebreaker Cenipai	Yellow	2	1	4	3			Draconic Illusionist Action - Attack	Go aga
 Dunebreaker Cenipai	Blue	3	1	3	3			Draconic Illusionist Action - Attack	Go again;Phantasm			UPR023	
 Dusk Path Pilgrimage	Red	1	1		3			Warrior Action	Go again			BOL029	
 Dusk Path Pilgrimage	Yellow	2	1		3			Warrior Action	Go again			MON111	
-Dusk Path Pilgrimage	Blue	3	1		3			Warrior Action	Go again			MON112	Pèlerinage de la voie du crépuscule
+Dusk Path Pilgrimage	Blue	3	1		3			Warrior Action	Go again			FR_MPW065	Pèlerinage de la voie du crépuscule
 Dust Runner Outlaw	Red	1	1	4	2			Draconic Ninja Action - Attack	Go again			FR_HNT066	Hors-la-loi coureur de poussière
 Dust Runner Outlaw	Yellow	2	1	3	2			Draconic Ninja Action - Attack	Go again			UPR067	
 Dust Runner Outlaw	Blue	3	1	2	2			Draconic Ninja Action - Attack	Go again			FAI024	
@@ -1407,7 +1407,7 @@ Flying High	Yellow	2	0		2			Generic Action	Go again			FR_SEA207	Voler haut
 Flying High	Blue	3	0		2			Generic Action	Go again			FR_SGB028	Voler haut
 Flying Kick	Red	1	2	5	3			Ninja Action - Attack				FR_ASR009	Coup de Pied Volant
 Flying Kick	Yellow	2	2	4	3			Ninja Action - Attack				CRU064	
-Flying Kick	Blue	3	2	3	3			Ninja Action - Attack				CRU065	Coup de pied volant
+Flying Kick	Blue	3	2	3	3			Ninja Action - Attack				FR_ASR021	Coup de pied volant
 Fool's Gold	Yellow	2						Generic Resource				FR_SEA215	Or des fous
 For the Dracai	Red	1	0	4	3			Draconic Action - Attack	Mark			FR_HNT158	Pour le Dracaï
 For the Emperor	Red	1	1	5	3			Draconic Action - Attack	Mark			FR_HNT159	Pour l’empereur

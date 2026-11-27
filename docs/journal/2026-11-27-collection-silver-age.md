@@ -17,7 +17,7 @@ la reprise de l'interface (ajouté : E16 de `docs/rapatriement-interface.md`).
   hors héros mis sur la touche, hors jetons. **4 045 cartes, 2 166 noms.**
 - Image : VF non foil d'illustration standard (artiste le plus fréquent des
   impressions ordinaires), sinon EN bord noir (hors Unlimited `U-` / `R-`),
-  puis replis. **3 401 images françaises**, 644 anglaises, 0 sans image.
+  puis replis. **3 403 images françaises**, 642 anglaises, 0 sans image.
   Les images restent chargées en ligne (≈ 4 000 images, plusieurs centaines
   de Mo : pas embarquées) ; le navigateur les garde en cache.
 - `api_decks.rs` lit la table (plus de base communautaire) ; le texte vient
@@ -31,5 +31,5 @@ la reprise de l'interface (ajouté : E16 de `docs/rapatriement-interface.md`).
 ## Pas repris
 - Le texte des cartes n'est pas dans la table (données LSS non republiées) :
   sans `public_card_data.csv` local, pas de recherche dans le texte.
-- Pour une carte dont la VF n'existe qu'en illustration alternative, l'image
-  standard anglaise est préférée à la VF alternative (ex. Flying Kick bleu).
+- (Réglé le même jour, à la demande du propriétaire : quand la VF n'existe
+  qu'en illustration alternative, c'est elle qui est prise.)
