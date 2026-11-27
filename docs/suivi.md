@@ -321,12 +321,13 @@ propriétaire.
 
 **Analyse Iyslander / Hala / Ira avec B3 (2026-11-26)** :
 `docs/analyses/2026-11-26-iyslander-hala-ira-b3.md`. B3 contre B3 : Iyslander
-21 %, Hala 42 %, Ira 60 %. Correctifs proposés, **en attente de l'accord du
-propriétaire** : B1 voit le go again de Zenith Blade aiguisée (Hala +3,4 points
-avec B1, +10 avec B3 sur 108 parties), puis celui des combos d'Ira ; refaire le
-side contre un adversaire qui utilise la table (Iyslander face à AB3/AB4).
-Question au propriétaire : en Silver Age réel, les adversaires d'Iyslander
-prennent-ils trois ou quatre Nullrune ?
+21 %, Hala 42 %, Ira 60 %. **Correctifs appliqués le 2026-11-27** (B1 : go
+again de Zenith Blade et des combos d'Ira, Scar for a Scar, équipements d'Ira,
+sorts d'Iyslander qui passent l'arcane barrier, gelures au tour adverse,
+pitch stacking ; table de side réapprise contre la table) : B3 contre B3,
+Ira 70 %, Hala 47 %, Iyslander 41 %. Poids de B3 de 4e génération essayés,
+moins bons (−22 Elo), non retenus. Réponse du propriétaire : AB3 contre
+Iyslander est réaliste.
 
 **Pour Claude :** l'étape 7 est finie ; il n'y a plus d'étape prévue.
 Prochaine tâche proposée (B3 3e génération faite le 2026-11-26 : les

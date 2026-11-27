@@ -35,7 +35,8 @@ complètes sur les 9 decks prouvent qu'aucune lecture interdite n'a lieu.
   faut. Il joue une réaction de défense si elle évite au moins 2 dégâts.
 - **Pitch** : la carte qui paie le reste au plus juste, en gardant les
   cartes les plus fortes.
-- **Arsenal** : la carte d'attaque la plus forte.
+- **Arsenal** : la carte d'attaque la plus forte (Iyslander : une carte
+  Ice bleue non-attaque d'abord).
 - **Cible d'une attaque** (CR 1.4.5) : le héros adverse, sauf si l'attaque
   peut détruire un allié adverse (un dragon de Dromai…) dont 2 attaques
   feraient plus de dégâts qu'elle (2 × puissance de l'allié > puissance de
@@ -48,7 +49,31 @@ complètes sur les 9 decks prouvent qu'aucune lecture interdite n'a lieu.
   attaquaient déjà les dragons (61 %, 38 %, 45 % des occasions).
 - **Capacités activées** (hors attaques d'arme) : seulement celles du
   héros, des armes et des permanents. Pas « Destroy this » sur un
-  équipement, ni « Banish this from your hand ».
+  équipement, ni « Banish this from your hand », sauf les équipements
+  d'Ira (ci-dessous).
+- **Go again qui n'est pas écrit sur la carte** (2026-11-26) : B1 lit les
+  mots-clés de la carte, alors qu'une partie du go again n'est donnée qu'en
+  jeu. Il prévoit désormais : Zenith Blade aiguisée ce tour (première
+  attaque du tour), les combos d'Ira (Seek Vengeance après Edge of Autumn,
+  Pouncing Qi et Qi Unleashed après Crouching Tiger, Aspect of Tiger: Body
+  après une attaque rouge) et Scar for a Scar quand il a moins de vie que
+  l'adversaire.
+- **Équipements d'Ira** : Pouncing Paws quand un combo du Tigre est en
+  main, Tearing Shuko juste avant de jouer le Crouching Tiger, Blood Scent
+  quand une carte de la main coûte plus que ses ressources.
+- **Sorts arcaniques (Iyslander)** : un sort vaut les dégâts qui passent
+  l'arcane barrier adverse (total public de ses équipements, plafonné par
+  ce qu'il peut payer). Un sort entièrement arrêté est gardé (défense,
+  pitch). Avant un sort, il ajoute les renforts qui servent : Crucible of
+  Aetherweave (+1, s'il reste de quoi payer), amp 1 d'Arcane Twining /
+  Photon Splicing ou Stir the Aetherwinds quand ils font passer la
+  barrière. Il garde en arsenal une carte Ice bleue non-attaque et la joue
+  au tour adverse (gelure chez l'adversaire). Frost Spike met sa gelure
+  chez l'adversaire.
+- **Ordre du pitch sous le deck (pitch stacking)** : il alterne une carte
+  à jouer et une carte qui paie, pour que les mains suivantes aient un sort
+  et de quoi le payer (effet mesuré faible : le deck de 40 cartes est
+  rarement épuisé).
 - **Questions des cartes** : « oui », le premier mode, le X maximum. Pour
   une cible : son attaque en cours, puis le héros adverse, puis un objet
   adverse.
@@ -204,6 +229,13 @@ Face-à-face direct, plus sensible : **B3 3e génération contre B3 2e
 génération : 52,0 % sur 2 592 parties, +14 Elo (intervalle +1 à +28)**,
 0 erreur.
 
+**4e génération (2026-11-27, non retenue)** : apprise après les correctifs
+de B1 (go again de Zenith Blade et des combos d'Ira, sorts d'Iyslander) sur
+9 072 parties B3-100 contre B3-100 (152 637 positions, 63 min ; perte de
+test 0,426, non comparable à la 3e génération car les parties ont changé).
+Face-à-face contre la 3e génération : **46,9 % sur 1 296 parties, −22 Elo
+(−41 à −3)**, 0 erreur. La 3e génération reste dans `data/b3/evaluation.txt`.
+
 0 erreur. Les poids de 1re génération prédisent bien la fin d'une partie
 **jouée par B1** (perte 0,35 contre 0,60 pour la formule fixe), mais
 n'aident presque pas la recherche. Ceux de 2e génération, appris sur des
@@ -250,7 +282,10 @@ bots : `crates/ai/src/side.rs`.
 **Apprentissage** (`--apprendre-side`, ≈ 3 minutes sur 4 cœurs) : pour
 chacune des 81 paires, 20 000 parties B1 contre B1 où le premier deck tire
 son équipement (une option par zone) et ses 40 cartes au hasard, l'autre
-gardant le choix `liste`. Une régression linéaire estime ce que chaque
+gardant le choix `liste` (ou, avec `--side-adverse appris`, le choix de
+la table actuelle : c'est ainsi qu'a été faite la table du 2026-11-26, pour
+qu'un deck apprenne à jouer contre les équipements que l'adversaire prend
+vraiment, comme les Nullrune contre Iyslander). Une régression linéaire estime ce que chaque
 exemplaire de carte et chaque équipement change aux chances de gagner
 (avec « je commence » comme variable à part). L'estimation d'une paire est
 tirée vers l'estimation générale du deck (pénalité « ridge » λ = 1 000).
@@ -258,7 +293,7 @@ Le choix appris garde le meilleur équipement de chaque zone et les 40
 exemplaires les mieux notés.
 
 ```bash
-cargo run --release -p fab-sim -- --apprendre-side --games 20000
+cargo run --release -p fab-sim -- --apprendre-side --games 20000 --side-adverse appris
 cargo run --release -p fab-sim -- --tournoi --bots b1 b1 --side appris liste --games 4000 --check
 ```
 
