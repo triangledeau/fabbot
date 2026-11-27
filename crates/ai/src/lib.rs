@@ -20,6 +20,7 @@ pub mod determinisation;
 pub mod elo;
 pub mod reflechi;
 pub mod side;
+pub mod tour_exact;
 pub mod vue;
 
 pub use b1::HeuristicAgent;
