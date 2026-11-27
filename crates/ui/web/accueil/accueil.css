@@ -40,8 +40,14 @@
 .ht .foot { margin: clamp(6px, 1.2vh, 10px) 14px 14px; padding: clamp(5px, 1vh, 9px) 12px; border-radius: 9px; background: rgb(255 255 255 / .04); border: 1px solid var(--line2); font-size: .85rem; display: flex; flex-direction: column; gap: 6px; }
 .ht .foot .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
 /* Match en cours, dans le volet Jouer (le volet est un div : pas de lien dans un lien) */
-.ht .resume { text-align: center; cursor: default; }
-.ht .resume .row { justify-content: center; flex-wrap: wrap; }
+.ht .resume { cursor: default; padding-left: 9px; padding-right: 6px; }
+.ht .resume .row { gap: 4px; flex-wrap: nowrap; }
+.ht .resume .lib { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8rem; }
+.ht .resume .lib b { font-weight: 600; }
+.ht .resume .btn { flex: none; padding: 3px 7px; min-height: 28px; font-size: .78rem; }
+/* Accueil : fond des volets translucide (les halos de la page passent au travers) */
+.homepg .ht { background: rgb(13 17 25 / .5); backdrop-filter: blur(6px); }
+.homepg .ht .pic::after { background: linear-gradient(180deg, transparent 65%, rgb(13 17 25 / .5)); }
 .ht .resume[hidden] { display: none; }
 .homefoot { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; color: var(--muted); font-size: .85rem; text-align: center; }
 @media (max-width: 900px) { .tiles3 { grid-template-columns: minmax(0, 360px); } }

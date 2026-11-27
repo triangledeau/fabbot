@@ -13,3 +13,10 @@
   (mesuré 15/15/15 px à 720 et 950 px de haut).
 - Vérifié dans Chromium (captures 1500×720 et 1500×950, aucun message
   d'erreur JS, clic tuile → `#decks`, clic Reprendre → `#partie`).
+
+## Suite (même jour)
+- Cartouche du match en cours sur une seule ligne : « Hala – Dorinthea 0–0 »
+  + Reprendre + Nouveau (le détail complet, avec le niveau du bot, est dans
+  l'infobulle). Mesuré sans troncature jusqu'à « Iyslander – Dorinthea ».
+- Fond des volets de l'accueil translucide (50 %, flou léger) au lieu du
+  dégradé opaque ; la page Entraîner garde ses volets opaques.
