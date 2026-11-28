@@ -20,19 +20,51 @@
 #    -Fin 07:30     : heure limite ; un travail encore en cours est arrete,
 #                     les suivants ne sont pas lances ;
 #    -Discret       : priorite basse (pour garder le PC utilisable le jour) ;
-#    -SansMiseAJour : ne fait pas le « git pull ».
+#    -SansMiseAJour : ne fait pas le « git pull » ;
+#    -Planifie      : lancement par la tache planifiee (23 h, deverrouillage
+#                     ou reveil du PC) : le script ne fait rien hors de la
+#                     plage -Heure .. -Fin (moins 1 h), ni si la nuit a deja
+#                     ete lancee ;
+#    -Heure 23:00   : debut de la plage (avec -Planifie).
 #  Mode d'emploi : docs\nuit.md
 # ===========================================================================
 param(
     [switch]$Essai,
     [string]$Fin = "07:30",
     [switch]$Discret,
-    [switch]$SansMiseAJour
+    [switch]$SansMiseAJour,
+    [switch]$Planifie,
+    [string]$Heure = "23:00"
 )
 
 $ErrorActionPreference = "Continue"
 $racine = Split-Path -Parent $PSScriptRoot
 Set-Location $racine
+
+# --- Lancement planifié : une seule fois par nuit, dans la plage horaire -----
+# La tâche planifiée part à 23 h, mais aussi au déverrouillage et au réveil
+# du PC : une Surface en veille moderne ne se réveille pas toujours à l'heure
+# (nuit du 27 au 28/11 : départ à 00:52). Hors de la plage, ou si la nuit a
+# déjà été lancée, on s'arrête tout de suite.
+if ($Planifie) {
+    $maintenant = Get-Date
+    $hDebut = [datetime]::ParseExact($Heure, "HH:mm", $null).TimeOfDay
+    $hFin = [datetime]::ParseExact($Fin, "HH:mm", $null).TimeOfDay
+    $soir = $maintenant.Date
+    if ($hFin -le $hDebut -and $maintenant.TimeOfDay -lt $hFin) { $soir = $soir.AddDays(-1) }
+    $ouverture = $soir.Add($hDebut)
+    $fermeture = $soir.Add($hFin)
+    if ($fermeture -le $ouverture) { $fermeture = $fermeture.AddDays(1) }
+    # Moins d'une heure avant la fin : pas la peine de commencer.
+    if ($maintenant -lt $ouverture -or $maintenant -gt $fermeture.AddHours(-1)) { exit 0 }
+    $baseNuit = Join-Path $racine "resultats\nuit"
+    New-Item -ItemType Directory -Force -Path $baseNuit | Out-Null
+    $marque = Join-Path $baseNuit "derniere-nuit.txt"
+    $cle = $soir.ToString("yyyy-MM-dd")
+    if ($Essai) { $cle += "-essai" }
+    if ((Test-Path $marque) -and ((Get-Content $marque -TotalCount 1) -eq $cle)) { exit 0 }
+    Set-Content -Path $marque -Value $cle -Encoding ASCII
+}
 
 # --- Empêcher la mise en veille tant que le script tourne -------------------
 Add-Type -Namespace Fabbot -Name Veille -MemberDefinition @"
@@ -74,6 +106,7 @@ Ecrire "# $titre"
 Ecrire ""
 Ecrire ("- Début : " + $debut.ToString("dd/MM/yyyy HH:mm") + " ; heure limite : " + $limite.ToString("dd/MM HH:mm"))
 Ecrire ("- Machine : $env:COMPUTERNAME, " + [Environment]::ProcessorCount + " threads")
+if ($Planifie) { Ecrire "- Lancement : tâche planifiée (plage $Heure à $Fin)" } else { Ecrire "- Lancement : à la main" }
 
 # --- Mise à jour (seulement sur main, sans modification en cours) -----------
 $git = Get-Command git -ErrorAction SilentlyContinue
