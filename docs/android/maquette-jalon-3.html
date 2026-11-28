@@ -165,6 +165,51 @@ svg.i { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-widt
 .menu { position: absolute; left: 6px; top: 46px; z-index: 11; width: 260px; background: var(--surface2); border: 1px solid var(--line); border-radius: 12px; padding: 6px; display: grid; gap: 2px; }
 .menu .btn { justify-content: flex-start; border: 0; background: none; }
 .menu hr { border: 0; border-top: 1px solid var(--line2); margin: 3px 0; }
+
+/* ===== version 2 (retour d'Antoine du 2026-11-28) ===== */
+.liste { gap: 5px; }
+.dk { height: 50px; position: relative; border-left: 1px solid var(--line2); background: var(--surface); }
+.dk.sel { border-color: var(--brass); box-shadow: 0 0 0 1px var(--brass); }
+.dk .fondu { position: absolute; left: 0; top: 0; bottom: 0; width: 250px; overflow: hidden; -webkit-mask-image: linear-gradient(to right, #000 28%, transparent 96%); mask-image: linear-gradient(to right, #000 28%, transparent 96%); }
+.dk .fondu img { position: absolute; }
+.dk .tx { position: relative; padding: 0 4px 0 118px; gap: 0; }
+.dk .tx b { font-size: 17px; text-shadow: 0 1px 4px #000, 0 0 10px #000; }
+.dk .tx .sub { font-size: 12px; text-shadow: 0 1px 3px #000; color: #c9c3b2; }
+.dk .ic { position: relative; flex: none; width: 34px; display: flex; align-items: center; justify-content: center; }
+.dk .ic svg { width: 28px; height: 28px; }
+.dk .more { position: relative; width: 40px; }
+.dk .compte { position: relative; align-self: center; font: 600 11px var(--f-num); color: #f0b04a; border: 1px solid rgb(240 176 74 / .5); border-radius: 99px; padding: 0 5px; }
+.dk.newd { height: 44px; }
+
+.tapis { grid-template-columns: 109px 165px 109px; }
+.tapis .g2 { grid-template-columns: 53px 53px; }
+.tapis .g3 { display: grid; grid-template-columns: 53px 53px 53px; grid-template-rows: 74px 74px; gap: 3px; }
+.tapis.bot .g3 { direction: ltr; }
+.z { width: 53px; height: 74px; }
+.z.rien { border: 0; }
+.pitchf .c { width: 53px; height: 74px; }
+.pv { width: 32px; height: 32px; font-size: 16px; }
+
+.rangee { flex: none; display: flex; gap: 6px; padding: 0 6px; }
+.rangee .main { flex: 1; min-width: 0; height: 122px; justify-content: flex-start; padding: 6px 0 0 6px; }
+.rangee .main .c { width: 72px; height: 100px; margin: 0 -8px 0 0; }
+.perms { width: 142px; flex: none; display: grid; grid-template-columns: repeat(3, 42px); grid-auto-rows: 58px; gap: 6px 8px; align-content: start; padding-top: 6px; }
+.perms .pc { position: relative; }
+.perms .pc .c { width: 42px; height: 58px; position: absolute; inset: 0; }
+.perms .x { position: absolute; right: -6px; bottom: -5px; z-index: 2; font: 700 12px var(--f-num); color: #14110c; background: var(--ink); border-radius: 99px; padding: 0 5px; box-shadow: 0 1px 3px #000; }
+.perms .plus { display: grid; place-items: center; border: 1px dashed var(--line); border-radius: 5px; font: 600 13px var(--f-body); color: var(--muted); }
+.perms .aucun { grid-column: 1 / -1; color: rgb(239 229 207 / .35); font-size: 12px; border: 1px dashed var(--line2); border-radius: 8px; padding: 18px 6px; text-align: center; grid-row: span 2; }
+.rangee.bot { height: 66px; align-items: flex-start; padding-top: 3px; }
+.rangee.bot .perms { width: auto; flex: 1; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 38px; grid-template-rows: 53px; grid-auto-rows: auto; gap: 8px; padding: 0; }
+.rangee.bot .perms .pc .c { width: 38px; height: 53px; }
+.mainbot2 { flex: none; display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.mainbot2 .dosm { display: flex; }
+.mainbot2 .dosm i { width: 24px; height: 34px; border-radius: 3px; margin-left: -12px; box-shadow: -1px 0 3px #000; }
+.etat .fxs { margin-left: auto; display: flex; gap: 4px; min-width: 0; }
+.etat .fx { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+.etat .fx.mal { color: #f0b8ae; border-color: rgb(224 87 74 / .45); }
+.z .lib { font-size: 7.5px; letter-spacing: .02em; }
+.rangee.bot .perms .aucun { grid-row: auto; padding: 6px 12px; white-space: nowrap; align-self: center; }
 </style>
 </head>
 <body>
@@ -173,6 +218,16 @@ svg.i { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-widt
 const IMG = (c, t = "normal") => `https://legendstory-production-s3-public.s3.amazonaws.com/media/cards/${t}/${c}.webp`;
 const C = (code, cls = "", st = "") => `<div class="c ${cls}" style="background-image:url('${IMG(code)}');${st}"></div>`;
 const VIS = {FR_IRA001:[.47,.22],FR_MPW004:[.50,.25],FR_SDO001:[.46,.24],FR_SBR001:[.40,.30],FR_SIY001:[.48,.23],FR_ROS002:[.36,.22],FR_IAR002:[.46,.26],UPR002:[.50,.27],FR_SAR001:[.47,.25],FR_ROS008:[.49,.28]};
+// Point entre les yeux, en fraction de la carte (546 × 763), noté à la main.
+const YEUX = {FR_IRA001:[.50,.205],FR_MPW004:[.437,.225],FR_SDO001:[.55,.212],FR_SBR001:[.436,.295],FR_SIY001:[.543,.199],FR_ROS002:[.436,.234],FR_IAR002:[.50,.225],UPR002:[.50,.245],FR_SAR001:[.38,.238],FR_ROS008:[.565,.244]};
+// Illustration fondue sur la gauche de la tuile : la carte affichée à 420 points
+// de large (zoom ×2 environ sur l'écran du Pixel 9), yeux à 60 points du bord.
+function fondu(code, h = 50) {
+  const [x, y] = YEUX[code] || [.5, .22];
+  const W = 420, H = W * 763 / 546;
+  return `<div class="fondu"><img src="${IMG(code, "large")}" style="width:${W}px;height:${H}px;left:${60 - x * W}px;top:${h / 2 - y * H}px" alt=""></div>`;
+}
+const ROBOT = '<svg viewBox="0 0 32 32" aria-label="réglé pour le bot"><path d="M16 3v4" stroke="#63c98b" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="3" r="1.8" fill="#63c98b"/><rect x="5" y="8" width="20" height="16" rx="5" fill="none" stroke="#63c98b" stroke-width="2"/><circle cx="11.5" cy="15" r="2.2" fill="#63c98b"/><circle cx="18.5" cy="15" r="2.2" fill="#63c98b"/><path d="M11 20h8" stroke="#63c98b" stroke-width="2" stroke-linecap="round"/><path d="M2.5 13v5M27.5 13v1" stroke="#63c98b" stroke-width="2" stroke-linecap="round"/><circle cx="25" cy="24" r="6" fill="#63c98b"/><path d="M22.2 24.2l2 2 3.8-4" fill="none" stroke="#0a0d13" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 // Vignette « visage » : la carte agrandie pour qu'un carré de 34 % de sa largeur remplisse la vignette.
 function visage(code, t = 66) {
   const [x, y] = VIS[code] || [.48, .23];
@@ -204,8 +259,8 @@ tel(`<div class="acc">
 </div>`, "1. Accueil : les trois tuiles tiennent sans défilement (illustration plus basse, titre posé dessus).");
 
 // ---------- 2. Jouer : choix des decks ----------
-const DECKS = [["Ira","Ira, Crimson Haze · Sunday Showdown: Sydney 2nd","FR_IRA001","#e0563f"],["Hala","Hala · Sunday Showdown: Sydney 5th","FR_MPW004","#c9483c"],["Dorinthea","Dorinthea · Sunday Showdown: Mexico City 1st","FR_SDO001","#c9483c"],["Bravo","Bravo, Flattering Showman · Sunday Showdown: Mexico City 3rd","FR_SBR001","#d08a2a"],["Iyslander","Iyslander · SAGE Rabblelander","FR_SIY001","#6fd0e6"],["Florian","Florian · Sunday Showdown: Bangkok 2nd","FR_ROS002","#9a6bd1"],["Levia","Levia · Sunday Showdown: Atlanta 5th","FR_IAR002","#b0653a"],["Dromai","Dromai · Sunday Showdown: Paris 5th","UPR002","#e0782f"]];
-const tuileDeck = ([n, s, c, col], sel) => `<div class="dk${sel ? " sel" : ""}" style="--c:${col}">${visage(c)}<div class="tx"><b>${n}</b><span class="sub">${s}</span><div class="pl"><span class="pill ok">réglé pour le bot</span><span class="pill">55 / 55</span></div></div><div class="more">⋯</div></div>`;
+const DECKS = [["Ira","Ira, Crimson Haze · Sunday Showdown: Sydney 2nd","FR_IRA001","#e0563f"],["Hala","Hala · Sunday Showdown: Sydney 5th","FR_MPW004","#c9483c"],["Dorinthea","Dorinthea · Sunday Showdown: Mexico City 1st","FR_SDO001","#c9483c"],["Bravo","Bravo, Flattering Showman · Sunday Showdown: Mexico City 3rd","FR_SBR001","#d08a2a"],["Iyslander","Iyslander · SAGE Rabblelander","FR_SIY001","#6fd0e6"],["Florian","Florian · Sunday Showdown: Bangkok 2nd","FR_ROS002","#9a6bd1"],["Levia","Levia · Sunday Showdown: Atlanta 5th","FR_IAR002","#b0653a"],["Dromai","Dromai · Sunday Showdown: Paris 5th","UPR002","#e0782f"],["Arakni","Arakni, Web of Deceit · Sunday Showdown: Jakarta 5th","FR_SAR001","#8a5bc8"],["Aurora","Aurora · Sunday Showdown: Sydney 5th","FR_ROS008","#6fd0e6"]];
+const tuileDeck = ([n, s, c, col, compte], sel) => `<div class="dk${sel ? " sel" : ""}" style="--c:${col}">${fondu(c)}<div class="tx"><b>${n}</b><span class="sub">${s.replace(/^[^·]*· /, "")}</span></div>${compte ? `<span class="compte">${compte}</span>` : ""}<div class="ic">${ROBOT}</div><div class="more">⋯</div></div>`;
 tel(`<div class="dk-h"><button class="btn ico">${I.maison}</button><h1>Jouer</h1></div>
   <div class="chips"><button class="btn">＋ Nouveau</button><button class="btn">Importer</button><button class="btn">Imprimer</button><button class="btn">Archives</button></div>
   <div class="sec">MES DECKS</div>
@@ -219,7 +274,10 @@ tel(`<div class="dk-h"><button class="btn ico">${I.maison}</button><h1>Jouer</h1
 
 // ---------- partie : morceaux ----------
 const VOUS = { heros: "FR_MPW004", tete: "FR_SBL004", torse: "FR_MPW014", bras: "FR_SBL007", jambes: "FR_PEN047", arme: "FR_MPW005" };
-const BOT = { heros: "FR_SDO001", tete: "FR_SBL004", torse: "FR_PEN045", bras: "FR_SBL007", jambes: "FR_SAT009", arme: "FR_DTD205" };
+const BOT = { nom: "Dorinthea", heros: "FR_SDO001", tete: "FR_SBL004", torse: "FR_PEN045", bras: "FR_SBL007", jambes: "FR_SAT009", arme: "FR_DTD205" };
+const DROMAI = { nom: "Dromai", heros: "UPR002", tete: "FR_PEN123", torse: "FR_PEN253", bras: "FR_SAT008", jambes: "FR_OMN208", arme: "DRO004" };
+// Permanents d'exemple pour Dromai (illusionniste) : jetons Ash regroupés, dragons.
+const PERMS_DROMAI = [["DRO002", 4], ["UPR010_BACK", 1], ["UPR011_BACK", 1], ["UPR013_BACK", 1]];
 const zc = (lib, code, extra = "") => `<div class="z">${code ? C(code) : `<span class="lib">${lib}</span>`}${extra}</div>`;
 function tapis(j, bot, o = {}) {
   const pitch = (o.pitch || []).length ? `<div class="z"><div class="pitchf">${o.pitch.map((c, i) => C(c, "", `left:${i * 6}px;top:${i * 3}px`)).join("")}</div><span class="n">${o.pitch.length}</span></div>` : zc("Pitch");
@@ -228,36 +286,47 @@ function tapis(j, bot, o = {}) {
   const ban = `<div class="z"><span class="lib">Banni</span><span class="n">0</span></div>`;
   const heros = `<div class="z heros${o.prio ? " prio" : ""}">${C(j.heros)}<span class="pv">${o.pv}</span></div>`;
   const ars = o.ars ? `<div class="z">${o.ars === "dos" ? '<div class="c dos" style="position:absolute;inset:0"></div>' : C(o.ars)}</div>` : zc("Arsenal");
+  const rien = '<div class="z rien"></div>';
+  const lib2 = j.offhand ? "Off-hand" : "Arme";
   // Vous : rangée du haut = côté chaîne. Le bot : tapis tourné (rangées et colonnes inversées).
   const eqH = [zc("Tête", j.tete), zc("Torse", j.torse)], eqB = [zc("Bras", j.bras), zc("Jambes", j.jambes)];
+  const mH = [zc("Arme", j.arme), heros, zc(lib2, j.arme2)], mB = [rien, ars, rien];
   const pH = [pitch, cim], pB = [ban, deck];
-  if (!bot) return `<div class="tapis"><div class="g2">${eqH.join("") + eqB.join("")}</div><div class="g1">${zc("Arme", j.arme)}${zc("Arme 2")}</div><div class="g1">${heros}${ars}</div><div class="g2">${pH.join("") + pB.join("")}</div></div>`;
-  return `<div class="tapis bot"><div class="g2">${eqB.reverse().join("") + eqH.reverse().join("")}</div><div class="g1">${zc("Arme 2")}${zc("Arme", j.arme)}</div><div class="g1">${ars}${heros}</div><div class="g2">${pB.reverse().join("") + pH.reverse().join("")}</div></div>`;
+  if (!bot) return `<div class="tapis"><div class="g2">${eqH.join("") + eqB.join("")}</div><div class="g3">${mH.join("") + mB.join("")}</div><div class="g2">${pH.join("") + pB.join("")}</div></div>`;
+  return `<div class="tapis bot"><div class="g2">${eqB.reverse().join("") + eqH.reverse().join("")}</div><div class="g3">${mB.reverse().join("") + mH.reverse().join("")}</div><div class="g2">${pB.reverse().join("") + pH.reverse().join("")}</div></div>`;
 }
+// Permanents : les exemplaires identiques sont regroupés (×N) ; au-delà de la place, « +N » ouvre la liste.
+function perms(L, max) {
+  if (!L.length) return '<div class="perms"><div class="aucun">aucun permanent</div></div>';
+  const vis = L.length > max ? L.slice(0, max - 1) : L;
+  return `<div class="perms">${vis.map(([c, n]) => `<div class="pc">${C(c)}${n > 1 ? `<span class="x">×${n}</span>` : ""}</div>`).join("")}${L.length > max ? `<div class="plus">+${L.length - vis.length}</div>` : ""}</div>`;
+}
+const fxs = (L) => `<span class="fxs">${L.length ? L.map(([t, mal]) => `<span class="fx${mal ? " mal" : ""}">${t}</span>`).join("") : '<span class="fx">aucun effet</span>'}</span>`;
 const etat = (r, ap, apmax, extra = "") => `<div class="etat"><span class="g"><span class="res">${r}</span></span><span class="g">${Array.from({ length: Math.max(1, apmax) }, (_, i) => `<span class="ap${i < ap ? "" : " off"}"></span>`).join("")}</span>${extra}</div>`;
-const barre = (tour, der) => `<div class="barre"><button class="btn ico">${I.menu}</button><div class="sc">Hala <b>0–0</b> Dorinthea<br><span style="color:var(--muted)">Manche 1 · 2 manches gagnantes</span></div><button class="btn ico">${I.journal}</button></div>`;
+const barre = (adv = "Dorinthea") => `<div class="barre"><button class="btn ico">${I.menu}</button><div class="sc">Hala <b>0–0</b> ${adv}<br><span style="color:var(--muted)">Manche 1 · 2 manches gagnantes</span></div><button class="btn ico">${I.journal}</button></div>`;
 const ETP = ["Layer", "Attaque", "Défense", "Réactions", "Dégâts", "Résolution"];
 const etapes = (r) => `<div class="etapes">${ETP.map((t, k) => `<span class="${k === r ? "on" : k < r ? "done" : ""}">${t}</span>`).join("")}</div>`;
 const MAIN = ["FR_SBZ009", "FR_HVY111", "FR_MPW105", "FR_AKO009"];
 const main = (cls = [], L = MAIN) => `<div class="main">${L.map((c, i) => C(c, cls[i] || "")).join("")}</div>`;
 
-function partie({ centre, ruban, mainCls, prioVous, prioBot, pitchBot, apV = 1, mainL = MAIN }) {
-  return `<div class="p">${barre()}
-    ${etat(0, 0, 1, `<span class="mainbot">Main du bot <b style="color:var(--ink)">&nbsp;1</b>&nbsp;&nbsp;<i></i><i></i></span><span class="perm"><span class="fx">aucun effet</span></span>`)}
-    ${tapis(BOT, true, { pv: 20, deck: 36, pitch: pitchBot, prio: prioBot })}
+function partie({ centre, ruban, mainCls, prioVous, prioBot, pitchBot, apV = 1, mainL = MAIN, bot = BOT, permsBot = [], permsVous = [], fxBot = [], fxVous = [], mainBot = 1 }) {
+  return `<div class="p">${barre(bot.nom)}
+    ${etat(0, 0, 1, fxs(fxBot))}
+    <div class="rangee bot">${perms(permsBot, 8)}<div class="mainbot2">Main ${mainBot}<span class="dosm">${'<i class="dos"></i>'.repeat(Math.min(mainBot, 4))}</span></div></div>
+    ${tapis(bot, true, { pv: 20, deck: 36, pitch: pitchBot, prio: prioBot })}
     <div class="centre">${centre}</div>
     ${tapis(VOUS, false, { pv: 20, deck: 36, prio: prioVous })}
-    ${etat(0, apV, 1, `<span>Votre main : ${mainL.length}</span><span class="perm"><span class="fx">aucun effet</span></span>`)}
-    ${main(mainCls, mainL)}
+    ${etat(0, apV, 1, `<span>Main ${mainL.length}</span>` + fxs(fxVous))}
+    <div class="rangee">${main(mainCls, mainL)}${perms(permsVous, 6)}</div>
     <div class="ruban">${ruban}</div></div>`;
 }
 
 // ---------- 3. Partie : votre tour ----------
 const centreVide = `<div class="ticker"><span class="t">Tour 2</span><span class="der">Le bot passe. Votre tour commence.</span></div>
   <div class="etapes"><span class="on">Votre tour · phase d'action</span></div><div class="chainevide">CHAÎNE FERMÉE</div>`;
-tel(partie({ centre: centreVide, prioVous: true, mainCls: ["jouable", "jouable", "jouable", "jouable"],
+tel(partie({ centre: centreVide, prioVous: true, mainCls: ["jouable", "jouable", "jouable", "jouable"], bot: DROMAI, permsBot: PERMS_DROMAI, mainBot: 4, fxVous: [["Lame du zénith : marqueur +1", 0]],
   ruban: `<div class="q">À vous de jouer : touchez une carte ou une arme.</div><div class="bs"><button class="btn ico">${I.annuler}</button><button class="btn">Passer</button></div>` }),
-  "3. Partie, votre tour : le tapis du bot en haut (tourné), le vôtre en bas, chaîne et pile au milieu, votre main au bas, sous le pouce. Toucher une carte jouable ouvre directement ses actions.");
+  "3. Partie contre Dromai : héros au centre entre ses deux armes, arsenal dessous. Permanents regroupés (×4 pour les jetons identiques) : à droite de votre main pour vous, sur une ligne au-dessus du tapis pour le bot. Effets en cours dans la ligne d'état.");
 
 // ---------- 4. Partie : défense ----------
 const centreDef = `<div class="ticker"><span class="t">Tour 1</span><span class="der">Le bot joue Avoir l'air coriace (rouge), pitche 2 cartes.</span></div>${etapes(2)}

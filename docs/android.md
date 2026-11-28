@@ -797,7 +797,22 @@ reprenne sans rien demander.
     carré de 34 % de sa largeur, centré sur un point noté à la main pour
     chacun des 10 héros (table `VIS` de la maquette) ; héros inconnu (deck
     maison) : point par défaut (48 %, 23 %).
-- **Reste** : avis d'Antoine sur la maquette, puis `mobile.css` /
+- **Version 2 de la maquette** (retour d'Antoine du 2026-11-28) :
+  - tuiles de decks plus fines (50 points) ; « réglé pour le bot » devient
+    un symbole (tête de robot verte avec une coche) ; l'illustration est
+    fondue en dégradé sur la gauche de la tuile, plus zoomée (carte affichée
+    à 420 points de large) et centrée sur les yeux (table `YEUX` de la
+    maquette, notée à la main pour les 10 héros) ; le compte du card-pool
+    n'apparaît que s'il n'est pas complet ;
+  - tapis : le héros au centre, une zone d'arme de chaque côté (la seconde
+    s'appelle « Off-hand » si c'en est une), l'arsenal dessous ; cartes de
+    53 × 74 points, 6 points de marge de chaque côté ;
+  - main décalée à gauche ; à droite, les permanents (6 places, « +N » ouvre
+    la liste), les exemplaires identiques regroupés avec « ×N » (penser aux
+    illusionnistes). Pour le bot : une ligne de permanents au-dessus de son
+    tapis, sa main (dos) à droite. Effets en cours dans la ligne d'état de
+    chaque joueur.
+- **Reste** : avis d'Antoine sur la version 2, puis `mobile.css` /
   `mobile.js` (accueil, choix des decks, partie), test des sélecteurs à
   compléter, captures relues, reprise après que l'appli a été tuée, tableau
   9.1. Puis jalons 4 à 8.
