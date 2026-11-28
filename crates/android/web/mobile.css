@@ -1,0 +1,28 @@
+/* Arsenal sur Android : adaptation de la page PC au téléphone.
+ *
+ * Servi par l'appli à /android/mobile.css et ajouté à la fin du <head> de
+ * la page (crates/android/src/serveur.rs). Règle : toute adaptation passe
+ * par ce fichier et mobile.js, jamais par crates/ui/web/.
+ *
+ * Chaque classe ou identifiant de la page PC visé ici est vérifié par le
+ * test crates/android/tests/selecteurs.rs : si un autre agent le renomme,
+ * la CI le prévient. Les classes créées par mobile.js commencent par
+ * « android » et ne sont pas vérifiées.
+ *
+ * Jalon 1 : la base seulement. L'écran de partie est adapté au jalon 3
+ * (docs/android.md, section 9). */
+
+/* Pas de reflet gris sur ce qu'on touche, pas de grossissement du texte
+   décidé par la WebView. */
+html.android {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Un toucher est un clic tout de suite (pas d'attente du double toucher
+   pour zoomer) ; pas de rebond de la page entière en haut et en bas. */
+html.android body {
+  touch-action: manipulation;
+  overscroll-behavior-y: none;
+}

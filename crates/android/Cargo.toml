@@ -1,0 +1,26 @@
+[package]
+name = "fab-android"
+description = "Appli Android d'Arsenal : le serveur de fab-web, lancé dans le téléphone et affiché dans une WebView (docs/android.md)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+name = "fab_android"
+# cdylib : la bibliothèque `libfab_android.so` chargée par l'appli Kotlin ;
+# rlib : pour le binaire `apercu` et les tests sur PC.
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "apercu"
+path = "src/bin/apercu.rs"
+
+[dependencies]
+fab-ui = { path = "../ui" }
+serde_json.workspace = true
+
+# Le lien avec Kotlin n'existe que sur le téléphone : sur PC, la crate se
+# compile et se teste sans le SDK Android.
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
