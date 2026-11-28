@@ -38,7 +38,7 @@
   vert retiré) et recadré au carré : `android/icone/arsenal-embleme.png`.
 - Antoine a donné sa version d'Android : 17.
 
-## Tests (18, noms en français)
+## Tests (18 nouveaux, noms en français ; 1 073 au total, tous au vert)
 
 - `tests/demarrage.rs` : démarrage dans un dossier vide, decks copiés sans
   écraser les decks maison (et un deck abîmé réparé, un deck retiré
@@ -57,10 +57,17 @@
   entier avec les deux balises, classe `android` présente.
 - Match contre B3 (Hala contre Dorinthea, 2 manches gagnantes) joué par
   un script Chromium qui clique dans la page (cartes jouables et boutons
-  d'options, écran de préparation, « Manche suivante ») : RESULTAT_MATCH.
+  d'options, écran de préparation, « Manche suivante ») : **match joué
+  jusqu'au bout**, 2 manches à 0 pour B3 (le script joue au hasard parmi
+  les choix proposés). Un premier script s'est figé au tour 8 : c'était
+  le script d'essai (une attente sans fin côté Playwright), pas l'appli
+  (un clic à la main sur la même page faisait avancer la partie) ; un
+  second script a repris le même match là où il était et l'a terminé.
 - Erreurs de la page pendant l'essai : seulement des ressources
   extérieures refusées par le réseau de la session (polices Google, images
-  des cartes) et le 404 attendu du dos de carte absent.
+  des cartes) et le 404 attendu du dos de carte absent (seule adresse en erreur
+  sur les écrans Accueil, Partie, Decks, Éditeur, Imprimer, Entraîner,
+  Apprendre).
 - Au format du Pixel 9 (412 × 923, rapport de pixels 2,625, tactile) :
   l'accueil s'affiche correctement ; l'écran de partie déborde à droite
   et la grande carte, ouverte au toucher, couvre le plateau. À traiter au
