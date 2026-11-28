@@ -9,8 +9,9 @@
  * la CI le prévient. Les classes créées par mobile.js commencent par
  * « android » et ne sont pas vérifiées.
  *
- * Jalon 1 : la base seulement. L'écran de partie est adapté au jalon 3
- * (docs/android.md, section 9). */
+ * Jalon 3 (docs/android.md, maquette docs/android/maquette-jalon-3.html) :
+ * accueil sans défilement, tuiles de decks fines, écran de partie en
+ * portrait. Tout est écrit pour html.android : la page PC ne change pas. */
 
 /* Pas de reflet gris sur ce qu'on touche, pas de grossissement du texte
    décidé par la WebView. */
@@ -26,3 +27,343 @@ html.android body {
   touch-action: manipulation;
   overscroll-behavior-y: none;
 }
+
+/* Pas de menu « copier / enregistrer l'image » ni de sélection de texte
+   quand on appuie longtemps sur une carte (l'appui long ouvre la fiche). */
+html.android #v-partie, html.android #v-decks .dk {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+html.android #v-partie img { -webkit-user-drag: none; pointer-events: none; }
+
+/* ======================================================================
+   Accueil : les trois volets tiennent sur l'écran, sans défilement.
+   ====================================================================== */
+html.android .home { min-height: 100dvh; justify-content: flex-start; gap: 1.2dvh; padding: 1.4dvh 12px; }
+html.android .brand small { font-size: .62rem; letter-spacing: .26em; margin-bottom: 0; }
+html.android .brand .logo { width: min(64vw, 26dvh * 2.26); }
+html.android .tiles3 { grid-template-columns: minmax(0, 1fr); gap: 1.2dvh; }
+html.android .ht { border-radius: 14px; }
+html.android .ht:hover, html.android .ht:focus-visible { transform: none; }
+/* L'illustration rapetisse avec la hauteur de l'écran ; le titre est posé dessus. */
+html.android .ht .pic { height: clamp(64px, 14dvh, 170px); margin: 6px 6px 0; }
+html.android .ht .pic .sym { font-size: 2.4rem; }
+html.android .ht .txt { position: relative; padding: 0 14px 6px; gap: 2px; }
+html.android .ht h2 { position: absolute; left: 14px; top: -2.1em; text-align: left; font-size: 1.45rem; text-shadow: 0 2px 8px #000, 0 0 2px #000; }
+html.android .ht .txt ul { align-self: stretch; font-size: .88rem; gap: 1px; }
+html.android .ht .foot { margin: 2px 8px 8px; padding: 4px 6px 4px 10px; }
+html.android .ht .resume .lib { font-size: .9rem; }
+/* Boutons Reprendre / Nouveau assez grands pour un doigt. */
+html.android .ht .resume .btn { min-height: 44px; padding: 0 14px; font-size: .95rem; }
+/* La ligne du bas parle de Jouer.bat (textes des cartes absents) : sans
+   objet dans l'appli, qui embarque ces textes. */
+html.android .homefoot { display: none; }
+/* « Faire apprendre les bots » : la ligne de trop sur un téléphone. */
+html.android .ht[href="#entrainer"] .txt li:nth-child(3) { display: none; }
+
+/* ======================================================================
+   Jouer : tuiles de decks longues et fines. Visage du héros en fondu à
+   gauche (mobile.js place l'illustration sur les yeux : --android-x / -y),
+   symbole « réglé pour le bot » (tête de robot cochée) à droite.
+   ====================================================================== */
+html.android .dkz .top { gap: 8px; padding: 6px 10px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+html.android .dkz .top .crumb, html.android .dkz .top .dossier, html.android .dkz .top .sp { display: none; }
+html.android .dkz .top .btn { min-height: 44px; flex: none; }
+html.android .dkz .pbody { padding: 10px 10px 240px; }
+html.android .dkz .lib { grid-template-columns: minmax(0, 1fr); gap: 0; }
+html.android .dkz .libsec + .libsec { margin-top: 12px; }
+html.android .dkz .libsec h2 { margin-bottom: 6px; }
+html.android .dkz .libsec h2 .aide { display: none; }
+html.android .dkz .dgrid { grid-template-columns: minmax(0, 1fr); gap: 5px; }
+/* « Partie contre le bot » : un panneau fixe en bas, sous le pouce. */
+html.android .dkz .vsp {
+  position: fixed; z-index: 30; left: 0; right: 0; top: auto; bottom: 0; margin: 0; border-radius: 16px 16px 0 0;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 8px 10px calc(10px + env(safe-area-inset-bottom));
+  background: var(--surface2); border: 1px solid var(--line); box-shadow: 0 -10px 30px rgb(0 0 0 / .7);
+}
+html.android .dkz .vsp > :not(.champ):not(#dk-lancer):not(#dk-avert):not(.dk-erreur) { display: none; }
+html.android .dkz .vsp .champ { display: flex; flex-direction: column; gap: 2px; margin: 0; font-size: .72rem; color: var(--muted); min-width: 0; }
+html.android .dkz .vsp .champ select { width: 100%; min-height: 40px; padding: 4px 6px; font-size: .9rem; }
+/* Le niveau du bot a les libellés les plus longs : toute la largeur, en
+   dernier (« Deck du bot » et « Manches à gagner » côte à côte au-dessus). */
+html.android .dkz .vsp .champ:has(#dk-s-niveau) { grid-column: 1 / -1; order: 1; }
+html.android .dkz .vsp #dk-avert, html.android .dkz .vsp .dk-erreur { order: 2; }
+html.android .dkz .vsp #dk-lancer { order: 3; }
+html.android .dkz .vsp #dk-avert, html.android .dkz .vsp .dk-erreur { grid-column: 1 / -1; font-size: .8rem; margin: 0; }
+html.android .dkz .vsp #dk-avert:empty { display: none; }
+html.android .dkz .vsp #dk-lancer { grid-column: 1 / -1; min-height: 48px; margin: 0; }
+html.android .dkz .dk { flex-direction: row; align-items: center; height: 50px; border-radius: 10px; border-color: var(--line2); }
+html.android .dkz .dk:hover { transform: none; }
+html.android .dkz .dk.sel { border-color: var(--brass); }
+html.android .dkz .dk .dart {
+  /* Le dégradé est entièrement transparent avant 200 points : le cadre de
+     la carte (à droite de l'illustration) arrive au plus tôt vers 224
+     points (Aurora) et ne doit jamais se voir. */
+  position: absolute; left: 0; top: 0; bottom: 0; width: 200px; height: auto;
+  background-size: 420px auto; background-position: var(--android-x, -150px) var(--android-y, -105px);
+  -webkit-mask-image: linear-gradient(to right, #000 60px, rgb(0 0 0 / .55) 120px, transparent 196px);
+  mask-image: linear-gradient(to right, #000 60px, rgb(0 0 0 / .55) 120px, transparent 196px);
+}
+html.android .dkz .dk .dart::after { display: none; }
+html.android .dkz .dk .bd { position: relative; flex: 1; min-width: 0; padding: 0 4px 0 118px; gap: 0; }
+html.android .dkz .dk b { font-size: 1.05rem; font-variant: small-caps; line-height: 1.1; text-shadow: 0 1px 4px #000, 0 0 10px #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.android .dkz .dk .sub { font-size: .76rem; color: #c9c3b2; text-shadow: 0 1px 3px #000; }
+html.android .dkz .dk .pills { flex-wrap: nowrap; overflow: hidden; }
+html.android .dkz .dk .pills .pill { font-size: .66rem; padding: 0 5px; }
+/* Pastilles remplacées par le symbole (mobile.js marque les tuiles). */
+html.android .dkz .dk.android-bot .pills .pill.ok, html.android .dkz .dk .pills .pill.android-plein { display: none; }
+html.android .dkz .dk .android-robot { position: relative; order: 2; flex: none; width: 30px; height: 30px; margin-right: 2px; }
+/* Une pastille qui signale un problème (héros pas encore codé…) prend la
+   place du sous-titre. */
+html.android .dkz .dk:has(.pills .pill:not(.ok):not(.android-plein)) .sub { display: none; }
+html.android .dkz .dk .pills:not(:has(.pill:not(.android-plein))) { display: none; }
+html.android .dkz .dk.android-bot .pills:not(:has(.pill:not(.ok):not(.android-plein))) { display: none; }
+html.android .dkz .dk .more { order: 3; position: relative; top: auto; right: auto; flex: none; width: 44px; height: 44px; border: 0; background: none; opacity: 1; font-size: 1.3rem; color: var(--muted); }
+html.android .dkz .dk.newd, html.android .dkz .dk.newd.compacte { height: 44px; min-height: 0; padding: 0 14px; flex-direction: row; justify-content: flex-start; gap: 14px; border-style: dashed; }
+html.android .dkz .dk.newd .tx { flex-direction: row; align-items: baseline; gap: 8px; }
+html.android .dkz .dk.newd .plus { font-size: 1.8rem; }
+
+/* ======================================================================
+   Partie en portrait (maquette, écrans 3 à 7).
+   Le plateau devient une seule grille plein écran : les conteneurs de la
+   page PC (tapis, colonnes, joueur, décision) s'effacent (display:
+   contents) et chaque zone est posée à sa case.
+
+   Colonnes : 1 marge · 2-3 équipement · 4 espace · 5-7 arme, héros, arme ·
+   8 espace · 9-10 cimetière, banni, pitch, deck · 11 marge.
+   Rangées : 1 état du bot · 2 permanents et main du bot · 3-4 tapis du
+   bot · 5 chaîne et pile · 6-7 votre tapis · 8 votre état · 9 votre main
+   et vos permanents · 10 question et boutons.
+   ====================================================================== */
+html.android #v-partie {
+  /* Largeur d'une carte du tapis : 7 colonnes dans la largeur, et pas plus
+     que ce que permet la hauteur de l'écran. */
+  --android-cw: min(calc((100vw - 48px) / 7), calc((100dvh - 500px) / 4.75 * .716));
+  --android-ch: calc(var(--android-cw) / .716);
+  --g: 3px;
+  --H: var(--android-ch); --S: var(--android-ch); --W: var(--android-cw); --SW: var(--android-cw);
+  height: 100dvh; min-height: 0; overflow: hidden;
+}
+html.android #v-partie main.jeu { display: flex; flex-direction: column; height: 100dvh; }
+html.android #v-partie #preparation { flex: 1; min-height: 0; height: auto; }
+/* Préparation de la manche : la liste défile, le pied reste en bas. */
+html.android #preparation .ah { padding: 8px 12px; gap: 8px; }
+html.android #preparation .ah h2 { font-size: 1rem; }
+html.android #preparation .abody { overflow-y: auto; padding: 4px 12px 10px; }
+html.android #preparation .af { flex: none; gap: 6px 8px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); }
+html.android #preparation .af .acount { flex-basis: 100%; }
+html.android #preparation .af .sp { display: none; }
+html.android #preparation .af .aopt { flex: 1 1 auto; }
+html.android #preparation .af .aopt select { min-height: 40px; max-width: 46vw; }
+html.android #v-partie #preparation .aopt .seg button { min-height: 38px; }
+html.android #preparation .af .btn { min-height: 46px; }
+html.android #preparation #prep-go { flex: 1 1 auto; }
+/* Sans souris : toucher ajoute un exemplaire, l'appui long en retire un. */
+html.android #preparation .af::after { content: "Toucher une carte : un exemplaire de plus. Appui long : un de moins."; order: -1; flex-basis: 100%; font-size: .78rem; color: var(--muted); }
+
+/* Barre du haut (créée par mobile.js) : menu, score, journal. */
+.android-barre { flex: none; height: 46px; display: flex; align-items: center; gap: 2px; padding: 0 2px; border-bottom: 1px solid var(--line2); background: rgb(8 10 15 / .7); }
+.android-barre .android-titre { flex: 1; min-width: 0; text-align: center; font-size: .8rem; line-height: 1.15; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.android-barre .android-titre b { display: block; font: 600 .92rem/1.2 var(--f-body); color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+.android-barre .android-score span { font-family: var(--f-num); color: var(--brass); }
+html.android #v-partie .android-barre button { width: 46px; height: 46px; padding: 0; border: 0; border-radius: 10px; background: none; display: grid; place-items: center; color: var(--ink); }
+.android-barre svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+html.android #v-partie #plateau {
+  flex: 1; min-height: 0; padding: 0 0 0; overflow: hidden;
+  grid-template-columns: 0 repeat(2, var(--android-cw)) minmax(2px, 1fr) repeat(3, var(--android-cw)) minmax(2px, 1fr) repeat(2, var(--android-cw)) 0;
+  grid-template-rows: auto auto var(--android-ch) var(--android-ch) minmax(0, 1fr) var(--android-ch) var(--android-ch) auto auto auto;
+  grid-template-areas: none; column-gap: 3px; row-gap: 3px;
+}
+html.android #plateau .arena, html.android #plateau .col, html.android #plateau .decide { display: contents; }
+html.android #plateau .col .espace { display: none; }
+html.android #plateau .matart { opacity: .3; width: 100%; }
+html.android #plateau .matart.o { top: 8%; right: 0; } html.android #plateau .matart.m { bottom: 22%; left: 0; }
+
+/* Zones : toutes à la taille d'une carte du tapis. */
+html.android #plateau .z.big, html.android #plateau .z.sm { --zh: var(--android-ch); width: var(--android-cw); height: var(--android-ch); border-radius: 5px; }
+html.android #plateau .z::after { display: none; }
+html.android #plateau .z.vide::before { font-size: .44rem; letter-spacing: .04em; padding: 1px; }
+html.android #plateau .z > .n { right: -3px; top: -5px; font-size: 10px; padding: 1px 4px; }
+html.android #plateau .z .carte .pastilles span { font-size: 7px; }
+html.android #plateau .z.heros { border-width: 1px; }
+html.android #plateau .z.heros.prio { outline-offset: 1px; }
+/* PV : médaillon lisible, à cheval sur le bas de la carte du héros. */
+html.android #plateau .z .pv { right: auto; left: 50%; translate: -50% 0; bottom: -8px; width: 32px; font-size: 15px; box-shadow: 0 0 0 2px rgb(8 10 15 / .85), 0 4px 10px rgb(0 0 0 / .7); }
+html.android #plateau .arena.o .z .pv { bottom: auto; top: -8px; }
+html.android #plateau .z.sm.pitch { width: var(--android-cw); min-width: 0; justify-content: flex-start; overflow: visible; }
+
+/* Vous : rangée 6 côté chaîne, rangée 7 au bord. */
+html.android .arena.m > .col:nth-child(1) > .z:nth-child(1) { grid-area: 6 / 2; }
+html.android .arena.m > .col:nth-child(1) > .z:nth-child(2) { grid-area: 6 / 3; }
+html.android .arena.m > .col:nth-child(1) > .z:nth-child(3) { grid-area: 7 / 3; }
+html.android .arena.m > .col:nth-child(2) > .z { grid-area: 7 / 2; }
+html.android .arena.m > .col:nth-child(3) > .z { grid-area: 6 / 5; }
+html.android .arena.m > .col:nth-child(4) > .z:nth-child(1) { grid-area: 6 / 6; }
+html.android .arena.m > .col:nth-child(4) > .z:nth-child(2) { grid-area: 7 / 6; }
+html.android .arena.m > .col:nth-child(5) > .z:nth-child(1) { grid-area: 6 / 7; }
+html.android .arena.m > .col:nth-child(6) > .z { grid-area: 7 / 9; }
+html.android .arena.m > .col:nth-child(7) > .z:nth-child(1) { grid-area: 6 / 9; }
+html.android .arena.m > .col:nth-child(7) > .z:nth-child(2) { grid-area: 7 / 10; }
+html.android .arena.m > .col:nth-child(7) > .z:nth-child(3) { grid-area: 6 / 10; }
+/* Le bot : le même tapis tourné d'un demi-tour (colonne c → 12 − c). */
+html.android .arena.o > .col:nth-child(1) > .z:nth-child(1) { grid-area: 4 / 10; }
+html.android .arena.o > .col:nth-child(1) > .z:nth-child(2) { grid-area: 4 / 9; }
+html.android .arena.o > .col:nth-child(1) > .z:nth-child(3) { grid-area: 3 / 9; }
+html.android .arena.o > .col:nth-child(2) > .z { grid-area: 3 / 10; }
+html.android .arena.o > .col:nth-child(3) > .z { grid-area: 4 / 7; }
+html.android .arena.o > .col:nth-child(4) > .z:nth-child(1) { grid-area: 4 / 6; }
+html.android .arena.o > .col:nth-child(4) > .z:nth-child(2) { grid-area: 3 / 6; }
+html.android .arena.o > .col:nth-child(5) > .z:nth-child(1) { grid-area: 4 / 5; }
+html.android .arena.o > .col:nth-child(6) > .z { grid-area: 3 / 3; }
+html.android .arena.o > .col:nth-child(7) > .z:nth-child(1) { grid-area: 4 / 3; }
+html.android .arena.o > .col:nth-child(7) > .z:nth-child(2) { grid-area: 3 / 2; }
+html.android .arena.o > .col:nth-child(7) > .z:nth-child(3) { grid-area: 4 / 2; }
+
+/* Permanents : sortis du tapis. Les vôtres à droite de la main (deux
+   rangées, on fait défiler de côté s'il y en a plus), ceux du bot sur une
+   ligne au-dessus de son tapis. Les exemplaires identiques sont regroupés
+   par mobile.js (×N). */
+html.android #plateau .arena > .col:nth-child(5) > .z:nth-child(2) {
+  width: auto; height: auto; min-width: 0; border: 0; background: none; place-items: stretch; display: block;
+}
+html.android .arena.m > .col:nth-child(5) > .z:nth-child(2) { grid-area: 9 / 8 / 10 / 12; margin-right: 6px; }
+html.android .arena.o > .col:nth-child(5) > .z:nth-child(2) { grid-area: 2 / 2 / 3 / 9; }
+html.android #plateau .arena > .col:nth-child(5) > .z.vide:nth-child(2)::before { display: block; padding: 6px 0; text-align: left; font-size: .5rem; }
+html.android #plateau .perms {
+  --android-pw: calc(var(--android-cw) * .78);
+  display: grid; grid-auto-flow: column; grid-auto-columns: var(--android-pw); justify-content: start;
+  gap: 6px 9px; padding: 6px 6px 6px 2px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+}
+html.android .arena.m .perms { grid-template-rows: repeat(2, calc(var(--android-pw) / .716)); }
+html.android .arena.o .perms { grid-template-rows: calc(var(--android-pw) / .716); padding-top: 2px; }
+html.android #plateau .perms > .carte, html.android #plateau .perms > .carte.img {
+  width: var(--android-pw) !important; height: calc(var(--android-pw) / .716) !important; margin: 0 !important; padding: 0;
+}
+html.android #plateau .perms > .carte.pile-perm { box-shadow: 2px 2px 0 -1px #0b0e14, 3px 3px 0 -1px var(--line); }
+html.android #plateau .perms > .carte.android-cache { display: none; }
+html.android #plateau .perms .nb-perm, html.android #plateau .perms .android-nb {
+  position: absolute; z-index: 8; left: auto; right: 2px; top: auto; bottom: 2px; min-width: 0; height: auto;
+  padding: 0 5px; border: 0; border-radius: 99px; font: 700 12px/1.35 var(--f-num); background: var(--ink); color: #14110c; box-shadow: 0 1px 3px #000; pointer-events: none;
+}
+html.android #plateau .perms .carte .pastilles { left: 1px; right: 1px; bottom: auto; top: 2px; gap: 1px; justify-content: flex-start; max-height: 24px; overflow: hidden; }
+html.android #plateau .perms .carte .pastilles span { font-size: 7px; padding: 0 3px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Fin de manche : boutons au doigt. */
+html.android #d-fin { padding: 18px; }
+html.android #d-fin .btns button { min-height: 46px; flex: 1 1 auto; }
+
+/* État des joueurs : ressources, points d'action et effets sur une ligne. */
+html.android #plateau .etat { flex-direction: row; align-items: center; gap: 8px; padding: 0 6px; overflow: hidden; }
+html.android #plateau .etat.o { grid-area: 1 / 1 / 2 / 12; }
+html.android #plateau .etat.m { grid-area: 8 / 1 / 9 / 12; }
+html.android #plateau .gauges { flex: none; flex-wrap: nowrap; gap: 6px; }
+html.android #plateau .res { --rs: 22px; gap: 4px; }
+html.android #plateau .res.many { --rs: 18px; }
+html.android #plateau .res small { font-size: .5rem; letter-spacing: .04em; }
+html.android #plateau .gauges .sep { height: 16px; }
+html.android #plateau .apsym { width: 18px; height: 18px; }
+html.android #plateau .effects { flex: 1; min-width: 0; display: flex; justify-content: flex-end; }
+html.android #plateau .effects .lab { display: none; }
+html.android #plateau .etat .pills { flex-direction: row; flex-wrap: nowrap; justify-content: flex-end; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+html.android #plateau .etat .pill { flex: none; max-width: 70vw; font-size: .72rem; padding: 1px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.android #plateau .etat .none { font-size: .72rem; }
+
+/* Main du bot (dos) à droite de ses permanents. */
+html.android #plateau .ohand { grid-area: 2 / 9 / 3 / 12; justify-self: end; align-self: center; flex-direction: row; gap: 8px; padding-right: 6px; }
+html.android #plateau .ohand .handlab { font-size: .5rem; letter-spacing: .08em; }
+html.android #plateau .dos-main { --zh: calc(var(--android-ch) * .55); }
+
+/* Votre main : à gauche de vos permanents ; les cartes se chevauchent
+   d'elles-mêmes quand elles sont nombreuses. */
+html.android #plateau .hand {
+  grid-area: 9 / 1 / 10 / 8; justify-self: stretch; align-self: stretch; display: flex; align-items: flex-end; justify-content: flex-start; gap: 0;
+  padding: 10px 0 2px 6px; min-width: 0; --ch: calc(var(--android-ch) * 1.36);
+}
+html.android #plateau .hand .handlab { display: none; }
+html.android #plateau .hand > .vide { align-self: center; padding: 0 0 0 8px; }
+html.android #plateau .hand .hc { flex: 0 1 calc(var(--ch) * .716 - 6px); min-width: 14px; }
+html.android #plateau .hand .hc:last-child { flex-shrink: 0; }
+html.android #plateau .hand .carte:hover { transform: none; }
+html.android #plateau .hand .carte.sel, html.android #plateau .hand .carte.on { transform: translateY(-10px); }
+
+/* Chaîne de combat au milieu ; la pile à droite quand elle n'est pas vide. */
+html.android #plateau .milieu { grid-area: 5 / 2 / 6 / 11; padding: 4px 0 0; border-top: 1px solid color-mix(in srgb, var(--oc) 45%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--mc) 45%, transparent); margin: 6px 0; }
+html.android #plateau:has(.pilebox.live) .milieu { grid-column: 2 / 8; }
+html.android #plateau .pilebox { grid-area: 5 / 8 / 6 / 11; margin: 6px 0; padding: 4px 3px; display: none; }
+html.android #plateau .pilebox.live { display: flex; }
+html.android #plateau .mhead { gap: 6px; flex-wrap: wrap; justify-content: flex-start; }
+html.android #plateau .turnmark { padding: 3px 7px; }
+html.android #plateau .steps { gap: 7px; font-size: .48rem; letter-spacing: .05em; }
+html.android #plateau .mhead .step { font-size: .55rem; letter-spacing: .08em; }
+html.android #plateau .links { padding: 0 2px; gap: 6px; }
+html.android #plateau .lk { gap: 4px; --mh: clamp(48px, calc(100cqh - 14px), calc(var(--android-ch) * 1.5)); }
+html.android #plateau .lk.old { --mh: clamp(40px, calc((100cqh - 14px) * .74), var(--android-ch)); }
+html.android #plateau .lk .info { width: 74px; font-size: .68rem; }
+html.android #plateau .clash { margin: 0 6px; }
+html.android #plateau .lk .defs { margin-left: 2px; }
+html.android #plateau .lk .defs .carte { rotate: 0deg; }
+html.android #plateau .clash b { font-size: 1.9rem; }
+html.android #plateau .milieu::before { display: none; }
+
+/* Question et boutons tout en bas, sous le pouce. */
+html.android #plateau .ruban { grid-area: 10 / 1 / 11 / 12; border-radius: 0; border-width: 1px 0 0; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); gap: 6px; box-shadow: none; background: rgb(12 15 22 / .96); }
+html.android #plateau .ruban .prompt { font-size: .92rem; }
+html.android #v-partie #plateau .ruban button { min-height: 46px; font-size: .95rem; }
+
+/* Colonne de droite du PC : un tiroir. ☰ l'ouvre côté menu (à gauche),
+   le bouton journal côté journal (à droite). Pas de transform : les
+   messages en position fixe qu'il contient restent placés sur l'écran. */
+html.android #v-partie .cote {
+  position: fixed; z-index: 45; top: 0; bottom: 0; width: min(86vw, 380px); right: -100vw;
+  border-left: 1px solid var(--line); transition: right .2s, left .2s; overflow-y: auto;
+}
+html.android.android-tiroir-journal #v-partie .cote { right: 0; }
+html.android.android-tiroir-menu #v-partie .cote { right: auto; left: 0; border-left: 0; border-right: 1px solid var(--line); }
+html.android.android-tiroir-journal .cote .gh, html.android.android-tiroir-journal .cote .infos,
+html.android.android-tiroir-journal .cote .aide-bot { display: none; }
+html.android.android-tiroir-menu .cote .log { display: none; }
+html.android .cote .log::before { content: "Journal"; font: 800 1.15rem var(--f-display); color: var(--ink); margin-bottom: 4px; }
+html.android .cote .log { font-size: .92rem; }
+html.android #v-partie .cote .gh { flex-wrap: wrap; }
+html.android #v-partie .cote button.small, html.android .cote .home-btn { min-height: 44px; font-size: .92rem; }
+/* Menu : les options et les actions (nouveau match, importer, bug,
+   abandon) sont visibles tout de suite, sans passer par « Options ». */
+html.android.android-tiroir-menu .cote .gopts[hidden] { display: flex; }
+html.android.android-tiroir-menu #b-options { display: none; }
+html.android #v-partie .android-barre button:disabled { opacity: .3; }
+html.android .cote .gopts { position: static; width: auto; box-shadow: none; flex-basis: 100%; }
+html.android .cote .gopts .aide { display: none; }
+html.android .cote .gopts label { min-height: 40px; font-size: .92rem; }
+html.android .sidefoot button { flex: 1; }
+.android-voile { position: fixed; inset: 0; z-index: 44; background: rgb(5 7 10 / .62); display: none; }
+html.android-tiroir-menu .android-voile, html.android-tiroir-journal .android-voile, html.android-fiche .android-voile { display: block; }
+
+/* Messages qui ne doivent pas rester cachés dans le tiroir. */
+html.android #v-partie .cote #erreur:not(:empty) { position: fixed; z-index: 46; left: 8px; right: 8px; top: 52px; padding: 10px 12px; border-radius: 10px; background: #2a1210; border: 1px solid var(--dmg); }
+html.android #v-partie .cote #suite:not(:empty) { position: fixed; z-index: 43; left: 8px; right: 8px; top: 52px; padding: 10px; border-radius: 12px; background: rgb(12 15 22 / .96); border: 1px solid var(--brass); display: flex; flex-direction: column; gap: 8px; text-align: center; }
+html.android #v-partie .cote #suite button { min-height: 46px; }
+html.android #attente { right: 8px; bottom: auto; top: 52px; z-index: 42; }
+html.android #film-passer { right: 8px; bottom: auto; top: 52px; min-height: 40px; }
+
+/* Fiche d'une carte (appui long) : la carte en grand et son texte, qui
+   montent du bas de l'écran. mobile.js y range l'aperçu #detail. */
+/* Les valeurs de la règle .pv d'apprendre/apprendre.css (non limitée à
+   son volet) qui touchent #detail sont toutes remises ici. */
+html.android #v-partie > #detail {
+  position: fixed; z-index: 46; left: 0; right: 0; bottom: 0; top: auto; translate: none; max-height: 92dvh; overflow-y: auto;
+  font: 400 .95rem/1.35 var(--f-body); color: var(--ink); align-items: stretch;
+  display: none; flex-direction: column; gap: 6px; padding: 18px 16px calc(14px + env(safe-area-inset-bottom));
+  background: var(--surface); border: 0; border-top: 1px solid var(--line); border-radius: 18px 18px 0 0; box-shadow: 0 -10px 40px #000;
+}
+html.android.android-fiche #v-partie > #detail { display: flex; }
+html.android #v-partie > #detail::before { content: ""; position: absolute; left: 50%; top: 7px; translate: -50% 0; width: 44px; height: 5px; border-radius: 3px; background: var(--line); }
+html.android #v-partie > #detail .grande { width: min(64vw, 40dvh * .716); }
+html.android #v-partie > #detail .texte { font-size: .95rem; line-height: 1.35; }
+html.android #v-partie > #detail { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+html.android #v-partie > .android-fermer { display: none; position: fixed; z-index: 47; left: 16px; right: 16px; bottom: calc(12px + env(safe-area-inset-bottom)); min-height: 48px; border-radius: 12px; background: var(--surface2); box-shadow: 0 -6px 20px var(--surface); }
+html.android.android-fiche #v-partie > .android-fermer { display: block; }
+
+/* Menu des options d'une carte (plusieurs façons de la jouer) : centré, au doigt. */
+html.android #menu { left: 12px !important; right: 12px; top: auto !important; bottom: 120px; max-width: none; padding: 8px; gap: 6px; }
+html.android #menu button { min-height: 46px; border-radius: 10px; }
