@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Appli Android d'Arsenal : une seule activité, en portrait (choix
+     d'Antoine du 2026-11-28, docs/android.md section 12). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Images des cartes (Internet) et connexion au serveur local. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="@string/nom_appli"
+        android:networkSecurityConfig="@xml/securite_reseau"
+        android:supportsRtl="false"
+        android:theme="@style/Theme.Arsenal">
+
+        <activity
+            android:name=".ActiviteArsenal"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:configChanges="keyboard|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

@@ -16,3 +16,11 @@ Thumbs.db
 __pycache__/
 # Résultats des travaux de nuit (tools/nuit.ps1), propres à chaque machine
 /resultats/
+# Appli Android : fichiers produits par Gradle et par android/construire.sh
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/local.properties
+/android/.kotlin/
+/android/app/src/main/jniLibs/
+/android/app/src/main/assets/donnees/
