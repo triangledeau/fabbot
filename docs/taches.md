@@ -11,7 +11,7 @@ retire en finissant.
 |---|---|---|---|---|
 | 2026-11-26 | Claude | `claude/project-thread-0p5cpk` | Didacticiel « Apprendre » des règles (phase 2 du rapatriement) | `crates/ui/web/apprendre/` (nouveau), `crates/ui/src/api_apprendre.rs` (nouveau), quelques lignes dans `serveur.rs`, `index.html`, `accueil.js` |
 | 2026-11-26 | Claude | `claude/vigilant-fermat-iq5cjs` | B2/B3 : estimation qui comprend le blood debt et les cartes bannies (Levia), mesurée contre B2 | `crates/ai/src/b2.rs`, `b3.rs` (recherche seulement), `docs/bots.md` |
-| 2026-11-28 | Claude (compte Android) | `claude/laughing-ramanujan-pnd3nr` | Appli Android, jalon 1 : crate Rust et aperçu sur PC (brief : `docs/android.md`) | `crates/android/` (nouveau), `docs/android.md` ; une ligne dans `Cargo.toml` (`members`), `Cargo.lock`, `.gitignore` |
+| 2026-11-28 | Claude (compte Android) | `claude/laughing-ramanujan-pnd3nr` | Appli Android : jalon 1 fini, jalon 2 à suivre (premier APK, construit par GitHub ; brief : `docs/android.md`) | `crates/android/`, `android/` (nouveau), `.github/workflows/android.yml` (nouveau), `docs/android.md` |
 
 ## Découpage conseillé des prochaines tâches
 
