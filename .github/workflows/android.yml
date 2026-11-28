@@ -11,6 +11,11 @@
 #   ARSENAL_DOS_DE_CARTE  le vrai dos de carte (image), encodé en base64.
 # Sans la clé, l'APK est signé avec une clé de débogage jetable : il
 # s'installe, mais une mise à jour demandera de désinstaller.
+#
+# Sur main (et à la demande depuis main), l'APK est aussi publié dans la
+# « Release » arsenal-dernier, facile à télécharger depuis un téléphone :
+#   https://github.com/triangledeau/fabbot/releases/download/arsenal-dernier/arsenal.apk
+# (lien public, accord d'Antoine du 2026-11-28, docs/android.md section 5.3).
 name: Android
 
 on:
@@ -31,6 +36,8 @@ jobs:
   apk:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: write # pour publier la Release arsenal-dernier
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -91,3 +98,20 @@ jobs:
           name: arsenal-${{ github.run_number }}
           path: arsenal-${{ github.run_number }}.apk
           retention-days: 30
+      - name: Publier dans la Release arsenal-dernier (main seulement)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES: >-
+            APK d'Arsenal construit depuis main (construction n° ${{ github.run_number }},
+            commit ${{ github.sha }}). Sur le téléphone : télécharger arsenal.apk,
+            l'ouvrir, puis Installer.
+        run: |
+          cp "arsenal-${{ github.run_number }}.apk" arsenal.apk
+          if gh release view arsenal-dernier >/dev/null 2>&1; then
+            gh release upload arsenal-dernier arsenal.apk --clobber
+            gh release edit arsenal-dernier --notes "$NOTES"
+          else
+            gh release create arsenal-dernier arsenal.apk --target "${{ github.sha }}" \
+              --prerelease --title "Arsenal pour Android (dernière version)" --notes "$NOTES"
+          fi
