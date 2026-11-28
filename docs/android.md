@@ -302,7 +302,8 @@ Si un écran ne peut vraiment pas s'adapter de l'extérieur, ne force pas :
   Le dépôt est public.
 - Pousser sur `main` directement, faire un `git push --force` sur `main`
   ou sur la branche d'un autre agent.
-- Publier l'appli (Play Store, site, lien public).
+- Publier l'appli (Play Store, site, lien public). Exception : la Release
+  GitHub `arsenal-dernier` (section 5.3).
 
 ### 5.1 L'exception autorisée d'avance : le dossier des decks
 
@@ -352,6 +353,18 @@ section 5.
 Si tu trouves un bug de règle ou de carte en jouant sur le téléphone :
 ne le corrige pas, note-le dans ton point de reprise et signale-le à
 Antoine (il le confiera à un autre agent).
+
+### 5.3 Accords d'Antoine notés en cours de route
+
+- **2026-11-28 : l'APK publié dans une Release GitHub.** Sur téléphone,
+  la page GitHub d'une construction n'affiche pas le lien de
+  l'artefact. Antoine a donc accepté que le workflow publie l'APK
+  construit depuis `main` dans la Release `arsenal-dernier`
+  (préversion, remplacée à chaque construction), avec un lien fixe et
+  public :
+  `https://github.com/triangledeau/fabbot/releases/download/arsenal-dernier/arsenal.apk`.
+  Conséquence : si le secret `ARSENAL_DOS_DE_CARTE` est ajouté, le vrai
+  dos de carte est dans cet APK public.
 
 ## 6. Travailler sans coordinateur
 
@@ -802,6 +815,9 @@ reprenne sans rien demander.
   l'APK, qui les embarque).
 - **Reste** : retour d'Antoine sur l'APK (installation, accueil, une
   partie jusqu'au bout), puis jalons 3 à 8.
+- **Lien de l'APK pour le téléphone** (depuis `main`, Release
+  `arsenal-dernier`, section 5.3) :
+  `https://github.com/triangledeau/fabbot/releases/download/arsenal-dernier/arsenal.apk`.
 - **Prochaine commande** : pour reconstruire l'APK sans changer le code,
   GitHub → Actions → « Android » → « Run workflow ». Localement (avec SDK
   et NDK) : `bash android/construire.sh`. Aperçu sur PC :
