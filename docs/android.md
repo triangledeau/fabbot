@@ -366,6 +366,11 @@ Antoine (il le confiera à un autre agent).
   Conséquence : si le secret `ARSENAL_DOS_DE_CARTE` est ajouté, le vrai
   dos de carte est dans cet APK public.
 
+- **2026-11-28 : les matchs en plusieurs manches gagnantes n'intéressent
+  pas Antoine** (« on s'en fiche »). Ne pas les exiger dans les essais ni
+  y consacrer d'effort ou de place à l'écran (score de match, passage
+  d'une manche à l'autre) : une partie jouée jusqu'au bout suffit.
+
 ## 6. Travailler sans coordinateur
 
 Antoine coordonne plusieurs agents qui ne se parlent pas. Ton seul moyen
@@ -671,8 +676,8 @@ pas fusionné. Coche-les ici au fur et à mesure.
   - Reprise après que l'appli a été tuée (dans le menu développeur
     d'Android : « Ne pas conserver les activités », ou `adb shell am kill
     fr.arsenal.fabbot`).
-  - *Fini quand* : un match en 2 manches gagnantes se joue entièrement
-    au doigt, Annuler marche, la partie reprend après avoir tué
+  - *Fini quand* : une partie se joue entièrement au doigt jusqu'au bout
+    (pas besoin d'un match en plusieurs manches, voir 5.3), Annuler marche, la partie reprend après avoir tué
     l'appli, toutes les captures de la partie ont été relues (section
     7), le tableau 9.1 est rempli pour « Jouer » et « Partie ».
 
@@ -831,7 +836,7 @@ reprenne sans rien demander.
   rouge au milieu du plateau sur PC. Côté Android, `mobile.css` remet les
   valeurs touchées. Signalé à Antoine le 2026-11-28.
 - **Reste** : essai d'Antoine sur le Pixel 9 (APK construit depuis `main`) :
-  un match en 2 manches gagnantes au doigt, Annuler, appui long, Retour,
+  une partie entière au doigt, Annuler, appui long, Retour,
   reprise après que l'appli a été tuée ; corrections d'après son retour ;
   puis coche du jalon 3. Puis jalons 4 à 8.
 - **Lien de l'APK pour le téléphone** (depuis `main`, Release
