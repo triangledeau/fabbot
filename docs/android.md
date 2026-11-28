@@ -729,14 +729,14 @@ d'Arsenal (`crates/ui/web/commun/navigation.js`, adresses `#…`).
 
 | Écran PC (adresse) | Ce qui marche sur Android | Ce qui marche autrement, et pourquoi | Ce qui ne marche pas | Captures relues |
 |---|---|---|---|---|
-| Accueil (`#accueil`) | tout s'affiche en portrait (aperçu, jalon 2) | | à vérifier sur le téléphone | portrait, aperçu PC (jalon 2) |
+| Accueil (`#accueil`) | les trois volets, Reprendre / Nouveau, dernier tournoi | tient sans défilement : illustrations plus basses, titre posé dessus ; « Faire apprendre les bots » retiré de la liste du volet Entraîner (la ligne de trop) ; ligne du bas (« relancez Jouer.bat ») masquée, sans objet sur le téléphone | à vérifier sur le téléphone | Pixel 9, aperçu PC (jalon 3) |
 | Nouveau match (`#nouveau-match`) | | | | |
-| Préparation de la manche : qui commence, équipement, 40 cartes | | | | |
-| Partie (`#partie`) : plateau, main, chaîne de combat, journal, Annuler | | | | |
-| Partie : conseil, évaluation, Bot contre Bot, signaler un bug | | | | |
+| Préparation de la manche : qui commence, équipement, 40 cartes | qui commence, les 3 sources (dernier réglage, plan conseillé, proposition), activer et désactiver des exemplaires, équipement, rythme, niveau, Valider | toucher = un exemplaire de plus, appui long = un de moins (clic droit sur PC) ; la liste défile, le pied (compte, rythme, niveau, Retour, Valider) reste en bas | appui long à vérifier sur le téléphone | Pixel 9, aperçu PC (jalon 3) |
+| Partie (`#partie`) : plateau, main, chaîne de combat, journal, Annuler | tapis des deux joueurs, pile, chaîne, main, pitch, défense, cibles, options d'une carte, Annuler, journal | disposition de la maquette (section 10) ; carte en grand à l'appui long (fiche qui monte du bas) au lieu du survol, ou au toucher d'une carte sans action ; journal dans un tiroir (bouton en haut à droite) ; Annuler dans la barre du haut et dans les tiroirs ; permanents identiques regroupés dès 2 (×N) ; colonne de droite du PC rangée dans le menu ☰ | glisser une carte vers une zone : non vérifié au doigt (le toucher suffit pour tout) | Pixel 9, aperçu PC, une manche entière contre Dromai (jalon 3) |
+| Partie : conseil, évaluation, Bot contre Bot, signaler un bug | tout, dans le menu ☰ | le conseil s'affiche dans le menu : il faut l'ouvrir pour le lire | | Pixel 9, aperçu PC (jalon 3) |
 | Partie : sauvegarde, export et import | | | | |
-| Fin de manche et de match | | | | |
-| Mes decks (`#decks`), archives (`#archives`) | | | | |
+| Fin de manche et de match | fenêtre de fin, Manche suivante, Rejouer, Annuler, Exporter | « Manche suivante » aussi en haut de l'écran une fois la fenêtre fermée | Exporter : téléchargement à relier (jalon 4) | Pixel 9, aperçu PC (jalon 3) |
+| Mes decks (`#decks`), archives (`#archives`) | choix du deck (tuiles), ⋯, choix du bot, niveau, manches, Ajuster et lancer | tuiles de 50 points : visage du héros en fondu, tête de robot cochée pour « réglé pour le bot », compte du card-pool seulement s'il est incomplet ; le panneau « Partie contre le bot » est fixé en bas | archives : jalon 4 | Pixel 9, aperçu PC (jalon 3) |
 | Nouveau deck, import FaBrary (`#nouveau-deck`) | | | | |
 | Éditeur de deck (`#editeur`) | | | | |
 | Imprimer (`#impression`) | | | | |
@@ -750,15 +750,17 @@ sur Android, avec la raison et ce qu'il faudrait pour la reprendre.
 
 | Fonction | Raison | Pour la reprendre |
 |---|---|---|
-| | | |
+| Jouer : « Graine » (options avancées), « Charger une partie (.json) » et les deux lignes d'aide du panneau « Partie contre le bot » | le panneau, fixé en bas, doit rester petit | « Importer une partie » est dans le menu ☰ de la partie ; la graine pourrait aller dans un menu ⋯ du panneau |
+| Partie : raccourcis clavier (1 à 9, P, A, C, Ctrl+Z) | pas de clavier | boutons équivalents : ceux du ruban, Annuler dans la barre, Conseil dans le menu |
+| Partie : la carte en grand au survol | pas de survol au doigt | appui long sur la carte (fiche) |
 
 ## 10. Point de reprise
 
 À mettre à jour à chaque commit important, pour qu'une autre session
 reprenne sans rien demander.
 
-- **Dernière mise à jour** : 2026-11-28 (jalon 3 : maquette envoyée à
-  Antoine, en attente de son avis avant d'écrire `mobile.css` / `mobile.js`).
+- **Dernière mise à jour** : 2026-11-28 (jalon 3 : adaptation écrite et
+  vérifiée dans l'aperçu, en attente de l'essai d'Antoine sur son Pixel 9).
 - **Jalon en cours** : 3. Branche `claude/vigilant-ptolemy-56q2tv` (nom
   imposé par la session).
 - **Retour d'Antoine sur l'APK du jalon 2** (2026-11-28) : « ça se lance ».
@@ -812,10 +814,26 @@ reprenne sans rien demander.
     illusionnistes). Pour le bot : une ligne de permanents au-dessus de son
     tapis, sa main (dos) à droite. Effets en cours dans la ligne d'état de
     chaque joueur.
-- **Reste** : avis d'Antoine sur la version 2, puis `mobile.css` /
-  `mobile.js` (accueil, choix des decks, partie), test des sélecteurs à
-  compléter, captures relues, reprise après que l'appli a été tuée, tableau
-  9.1. Puis jalons 4 à 8.
+- **Validé par Antoine** (2026-11-28) : la version 2, avec le carré des piles
+  ainsi : cimetière / banni en haut, pitch / deck en bas (vu de chaque
+  joueur) ; toucher = agir, appui long = carte en grand.
+- **Adaptation écrite** (2026-11-28, branche `claude/vigilant-ptolemy-56q2tv`,
+  journal `docs/journal/2026-11-28-android-jalon-3.md`) :
+  `crates/android/web/mobile.css` et `mobile.js` pour l'accueil, Jouer, la
+  préparation de la manche, la partie et la fin de manche. Vérifié dans
+  l'aperçu PC au format du Pixel 9 (deux manches jouées entières contre
+  Dromai, captures relues). **Pas vérifié** : sur le téléphone (appui long,
+  Retour, reprise après que l'appli a été tuée, match entier au doigt).
+- **Bug de la page PC relevé** (pas corrigé : hors de ma zone) :
+  `crates/ui/web/apprendre/apprendre.css` a une règle `.pv` qui n'est pas
+  limitée au volet Apprendre ; elle s'applique aussi à l'aperçu de carte de
+  la partie (`#detail`, classe `pv`), qui s'affiche alors en grand ovale
+  rouge au milieu du plateau sur PC. Côté Android, `mobile.css` remet les
+  valeurs touchées. Signalé à Antoine le 2026-11-28.
+- **Reste** : essai d'Antoine sur le Pixel 9 (APK construit depuis `main`) :
+  un match en 2 manches gagnantes au doigt, Annuler, appui long, Retour,
+  reprise après que l'appli a été tuée ; corrections d'après son retour ;
+  puis coche du jalon 3. Puis jalons 4 à 8.
 - **Lien de l'APK pour le téléphone** (depuis `main`, Release
   `arsenal-dernier`, section 5.3) :
   `https://github.com/triangledeau/fabbot/releases/download/arsenal-dernier/arsenal.apk`.
@@ -825,8 +843,8 @@ reprenne sans rien demander.
   désinstaller l'ancien.
 - **Prochaine commande** : aperçu sur PC `cargo run -p fab-android --bin
   apercu`, puis captures au format du Pixel 9 (412 × 851, rapport 2,625).
-- **Questions en attente pour Antoine** : avis sur la maquette (voir
-  ci-dessus) ; a-t-il joué une partie jusqu'au bout avec l'APK du jalon 2 ?
+- **Questions en attente pour Antoine** : son essai du jalon 3 sur le
+  téléphone ; a-t-il joué une partie jusqu'au bout avec l'APK du jalon 2 ?
 - **Bugs de règle ou de carte relevés** : aucun.
 
 ## 11. Message pour lancer la session suivante

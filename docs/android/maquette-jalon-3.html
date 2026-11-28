@@ -170,7 +170,7 @@ svg.i { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-widt
 .liste { gap: 5px; }
 .dk { height: 50px; position: relative; border-left: 1px solid var(--line2); background: var(--surface); }
 .dk.sel { border-color: var(--brass); box-shadow: 0 0 0 1px var(--brass); }
-.dk .fondu { position: absolute; left: 0; top: 0; bottom: 0; width: 250px; overflow: hidden; -webkit-mask-image: linear-gradient(to right, #000 28%, transparent 96%); mask-image: linear-gradient(to right, #000 28%, transparent 96%); }
+.dk .fondu { position: absolute; left: 0; top: 0; bottom: 0; width: 200px; overflow: hidden; -webkit-mask-image: linear-gradient(to right, #000 60px, rgb(0 0 0 / .55) 120px, transparent 196px); mask-image: linear-gradient(to right, #000 60px, rgb(0 0 0 / .55) 120px, transparent 196px); }
 .dk .fondu img { position: absolute; }
 .dk .tx { position: relative; padding: 0 4px 0 118px; gap: 0; }
 .dk .tx b { font-size: 17px; text-shadow: 0 1px 4px #000, 0 0 10px #000; }
@@ -291,7 +291,7 @@ function tapis(j, bot, o = {}) {
   // Vous : rangée du haut = côté chaîne. Le bot : tapis tourné (rangées et colonnes inversées).
   const eqH = [zc("Tête", j.tete), zc("Torse", j.torse)], eqB = [zc("Bras", j.bras), zc("Jambes", j.jambes)];
   const mH = [zc("Arme", j.arme), heros, zc(lib2, j.arme2)], mB = [rien, ars, rien];
-  const pH = [pitch, cim], pB = [ban, deck];
+  const pH = [cim, ban], pB = [pitch, deck];
   if (!bot) return `<div class="tapis"><div class="g2">${eqH.join("") + eqB.join("")}</div><div class="g3">${mH.join("") + mB.join("")}</div><div class="g2">${pH.join("") + pB.join("")}</div></div>`;
   return `<div class="tapis bot"><div class="g2">${eqB.reverse().join("") + eqH.reverse().join("")}</div><div class="g3">${mB.reverse().join("") + mH.reverse().join("")}</div><div class="g2">${pB.reverse().join("") + pH.reverse().join("")}</div></div>`;
 }
