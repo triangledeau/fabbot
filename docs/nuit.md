@@ -27,10 +27,24 @@ la liste de nuit à la main, à n'importe quelle heure : double-cliquer sur
 - la **session Windows ouverte** (l'écran peut être verrouillé : la tâche
   tourne pour l'utilisateur connecté) ;
 - le PC allumé ou en veille : la tâche demande à réveiller le PC
-  (« réveil programmé »). Sur certaines Surface, le réveil depuis la veille
-  ne marche pas : le plus sûr est de laisser le PC allumé, écran verrouillé.
-  Pendant les travaux, le script empêche lui-même la mise en veille
-  (l'écran peut s'éteindre).
+  (« réveil programmé »). Pendant les travaux, le script empêche lui-même
+  la mise en veille (l'écran peut s'éteindre).
+
+**Surface en veille** : en veille moderne, Windows ne réveille pas
+toujours la Surface à l'heure (nuit du 27 au 28/11 : rien à 23 h, départ
+à 00 h 52 lors d'un réveil automatique). La tâche a donc trois
+déclencheurs : **23 h**, le **déverrouillage** de la session et la
+**sortie de veille** (réveil à la main ou automatique). À chaque
+déclenchement, `nuit.ps1 -Planifie` vérifie qu'on est dans la plage
+23 h → 6 h 30 (jusqu'à 1 h avant l'heure limite) et que la nuit n'a pas
+déjà été lancée (fichier `resultats\nuit\derniere-nuit.txt`) ; sinon il
+s'arrête tout de suite, sans rien écrire. Le propriétaire reçoit vers 23 h
+une notification sur son téléphone : réveiller la Surface suffit pour que
+la nuit parte. Le `resume.md` indique « Lancement : tâche planifiée » ou
+« à la main ».
+
+Après une mise à jour de `installer-nuit.ps1`, relancer
+`tools\installer-nuit.bat` une fois pour reprogrammer la tâche.
 
 ## Ce que fait le script (`tools\nuit.ps1`)
 
