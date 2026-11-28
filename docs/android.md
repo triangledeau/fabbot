@@ -621,7 +621,8 @@ pas fusionné. Coche-les ici au fur et à mesure.
   - Faire et fusionner le correctif partagé de la section 5.1.
   - *Fini quand* : réponses notées, correctif fusionné, CI verte.
 
-- [ ] **Jalon 1 : la crate Rust et l'aperçu sur PC**
+- [x] **Jalon 1 : la crate Rust et l'aperçu sur PC** (2026-11-28, journal
+  `docs/journal/2026-11-28-android-jalon-1.md`)
   - `crates/android` : `demarrer(dossier)`, copie des decks, lecture des
     textes, reprise de la sauvegarde, ta boucle de serveur, routes
     `/android/…`, injection dans `index.html`, journal des plantages.
@@ -637,8 +638,11 @@ pas fusionné. Coche-les ici au fur et à mesure.
 - [ ] **Jalon 2 : premier APK qui démarre**
   - Projet Gradle `android/`, activité unique, WebView, appel à
     `demarrer`, bouton Retour, `domStorageEnabled`, réseau limité à
-    `127.0.0.1`, icône (le logo `crates/ui/web/commun/logo_arsenal.webp`,
-    sous réserve d'accord d'Antoine), nom « Arsenal ».
+    `127.0.0.1`, icône (l'emblème `android/icone/arsenal-embleme.png`,
+    voir section 12, réponse 6), nom « Arsenal », appli verrouillée en
+    portrait.
+  - Workflow `.github/workflows/android.yml` qui construit l'APK (avancé
+    du jalon 7, section 12, réponse 4).
   - Script `android/construire.sh` / `.ps1`.
   - Captures de l'accueil en portrait et en paysage ; proposition
     d'orientation à Antoine.
@@ -740,21 +744,55 @@ sur Android, avec la raison et ce qu'il faudrait pour la reprendre.
 À mettre à jour à chaque commit important, pour qu'une autre session
 reprenne sans rien demander.
 
-- **Dernière mise à jour** : 2026-11-28 (jalon 0 fini).
-- **Jalon en cours** : aucun (prochain : jalon 1).
-- **Branche** : `claude/stoic-galileo-dk0tet` (nom imposé par la session).
-- **Fait** : jalon 0. Ligne Android dans `docs/taches.md`
-  (triangledeau/fabbot#88) ; correctif `FABBOT_DECKS` de la section 5.1
-  (triangledeau/fabbot#89) ; réponses d'Antoine notées en section 12.
-- **Changements de plan décidés au jalon 0** : appli en **portrait** ;
-  APK construit **par GitHub**, donc le workflow du jalon 7 avance au
-  jalon 2 ; vrai dos de carte par un secret du dépôt ; pas d'outil
-  Proxies de Rathe ; icône à redessiner (section 12, réponse 6).
-- **Reste** : jalons 1 à 8.
-- **Prochaine commande** : `cargo new --lib crates/android` (jalon 1),
-  puis ajouter `"crates/android"` dans `members` du `Cargo.toml` racine.
-- **Questions en attente pour Antoine** : version exacte d'Android du
-  Pixel 9 (utile au jalon 5 seulement) ; qui dessine l'icône.
+- **Dernière mise à jour** : 2026-11-28 (jalon 1 fini).
+- **Jalon en cours** : aucun (prochain : jalon 2, avec le workflow GitHub
+  qui construit l'APK).
+- **Branche** : `claude/laughing-ramanujan-pnd3nr` (nom imposé par la session).
+- **Fait** : jalons 0 et 1. La crate `crates/android` (`fab-android`) :
+  - `demarrer(dossier, textes, port)` (`src/lib.rs`) : crochet des
+    plantages (`sauvegardes/plantages.txt` + journal), dossier courant,
+    decks installés dans `<dossier>/decks/` (`maison/` jamais touché),
+    `FABBOT_DECKS`, port réservé, puis un fil « serveur » qui reprend la
+    sauvegarde ou crée le match (Hala contre Dorinthea, B3, 2 manches) et
+    lit les textes ;
+  - **port fixe 38080** (constante `PORT`, puis les 19 suivants) : la
+    WebView range `localStorage` par adresse, port compris ;
+  - textes des cartes attendus dans `<dossier>/donnees/public_card_data.csv`
+    (`chemin_textes`) : au jalon 2, la partie Kotlin y copie le fichier
+    rangé dans les « assets » de l'APK ;
+  - lien Kotlin (`src/jni_lien.rs`, compilé seulement pour Android) :
+    classe `fr.arsenal.fabbot.Moteur`, `@JvmStatic external fun
+    demarrer(dossier: String): Int` (rend le port, ou -1), bibliothèque
+    `fab_android` ;
+  - boucle de serveur (`src/serveur.rs`, copie de `fab_ui::serveur::servir`
+    à garder alignée) : `/android/mobile.css`, `/android/mobile.js`,
+    balises ajoutées avant `</head>` de `/` et `/index.html`, dos de carte
+    embarqué si présent (`/outils/dos-de-carte`, et `dos: true` dans
+    `/api/outils`) ;
+  - `build.rs` : embarque `data/decks/*.txt` et, s'il existe sur la
+    machine qui compile, `data/outils/dos-de-carte.{webp,png,jpg}` (au
+    jalon 2, le workflow le crée depuis le secret `ARSENAL_DOS_DE_CARTE`) ;
+  - `mobile.css` / `mobile.js` : la base seulement (classe `android` sur
+    `<html>`, pas de délai au toucher) ;
+  - 18 tests (`tests/demarrage.rs`, `tests/selecteurs.rs`, `src/donnees.rs`) ;
+  - binaire `apercu`.
+  - L'emblème de l'icône est prêt : `android/icone/arsenal-embleme.png`.
+- **Vérifié** : `cargo check` et `cargo clippy` pour
+  `aarch64-linux-android` passent (lien JNI compris) ; pas d'édition de
+  liens Android (pas de NDK dans la session). Un match complet contre B3
+  joué dans Chromium par l'aperçu (journal du jalon).
+- **Constaté pour le jalon 3** : au format du Pixel 9 (412 × 923),
+  l'accueil s'affiche déjà correctement ; l'écran de partie déborde à
+  droite (plateau prévu pour un grand écran), et toucher une carte ouvre
+  la grande carte en surimpression par-dessus le plateau.
+- **Reste** : jalons 2 à 8.
+- **Prochaine commande** : créer le projet Gradle `android/` (jalon 2),
+  puis `.github/workflows/android.yml`. Commandes Rust vérifiées :
+  `cargo run -p fab-android --bin apercu` (aperçu sur PC,
+  http://127.0.0.1:38080/) ;
+  `cargo clippy -p fab-android --all-targets --target aarch64-linux-android -- -D warnings`
+  (après `rustup target add aarch64-linux-android`).
+- **Questions en attente pour Antoine** : aucune.
 - **Bugs de règle ou de carte relevés** : aucun.
 
 ## 11. Message pour lancer la session suivante
@@ -791,7 +829,7 @@ reprenne sans rien demander.
    points CSS avec un rapport de pixels de 2,625 (à confirmer sur le
    téléphone : la taille d'affichage se règle dans Réglages → Écran). Le
    Pixel 9 est sorti sous Android 14, donc bien au-dessus de `minSdk 26`.
-   Version d'Android exacte : pas encore donnée.
+   Version d'Android : **Android 17** (donnée le 2026-11-28).
 2. **Orientation** (2026-11-28) : **portrait**, pour toute l'appli, partie
    comprise. Le plateau doit donc tenir dans environ 412 points CSS de
    large : c'est la contrainte principale de `mobile.css` (jalon 3). Au
@@ -822,3 +860,9 @@ reprenne sans rien demander.
    médaillon rond avec la gemme rouge et un « A »). Antoine choisit qui le
    dessine (Claude ou Gemini) ; l'intégration dans Android (icône
    adaptative, toutes les tailles) est faite au jalon 2.
+   **Fait le 2026-11-28** : Antoine a fourni un emblème dessiné par
+   Gemini (médaillon rond, « A » en métal, gemmes rouges) sur fond vert.
+   Le fond vert a été retiré et l'emblème recadré au carré :
+   `android/icone/arsenal-embleme.png` (1 024 × 1 024, fond transparent).
+   C'est la source de l'icône adaptative du jalon 2 (prévoir une marge :
+   Android rogne le tour de l'icône en cercle ou en carré arrondi).
