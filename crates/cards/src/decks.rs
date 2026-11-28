@@ -30,8 +30,22 @@ pub struct DeckDuProjet {
 }
 
 /// Le dossier `data/decks/`.
+///
+/// Si la variable d'environnement `FABBOT_DECKS` existe et n'est pas vide,
+/// c'est ce chemin qui est pris (l'appli Android y copie les decks, car le
+/// chemin de compilation n'existe pas sur le téléphone ; voir
+/// `docs/android.md`, section 5.1). Sinon, rien ne change.
 pub fn dossier() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/decks")
+    dossier_selon(std::env::var_os("FABBOT_DECKS"))
+}
+
+/// Le dossier des decks selon la valeur de `FABBOT_DECKS` (séparé de
+/// [`dossier`] pour être testé sans toucher l'environnement du processus).
+fn dossier_selon(variable: Option<std::ffi::OsString>) -> PathBuf {
+    match variable {
+        Some(v) if !v.is_empty() => PathBuf::from(v),
+        _ => PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/decks"),
+    }
 }
 
 /// Le nom court d'un fichier `NN_nom.txt`, si le nom de fichier a cette forme.
@@ -231,6 +245,21 @@ pub fn charger_pool(db: &CardDb, nom: &str) -> Result<CardPool, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sans_fabbot_decks_le_dossier_des_decks_ne_change_pas() {
+        let attendu = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/decks");
+        assert_eq!(dossier_selon(None), attendu);
+        assert_eq!(dossier_selon(Some("".into())), attendu);
+    }
+
+    #[test]
+    fn fabbot_decks_remplace_le_dossier_des_decks() {
+        assert_eq!(
+            dossier_selon(Some("/donnees/decks".into())),
+            PathBuf::from("/donnees/decks")
+        );
+    }
 
     #[test]
     fn le_nom_court_est_le_nom_du_fichier_sans_numero() {
