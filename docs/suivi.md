@@ -19,7 +19,7 @@ même temps : règles dans `AGENTS.md`, qui fait quoi dans `docs/taches.md`.
 | 6 | Matchs + choix équipement/deck (« phase de side ») | ✅ bots (choix appris, +96 Elo) et page web (écran avant chaque manche) ; à essayer par le propriétaire |
 | 7 | Bot B3 (évaluation apprise) + procédure « nouveau deck » | ✅ B3 (3e génération) = B2 + 53 Elo (+34 à +73) ; procédure : `docs/nouveau-deck.md` |
 | 8 | Rapatriement de l'Arsenal JS dans la page web (plan : `docs/rapatriement-arsenal.md`) | 🔄 lots 0 (accueil Arsenal, page en plusieurs fichiers, navigation par #), 1 (images des cartes en VF, noms français), 2 (plateau animé, tapis de jeu), 3 (sauvegarde et reprise), 4a (decks maison, import FaBrary), 4b (éditeur de deck), 4c (ajustement avant la manche), 5 (impression des proxies, en partie), 8 (entraîner : tournoi, SPRT, apprentissage dans la page) et 9 (conseil du bot, évaluation, Bot contre Bot, signalement de bug) faits : phase 1 finie ; puis reprise complète de l'interface, écran par écran (`docs/rapatriement-interface.md`, 2026-11-26) ; avancement lot par lot dans le plan |
-| 9 | Appli Android d'Arsenal (moteur et bot sur le téléphone, page PC dans une WebView) | ⏳ brief prêt : `docs/android.md` (confié à un autre compte Claude) |
+| 9 | Appli Android d'Arsenal (moteur et bot sur le téléphone, page PC dans une WebView) | 🔄 jalon 0 : `FABBOT_DECKS` fusionné, réponses du propriétaire en partie notées (`docs/android.md`, section 10) |
 
 **Branche de départ :** `main` (depuis le 2026-11-26, Claude crée et
 fusionne lui-même la pull request à la fin de chaque tâche ; l'étape 7 est

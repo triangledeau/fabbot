@@ -740,13 +740,20 @@ sur Android, avec la raison et ce qu'il faudrait pour la reprendre.
 À mettre à jour à chaque commit important, pour qu'une autre session
 reprenne sans rien demander.
 
-- **Dernière mise à jour** : 2026-11-28 (brief écrit, rien commencé).
-- **Jalon en cours** : aucun (prochain : jalon 0).
-- **Branche** : aucune.
-- **Fait** : —
-- **Reste** : tout, à partir du jalon 0.
-- **Prochaine commande** : —
-- **Questions en attente pour Antoine** : section 12.
+- **Dernière mise à jour** : 2026-11-28 (jalon 0).
+- **Jalon en cours** : 0 (préparation), presque fini.
+- **Branche** : `claude/stoic-galileo-dk0tet` (nom imposé par la session).
+- **Fait** : ligne Android dans `docs/taches.md` (pull request
+  triangledeau/fabbot#88, fusionnée) ; correctif `FABBOT_DECKS` de la
+  section 5.1 (pull request triangledeau/fabbot#89) ; réponse 1 de la
+  section 12 notée (Pixel 9).
+- **Reste pour finir le jalon 0** : les réponses 2 à 6 de la section 12.
+  Les reposer à Antoine au début de la session suivante, avant d'écrire
+  le code du jalon 1 (les réponses 4 et 6 changent le jalon 2, pas le 1).
+- **Prochaine commande** : `cargo new --lib crates/android` (jalon 1),
+  puis ajouter `"crates/android"` dans `members` du `Cargo.toml` racine.
+- **Questions en attente pour Antoine** : section 12, questions 2 à 6.
+- **Bugs de règle ou de carte relevés** : aucun.
 
 ## 11. Message pour lancer la session suivante
 
@@ -777,4 +784,16 @@ reprenne sans rien demander.
 
 ### Réponses d'Antoine
 
-(à remplir)
+1. **Téléphone** (2026-11-28) : Google **Pixel 9**. Écran de 1 080 × 2 424
+   pixels ; en taille d'affichage par défaut, cela fait environ 412 × 923
+   points CSS avec un rapport de pixels de 2,625 (à confirmer sur le
+   téléphone : la taille d'affichage se règle dans Réglages → Écran). Le
+   Pixel 9 est sorti sous Android 14, donc bien au-dessus de `minSdk 26`.
+   Version d'Android exacte : pas encore donnée.
+2. Orientation : pas encore répondu.
+3. Transfert de l'APK : pas encore répondu.
+4. Où construire l'APK : pas encore répondu. La session du jalon 0
+   tourne dans le cloud (claude.ai/code), sans SDK Android.
+5. Dos de carte et Proxies de Rathe dans son APK : pas encore répondu.
+6. Identifiant `fr.arsenal.fabbot`, nom « Arsenal », icône : pas encore
+   répondu.
