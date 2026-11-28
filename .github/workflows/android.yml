@@ -48,6 +48,7 @@ jobs:
         run: |
           cargo ndk --version || cargo install cargo-ndk --locked
           echo "ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
       - name: Dos de carte (secret)
         env:
           DOS: ${{ secrets.ARSENAL_DOS_DE_CARTE }}

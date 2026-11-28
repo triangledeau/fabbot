@@ -33,8 +33,14 @@
 
 ## Mesuré
 
-- Construction GitHub : MESURE_DUREE.
-- Taille de l'APK : MESURE_TAILLE.
+- Construction GitHub (exécution n° 3, sans cache) : 3 min en tout, dont
+  22 s pour installer `cargo-ndk`, 36 s pour la bibliothèque Rust en
+  profil `release` (arm64-v8a, NDK r30) et 1 min 28 s pour Gradle.
+- Artefact téléchargé (APK dans un zip) : 7,0 Mo. L'APK installé est plus
+  gros : le fichier des textes (33 Mo) y est rangé sans compression pour
+  être copié vite au premier lancement.
+- Deux essais ratés avant : un `--` interdit dans un commentaire XML
+  (`couleurs.xml`), puis une construction annulée par un nouveau `push`.
 
 ## Pas vérifié
 
