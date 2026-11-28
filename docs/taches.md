@@ -26,3 +26,4 @@ tâche ».
 | Améliorations de B2 (Levia, vitesse) | `crates/ai/src/b2.rs`, `determinisation.rs` | procédure « nouveau deck » ; **pas** avec B3 si B3 modifie la même évaluation |
 | Phase de side apprise avec B2 | `crates/ai/src/side.rs`, `data/side/` | tout ce qui ne touche pas `data/side/` |
 | Interface web | `crates/ui/` | tout |
+| Appli Android (brief : `docs/android.md`) | `crates/android/`, `android/` | tout ; relancer le test des sélecteurs si `crates/ui/web/` change |
