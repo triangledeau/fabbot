@@ -757,72 +757,61 @@ sur Android, avec la raison et ce qu'il faudrait pour la reprendre.
 À mettre à jour à chaque commit important, pour qu'une autre session
 reprenne sans rien demander.
 
-- **Dernière mise à jour** : 2026-11-28 (jalon 2 : code fusionné, essai
-  sur le Pixel 9 d'Antoine en attente).
-- **Jalon en cours** : 2, en attente de l'essai d'Antoine. Le jalon n'est
-  coché qu'une fois son retour reçu (« Fini quand » : l'APK s'installe,
-  l'accueil s'affiche, une partie se joue jusqu'au bout).
-- **Branche** : `claude/lucid-heisenberg-nxwfjz` (nom imposé par la session).
-- **Fait** : jalons 0 et 1 (voir leurs journaux), puis au jalon 2
-  (journal `docs/journal/2026-11-28-android-jalon-2.md`) :
-  - projet Gradle `android/` : Gradle 8.11.1 (wrapper committé), plugin
-    Android 8.7.3, Kotlin 2.0.21, `compileSdk`/`targetSdk` 35, `minSdk` 26,
-    seule dépendance `androidx.appcompat` ;
-  - activité unique `ActiviteArsenal` (`android/app/src/main/java/fr/arsenal/fabbot/`) :
-    copie des textes des cartes rangés dans l'APK vers
-    `<dossier>/donnees/` (au premier lancement et après chaque mise à
-    jour), appel de `Moteur.demarrer` hors du fil de l'écran, WebView
-    (`localStorage` actif, pas d'accès aux fichiers), message
-    « Chargement d'Arsenal… » en attendant la page, bouton Retour (page
-    précédente, sinon quitter), liens extérieurs ouverts dans le
-    navigateur, `alert`/`confirm` en boîtes de dialogue Android en
-    français (« OK », « Annuler »), marges pour les barres du système
-    (Android 15+ dessine sous ces barres), portrait verrouillé ;
-  - HTTP non chiffré permis seulement vers `127.0.0.1` et `localhost`
-    (`res/xml/securite_reseau.xml`) ;
-  - icône adaptative : l'emblème réduit à 66/108 (zone jamais rognée) sur
-    le fond de la page `#0A0D13`, plus une version monochrome pour les
-    icônes à thème ; PNG produits depuis `android/icone/arsenal-embleme.png` ;
-  - `android/construire.sh` et `.ps1` : bibliothèque Rust (`cargo ndk`,
-    pages de 16 Ko, sans symboles), textes des cartes, APK ;
-  - `.github/workflows/android.yml` : APK construit sur chaque pull
-    request qui touche `crates/android/`, `android/` ou ce workflow, sur
-    chaque `push` sur `main`, et à la demande ; déposé en artefact
-    `arsenal-<n>` (30 jours). Le numéro de construction GitHub sert de
-    numéro de version (une mise à jour doit avoir un numéro plus grand).
-- **Signature** : le workflow lit les secrets `ARSENAL_CLE_BASE64` et
-  `ARSENAL_CLE_MDP` (alias de la clé : `arsenal`). **Tant qu'Antoine ne
-  les a pas ajoutés**, chaque APK est signé avec une clé de débogage
-  différente : chaque nouvel APK demande de désinstaller l'ancien (ce qui
-  efface les sauvegardes du téléphone). Une clé a été créée pour lui le
-  2026-11-28 et lui a été envoyée directement (jamais dans le dépôt).
-- **Dos de carte** : secret `ARSENAL_DOS_DE_CARTE` (image webp, png ou
-  jpg encodée en base64), pas encore ajouté. Attention : les artefacts
-  d'un dépôt public sont téléchargeables par toute personne connectée à
-  GitHub ; l'APK qui embarque le dos de carte l'est donc aussi.
-- **Vérifié** : l'APK est construit par GitHub (voir le journal) ;
-  `cargo fmt`, `clippy`, `cargo test --workspace` au vert. Accueil
-  capturé au format du Pixel 9 (412 × 851 points CSS, une fois les
-  barres du système retirées, rapport 2,625) en portrait, avec l'aperçu
-  PC : rien ne déborde. **Pas vérifié** : l'installation et le démarrage
-  sur un vrai téléphone (pas d'émulateur ni de SDK dans la session cloud,
-  `dl.google.com` refusé par son réseau).
-- **Constaté pour le jalon 3** : dans l'écran de partie (préparation de
-  la manche), l'infobulle « Survolez une carte pour la voir en grand »
-  recouvre les cartes ; les boutons « Reprendre » et « Nouveau » de
-  l'accueil sont petits pour un doigt ; la ligne du bas de l'accueil
-  parle de `Jouer.bat` quand les textes manquent (n'arrive pas dans
-  l'APK, qui les embarque).
-- **Reste** : retour d'Antoine sur l'APK (installation, accueil, une
-  partie jusqu'au bout), puis jalons 3 à 8.
+- **Dernière mise à jour** : 2026-11-28 (jalon 3 : maquette envoyée à
+  Antoine, en attente de son avis avant d'écrire `mobile.css` / `mobile.js`).
+- **Jalon en cours** : 3. Branche `claude/vigilant-ptolemy-56q2tv` (nom
+  imposé par la session).
+- **Retour d'Antoine sur l'APK du jalon 2** (2026-11-28) : « ça se lance ».
+  Le reste n'est pas encore adapté, c'est attendu. Il n'a pas encore dit
+  s'il a joué une partie jusqu'au bout : le jalon 2 reste à cocher quand il
+  l'aura confirmé.
+- **Demandes d'Antoine pour le jalon 3** (2026-11-28) :
+  - partie : le tapis PC ne tient pas sur un téléphone ; chaque joueur a un
+    carré 2 × 2 pour l'équipement, un autre pour deck / pitch / cimetière /
+    banni, et entre les deux héros et arsenal ; le bot en miroir. Les deux
+    tapis, plus la chaîne de combat et la pile entre eux, tiennent sur
+    l'écran. Trouver un moyen d'afficher la carte en grand ; journal derrière
+    un bouton. Travailler d'abord sur une maquette aux proportions du Pixel
+    9, le livrable s'adaptant à la taille réelle de l'écran ;
+  - accueil : les tuiles tiennent sur l'écran sans défilement ;
+  - choix des decks : tuiles longues et fines, à gauche l'illustration du
+    héros recadrée sur le visage (zoom modéré, pour que les pixels ne se
+    voient pas), puis le nom du deck, etc.
+- **Maquette** : `docs/android/maquette-jalon-3.html` (page autonome, images
+  des cartes chargées depuis LSS ; s'ouvre dans un navigateur, 7 écrans de
+  412 × 851). Choix proposés à Antoine :
+  - tapis : 4 groupes par joueur, cartes de 58 × 81 points : équipement
+    2 × 2, colonne des armes (arme, seconde arme ou off-hand), colonne
+    héros / arsenal, carré pitch / cimetière / banni / deck. La colonne des
+    armes est un ajout à la proposition d'Antoine ; permanents et effets en
+    cours dans la ligne d'état de chaque joueur ;
+  - main en bas, puis la question et ses boutons tout en bas (sous le
+    pouce) ; Annuler à gauche des boutons ;
+  - toucher une carte = son action (comme le clic sur PC) ; appui long sur
+    n'importe quelle carte = fiche qui monte du bas (grande carte, texte
+    officiel, actions) ;
+  - journal : bouton en haut à droite, tiroir depuis la droite ; la dernière
+    ligne reste visible en haut de la chaîne ;
+  - menu ☰ en haut à gauche : tout le contenu de la colonne de droite du PC ;
+  - recadrage des visages : la carte « large » de LSS (546 px de large), un
+    carré de 34 % de sa largeur, centré sur un point noté à la main pour
+    chacun des 10 héros (table `VIS` de la maquette) ; héros inconnu (deck
+    maison) : point par défaut (48 %, 23 %).
+- **Reste** : avis d'Antoine sur la maquette, puis `mobile.css` /
+  `mobile.js` (accueil, choix des decks, partie), test des sélecteurs à
+  compléter, captures relues, reprise après que l'appli a été tuée, tableau
+  9.1. Puis jalons 4 à 8.
 - **Lien de l'APK pour le téléphone** (depuis `main`, Release
   `arsenal-dernier`, section 5.3) :
   `https://github.com/triangledeau/fabbot/releases/download/arsenal-dernier/arsenal.apk`.
-- **Prochaine commande** : pour reconstruire l'APK sans changer le code,
-  GitHub → Actions → « Android » → « Run workflow ». Localement (avec SDK
-  et NDK) : `bash android/construire.sh`. Aperçu sur PC :
-  `cargo run -p fab-android --bin apercu`.
-- **Questions en attente pour Antoine** : son essai de l'APK sur le Pixel 9.
+- **Signature et dos de carte** : voir le journal du jalon 2 (secrets
+  `ARSENAL_CLE_BASE64`, `ARSENAL_CLE_MDP`, `ARSENAL_DOS_DE_CARTE`). Tant que
+  la clé n'est pas dans les secrets, chaque nouvel APK demande de
+  désinstaller l'ancien.
+- **Prochaine commande** : aperçu sur PC `cargo run -p fab-android --bin
+  apercu`, puis captures au format du Pixel 9 (412 × 851, rapport 2,625).
+- **Questions en attente pour Antoine** : avis sur la maquette (voir
+  ci-dessus) ; a-t-il joué une partie jusqu'au bout avec l'APK du jalon 2 ?
 - **Bugs de règle ou de carte relevés** : aucun.
 
 ## 11. Message pour lancer la session suivante
