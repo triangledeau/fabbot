@@ -716,7 +716,7 @@ d'Arsenal (`crates/ui/web/commun/navigation.js`, adresses `#…`).
 
 | Écran PC (adresse) | Ce qui marche sur Android | Ce qui marche autrement, et pourquoi | Ce qui ne marche pas | Captures relues |
 |---|---|---|---|---|
-| Accueil (`#accueil`) | | | | |
+| Accueil (`#accueil`) | tout s'affiche en portrait (aperçu, jalon 2) | | à vérifier sur le téléphone | portrait, aperçu PC (jalon 2) |
 | Nouveau match (`#nouveau-match`) | | | | |
 | Préparation de la manche : qui commence, équipement, 40 cartes | | | | |
 | Partie (`#partie`) : plateau, main, chaîne de combat, journal, Annuler | | | | |
@@ -744,55 +744,69 @@ sur Android, avec la raison et ce qu'il faudrait pour la reprendre.
 À mettre à jour à chaque commit important, pour qu'une autre session
 reprenne sans rien demander.
 
-- **Dernière mise à jour** : 2026-11-28 (jalon 1 fini).
-- **Jalon en cours** : aucun (prochain : jalon 2, avec le workflow GitHub
-  qui construit l'APK).
-- **Branche** : `claude/laughing-ramanujan-pnd3nr` (nom imposé par la session).
-- **Fait** : jalons 0 et 1. La crate `crates/android` (`fab-android`) :
-  - `demarrer(dossier, textes, port)` (`src/lib.rs`) : crochet des
-    plantages (`sauvegardes/plantages.txt` + journal), dossier courant,
-    decks installés dans `<dossier>/decks/` (`maison/` jamais touché),
-    `FABBOT_DECKS`, port réservé, puis un fil « serveur » qui reprend la
-    sauvegarde ou crée le match (Hala contre Dorinthea, B3, 2 manches) et
-    lit les textes ;
-  - **port fixe 38080** (constante `PORT`, puis les 19 suivants) : la
-    WebView range `localStorage` par adresse, port compris ;
-  - textes des cartes attendus dans `<dossier>/donnees/public_card_data.csv`
-    (`chemin_textes`) : au jalon 2, la partie Kotlin y copie le fichier
-    rangé dans les « assets » de l'APK ;
-  - lien Kotlin (`src/jni_lien.rs`, compilé seulement pour Android) :
-    classe `fr.arsenal.fabbot.Moteur`, `@JvmStatic external fun
-    demarrer(dossier: String): Int` (rend le port, ou -1), bibliothèque
-    `fab_android` ;
-  - boucle de serveur (`src/serveur.rs`, copie de `fab_ui::serveur::servir`
-    à garder alignée) : `/android/mobile.css`, `/android/mobile.js`,
-    balises ajoutées avant `</head>` de `/` et `/index.html`, dos de carte
-    embarqué si présent (`/outils/dos-de-carte`, et `dos: true` dans
-    `/api/outils`) ;
-  - `build.rs` : embarque `data/decks/*.txt` et, s'il existe sur la
-    machine qui compile, `data/outils/dos-de-carte.{webp,png,jpg}` (au
-    jalon 2, le workflow le crée depuis le secret `ARSENAL_DOS_DE_CARTE`) ;
-  - `mobile.css` / `mobile.js` : la base seulement (classe `android` sur
-    `<html>`, pas de délai au toucher) ;
-  - 18 tests (`tests/demarrage.rs`, `tests/selecteurs.rs`, `src/donnees.rs`) ;
-  - binaire `apercu`.
-  - L'emblème de l'icône est prêt : `android/icone/arsenal-embleme.png`.
-- **Vérifié** : `cargo check` et `cargo clippy` pour
-  `aarch64-linux-android` passent (lien JNI compris) ; pas d'édition de
-  liens Android (pas de NDK dans la session). Un match complet contre B3
-  joué dans Chromium par l'aperçu (journal du jalon).
-- **Constaté pour le jalon 3** : au format du Pixel 9 (412 × 923),
-  l'accueil s'affiche déjà correctement ; l'écran de partie déborde à
-  droite (plateau prévu pour un grand écran), et toucher une carte ouvre
-  la grande carte en surimpression par-dessus le plateau.
-- **Reste** : jalons 2 à 8.
-- **Prochaine commande** : créer le projet Gradle `android/` (jalon 2),
-  puis `.github/workflows/android.yml`. Commandes Rust vérifiées :
-  `cargo run -p fab-android --bin apercu` (aperçu sur PC,
-  http://127.0.0.1:38080/) ;
-  `cargo clippy -p fab-android --all-targets --target aarch64-linux-android -- -D warnings`
-  (après `rustup target add aarch64-linux-android`).
-- **Questions en attente pour Antoine** : aucune.
+- **Dernière mise à jour** : 2026-11-28 (jalon 2 : code fusionné, essai
+  sur le Pixel 9 d'Antoine en attente).
+- **Jalon en cours** : 2, en attente de l'essai d'Antoine. Le jalon n'est
+  coché qu'une fois son retour reçu (« Fini quand » : l'APK s'installe,
+  l'accueil s'affiche, une partie se joue jusqu'au bout).
+- **Branche** : `claude/lucid-heisenberg-nxwfjz` (nom imposé par la session).
+- **Fait** : jalons 0 et 1 (voir leurs journaux), puis au jalon 2
+  (journal `docs/journal/2026-11-28-android-jalon-2.md`) :
+  - projet Gradle `android/` : Gradle 8.11.1 (wrapper committé), plugin
+    Android 8.7.3, Kotlin 2.0.21, `compileSdk`/`targetSdk` 35, `minSdk` 26,
+    seule dépendance `androidx.appcompat` ;
+  - activité unique `ActiviteArsenal` (`android/app/src/main/java/fr/arsenal/fabbot/`) :
+    copie des textes des cartes rangés dans l'APK vers
+    `<dossier>/donnees/` (au premier lancement et après chaque mise à
+    jour), appel de `Moteur.demarrer` hors du fil de l'écran, WebView
+    (`localStorage` actif, pas d'accès aux fichiers), message
+    « Chargement d'Arsenal… » en attendant la page, bouton Retour (page
+    précédente, sinon quitter), liens extérieurs ouverts dans le
+    navigateur, `alert`/`confirm` en boîtes de dialogue Android en
+    français (« OK », « Annuler »), marges pour les barres du système
+    (Android 15+ dessine sous ces barres), portrait verrouillé ;
+  - HTTP non chiffré permis seulement vers `127.0.0.1` et `localhost`
+    (`res/xml/securite_reseau.xml`) ;
+  - icône adaptative : l'emblème réduit à 66/108 (zone jamais rognée) sur
+    le fond de la page `#0A0D13`, plus une version monochrome pour les
+    icônes à thème ; PNG produits depuis `android/icone/arsenal-embleme.png` ;
+  - `android/construire.sh` et `.ps1` : bibliothèque Rust (`cargo ndk`,
+    pages de 16 Ko, sans symboles), textes des cartes, APK ;
+  - `.github/workflows/android.yml` : APK construit sur chaque pull
+    request qui touche `crates/android/`, `android/` ou ce workflow, sur
+    chaque `push` sur `main`, et à la demande ; déposé en artefact
+    `arsenal-<n>` (30 jours). Le numéro de construction GitHub sert de
+    numéro de version (une mise à jour doit avoir un numéro plus grand).
+- **Signature** : le workflow lit les secrets `ARSENAL_CLE_BASE64` et
+  `ARSENAL_CLE_MDP` (alias de la clé : `arsenal`). **Tant qu'Antoine ne
+  les a pas ajoutés**, chaque APK est signé avec une clé de débogage
+  différente : chaque nouvel APK demande de désinstaller l'ancien (ce qui
+  efface les sauvegardes du téléphone). Une clé a été créée pour lui le
+  2026-11-28 et lui a été envoyée directement (jamais dans le dépôt).
+- **Dos de carte** : secret `ARSENAL_DOS_DE_CARTE` (image webp, png ou
+  jpg encodée en base64), pas encore ajouté. Attention : les artefacts
+  d'un dépôt public sont téléchargeables par toute personne connectée à
+  GitHub ; l'APK qui embarque le dos de carte l'est donc aussi.
+- **Vérifié** : l'APK est construit par GitHub (voir le journal) ;
+  `cargo fmt`, `clippy`, `cargo test --workspace` au vert. Accueil
+  capturé au format du Pixel 9 (412 × 851 points CSS, une fois les
+  barres du système retirées, rapport 2,625) en portrait, avec l'aperçu
+  PC : rien ne déborde. **Pas vérifié** : l'installation et le démarrage
+  sur un vrai téléphone (pas d'émulateur ni de SDK dans la session cloud,
+  `dl.google.com` refusé par son réseau).
+- **Constaté pour le jalon 3** : dans l'écran de partie (préparation de
+  la manche), l'infobulle « Survolez une carte pour la voir en grand »
+  recouvre les cartes ; les boutons « Reprendre » et « Nouveau » de
+  l'accueil sont petits pour un doigt ; la ligne du bas de l'accueil
+  parle de `Jouer.bat` quand les textes manquent (n'arrive pas dans
+  l'APK, qui les embarque).
+- **Reste** : retour d'Antoine sur l'APK (installation, accueil, une
+  partie jusqu'au bout), puis jalons 3 à 8.
+- **Prochaine commande** : pour reconstruire l'APK sans changer le code,
+  GitHub → Actions → « Android » → « Run workflow ». Localement (avec SDK
+  et NDK) : `bash android/construire.sh`. Aperçu sur PC :
+  `cargo run -p fab-android --bin apercu`.
+- **Questions en attente pour Antoine** : son essai de l'APK sur le Pixel 9.
 - **Bugs de règle ou de carte relevés** : aucun.
 
 ## 11. Message pour lancer la session suivante
