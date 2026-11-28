@@ -7,6 +7,7 @@ members = [
     "crates/sim",
     "crates/fab-match",
     "crates/ui",
+    "crates/android",
 ]
 
 [workspace.package]
