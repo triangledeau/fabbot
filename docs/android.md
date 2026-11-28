@@ -614,7 +614,7 @@ Chaque jalon finit par une pull request fusionnée dans `main` et un
 message à Antoine. Ne commence pas un jalon tant que le précédent n'est
 pas fusionné. Coche-les ici au fur et à mesure.
 
-- [ ] **Jalon 0 : préparation** (une session courte)
+- [x] **Jalon 0 : préparation** (une session courte)
   - Poser à Antoine les questions de la section 12 et noter ses réponses
     dans ce document.
   - Inscrire la tâche dans `docs/taches.md` (pull request à part).
@@ -740,19 +740,21 @@ sur Android, avec la raison et ce qu'il faudrait pour la reprendre.
 À mettre à jour à chaque commit important, pour qu'une autre session
 reprenne sans rien demander.
 
-- **Dernière mise à jour** : 2026-11-28 (jalon 0).
-- **Jalon en cours** : 0 (préparation), presque fini.
+- **Dernière mise à jour** : 2026-11-28 (jalon 0 fini).
+- **Jalon en cours** : aucun (prochain : jalon 1).
 - **Branche** : `claude/stoic-galileo-dk0tet` (nom imposé par la session).
-- **Fait** : ligne Android dans `docs/taches.md` (pull request
-  triangledeau/fabbot#88, fusionnée) ; correctif `FABBOT_DECKS` de la
-  section 5.1 (pull request triangledeau/fabbot#89) ; réponse 1 de la
-  section 12 notée (Pixel 9).
-- **Reste pour finir le jalon 0** : les réponses 2 à 6 de la section 12.
-  Les reposer à Antoine au début de la session suivante, avant d'écrire
-  le code du jalon 1 (les réponses 4 et 6 changent le jalon 2, pas le 1).
+- **Fait** : jalon 0. Ligne Android dans `docs/taches.md`
+  (triangledeau/fabbot#88) ; correctif `FABBOT_DECKS` de la section 5.1
+  (triangledeau/fabbot#89) ; réponses d'Antoine notées en section 12.
+- **Changements de plan décidés au jalon 0** : appli en **portrait** ;
+  APK construit **par GitHub**, donc le workflow du jalon 7 avance au
+  jalon 2 ; vrai dos de carte par un secret du dépôt ; pas d'outil
+  Proxies de Rathe ; icône à redessiner (section 12, réponse 6).
+- **Reste** : jalons 1 à 8.
 - **Prochaine commande** : `cargo new --lib crates/android` (jalon 1),
   puis ajouter `"crates/android"` dans `members` du `Cargo.toml` racine.
-- **Questions en attente pour Antoine** : section 12, questions 2 à 6.
+- **Questions en attente pour Antoine** : version exacte d'Android du
+  Pixel 9 (utile au jalon 5 seulement) ; qui dessine l'icône.
 - **Bugs de règle ou de carte relevés** : aucun.
 
 ## 11. Message pour lancer la session suivante
@@ -790,10 +792,33 @@ reprenne sans rien demander.
    téléphone : la taille d'affichage se règle dans Réglages → Écran). Le
    Pixel 9 est sorti sous Android 14, donc bien au-dessus de `minSdk 26`.
    Version d'Android exacte : pas encore donnée.
-2. Orientation : pas encore répondu.
-3. Transfert de l'APK : pas encore répondu.
-4. Où construire l'APK : pas encore répondu. La session du jalon 0
-   tourne dans le cloud (claude.ai/code), sans SDK Android.
-5. Dos de carte et Proxies de Rathe dans son APK : pas encore répondu.
-6. Identifiant `fr.arsenal.fabbot`, nom « Arsenal », icône : pas encore
-   répondu.
+2. **Orientation** (2026-11-28) : **portrait**, pour toute l'appli, partie
+   comprise. Le plateau doit donc tenir dans environ 412 points CSS de
+   large : c'est la contrainte principale de `mobile.css` (jalon 3). Au
+   jalon 2, verrouiller l'activité en portrait au lieu de proposer le
+   paysage.
+3. **Transfert de l'APK** (2026-11-28) : **téléchargé depuis GitHub**,
+   directement sur le téléphone.
+4. **Où construire l'APK** (2026-11-28) : **par GitHub**. Pas d'Android
+   Studio sur la Surface. Conséquence : le workflow
+   `.github/workflows/android.yml` (jalon 7) passe **au jalon 2**, c'est
+   lui qui fabrique le premier APK. La clé de signature et le dos de carte
+   vont dans les secrets du dépôt (voir 5). Sans émulateur, les essais
+   « dans l'appli réelle » (section 7, règle 6) se font sur le Pixel 9
+   d'Antoine, avec ses captures.
+5. **Dos de carte et Proxies de Rathe** (2026-11-28) : **le vrai dos de
+   carte oui**, l'outil Proxies de Rathe **non** (pas besoin de
+   l'impression complète sur le téléphone ; à noter dans « Non repris »
+   au jalon 6). Le dos de carte ne doit pas entrer dans le dépôt : comme
+   l'APK est construit par GitHub, il passe par un secret du dépôt (fichier
+   encodé en base64, par exemple `ARSENAL_DOS_DE_CARTE`), qu'Antoine
+   ajoute lui-même, guidé pas à pas. Sans ce secret, l'appli dessine le dos
+   de remplacement, comme sur PC.
+6. **Identifiant, nom, icône** (2026-11-28) : `fr.arsenal.fabbot` et
+   « Arsenal » acceptés. Icône : partir du logo Arsenal, mais le
+   **retravailler** pour en faire une icône. Le logo est un long bandeau
+   (1 200 × 531) avec le mot « ARSENAL » : illisible réduit à une icône
+   ronde. Il faut un emblème carré dans le même style (par exemple le
+   médaillon rond avec la gemme rouge et un « A »). Antoine choisit qui le
+   dessine (Claude ou Gemini) ; l'intégration dans Android (icône
+   adaptative, toutes les tailles) est faite au jalon 2.

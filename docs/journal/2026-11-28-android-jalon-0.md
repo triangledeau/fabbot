@@ -20,3 +20,11 @@
   construire, dos de carte et Proxies de Rathe, identifiant et icône) :
   pas encore de réponse. À reposer au début de la session suivante.
 - Aucune mesure : pas de code Android à ce jalon.
+
+## Complément (même jour) : réponses d'Antoine
+
+Réponses 2 à 6 reçues et notées dans `docs/android.md`, section 12 :
+portrait ; APK téléchargé depuis GitHub et construit par GitHub (le
+workflow du jalon 7 avance au jalon 2) ; vrai dos de carte oui, outil
+Proxies de Rathe non ; identifiant et nom acceptés, icône à redessiner à
+partir du logo. Jalon 0 fini.
