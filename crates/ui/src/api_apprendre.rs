@@ -544,6 +544,33 @@ mod tests {
         assert!(connues.len() > 10);
     }
 
+    /// Aucune leçon ne s'ouvre sur un tapis vide : son premier plan pose des
+    /// cartes ou des zones (`fait`), ou lance une scène sur le moteur. Les
+    /// plans suivants gardent ce tapis (exigence du propriétaire, 2026-11-28).
+    #[test]
+    fn chaque_lecon_commence_par_remplir_le_tapis() {
+        let js = include_str!("../web/apprendre/lecons.js");
+        let corps = &js[js.find("const LECONS").unwrap()..];
+        let mut n = 0;
+        for (i, _) in corps.match_indices("plans: [") {
+            let suite = corps[i + 8..].trim_start();
+            // Le premier plan va jusqu'au début du suivant (ou à la fin de la liste).
+            let fin = ["\n          { ", "\n        ],"]
+                .iter()
+                .filter_map(|m| suite.find(m))
+                .min()
+                .unwrap_or(suite.len());
+            let premier = &suite[..fin];
+            let avant = &corps[i.saturating_sub(80)..i];
+            assert!(
+                premier.contains("fait: [") || premier.contains("scene: {"),
+                "leçon sans rien sur le tapis au départ : …{avant}"
+            );
+            n += 1;
+        }
+        assert!(n >= 25, "{n} leçons seulement");
+    }
+
     /// Scène « un-point » : après la première attaque, l'élève n'a plus de
     /// point d'action et ne peut plus jouer la seconde (CR 8.1.1c, 4.3.2).
     #[test]

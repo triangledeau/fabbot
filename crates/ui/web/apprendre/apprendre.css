@@ -83,7 +83,7 @@ html[data-vue="apprendre"] #v-apprendre { display: block; }
 .ap-flot .ico { width: 40px; height: 40px; }
 @keyframes ap-flot { 0% { opacity: 0; transform: translateY(20px) scale(.6); } 15% { opacity: 1; transform: translateY(0) scale(1.15); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-70px) scale(1); } }
 /* Compteurs du joueur (ressources, points d'action) : à gauche de la chaîne, en unités du tapis. */
-.ap-jauge, .ap-points { position: absolute; left: 150px; display: flex; align-items: center; gap: 10px; font-family: var(--f-num); font-size: 34px; padding: 6px 20px 6px 12px; border-radius: 999px; background: #0b0f16; border: 2px solid rgb(255 216 74 / .55); box-shadow: 0 8px 24px rgb(0 0 0 / .6); z-index: 40; color: #fff3c4; }
+.ap-jauge, .ap-points { position: absolute; left: 24px; display: flex; align-items: center; gap: 10px; font-family: var(--f-num); font-size: 34px; padding: 6px 20px 6px 12px; border-radius: 999px; background: #0b0f16; border: 2px solid rgb(255 216 74 / .55); box-shadow: 0 8px 24px rgb(0 0 0 / .6); z-index: 40; color: #fff3c4; }
 .ap-jauge { top: 300px; }
 .ap-points { top: 380px; }
 .ap-jauge .ico { width: 44px; height: 44px; }
@@ -170,3 +170,21 @@ html[data-vue="apprendre"] #v-apprendre { display: block; }
 .ap-zoom .etiq { padding: 8px 18px; border-radius: 12px; background: #0b0f16; border: 1px solid rgb(255 216 74 / .55); box-shadow: 0 8px 24px rgb(0 0 0 / .6); font-size: 34px; }
 .ct.appel { z-index: 30; }
 .ap-choix .ap-q { flex-basis: 100%; font-size: .95rem; color: #e6e9f0; margin-bottom: 2px; }
+/* Plan des zones : zones mises en avant, zones pâlies, étiquettes publique / privée. */
+.ap-slot { transition: opacity .4s, border-color .4s, background .4s; }
+.ap-slot.vu { border: 2px solid var(--brass); background: rgb(255 216 74 / .09); }
+.ap-slot.vu span { color: #fff3c4; border-color: var(--brass); }
+.ap-slot.terne { opacity: .3; }
+.ap-slot .tag { position: absolute; left: 50%; top: -15px; translate: -50% 0; z-index: 35; white-space: nowrap; padding: 2px 10px; border-radius: 999px; font: 700 16px/20px var(--f-body); background: #123524; color: #bdf5d2; border: 1px solid #63c98b; }
+.ap-slot .tag.prive { background: #2b1830; color: #f0d2ff; border-color: #b98ad0; }
+.ap-slot .tag.hors { background: #1d2230; color: #c9cfdc; border-color: #6d7891; }
+/* Frise des phases / étapes du combat. */
+.ap-frise { position: absolute; left: 1100px; top: 20px; width: 165px; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; z-index: 40; counter-reset: etape; }
+.ap-frise li { counter-increment: etape; padding: 8px 12px; border-radius: 10px; background: #0b0f16; border: 1px solid rgb(255 216 74 / .3); color: #c9cfdc; font: 600 21px/26px var(--f-body); transition: background .4s, color .4s, border-color .4s; }
+.ap-frise li::before { content: counter(etape) ". "; color: rgb(255 216 74 / .6); }
+.ap-frise li.passe { color: #7f8799; }
+.ap-frise li.ici { background: rgb(255 216 74 / .16); border-color: var(--brass); color: #fff3c4; box-shadow: 0 0 18px rgb(255 216 74 / .35); }
+/* Note posée sur le tapis. */
+.ap-note { position: absolute; z-index: 45; max-width: 420px; padding: 10px 16px; border-radius: 12px; background: #0b0f16; border: 1px solid rgb(255 216 74 / .55); box-shadow: 0 8px 24px rgb(0 0 0 / .6); color: #fff3c4; font: 600 24px/30px var(--f-body); animation: ap-note .4s ease-out; }
+@keyframes ap-note { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.ct.lueur { box-shadow: 0 0 0 3px var(--brass), 0 0 26px rgb(255 216 74 / .65); border-radius: 9px; }

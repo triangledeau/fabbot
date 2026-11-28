@@ -37,12 +37,28 @@
     "adv.heros": [570, 22], "moi.heros": [570, 488],
     "chaine": [470, 262], "def.0": [640, 262], "def.1": [790, 262], "def.2": [940, 262],
     "moi.pitch": [400, 488], "adv.pitch": [400, 22],
-    "moi.arsenal": [740, 488], "moi.cimetiere": [230, 488], "adv.cimetiere": [230, 22],
+    "moi.arsenal": [1110, 262], "pile": [300, 262], "maillon.0": [320, 262], "maillon.1": [470, 262], "moi.cimetiere": [230, 488], "adv.cimetiere": [230, 22],
     "moi.deck": [60, 488], "adv.deck": [60, 22],
     "centre": [570, 120], "trio.0": [330, 200], "trio.1": [570, 200], "trio.2": [810, 200],
   };
+  // Le plan complet des zones (chapitre 4) : cases de 105 × 147 (cartes à 75 %),
+  // x, y, largeur, hauteur. Les zones communes sont en haut.
+  const PLAN = {
+    "plan.pile": [40, 24, 105, 147, "Pile"], "plan.chaine": [290, 24, 450, 147, "Chaîne de combat"], "plan.permanents": [800, 24, 440, 147, "Permanents"],
+    "plan.tete": [40, 250, 105, 147, "Tête"], "plan.torse": [165, 250, 105, 147, "Torse"], "plan.bras": [290, 250, 105, 147, "Bras"], "plan.jambes": [415, 250, 105, 147, "Jambes"],
+    "plan.arme1": [560, 250, 105, 147, "Arme"], "plan.arme2": [690, 250, 105, 147, "Arme"],
+    "plan.deck": [40, 470, 105, 147, "Deck"], "plan.cimetiere": [165, 470, 105, 147, "Cimetière"], "plan.bannies": [290, 470, 105, 147, "Bannies"], "plan.pitch": [415, 470, 105, 147, "Pitch"],
+    "plan.heros": [625, 470, 105, 147, "Héros"], "plan.arsenal": [790, 470, 105, 147, "Arsenal"], "plan.main": [930, 470, 310, 147, "Main"],
+  };
+  const PETIT = 0.75, DX = CW * (1 - PETIT) / 2, DY = CH * (1 - PETIT) / 2;
   const zone = (z) => {
     if (ZONES[z]) return ZONES[z];
+    if (PLAN[z]) return [PLAN[z][0] - DX, PLAN[z][1] - DY];
+    let p = /^plan\.(main|chaine|permanents)\.(\d+)$/.exec(z);
+    if (p) { const [x, y] = PLAN["plan." + p[1]]; return [x - DX + (p[1] === "main" ? 102 : 115) * +p[2] + (p[1] === "main" ? 0 : 10), y - DY]; }
+    p = /^plan\.cimetiere\.(\d+)$/.exec(z);
+    if (p) { const [x, y] = PLAN["plan.cimetiere"]; return [x - DX + 8 * +p[1], y - DY - 8 * +p[1]]; }
+    if (z === "plan.armes") return [(PLAN["plan.arme1"][0] + PLAN["plan.arme2"][0] + 105) / 2 - 52.5 - DX, PLAN["plan.arme1"][1] - DY];
     let m = /^moi\.main\.(\d+)$/.exec(z); if (m) return [760 + 120 * +m[1], 493];
     m = /^adv\.main\.(\d+)$/.exec(z); if (m) return [920 + 70 * +m[1], 18];
     m = /^moi\.pitch\.(\d+)$/.exec(z); if (m) return [400, 488 - 26 * +m[1]];
@@ -106,7 +122,7 @@
       const e = el[id]; if (!e) return attendre(0);
       const [x, y] = zone(z);
       e.z = z;
-      const s = echelle ?? GRANDES[z] ?? 1;
+      const s = echelle ?? GRANDES[z] ?? (z.startsWith("plan.") ? PETIT : 1);
       e.n.style.transition = `transform ${duree(d)}ms cubic-bezier(.2,.75,.2,1), opacity ${duree(d)}ms`;
       e.n.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
       e.n.style.zIndex = z.includes(".cimetiere.") ? 10 + (+z.split(".")[2]) : z.startsWith("moi.main") ? 20 + (+z.split(".")[2]) : (GRANDES[z] ? 30 : (z === "chaine" || z.startsWith("def") ? 25 : 10));
@@ -128,16 +144,17 @@
       return placer(id, z, opts.vite ? 250 : 750);
     }
     function retirer(id) { if (el[id]) { el[id].n.remove(); delete el[id]; } }
-    function vider() { for (const id of Object.keys(el)) retirer(id); tapis.querySelectorAll(".ap-zoom, .ap-flot, .ap-bulle, .ap-slot, .ap-recap, .ap-fin, .ap-jauge, .ap-points").forEach((x) => x.remove()); }
+    function vider() { for (const id of Object.keys(el)) retirer(id); tapis.querySelectorAll(".ap-zoom, .ap-flot, .ap-bulle, .ap-slot, .ap-recap, .ap-fin, .ap-jauge, .ap-points, .ap-frise, .ap-note").forEach((x) => x.remove()); }
     // Une zone du tapis, dessinée en pointillés avec son nom. Elle apparaît la
     // première fois qu'on en parle et reste ensuite ; `eclairer` la fait briller.
     async function slot(z, nom, eclairer = true) {
       let n = tapis.querySelector(`.ap-slot[data-z="${z}"]`);
       if (!n) {
-        const [x, y] = zone(z);
+        const r = PLAN[z], [x, y] = r || zone(z);
         n = document.createElement("div"); n.className = "ap-slot"; n.dataset.z = z;
         n.style.left = x + "px"; n.style.top = y + "px";
-        n.innerHTML = `<span>${esc(nom)}</span>`;
+        if (r) { n.style.width = r[2] + "px"; n.style.height = r[3] + "px"; }
+        n.innerHTML = `<span>${esc(nom || (r && r[4]) || "")}</span>`;
         tapis.prepend(n);
       }
       if (eclairer && !vite) { n.classList.remove("eclaire"); n.getBoundingClientRect(); n.classList.add("eclaire"); await attendre(900); }
@@ -216,6 +233,54 @@
   const ACTIONS = {
     vider: (t) => t.vider(),
     zone: (t, z, nom, calme) => t.slot(z, nom, !calme),
+    // Plusieurs zones du plan d'un coup (sans pulsation) : ["plan", ["plan.tete", …]].
+    plan: async (t, zs) => { for (const z of zs) await t.slot(z, null, false); },
+    // Met en avant des zones (les autres pâlissent) ; ["voir"] remet tout à égalité.
+    voir: async (t, zs = []) => {
+      t.tapis.querySelectorAll(".ap-slot").forEach((n) => {
+        const dedans = zs.includes(n.dataset.z);
+        n.classList.toggle("vu", dedans); n.classList.toggle("terne", zs.length > 0 && !dedans);
+        if (dedans && !t.vite) { n.classList.remove("eclaire"); n.getBoundingClientRect(); n.classList.add("eclaire"); }
+      });
+      if (!t.vite && zs.length) await attendre(900);
+    },
+    // Petite étiquette sur des zones (« Publique », « Privée ») ; ["etiquette"] les retire.
+    etiquette: (t, zs = [], texte, cls = "") => {
+      if (!zs.length) { t.tapis.querySelectorAll(".ap-slot .tag").forEach((x) => x.remove()); return; }
+      for (const z of zs) {
+        const n = t.tapis.querySelector(`.ap-slot[data-z="${z}"]`); if (!n) continue;
+        n.querySelector(".tag")?.remove();
+        n.insertAdjacentHTML("beforeend", `<b class="tag ${esc(cls)}">${esc(texte)}</b>`);
+      }
+    },
+    // Une carte mise en valeur (sans être cliquable) ; ["lueur", id, false] l'éteint.
+    lueur: (t, id, oui = true) => { t.el[id]?.n.classList.toggle("lueur", oui); },
+    retirer: (t, ...ids) => { for (const id of ids) t.retirer(id); },
+    // La carte est retournée face cachée.
+    cacher: (t, id) => { const e = t.el[id]; if (e) { e.n.classList.add("dos"); e.n.innerHTML = ""; } },
+    // Une carte arrive depuis le deck.
+    tirer: (t, id, spec, z) => t.creer(id, spec, z, zone(z.startsWith("plan.") ? "plan.deck" : z.startsWith("adv") ? "adv.deck" : "moi.deck"), {}),
+    // La carte retourne sous le deck, face cachée.
+    sous_deck: async (t, id, deck = "moi.deck") => {
+      ACTIONS.cacher(t, id); await t.placer(id, deck, 550); t.retirer(id);
+    },
+    // Frise des phases ou des étapes, à droite du tapis ; i = étape en cours (-1 : aucune).
+    frise: async (t, noms, i = -1) => {
+      let f = t.tapis.querySelector(".ap-frise");
+      if (!f) { f = document.createElement("ol"); f.className = "ap-frise"; t.tapis.appendChild(f); }
+      f.innerHTML = noms.map((n, k) => `<li class="${k < i ? "passe" : k === i ? "ici" : ""}">${esc(n)}</li>`).join("");
+      if (!t.vite) await attendre(500);
+    },
+    // Une note posée sur le tapis (fond sombre) ; ["note", id] sans texte la retire.
+    note: (t, id, texte, x, y) => {
+      t.tapis.querySelector(`.ap-note[data-id="${id}"]`)?.remove();
+      if (!texte) return;
+      const n = document.createElement("div"); n.className = "ap-note"; n.dataset.id = id;
+      n.style.left = x + "px"; n.style.top = y + "px"; n.innerHTML = fine(esc(texte));
+      t.tapis.appendChild(n);
+    },
+    // Un texte qui s'élève au-dessus d'une carte (« +1 », « Bloqué »…).
+    flot: (t, id, texte, cls) => t.flotter(id, texte, cls),
     poser: (t, id, spec, z, o = {}) => t.creer(id, spec, z, null, o),
     dos: (t, id, z) => t.creer(id, null, z, null, { vite: true }),
     deplacer: (t, id, z) => t.placer(id, z),
